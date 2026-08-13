@@ -123,7 +123,7 @@ def _build_advanced_tab(self, workspace_tabs):
     self.advanced_pool_intro_label = ttk.Label(
         advanced_tab,
         text=(
-            'Choose what may appear in the next generated seed. Mission, unit, and superpower '
+            'Choose what may appear in the next generated seed. Mission, unit, and power '
             'cards toggle pool inclusion; buff-page cards select one target for detailed options. '
             'Excluded units lose both access and unit-specific buff rewards. Always-available '
             'essentials remain available. The current run is never changed.'
@@ -145,8 +145,8 @@ def _build_advanced_tab(self, workspace_tabs):
     self.advanced_pool_column_counts = {}
     for pool_key, pool_label in (
         ('missions', 'Missions'),
-        ('units', 'Units / Buildings'),
-        ('powers', 'Superpowers'),
+        ('units', 'Units'),
+        ('powers', 'Powers'),
     ):
         page = ttk.Frame(advanced_notebook)
         page.columnconfigure(0, weight=1)
@@ -276,7 +276,7 @@ def _build_advanced_tab(self, workspace_tabs):
     power_buff_page = ttk.Frame(advanced_notebook)
     power_buff_page.columnconfigure(0, weight=1)
     power_buff_page.rowconfigure(2, weight=1)
-    advanced_notebook.add(power_buff_page, text='Superpower Buffs')
+    advanced_notebook.add(power_buff_page, text='Power Buffs')
 
     power_buff_controls = ttk.Frame(power_buff_page)
     power_buff_controls.grid(
@@ -524,8 +524,8 @@ def _build_gameplay_settings(self, settings_frame):
     self.start_with_tier_one_units_check.grid(row=1, column=0, sticky='w', pady=(4, 0))
     WidgetTooltip(
         self.start_with_tier_one_units_check,
-        'Keeps the original starter-setting slot. DTA production routing is disabled until it can '
-        'preserve every map-placed unit and authored trigger reference.',
+        'Makes the selected DTA Tier 1 combat roles available at seed start. '
+        'Production uses player-house routing; enemy and scripted units stay native.',
     )
     self.start_with_tier_one_defenses_check = ttk.Checkbutton(
         reward_frame,
@@ -537,8 +537,7 @@ def _build_gameplay_settings(self, settings_frame):
     )
     WidgetTooltip(
         self.start_with_tier_one_defenses_check,
-        'Keeps the original starter-defense setting slot. DTA structure routing is disabled until '
-        'its map and trigger safety has been verified.',
+        'Makes the selected DTA Tier 1 defensive structures available at seed start.',
     )
     self.include_defensive_buildings_check = ttk.Checkbutton(
         reward_frame,
@@ -622,18 +621,7 @@ def _build_gameplay_settings(self, settings_frame):
     self.include_superweapon_rewards_check.grid(row=9, column=0, sticky='w', pady=(4, 0))
     WidgetTooltip(
         self.include_superweapon_rewards_check,
-        'Adds Lightning Storm, Tactical Nuke, Psychic Dominator, and Great Tempest as building-free rewards.',
-    )
-    self.include_secondary_superweapon_rewards_check = ttk.Checkbutton(
-        reward_frame,
-        text='Include secondary superweapon rewards',
-        variable=self.include_secondary_superweapon_rewards_var,
-        command=self.refresh_setting_states,
-    )
-    self.include_secondary_superweapon_rewards_check.grid(row=10, column=0, sticky='w', pady=(4, 0))
-    WidgetTooltip(
-        self.include_secondary_superweapon_rewards_check,
-        'Adds Chronoshift, Invulnerability, and Rage as building-free rewards.',
+        'Adds DTA Ion Cannon, Airstrike, faction Nuclear Strike, and Chrono Vortex unlocks. Each reward grants a map-local copy only to the scenario player house.',
     )
     self.include_aid_power_rewards_check = ttk.Checkbutton(
         reward_frame,
@@ -644,11 +632,11 @@ def _build_gameplay_settings(self, settings_frame):
     self.include_aid_power_rewards_check.grid(row=11, column=0, sticky='w', pady=(4, 0))
     WidgetTooltip(
         self.include_aid_power_rewards_check,
-        'Adds faction strikes, buffs, scouting, unit drops, deployable support structures, minefields, and grid spawners.',
+        'Adds DTA Chrono Tank and Paratroopers support-power unlocks. Each reward grants a map-local copy only to the scenario player house.',
     )
     self.include_power_buff_rewards_check = ttk.Checkbutton(
         reward_frame,
-        text='Include superweapon / aid power buff rewards',
+        text='Include superweapon / support power buff rewards',
         variable=self.include_power_buff_rewards_var,
         command=self.refresh_setting_states,
     )

@@ -16,7 +16,7 @@ if FROZEN:
 else:
     APP_DIR = SOURCE_DIR
     GAME_ROOT = SOURCE_DIR.parent
-WINDOW_ICON_PATH = GAME_ROOT / 'Resources' / 'gameicon.ico'
+WINDOW_ICON_PATH = SOURCE_DIR / 'launcher_icon.ico'
 GAME_LAUNCHER_EXE = GAME_ROOT / 'LaunchVinifera.dat'
 GAME_EXE = GAME_ROOT / 'game.exe'
 SPAWN_INI = GAME_ROOT / 'spawn.ini'

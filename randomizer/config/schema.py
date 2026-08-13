@@ -517,6 +517,12 @@ def _validate_special_buildings(sections, path):
 
 
 def _validate_ui(sections, path):
+    color_values = sections.get('player_color_engine_values', {})
+    if not isinstance(color_values, dict) or not all(
+        _is_nonempty_string(label) and _is_nonempty_string(value)
+        for label, value in color_values.items()
+    ):
+        _invalid('Invalid player color engine values', path)
     messages = sections['rewards_per_check_messages']
     if (
         not isinstance(messages.get('maximum'), str)

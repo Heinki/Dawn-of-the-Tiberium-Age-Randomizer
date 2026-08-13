@@ -2,7 +2,7 @@
 
 # Dawn of the Tiberium Age Randomizer Launcher
 
-This project is a direct DTA port of the existing Mental Omega Randomizer. It preserves the original launcher UI, modes, settings model, mission/grid progression, rewards view, seed system, save/load behavior, navigation, tooltips, and run flow. Game-specific data and engine integration are adapted for DTA 15.1.0 and Vinifera.
+This project is the randomizer launcher for DTA 15.1.0 and Vinifera. It reuses the proven progression, reward-planning, launcher UI, save/load, and Archipelago structure from the Mental Omega Randomizer, while using DTA missions, factions, units, powers, rules, maps, cameos, difficulty handling, and launch behavior.
 
 ## Current DTA integration
 
@@ -16,20 +16,30 @@ This project is a direct DTA port of the existing Mental Omega Randomizer. It pr
 - Detects the Vinifera score screen through the newest `Debug/*.LOG` file.
 - Reads the installed `INI/Rules.ini` catalogue at runtime.
 - Extracts native TS SHP cameos from DTA MIX archives.
-- Enables six broad player-only army modifiers through the mission's selected human difficulty section: production, cost, movement speed, armor, firepower, and reload.
-- Exposes 116 canonical mobile types: 20 infantry, 56 regular vehicles/naval units, 8 aircraft, and 32 campaign/skirmish special units. The 105 non-essential types can become access rewards. Engineer, all four MCVs, both resource harvesters, and all four faction hovercraft transports remain permanently available.
+- Applies five broad Player Army buffs through player-production clones: production, cost, movement speed, firepower, and reload. Direct player-owned starting units use the same clones; enemy and scripted units retain the installed rules. Armor remains unit-specific.
+- Adds unit-specific production-clone buffs where the installed DTA rules support them: production, cost, speed, armor, health, damage, reload, range, sight, ammo, passenger capacity, cloaking, sensors, and self-healing. Native capabilities are not offered redundantly.
+- Exposes 128 canonical mobile types: 27 infantry, 93 vehicles/naval units, and 8 aircraft. The 117 non-essential types can become access rewards. Engineer, all four MCVs, both resource harvesters, and all four faction hovercraft transports remain permanently available.
 - Removes obsolete mission aliases such as `E1N`, `E3N`, and `APCN` from the dashboard. Shared units appear in each faction tab that can use them; global house rewards alone use Neutral. Duplicate display names use faction/editor-qualified labels.
-- Includes campaign/map-only Special rewards by default. Three special types whose referenced native cameo files are absent from DTA's active MIX archives use text cards instead of unrelated substitute artwork.
+- Excludes the base Tiberian Sun Devil's Tongue, Wolverine, and Disruptor types that are not part of DTA's active roster. Campaign-only units use curated faction ownership instead of appearing under every faction solely because their map-editor definitions list every house.
+- Uses native DTA cameos for active rewards. Railgun Tank and Battle Rig use text-only entries because DTA has no correct native cameo for them.
+- Includes five offensive powers and two support powers. Each is cloned into the generated map and granted only to the exact scenario player house.
+- Includes 12 defensive-building unlocks and their supported production, cost, durability, weapon, range, sight, cloaking, sensor, and self-healing buffs.
+- Offers stackable recharge-speed rewards for all seven powers. Airstrike, both nuclear strikes, and Chrono Vortex also offer player-only damage and effect-radius buffs through cloned weapon, warhead, and animation chains.
+- Offers optional enemy armor and production-speed rewards. These target only active hostile production families; any family used by the player or a direct ally is excluded.
+- Uses the 12 colors exposed by DTA's multiplayer options. The Pink UI choice writes DTA's `DarkMagenta` engine color.
+- Awards mission rewards at the observable score-screen victory event. DTA maps do not expose one uniform runtime signal for their varied sub-objectives, so the launcher does not create or display objective-reward checks.
 
 ## Unit safety rule
 
-Map-placed units always retain their original type. The DTA adapter never replaces authored map objects, TaskForce entries, trigger references, or script references.
+Direct mobile-unit placements owned by the exact player house use a non-buildable player clone when that unit has an active buff. Enemy placements, structures, TaskForce entries, trigger references, script references, and reinforcements retain their original type.
 
-Every unit-specific reward uses a map-local Vinifera production clone, forbids the human house from producing the original, and allows only that house to produce the clone. Earned access uses the same isolation. Placed objects, TaskForces, teams, triggers, scripts, and reinforcement identities remain unchanged.
+Every unit-specific and Player Army buff uses a map-local Vinifera clone. Normal production routes the human production house from the original to the clone. Earned access uses the same isolation. Only exact player-owned starting mobile units are rewritten; TaskForces, teams, triggers, scripts, reinforcements, and non-player objects remain unchanged.
 
-Infantry access uses the same identity-preservation boundary. Native earned infantry can use the original type. A foreign infantry type that the human house cannot normally produce receives an exact-house `_PLAYER` production clone. Existing map and scripted infantry are never replaced.
+If a hostile scenario house shares the player's Vinifera `ActsLike` production mask, production clones are skipped for that mission. Exact player-owned starting mobile units may still use non-buildable placement-only clones, which the hostile factory cannot produce.
 
-`DTA Puzzle.png` is shown on this GitHub README and bundled as a compiled-executable resource. It is not rendered inside the launcher window.
+Unit and defensive-building access uses the same identity-preservation boundary. Earned production is routed through exact-production-house `_PLAYER` clones. Existing enemy and scripted objects are never replaced.
+
+`DTA Puzzle.png` is shown on this GitHub README and bundled as a compiled-executable resource. The Python window and packaged executable use `launcher_icon.ico`, cut from the center JM section of that existing image; no replacement artwork is used.
 
 ## Run from source
 
@@ -49,6 +59,10 @@ The self-check does not launch DTA and writes its report to `RandomizerLauncher/
 
 ## Status
 
-The static adapter, mission catalogue, native cameos, map generation, launch contract, broad buffs, mobile-unit access, and player-production clones are implemented and self-checked. PTTP #6 was successfully started directly from Mission List without opening the DTA client. Unit-specific buffs and earned access always create a player-production clone; authored map units and enemy identities remain original. Access clones use `TechLevel=1` and remove inherited prerequisites, `BuiltAt`, and `BuildLimit`. Standard mode activates only rewards matching the selected mission's faction; Chaos retains cross-faction access. Old rewards for still-locked units are ignored at launch instead of granting access. Score-screen completion, sidebar production across every special unit, capture behavior, and clone save/load still need live verification.
+The mission catalogue, cameos, map generation, launch contract, broad buffs, unit and defense buffs, production access, player-production clones, seven power unlocks, supported power buffs, optional enemy buffs, Randomizer Arsenal, and Archipelago catalogue are implemented and covered by the non-invasive self-check. Access clones use `TechLevel=1` and remove inherited prerequisites, `BuiltAt`, and `BuildLimit`. Standard mode activates only rewards matching the selected mission's faction; Chaos retains cross-faction access. Old buffs for still-locked units are ignored at launch instead of granting access.
+
+All 81 active mission maps were checked for map-local power types. The obsolete duplicate `EMPulseSpecial` alias is not a reward.
+
+Live verification is still required for sidebar production, buff effects, unlocks, clone save/load, score-screen completion, and Archipelago item receipt.
 
 Player configurations created before mobile-unit access was introduced are migrated once to enable access and buffs. Existing buff-only seeds are not rewritten because changing their assigned rewards would invalidate completed progression; the launcher asks the player to generate a new seed instead.

@@ -3,7 +3,14 @@
 from pathlib import Path
 
 from randomizer.core.paths import GAME_ROOT, SPAWN_MAP_INI
-from randomizer.maps.ini import IniLines, merge_ini_section_values, read_text
+from randomizer.maps.hooks import unique_section_key
+from randomizer.maps.ini import (
+    IniLines,
+    action_group_tokens,
+    append_section_entry,
+    merge_ini_section_values,
+    read_text,
+)
 
 
 DIFFICULTY_FILE_BY_VALUE = {
@@ -35,6 +42,15 @@ def mission_source_path(scenario):
     if not source.is_file():
         raise FileNotFoundError(f'DTA mission map is missing: {source}')
     return source
+
+
+def mission_source_lines(scenario):
+    """Read one loose DTA mission without using the legacy MIX extractor."""
+    return IniLines(
+        mission_source_path(scenario).read_text(
+            encoding='cp1252', errors='strict'
+        ).splitlines()
+    )
 
 
 def mission_difficulty_modifiers(mission, section_name='Normal'):
@@ -69,11 +85,13 @@ def prepare_spawn_map(
     mission,
     difficulty,
     extra_rules=None,
+    power_actions=(),
+    power_house='',
     output_path=SPAWN_MAP_INI,
 ):
     """Copy one loose DTA mission, consolidate difficulty, then add safe rules."""
     source = mission_source_path(mission.get('scenario'))
-    lines = IniLines(source.read_text(encoding='cp1252', errors='strict').splitlines())
+    lines = mission_source_lines(mission.get('scenario'))
 
     difficulty_value = int(getattr(difficulty, 'engine_value', difficulty))
     difficulty_name = DIFFICULTY_FILE_BY_VALUE.get(difficulty_value, 'Difficulty Medium.ini')
@@ -101,6 +119,32 @@ def prepare_spawn_map(
 
     if extra_rules:
         merge_ini_section_values(lines, extra_rules)
+    power_actions = [list(action) for action in power_actions or ()]
+    power_grant_triggers = []
+    if power_actions and power_house:
+        for chunk_index in range(0, len(power_actions), 20):
+            chunk = power_actions[chunk_index:chunk_index + 20]
+            trigger_id = unique_section_key(
+                lines, ('Events', 'Actions', 'Triggers'), 'DTAPW'
+            )
+            tag_id = unique_section_key(lines, ('Tags',), 'DTAPT')
+            delay = 1 + chunk_index // 20
+            name = f'DTA Randomizer Earned Powers {delay}'
+            append_section_entry(lines, 'Events', trigger_id, f'1,13,0,{delay}')
+            append_section_entry(
+                lines,
+                'Actions',
+                trigger_id,
+                f'{len(chunk)},{",".join(action_group_tokens(chunk))}',
+            )
+            append_section_entry(
+                lines,
+                'Triggers',
+                trigger_id,
+                f'{power_house},<none>,{name},0,1,1,1,0',
+            )
+            append_section_entry(lines, 'Tags', tag_id, f'0,{name} 1,{trigger_id}')
+            power_grant_triggers.append(trigger_id)
     merge_ini_section_values(lines, {
         'Basic': {
             'EndOfGame': 'true',
@@ -129,6 +173,7 @@ def prepare_spawn_map(
         'normal_difficulty_modifiers': bool(
             getattr(difficulty, 'apply_normal_modifiers', False)
         ),
+        'power_grant_triggers': power_grant_triggers,
     }
 
 

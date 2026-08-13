@@ -1,11 +1,12 @@
 """Entry point for source runs and the packaged launcher."""
 
 import json
+from collections import Counter
 from hashlib import sha256
 import sys
 import traceback
 
-from randomizer.ui.cameos import ensure_unit_cameos
+from randomizer.ui.cameos import ensure_superweapon_cameos, ensure_unit_cameos
 from randomizer.core.diagnostics import event as log_event
 from randomizer.core.paths import (
     APP_DIR,
@@ -50,24 +51,46 @@ def run_self_check():
     """Validate the DTA adapter without launching or altering live game files."""
     from randomizer.core.paths import BATTLE_CLIENT_INI
     from randomizer.config.player import migrate_loaded_config
-    from randomizer.dta.maps import mission_normal_modifiers, prepare_spawn_map
+    from randomizer.dta.maps import (
+        mission_source_lines,
+        mission_source_path,
+        prepare_spawn_map,
+    )
     from randomizer.dta.access import player_infantry_access_rules
-    from randomizer.dta.clones import unit_specific_buff_rules
-    from randomizer.dta.clones import _player_production_context
+    from randomizer.dta.clones import (
+        _effective_buff_counts,
+        _player_production_context,
+        unit_specific_buff_rules,
+    )
     from randomizer.dta.difficulty import resolve_mission_difficulty
-    from randomizer.dta.rewards import human_modifier_rules
+    from randomizer.dta.enemies import enemy_buff_rules
+    from randomizer.dta.powers import POWER_SPECS, player_power_rules
     from randomizer.dta.rules import (
         ALWAYS_AVAILABLE_MOBILE_IDS,
+        DEFENSE_BUILDING_IDS,
+        comma_items,
         effective_section,
         ini_sections,
         techno_catalogue,
         unit_collision_report,
     )
     from randomizer.launch.options import spawn_ini_text
-    from randomizer.ui.config import GAME_SPEEDS
+    from randomizer.maps.settings import mission_house_color_rules
+    from randomizer.ui.config import (
+        GAME_SPEEDS,
+        PLAYER_COLOR_ENGINE_VALUES,
+        RAINBOWIZER_COLORS,
+    )
     from randomizer.rewards.catalogue import (
         ALWAYS_AVAILABLE_TECH_IDS,
+        BUFF_TARGETS,
         REWARD_POOL,
+        canonical_reward,
+    )
+    from randomizer.config.tuning import movement_speed_ceiling
+    from randomizer.rewards.arsenal import (
+        arsenal_power_candidates,
+        arsenal_unit_candidates,
     )
     from randomizer.rewards.planning import plan_seed_rewards
     from randomizer.rewards.rules import tech_ids_for_rewards
@@ -115,31 +138,31 @@ def run_self_check():
         reward_names = [reward['name'] for reward in REWARD_POOL]
         damage_reward = next(
             reward for reward in REWARD_POOL
-            if reward.get('buff_type') == 'damage'
+            if reward.get('global_buff')
+            and reward.get('buff_type') == 'damage'
         )
-        armor_reward = next(
+        reload_reward = next(
             reward for reward in REWARD_POOL
-            if reward.get('buff_type') == 'armor'
+            if reward.get('global_buff')
+            and reward.get('buff_type') == 'reload'
         )
-        modifier_rules = human_modifier_rules([damage_reward])
-        armor_rules = human_modifier_rules([armor_reward])
-        authored_normal_mission = next(
-            (
-                mission for mission in missions
-                if mission_normal_modifiers(mission).get('Cost') == '0.75'
-            ),
-            None,
+        speed_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('global_buff')
+            and reward.get('buff_type') == 'speed'
         )
         cost_reward = next(
             reward for reward in REWARD_POOL
-            if reward.get('buff_type') == 'cost'
+            if reward.get('global_buff')
+            and reward.get('buff_type') == 'cost'
         )
-        authored_cost_rules = human_modifier_rules(
-            [cost_reward],
-            mission_normal_modifiers(authored_normal_mission)
-            if authored_normal_mission else {},
+        production_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('global_buff')
+            and reward.get('buff_type') == 'production'
         )
         catalogue = techno_catalogue()
+        catalogue_records = {record['id']: record for record in catalogue}
         mobile_ids = {
             record['id'] for record in catalogue
             if record.get('rewardable')
@@ -147,7 +170,35 @@ def run_self_check():
             and not record.get('duplicate_of')
         }
         cameo_paths = ensure_unit_cameos(mobile_ids)
+        power_cameo_paths = ensure_superweapon_cameos(
+            spec['id'] for spec in POWER_SPECS
+        )
         expected_access_ids = mobile_ids - set(ALWAYS_AVAILABLE_MOBILE_IDS)
+        arsenal_candidates = arsenal_unit_candidates(
+            {
+                'include_special_rewards': True,
+                'excluded_unit_access_ids': [],
+            },
+            {
+                'factions': ['GDI', 'Nod', 'Allies', 'Soviet'],
+                'roster_sizes': {},
+                'power_counts': {},
+            },
+        )
+        arsenal_powers = arsenal_power_candidates(
+            {
+                'include_special_rewards': True,
+                'include_superweapon_rewards': True,
+                'include_secondary_superweapon_rewards': True,
+                'include_aid_power_rewards': True,
+                'excluded_superweapon_ids': [],
+            },
+            {
+                'factions': ['GDI', 'Nod', 'Allies', 'Soviet'],
+                'roster_sizes': {},
+                'power_counts': {},
+            },
+        )
         collision = unit_collision_report(source, 'E1')
         clone_mission = next(
             mission for mission in missions if mission['code'] == 'M_PTTP6'
@@ -275,6 +326,274 @@ def run_self_check():
         _orphan_rules, orphan_buff_report = unit_specific_buff_rules(
             tutorial_two, [e2_damage_reward], access_randomized=True
         )
+        apc_buff_types = {
+            'health', 'range', 'sight', 'passenger_capacity', 'cloak', 'sensors',
+        }
+        apc_buff_rewards = [
+            reward for reward in REWARD_POOL
+            if reward.get('unit') == 'APC'
+            and reward.get('buff_type') in apc_buff_types
+        ]
+        apc_buff_rules, apc_buff_report = unit_specific_buff_rules(
+            tutorial_two, apc_buff_rewards
+        )
+        installed_apc = effective_section(installed_sections, 'APC')
+        installed_apc_weapon = effective_section(
+            installed_sections, installed_apc.get('Primary')
+        )
+        generated_apc = apc_buff_rules.get('APC_PLAYER', {})
+        generated_apc_weapon = apc_buff_rules.get(
+            generated_apc.get('Primary'), {}
+        )
+        global_clone_rules, global_clone_report = unit_specific_buff_rules(
+            tutorial_two, [damage_reward]
+        )
+        global_e1 = global_clone_rules.get('E1_PLAYER', {})
+        global_e1_weapon = global_clone_rules.get(
+            global_e1.get('Primary'), {}
+        )
+        legacy_stack_rules, legacy_stack_report = unit_specific_buff_rules(
+            tutorial_two,
+            [speed_reward] * 157
+            + [cost_reward] * 14
+            + [production_reward] * 10,
+        )
+        legacy_outputs = {
+            item['unit']: item['output_type']
+            for item in legacy_stack_report['applied']
+        }
+        legacy_pyle = legacy_stack_rules.get(
+            legacy_outputs.get('PYLE'), {}
+        )
+        legacy_refinery = legacy_stack_rules.get(
+            legacy_outputs.get('TDPROC'), {}
+        )
+        legacy_orca = legacy_stack_rules.get(
+            legacy_outputs.get('ORCA'), {}
+        )
+        legacy_groups = legacy_stack_rules.get('PrerequisiteGroups', {})
+        useless_unit_buffs = []
+        for reward in REWARD_POOL:
+            unit_id = str(reward.get('unit') or '').upper()
+            buff_type = str(reward.get('buff_type') or '').lower()
+            if (
+                reward.get('kind') != 'buff'
+                or reward.get('global_buff')
+                or reward.get('dta_player_power_buff')
+                or reward.get('enemy_reward')
+                or not unit_id
+            ):
+                continue
+            target = BUFF_TARGETS.get(unit_id)
+            effective = _effective_buff_counts(
+                effective_section(installed_sections, unit_id),
+                target or {},
+                Counter({buff_type: 1}),
+                installed_sections,
+            )
+            if not effective:
+                useless_unit_buffs.append((unit_id, buff_type))
+        carrtruk_access_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('dta_production_access')
+            and reward.get('unit') == 'CARRTRUK'
+        )
+        spawner_rules, spawner_report = unit_specific_buff_rules(
+            tutorial_two,
+            [carrtruk_access_reward, damage_reward, reload_reward],
+            access_randomized=True,
+        )
+        spawner_clone = spawner_rules.get('CARRTRUK_PLAYER', {})
+        shared_house_mission = next(
+            mission for mission in missions if mission['code'] == 'M_PTTP1'
+        )
+        shared_clone_rules, shared_clone_report = unit_specific_buff_rules(
+            shared_house_mission, [damage_reward]
+        )
+        installed_e1 = effective_section(installed_sections, 'E1')
+        installed_e1_weapon = effective_section(
+            installed_sections, installed_e1.get('Primary')
+        )
+        ion_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('superweapon') == 'IonCannonSpecial'
+        )
+        power_rules, power_actions, power_report = player_power_rules(
+            tutorial_two, [ion_reward]
+        )
+        chrono_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('superweapon') == 'HuntSeekSpecial'
+        )
+        allied_power_mission = next(
+            mission for mission in missions if mission['code'] == 'M_CRC14'
+        )
+        chrono_rules, chrono_actions, chrono_report = player_power_rules(
+            allied_power_mission, [chrono_reward]
+        )
+        crash_clone_rules = {}
+        crash_clone_reports = {}
+        crash_unit_missions = {
+            'JEEPPTNK': tutorial_two,
+            'TTNKMSL': allied_power_mission,
+            'FRIGATE': allied_power_mission,
+        }
+        for crash_unit, crash_mission in crash_unit_missions.items():
+            crash_access = next(
+                reward for reward in REWARD_POOL
+                if reward.get('dta_production_access')
+                and reward.get('unit') == crash_unit
+            )
+            crash_damage = next(
+                reward for reward in REWARD_POOL
+                if reward.get('unit') == crash_unit
+                and reward.get('buff_type') == 'damage'
+            )
+            generated_rules, generated_report = unit_specific_buff_rules(
+                crash_mission,
+                [crash_access, crash_damage],
+                access_randomized=True,
+            )
+            crash_clone_rules[crash_unit] = generated_rules
+            crash_clone_reports[crash_unit] = generated_report
+        tutorial_one = next(
+            mission for mission in missions if mission['code'] == 'M_TUTORIAL1'
+        )
+        mtnk_health_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('unit') == 'MTNK'
+            and reward.get('buff_type') == 'health'
+        )
+        starter_rules, starter_report = unit_specific_buff_rules(
+            tutorial_one, [mtnk_health_reward]
+        )
+        allied_helper_mission = next(
+            mission for mission in missions if mission['code'] == 'M_CRC14'
+        )
+        artillery_cloak_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('unit') == 'RAARTY'
+            and reward.get('buff_type') == 'cloak'
+        )
+        helper_rules, helper_report = unit_specific_buff_rules(
+            allied_helper_mission,
+            [artillery_cloak_reward],
+            buff_allied_helpers=True,
+        )
+        harvester_speed_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('unit') == 'RAHARV'
+            and reward.get('buff_type') == 'speed'
+        )
+        harvester_rules, harvester_report = unit_specific_buff_rules(
+            allied_helper_mission, [harvester_speed_reward]
+        )
+        refinery_production_reward = {
+            'unit': 'RAPROC',
+            'buff_type': 'production',
+            'kind': 'buff',
+        }
+        refinery_rules, refinery_report = unit_specific_buff_rules(
+            allied_helper_mission, [refinery_production_reward]
+        )
+        defense_access_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('dta_production_access')
+            and reward.get('unit') == 'TWR'
+        )
+        defense_buff_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('dta_production_clone')
+            and reward.get('unit') == 'TWR'
+            and reward.get('buff_type') == 'armor'
+        )
+        defense_access_rules, defense_access_report = (
+            player_infantry_access_rules(
+                tutorial_two,
+                [defense_access_reward],
+                True,
+                include_defenses=True,
+            )
+        )
+        defense_clone_rules, defense_clone_report = unit_specific_buff_rules(
+            tutorial_two,
+            [defense_access_reward, defense_buff_reward],
+            access_randomized=True,
+        )
+        nuclear_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('dta_player_power')
+            and reward.get('superweapon') == 'MultiSpecial'
+        )
+        nuclear_damage_buff = next(
+            reward for reward in REWARD_POOL
+            if reward.get('dta_player_power_buff')
+            and reward.get('superweapon') == 'MultiSpecial'
+            and reward.get('power_buff_type') == 'damage'
+        )
+        nuclear_area_buff = next(
+            reward for reward in REWARD_POOL
+            if reward.get('dta_player_power_buff')
+            and reward.get('superweapon') == 'MultiSpecial'
+            and reward.get('power_buff_type') == 'area'
+        )
+        nuclear_rules, nuclear_actions, nuclear_report = player_power_rules(
+            tutorial_two,
+            [nuclear_reward, nuclear_damage_buff, nuclear_area_buff],
+        )
+        nuclear_animation = next(
+            (
+                values for values in nuclear_rules.values()
+                if 'ExplosionDamage' in values
+            ),
+            {},
+        )
+        nuclear_area_warhead = next(
+            (
+                values for values in nuclear_rules.values()
+                if values.get('CellSpread') == '4.5'
+            ),
+            {},
+        )
+        nuclear_power_clone = next(
+            (
+                values for section, values in nuclear_rules.items()
+                if section.startswith('DTAMULTIRNG')
+            ),
+            {},
+        )
+        launch_color_source = mission_source_lines(tutorial_two['scenario'])
+        enemy_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('enemy_effect_id') == 'enemy_armor'
+        )
+        enemy_rules, enemy_report = enemy_buff_rules(
+            tutorial_two, [enemy_reward]
+        )
+        color_rules = mission_house_color_rules(
+            launch_color_source,
+            player_color=PLAYER_COLOR_ENGINE_VALUES['Pink'],
+            rainbowizer=True,
+            rainbow_colors=[
+                PLAYER_COLOR_ENGINE_VALUES.get(color, color)
+                for color in RAINBOWIZER_COLORS
+            ],
+            random_key='dta-color-self-check',
+        )
+        defense_cameo_paths = ensure_unit_cameos(DEFENSE_BUILDING_IDS)
+        power_generated = APP_DIR / '.self_check_power_spawnmap.ini'
+        try:
+            prepare_spawn_map(
+                tutorial_two,
+                resolve_mission_difficulty(tutorial_two, 'Normal'),
+                extra_rules=power_rules,
+                power_actions=power_actions,
+                power_house=power_report['player_house'],
+                output_path=power_generated,
+            )
+            power_generated_text = power_generated.read_text(encoding='cp1252')
+        finally:
+            power_generated.unlink(missing_ok=True)
 
         def access_plan_smoke(label, pool):
             code = 'M_PTTP6'
@@ -358,7 +677,7 @@ def run_self_check():
             },
             'dta_puzzle_exists': DTA_PUZZLE_PATH.is_file(),
             'objective_reward_mode': (
-                'victory-only until DTA map-specific objective hooks are verified'
+                'victory-only; DTA has no uniform objective-completion signal'
             ),
             'no_unreportable_objective_checks': all(
                 not mission.get('objectives') for mission in missions
@@ -370,7 +689,7 @@ def run_self_check():
             'dta_reward_pool_count': len(reward_names),
             'dta_house_reward_count': sum(
                 1 for reward in REWARD_POOL
-                if reward.get('dta_house_modifier')
+                if reward.get('dta_global_clone_buff')
             ),
             'dta_unit_clone_reward_count': sum(
                 1 for reward in REWARD_POOL
@@ -383,6 +702,7 @@ def run_self_check():
             'dta_mobile_access_reward_count_valid': sum(
                 1 for reward in REWARD_POOL
                 if reward.get('dta_production_access')
+                and str(reward.get('unit') or '').upper() in expected_access_ids
             ) == len(expected_access_ids),
             'dta_essential_mobile_units_always_available': (
                 set(ALWAYS_AVAILABLE_TECH_IDS) == set(ALWAYS_AVAILABLE_MOBILE_IDS)
@@ -396,6 +716,137 @@ def run_self_check():
             'dta_special_roster_present': {
                 'BFRT', 'TTNKMSL', 'XO', 'PLSM', 'BEHEMOTH'
             }.issubset(mobile_ids),
+            'dta_all_mobile_buff_targets_present': (
+                mobile_ids
+                == {
+                    unit_id for unit_id, target in BUFF_TARGETS.items()
+                    if target.get('category')
+                    in {'infantry', 'vehicles', 'aircraft'}
+                }
+            ),
+            'dta_arsenal_all_mobile_access_present': (
+                len(arsenal_candidates) == len(expected_access_ids)
+                and {item['unit_id'] for item in arsenal_candidates}
+                == expected_access_ids
+                and {'infantry', 'vehicles', 'naval', 'aircraft'}
+                .issubset({item['production_type'] for item in arsenal_candidates})
+            ),
+            'dta_power_rewards_present': (
+                {
+                    reward.get('superweapon') for reward in REWARD_POOL
+                    if reward.get('kind') == 'superweapon'
+                }
+                == {spec['id'] for spec in POWER_SPECS}
+                and {
+                    reward.get('superweapon') for reward in REWARD_POOL
+                    if reward.get('dta_player_power_buff')
+                } == {spec['id'] for spec in POWER_SPECS}
+            ),
+            'dta_power_buff_matrix_valid': all(
+                {
+                    reward.get('power_buff_type')
+                    for reward in REWARD_POOL
+                    if reward.get('dta_player_power_buff')
+                    and reward.get('superweapon') == spec['id']
+                } == (
+                    {'recharge', 'damage', 'area'}
+                    if spec['id'] in {
+                        'AirstrikeSpecial', 'ChemicalSpecial',
+                        'MultiSpecial', 'VortexSpecial',
+                    }
+                    else {'recharge'}
+                )
+                for spec in POWER_SPECS
+            ),
+            'dta_power_cameos_complete': (
+                {spec['id'].upper() for spec in POWER_SPECS}
+                == set(power_cameo_paths)
+            ),
+            'dta_defense_rewards_complete': (
+                {
+                    str(reward.get('unit') or '').upper()
+                    for reward in REWARD_POOL
+                    if reward.get('access_category') == 'defense'
+                } == set(DEFENSE_BUILDING_IDS)
+                and set(defense_cameo_paths) == set(DEFENSE_BUILDING_IDS)
+                and 'TWR' in defense_access_rules
+                and defense_access_report['clone_unlocked'] == ['TWR']
+                and 'TWR_PLAYER' in defense_clone_rules
+                and defense_clone_report['map_objects_rewritten'] == 0
+            ),
+            'dta_firestorm_removed': (
+                all(
+                    spec['id'].casefold() != 'firestormspecial'
+                    for spec in POWER_SPECS
+                )
+                and all(
+                    str(reward.get('superweapon') or '').casefold()
+                    != 'firestormspecial'
+                    for reward in REWARD_POOL
+                )
+            ),
+            'dta_power_damage_area_clones_valid': (
+                len(nuclear_actions) == 1
+                and nuclear_report['enemy_grants'] == 0
+                and nuclear_report['applied'][0]['damage_buffs'] == 1
+                and nuclear_report['applied'][0]['area_buffs'] == 1
+                and nuclear_animation.get('ExplosionDamage') == '767'
+                and nuclear_area_warhead.get('CellSpread') == '4.5'
+                and str(nuclear_power_clone.get('WeaponType', '')).startswith(
+                    'DTANUKEWEAPONS2WP'
+                )
+                and not {'ATOMEXPL', 'AtomicWH', 'NukeWeaponS2'}.intersection(
+                    nuclear_rules
+                )
+            ),
+            'dta_enemy_buffs_exclude_player_family': (
+                enemy_rules.get('Nod', {}).get('Armor') == '1.1'
+                and 'GDI' not in enemy_rules
+                and enemy_report['friendly_families'] == ['GDI']
+                and enemy_report['hostile_families'] == ['Nod']
+            ),
+            'dta_player_color_list_valid': (
+                color_rules.get('TutorialGDI', {}).get('Color')
+                == 'DarkMagenta'
+                and set(RAINBOWIZER_COLORS) == {
+                    'Gold', 'Red', 'Teal', 'Green', 'Orange', 'Blue',
+                    'Purple', 'Metallic', 'White', 'Brown', 'Pink', 'Cyan',
+                }
+            ),
+            'dta_loose_mission_launch_source_valid': (
+                mission_source_path(tutorial_two['scenario']).resolve()
+                == (GAME_ROOT / tutorial_two['scenario']).resolve()
+                and color_rules.get('TutorialGDI', {}).get('Color')
+                == 'DarkMagenta'
+            ),
+            'dta_arsenal_power_pool_complete': (
+                {item['power_id'] for item in arsenal_powers}
+                == {spec['id'].upper() for spec in POWER_SPECS}
+            ),
+            'dta_ts_leftovers_excluded': not {
+                'HTNKMSAM', 'SMECH', 'UTNK'
+            }.intersection(mobile_ids),
+            'dta_special_factions_curated': all(
+                set(BUFF_TARGETS[unit_id]['factions']) == expected
+                for unit_id, expected in {
+                    'GTNK': {'Soviet'},
+                    'HVR': {'GDI'},
+                    'HVC': {'Nod'},
+                    'HVCSAM': {'GDI'},
+                    'HTNKARTY': {'Nod'},
+                    'JEEPPTNK': {'GDI'},
+                    'LTNKCRUS': {'Nod'},
+                    'MWAVEMSAM': {'Nod'},
+                    'BRIG': {'Allies'},
+                    'MGI': {'Allies'},
+                    'MSA': {'GDI'},
+                    'MHQ': {'GDI'},
+                }.items()
+            ) and all(
+                len(target.get('factions', ())) == 1
+                for target in BUFF_TARGETS.values()
+                if target.get('special_reward')
+            ),
             'custom_campaign_house_acts_like_resolved': (
                 tutorial_two_context['player_house'] == 'TutorialGDI'
                 and tutorial_two_context['production_house'] == 'GDI'
@@ -417,20 +868,203 @@ def run_self_check():
                 and tutorial_clone_report['map_objects_rewritten'] == 0
             ),
             'safe_reward_pool_only': all(
-                reward.get('dta_house_modifier')
-                or reward.get('dta_production_clone')
+                reward.get('dta_production_clone')
                 or reward.get('dta_production_access')
+                or reward.get('dta_player_power')
+                or reward.get('dta_player_power_buff')
+                or reward.get('enemy_reward')
                 for reward in REWARD_POOL
             ),
-            'player_firepower_modifier_works': (
-                float(modifier_rules['Normal']['Firepower']) > 1.0
+            'global_buffs_use_player_clones_only': (
+                global_clone_report.get('global_buffs') == {'damage': 1}
+                and global_e1.get('RequiredHouses') == 'GDI'
+                and int(global_e1.get('Strength', 0))
+                == int(installed_e1.get('Strength', 0))
+                and int(global_e1_weapon.get('Damage', 0))
+                > int(installed_e1_weapon.get('Damage', 0))
+                and set(global_clone_rules.get('E1', {}))
+                == {'ForbiddenHouses'}
+                and not {'Easy', 'Normal', 'Difficult'}.intersection(
+                    global_clone_rules
+                )
+                and global_clone_report['map_objects_rewritten'] == 0
             ),
-            'player_armor_modifier_works': (
-                float(armor_rules['Normal']['Armor']) > 1.0
+            'global_armor_removed': not any(
+                reward.get('global_buff')
+                and reward.get('buff_type') == 'armor'
+                for reward in REWARD_POOL
             ),
-            'authored_map_modifier_preserved': (
-                authored_normal_mission is not None
-                and float(authored_cost_rules['Normal']['Cost']) < 0.75
+            'spawner_control_weapons_are_not_cloned': (
+                spawner_clone.get('Primary') == 'TruckHornetLauncher'
+                and not any(
+                    section.startswith('CARRTRUK_TRUCKHORNET')
+                    for section in spawner_rules
+                )
+                and any(
+                    item.get('unit') == 'CARRTRUK'
+                    for item in spawner_report['applied']
+                )
+                and not any(
+                    reward.get('unit') == 'CARRTRUK'
+                    and reward.get('buff_type')
+                    in {'damage', 'reload', 'range'}
+                    for reward in REWARD_POOL
+                )
+            ),
+            'legacy_speed_stacks_are_engine_safe': all(
+                (
+                    'Speed' not in legacy_stack_rules.get(output_id, {})
+                    or int(legacy_stack_rules[output_id]['Speed'])
+                    <= max(
+                        int(round(float(BUFF_TARGETS[unit_id]['speed']))),
+                        movement_speed_ceiling(BUFF_TARGETS[unit_id]),
+                    )
+                )
+                for unit_id, output_id in legacy_outputs.items()
+                if movement_speed_ceiling(BUFF_TARGETS.get(unit_id, {}))
+                is not None
+            ) and int(legacy_orca.get('Speed', 0)) <= 30,
+            'global_building_cost_and_production_buffs_work': (
+                int(legacy_pyle.get('Cost', 0))
+                < int(effective_section(installed_sections, 'PYLE')['Cost'])
+                and float(legacy_pyle.get('BuildTimeMultiplier', 1)) < 1
+                and int(legacy_refinery.get('Cost', 0))
+                < int(effective_section(installed_sections, 'TDPROC')['Cost'])
+                and float(legacy_refinery.get('BuildTimeMultiplier', 1))
+                < float(
+                    effective_section(installed_sections, 'TDPROC').get(
+                        'BuildTimeMultiplier', 1
+                    )
+                )
+                and legacy_refinery.get('FreeUnit') == 'TDHARV'
+                and all(
+                    'Speed' not in legacy_stack_rules.get(output_id, {})
+                    for unit_id, output_id in legacy_outputs.items()
+                    if catalogue_records.get(unit_id, {}).get('category')
+                    in {'buildings', 'defenses'}
+                )
+            ),
+            'cloned_building_tech_chains_work': (
+                bool(legacy_groups)
+                and all(
+                    any(
+                        value == f'{unit_id},{output_id}'
+                        for value in legacy_groups.values()
+                    )
+                    for unit_id, output_id in legacy_outputs.items()
+                    if catalogue_records.get(unit_id, {}).get('category')
+                    in {'buildings', 'defenses'}
+                )
+                and 'NUKE_PLAYER' in legacy_stack_rules.get(
+                    'General', {}
+                ).get('PrerequisitePower', '')
+            ),
+            'unit_buff_pool_has_no_noop_rewards': not useless_unit_buffs,
+            'shared_house_enemy_clone_isolation': (
+                bool(shared_clone_report['shared_hostile_houses'])
+                and shared_clone_report['map_objects_rewritten'] == 6
+                and shared_clone_report['applied']
+                and all(
+                    item.get('route') == 'player_placement_clone'
+                    for item in shared_clone_report['applied']
+                )
+                and all(
+                    shared_clone_rules.get(
+                        item['output_type'], {}
+                    ).get('TechLevel') == '-1'
+                    for item in shared_clone_report['applied']
+                )
+                and not {'E1S', 'E2S'}.intersection(shared_clone_rules)
+                and any(
+                    item.get('reason')
+                    == 'production_house_shared_with_hostile_house'
+                    for item in shared_clone_report['skipped']
+                )
+            ),
+            'dta_powers_granted_to_player_only': (
+                len(power_report['applied']) == 1
+                and power_report['player_house'] == 'TutorialGDI'
+                and power_report['enemy_grants'] == 0
+                and len(power_actions) == 1
+                and f'TutorialGDI,<none>,DTA Randomizer Earned Powers' in power_generated_text
+                and 'Nod,<none>,DTA Randomizer Earned Powers' not in power_generated_text
+                and '[DTAIONCANNONRNG]' in power_generated_text
+            ),
+            'allied_chrono_tank_power_deploys_unit': (
+                len(chrono_report['applied']) == 1
+                and len(chrono_actions) == 1
+                and bool(
+                    chrono_unit := chrono_rules.get('AlliesSide', {}).get(
+                        'HunterSeeker'
+                    )
+                )
+                and chrono_rules.get(chrono_unit, {}).get('HunterSeeker')
+                == 'yes'
+                and chrono_unit in chrono_rules.get('VehicleTypes', {}).values()
+                and 'General' not in chrono_rules
+            ),
+            'crashing_unit_weapons_registered': all(
+                (
+                    (entries := crash_clone_reports[unit_id]['applied'])
+                    and (
+                        output_id := next(
+                            item['output_type'] for item in entries
+                            if item['unit'] == unit_id
+                        )
+                    )
+                    and (
+                        unit_rules := crash_clone_rules[unit_id].get(
+                            output_id, {}
+                        )
+                    )
+                    and {
+                        unit_rules.get(key)
+                        for key in ('Primary', 'Secondary', 'Elite')
+                        if unit_rules.get(key)
+                    }.issubset(set(
+                        crash_clone_rules[unit_id].get(
+                            'WeaponTypes', {}
+                        ).values()
+                    ))
+                )
+                and all(
+                    len(section) <= 23
+                    for section in crash_clone_rules[unit_id]
+                    if section not in {
+                        'PrerequisiteGroups', 'InfantryTypes', 'VehicleTypes',
+                        'AircraftTypes', 'BuildingTypes', 'WeaponTypes',
+                        'General',
+                    }
+                )
+                for unit_id in crash_unit_missions
+            ),
+            'player_starting_units_use_player_clone': (
+                starter_report['map_objects_rewritten'] == 3
+                and any(
+                    item.get('unit') == 'MTNK'
+                    and len(item.get('player_placements_rewritten', ())) == 3
+                    for item in starter_report['applied']
+                )
+                and all(
+                    comma_items(value)[1] == 'MTNK_PLAYER'
+                    for value in starter_rules.get('Units', {}).values()
+                )
+            ),
+            'reported_roster_corrections_active': (
+                {
+                    'TTNKMSL', 'MGI', 'BRIG', 'MFLAK', 'CYBORG',
+                    'GRENL', 'THIEF', 'HIJACK', 'CYP', 'JUMPJET',
+                    'RAIDER', 'MRV', 'STAPC', 'TNKD',
+                    'SCARAB', 'TORPCAT', 'FLAKCORV',
+                }.issubset(mobile_ids)
+                and '2TNKMSL' not in mobile_ids
+                and tutorial_access_rules.get('2TNKMSL', {}).get(
+                    'ForbiddenHouses'
+                ) == 'GDI'
+                and canonical_reward({
+                    'name': 'Unlock Missile Tank (2TNKMSL)'
+                }).get('unit') == 'TTNKMSL'
+                and not {'TNKN', 'BRIG'}.intersection(cameo_paths)
             ),
             'dta_e1_cameo_extracted': (
                 'E1' in cameo_paths and cameo_paths['E1'].is_file()
@@ -439,9 +1073,64 @@ def run_self_check():
                 'ENGINEER' in cameo_paths
                 and cameo_paths['ENGINEER'].is_file()
             ),
-            'dta_missing_cameos_use_text_fallback': (
-                mobile_ids - set(cameo_paths)
-                == {'HTNKMSAM', 'SMECH', 'UTNK'}
+            'dta_active_unit_cameos_or_text_complete': (
+                mobile_ids - set(cameo_paths) == {'TNKN', 'BRIG'}
+            ),
+            'dta_allied_helpers_use_buffed_clones': (
+                helper_rules.get('RAARTY_PLAYER', {}).get(
+                    'Cloakable'
+                ) == 'yes'
+                and set(comma_items(helper_rules.get(
+                    'RAARTY_PLAYER', {}
+                ).get(
+                    'RequiredHouses'
+                ))) == {'Allies'}
+                and helper_rules.get('RAARTY', {}).get('Buildability')
+                == 'AIOnly'
+                and helper_rules.get('RAARTY', {}).get('Cloakable') == 'yes'
+                and not {'Allies', 'Allies1', 'Allies2'}.intersection(set(
+                    comma_items(helper_rules.get('RAARTY', {}).get(
+                        'ForbiddenHouses'
+                    ))
+                ))
+                and any(
+                    route.get('production_house') == 'Allies'
+                    and route.get('production_routed') is True
+                    and route.get('output_type') == 'RAARTY_PLAYER'
+                    and route.get('native_ai_fallback_buffed') is True
+                    and set(route.get('scenario_houses', ()))
+                    == {'Allies1', 'Allies2'}
+                    for item in helper_report['applied']
+                    for route in item.get('allied_helper_routes', ())
+                )
+            ),
+            'dta_harvester_clones_keep_harvester_identity': (
+                'RAHARV_PLAYER' in comma_items(
+                    harvester_rules.get('General', {}).get('HarvesterUnit')
+                )
+                and harvester_rules.get('RAHARV_PLAYER', {}).get('Harvester')
+                == 'yes'
+                and bool(harvester_report['applied'])
+            ),
+            'dta_harvesters_survive_refinery_clones': (
+                bool(refinery_report['applied'])
+                and bool(
+                    refinery_group := next(
+                        (
+                            key for key, value in refinery_rules.get(
+                                'PrerequisiteGroups', {}
+                            ).items()
+                            if value == 'RAPROC,RAPROC_PLAYER'
+                        ),
+                        '',
+                    )
+                )
+                and refinery_group in comma_items(
+                    refinery_rules.get('RAHARV', {}).get('Prerequisite')
+                )
+                and 'Allies' not in comma_items(
+                    refinery_rules.get('RAHARV', {}).get('ForbiddenHouses')
+                )
             ),
             'map_unit_preservation_policy_active': (
                 collision['map_objects_must_remain_original'] is True
@@ -470,6 +1159,24 @@ def run_self_check():
                     item.get('route') == 'original_type'
                     for item in e2_clone_report['applied']
                 )
+            ),
+            'dta_extended_unit_buffs_work': (
+                len(apc_buff_rewards) == len(apc_buff_types)
+                and any(
+                    item.get('unit') == 'APC'
+                    and set(item.get('buffs', {})) == apc_buff_types
+                    for item in apc_buff_report['applied']
+                )
+                and int(generated_apc.get('Strength', 0))
+                > int(installed_apc.get('Strength', 0))
+                and float(generated_apc.get('Sight', 0))
+                > float(installed_apc.get('Sight', 0))
+                and int(generated_apc.get('Passengers', 0))
+                > int(installed_apc.get('Passengers', 0))
+                and generated_apc.get('Cloakable') == 'yes'
+                and generated_apc.get('Sensors') == 'yes'
+                and float(generated_apc_weapon.get('Range', 0))
+                > float(installed_apc_weapon.get('Range', 0))
             ),
             'orphan_unit_buffs_do_not_grant_access': (
                 not _orphan_rules
@@ -604,9 +1311,10 @@ def run_self_check():
             ),
             'legacy_map_rules_isolated': True,
             'dta_reward_adapter_status': (
-                'broad player-house modifiers and guarded Vinifera production '
-                'clones enabled; all mobile access categories use ActsLike-safe '
-                'isolation; production and clone save/load need live verification'
+                'all buffs use guarded player-production clones; powers use '
+                'map-local player-house grants; direct player starting units may '
+                'use non-buildable clones while enemy and scripted identities remain '
+                'unchanged; live production and save/load need verification'
             ),
             'diagnostic_log': str(LAUNCHER_LOG),
         }
@@ -619,17 +1327,43 @@ def run_self_check():
             'generated_map_has_difficulty_overlay',
             'generated_map_enables_score_screen', 'original_map_unchanged',
             'spawn_contract_valid', 'legacy_map_rules_isolated',
-            'safe_reward_pool_only', 'player_firepower_modifier_works',
-            'player_armor_modifier_works',
-            'authored_map_modifier_preserved',
+            'safe_reward_pool_only',
+            'global_buffs_use_player_clones_only',
+            'global_armor_removed',
+            'spawner_control_weapons_are_not_cloned',
+            'legacy_speed_stacks_are_engine_safe',
+            'global_building_cost_and_production_buffs_work',
+            'cloned_building_tech_chains_work',
+            'unit_buff_pool_has_no_noop_rewards',
+            'shared_house_enemy_clone_isolation',
+            'dta_powers_granted_to_player_only',
             'dta_e1_cameo_extracted', 'map_unit_preservation_policy_active',
             'dta_engineer_cameo_extracted',
-            'dta_missing_cameos_use_text_fallback',
+            'dta_active_unit_cameos_or_text_complete',
+            'dta_allied_helpers_use_buffed_clones',
+            'dta_harvester_clones_keep_harvester_identity',
+            'dta_harvesters_survive_refinery_clones',
             'dta_mobile_access_reward_count_valid',
             'dta_essential_mobile_units_always_available',
             'dta_obsolete_aliases_removed', 'dta_special_roster_present',
+            'dta_all_mobile_buff_targets_present',
+            'dta_arsenal_all_mobile_access_present',
+            'dta_power_rewards_present',
+            'allied_chrono_tank_power_deploys_unit',
+            'dta_power_buff_matrix_valid',
+            'dta_power_cameos_complete',
+            'dta_defense_rewards_complete',
+            'dta_firestorm_removed',
+            'dta_power_damage_area_clones_valid',
+            'dta_enemy_buffs_exclude_player_family',
+            'dta_player_color_list_valid',
+            'dta_loose_mission_launch_source_valid',
+            'dta_arsenal_power_pool_complete',
+            'dta_ts_leftovers_excluded',
+            'dta_special_factions_curated',
             'vinifera_production_clone_generated',
             'all_unit_specific_buffs_use_production_clones',
+            'dta_extended_unit_buffs_work',
             'orphan_unit_buffs_do_not_grant_access',
             'access_clone_receives_unit_specific_buffs',
             'vinifera_clone_written_to_generated_map',

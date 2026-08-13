@@ -11,16 +11,21 @@ LEGACY_CONFIG_PATH = LEGACY_CONFIG_DIR / CONFIG_PATH.name
 DEFAULT_CONFIG = static_config_section(
     'default_player_config.json', 'defaults', dict
 )
-UNIT_BUFF_CATALOGUE_VERSION = 1
+UNIT_BUFF_CATALOGUE_VERSION = 3
 UNIT_BUFF_TYPES_INTRODUCED = {
     1: ('passenger_capacity', 'open_topped'),
+    2: ('health', 'range', 'sight', 'ammo', 'passenger_capacity', 'cloak', 'sensors'),
+    3: ('self_healing',),
 }
-POWER_BUFF_CATALOGUE_VERSION = 1
+POWER_BUFF_CATALOGUE_VERSION = 3
 POWER_BUFF_TYPES_INTRODUCED = {
     1: ('vision',),
+    2: ('recharge',),
+    3: ('damage', 'area'),
 }
 ENEMY_STACK_MODEL_VERSION = 2
 INFANTRY_ACCESS_CATALOGUE_VERSION = 1
+DTA_POWER_CATALOGUE_VERSION = 3
 
 
 def deep_copy(value):
@@ -60,6 +65,9 @@ def migrate_loaded_config(loaded):
             archipelago['server'] = 'archipelago.gg'
             changed = True
     generation = loaded.get('generation')
+    if loaded.get('rewards_on_victory_only') is not True:
+        loaded['rewards_on_victory_only'] = True
+        changed = True
     if not isinstance(generation, dict):
         return changed
     if generation.get('reward_mode') == 'Chaos (Experimental)':
@@ -82,6 +90,27 @@ def migrate_loaded_config(loaded):
         generation['infantry_access_catalogue_version'] = (
             INFANTRY_ACCESS_CATALOGUE_VERSION
         )
+        changed = True
+    try:
+        dta_power_version = max(
+            0, int(generation.get('dta_power_catalogue_version', 0))
+        )
+    except (TypeError, ValueError):
+        dta_power_version = 0
+    if dta_power_version < DTA_POWER_CATALOGUE_VERSION:
+        generation['include_superweapon_rewards'] = True
+        generation['include_aid_power_rewards'] = True
+        generation['include_secondary_superweapon_rewards'] = False
+        generation['include_power_buff_rewards'] = True
+        generation['include_defensive_buildings'] = True
+        enabled_reward_types = generation.get('enabled_reward_types')
+        if isinstance(enabled_reward_types, list):
+            while 'secondary_superweapon' in enabled_reward_types:
+                enabled_reward_types.remove('secondary_superweapon')
+            for reward_type in ('superweapon', 'aid_power', 'power_buff'):
+                if reward_type not in enabled_reward_types:
+                    enabled_reward_types.append(reward_type)
+        generation['dta_power_catalogue_version'] = DTA_POWER_CATALOGUE_VERSION
         changed = True
     try:
         version = max(0, int(generation.get('unit_buff_catalogue_version', 0)))

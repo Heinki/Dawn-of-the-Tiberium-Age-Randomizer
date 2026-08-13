@@ -8,9 +8,21 @@ Set-StrictMode -Version Latest
 $moduleName = "dta"
 $sourceDirectory = Join-Path $PSScriptRoot "APWorld\$moduleName"
 $manifestPath = Join-Path $sourceDirectory "archipelago.json"
+$repositoryRoot = Split-Path -Parent $PSScriptRoot
 
 if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
     throw "APWorld manifest not found: $manifestPath"
+}
+
+Push-Location $repositoryRoot
+try {
+    & python -m Archipelago.generate_catalogue | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "APWorld catalogue generation failed with exit code $LASTEXITCODE."
+    }
+}
+finally {
+    Pop-Location
 }
 
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null

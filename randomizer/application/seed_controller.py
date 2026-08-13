@@ -89,9 +89,7 @@ class SeedController:
         self.seed_var.set(seed)
         mission_goal = self.selected_mission_goal()
         rewards_per_check = self.selected_rewards_per_check()
-        rewards_on_victory_only = bool(
-            self.rewards_on_victory_only_var.get()
-        )
+        rewards_on_victory_only = True
         use_act_based_reward_multipliers = bool(
             self.use_act_reward_multipliers_var.get()
         )

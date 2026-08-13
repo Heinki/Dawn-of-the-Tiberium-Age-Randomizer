@@ -160,8 +160,7 @@ def _png_chunk(kind, payload):
     )
 
 
-def shp_to_png(shp_data, palette_data, output_path):
-    width, height, pixels = decode_shp_frame(shp_data)
+def _write_indexed_png(width, height, pixels, palette_data, output_path):
     if len(palette_data) < 768:
         raise ValueError('Invalid DTA cameo palette')
     scale = 4 if max(palette_data[:768]) <= 63 else 1
@@ -191,6 +190,13 @@ def shp_to_png(shp_data, palette_data, output_path):
     return output_path
 
 
+def shp_to_png(shp_data, palette_data, output_path):
+    width, height, pixels = decode_shp_frame(shp_data)
+    return _write_indexed_png(
+        width, height, pixels, palette_data, output_path
+    )
+
+
 def _effective_art_value(sections, section_id, key, seen=None):
     section_id = str(section_id or '').upper()
     seen = set(seen or ())
@@ -215,8 +221,13 @@ def ensure_unit_cameos(unit_ids):
     if palette is None:
         return {}
     result = {}
+    # DTA does not provide correct cameos for these units. TNKN points at the
+    # Tank Destroyer icon and BRIG has none; the UI intentionally uses text.
+    text_only_ids = {'TNKN', 'BRIG'}
     for raw_unit_id in unit_ids:
         unit_id = str(raw_unit_id or '').upper()
+        if unit_id in text_only_ids:
+            continue
         art_id = rules.get(unit_id, {}).get('image', unit_id).upper()
         cameo = _effective_art_value(art, art_id, 'cameo')
         filenames = []
@@ -226,10 +237,10 @@ def ensure_unit_cameos(unit_ids):
             (payload for filename in filenames if (payload := mix_asset(filename)) is not None),
             None,
         )
-        if shp is None:
-            continue
         output = CAMEO_CACHE_DIR / f'{unit_id.lower()}-dta.png'
         try:
+            if shp is None:
+                continue
             shp_to_png(shp, palette, output)
         except (OSError, ValueError, struct.error):
             continue

@@ -34,20 +34,8 @@ def build_enemy_scaling_settings(self, reward_frame):
     rates = ttk.Frame(reward_frame)
     rates.grid(row=18, column=0, sticky='ew', pady=(4, 0))
     rates.columnconfigure(1, weight=1)
-    ttk.Label(rates, text='AI bonus stacks per completed objective').grid(
-        row=0, column=0, sticky='w', padx=(0, 8)
-    )
-    self.enemy_objective_rewards_spinbox = ttk.Spinbox(
-        rates,
-        from_=0,
-        to=MAX_AI_REWARDS_PER_COMPLETION,
-        width=5,
-        textvariable=self.enemy_objective_rewards_var,
-        command=self.refresh_setting_states,
-    )
-    self.enemy_objective_rewards_spinbox.grid(row=0, column=1, sticky='w')
     ttk.Label(rates, text='AI bonus stacks per completed mission').grid(
-        row=1, column=0, sticky='w', padx=(0, 8), pady=(3, 0)
+        row=0, column=0, sticky='w', padx=(0, 8)
     )
     self.enemy_mission_rewards_spinbox = ttk.Spinbox(
         rates,
@@ -58,23 +46,14 @@ def build_enemy_scaling_settings(self, reward_frame):
         command=self.refresh_setting_states,
     )
     self.enemy_mission_rewards_spinbox.grid(
-        row=1, column=1, sticky='w', pady=(3, 0)
+        row=0, column=1, sticky='w'
     )
-    for control in (
-        self.enemy_objective_rewards_spinbox,
-        self.enemy_mission_rewards_spinbox,
-    ):
+    for control in (self.enemy_mission_rewards_spinbox,):
         control.bind('<FocusOut>', lambda _event: self.refresh_setting_states())
         control.bind('<Return>', lambda _event: self.refresh_setting_states())
         control.bind(
             '<MouseWheel>', self.on_settings_control_mousewheel, add='+'
         )
-    WidgetTooltip(
-        self.enemy_objective_rewards_spinbox,
-        'Attempts to grant this many valid AI bonus stacks after every '
-        'completed mission objective. All AI reward sources share per-bonus '
-        'caps, so fewer or zero remain after every enabled bonus is capped.',
-    )
     WidgetTooltip(
         self.enemy_mission_rewards_spinbox,
         'Attempts to grant this many additional valid AI bonus stacks after '

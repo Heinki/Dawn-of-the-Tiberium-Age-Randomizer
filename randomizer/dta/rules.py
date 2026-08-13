@@ -8,6 +8,12 @@ from randomizer.core.paths import GAME_ROOT
 
 
 PLAYABLE_FACTIONS = ('GDI', 'Nod', 'Allies', 'Soviet')
+DEFENSE_BUILDING_IDS = frozenset({
+    'TWR', 'ATWR',
+    'GUN', 'SAM', 'OBLI',
+    'RAPBOX', 'RAHBOX', 'RAGUN', 'RAAGUN',
+    'RAFTUR', 'RASAM', 'RATSLA',
+})
 ALWAYS_AVAILABLE_MOBILE_IDS = frozenset({
     'ENGINEER',
     'GMCV', 'NMCV', 'AMCV', 'SMCV',
@@ -17,8 +23,37 @@ ALWAYS_AVAILABLE_MOBILE_IDS = frozenset({
 # Installed campaign identities made buildable by mission progression or used
 # as reviewed human reward units despite a global TechLevel of -1.
 CAMPAIGN_SPECIAL_MOBILE_IDS = frozenset({
-    'BFRT', 'COASTARTY', 'MSA', 'SHILKA',
+    'BFRT', 'BRIG', 'COASTARTY', 'MGI', 'MSA', 'SHILKA',
+    # Reviewed hidden DTA skirmish identities. These are registered in the
+    # installed faction rosters and have native DTA art, but use TechLevel=-1
+    # until a map or the randomizer explicitly unlocks them.
+    'GRENL', 'THIEF', 'HIJACK', 'CYBORG', 'CYP', 'JUMPJET',
+    'RAIDER', 'MRV', 'STAPC', 'MFLAK', 'TNKD',
+    'SCARAB', 'TORPCAT', 'FLAKCORV',
 })
+EXCLUDED_MOBILE_IDS = frozenset({
+    # Registered TS leftovers without native DTA cameo assets or DTA roster use.
+    'HTNKMSAM', 'SMECH', 'UTNK',
+    # Older Missile Tank identity. TTNKMSL is the canonical DTA reward unit.
+    '2TNKMSL',
+})
+SPECIAL_MOBILE_FACTION_OVERRIDES = {
+    # Campaign-only units use broad Rules.ini owners so any mission can place
+    # them. Reward ownership follows their actual DTA design and map use.
+    'GTNK': ('Soviet',),
+    'HVR': ('GDI',),
+    'HVC': ('Nod',),
+    'HVCSAM': ('GDI',),
+    'HTNKARTY': ('Nod',),
+    'JEEPPTNK': ('GDI',),
+    'LTNKCRUS': ('Nod',),
+    'MWAVEMSAM': ('Nod',),
+    'BRIG': ('Allies',),
+    'MSA': ('GDI',),
+    'MHQ': ('GDI',),
+    # MRV is listed in DTA's Nod vehicle block despite broad placement owners.
+    'MRV': ('Nod',),
+}
 TYPE_LISTS = {
     'InfantryTypes': 'infantry',
     'VehicleTypes': 'vehicles',
@@ -44,6 +79,20 @@ def ini_sections(path):
 
 def comma_items(value):
     return tuple(item.strip() for item in str(value or '').split(',') if item.strip())
+
+
+def numeric_value(values, key, default=0):
+    try:
+        return int(float(values.get(key, default)))
+    except (TypeError, ValueError):
+        return default
+
+
+def decimal_value(values, key, default=0.0):
+    try:
+        return float(values.get(key, default))
+    except (TypeError, ValueError):
+        return default
 
 
 def effective_section(sections, section_id, _seen=None):
@@ -79,23 +128,17 @@ def techno_catalogue():
                 tech_level = int(values.get('TechLevel', -1))
             except ValueError:
                 tech_level = -1
-            try:
-                cost = int(values.get('Cost', 0))
-            except ValueError:
-                cost = 0
-            try:
-                speed = int(float(values.get('Speed', 0)))
-            except ValueError:
-                speed = 0
-            try:
-                strength = int(float(values.get('Strength', 0)))
-            except ValueError:
-                strength = 0
+            cost = numeric_value(values, 'Cost')
+            speed = numeric_value(values, 'Speed')
+            strength = numeric_value(values, 'Strength')
             playable_owners = tuple(
                 faction for faction in PLAYABLE_FACTIONS
                 if faction in owners
                 and (not required or faction in required)
                 and faction not in forbidden
+            )
+            playable_owners = SPECIAL_MOBILE_FACTION_OVERRIDES.get(
+                type_id.upper(), playable_owners
             )
             editor_name = values.get('EditorName', '')
             editor_category = values.get('EditorCategory', '')
@@ -112,18 +155,41 @@ def techno_catalogue():
                 and cost > 0
                 and not obsolete
                 and not ai_only
+                and type_id.upper() not in EXCLUDED_MOBILE_IDS
                 and (
                     tech_level >= 0
                     or campaign_special
                 )
             )
+            weapon_ids = tuple(dict.fromkeys(
+                weapon_id
+                for key in ('Primary', 'Secondary', 'ElitePrimary', 'EliteSecondary')
+                if (weapon_id := values.get(key, '')).casefold() not in {'', 'none'}
+            ))
+            weapons = {}
+            for weapon_id in weapon_ids:
+                weapon_values = effective_section(sections, weapon_id)
+                weapon_buff_safe = weapon_values.get(
+                    'Spawner', ''
+                ).casefold() not in {'yes', 'true', '1'}
+                weapons[weapon_id] = {
+                    'damage': numeric_value(weapon_values, 'Damage'),
+                    'rof': numeric_value(weapon_values, 'ROF'),
+                    'range': decimal_value(weapon_values, 'Range'),
+                    'buff_safe': weapon_buff_safe,
+                }
             records.append({
                 'id': type_id.upper(),
                 'label': values.get('Name') or values.get('UIName') or type_id,
                 'editor_name': editor_name,
                 'editor_category': editor_category,
                 'buildability': buildability,
-                'category': category,
+                'category': (
+                    'defenses'
+                    if category == 'buildings'
+                    and type_id.upper() in DEFENSE_BUILDING_IDS
+                    else category
+                ),
                 'owners': owners,
                 'playable_owners': playable_owners,
                 'prerequisites': comma_items(values.get('Prerequisite')),
@@ -131,9 +197,22 @@ def techno_catalogue():
                 'cost': cost,
                 'speed': speed,
                 'strength': strength,
+                'sight': numeric_value(values, 'Sight'),
+                'ammo': numeric_value(values, 'Ammo'),
+                'passengers': numeric_value(values, 'Passengers'),
+                'cloakable': values.get('Cloakable', '').casefold() in {
+                    'yes', 'true', '1',
+                },
+                'sensors': values.get('Sensors', '').casefold() in {
+                    'yes', 'true', '1',
+                },
+                'self_healing': values.get('SelfHealing', '').casefold() in {
+                    'yes', 'true', '1',
+                },
                 'image': values.get('Image', type_id).upper(),
                 'primary_weapon': values.get('Primary', ''),
                 'secondary_weapon': values.get('Secondary', ''),
+                'weapons': weapons,
                 'deploys_into': values.get('DeploysInto', ''),
                 'undeploys_into': values.get('UndeploysInto', ''),
                 'naval': values.get('Naval', '').casefold() in {

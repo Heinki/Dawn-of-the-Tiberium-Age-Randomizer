@@ -112,7 +112,9 @@ class RewardController:
             self.earned_rewards_from_checks() if self.state else []
         )
         rewards = [
-            reward for reward in rewards if not reward.get('enemy_reward')
+            reward for reward in rewards
+            if not reward.get('enemy_reward')
+            and not reward.get('retired_reward')
         ]
         manual_names = self.manual_starting_reward_names_in_state()
 
@@ -634,7 +636,7 @@ class RewardController:
             ),
             rewards_per_check=self.state.get('rewards_per_check', DEFAULT_REWARDS_PER_CHECK),
             rewards_on_victory_only=bool(
-                self.state.get('rewards_on_victory_only', False)
+                self.state.get('rewards_on_victory_only', True)
             ),
             use_act_based_reward_multipliers=bool(
                 self.state.get('use_act_based_reward_multipliers', True)
@@ -679,7 +681,7 @@ class RewardController:
         completed_missions=None,
         preserved_checks=None,
         rewards_per_check=DEFAULT_REWARDS_PER_CHECK,
-        rewards_on_victory_only=False,
+        rewards_on_victory_only=True,
         use_act_based_reward_multipliers=True,
         progression_mode=None,
         grid=None,

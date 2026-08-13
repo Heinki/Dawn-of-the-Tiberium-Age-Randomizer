@@ -23,7 +23,7 @@ def _forbidden_houses(values, player_house, locked):
     return ','.join(houses)
 
 
-def player_infantry_access_rules(mission, rewards, enabled):
+def player_infantry_access_rules(mission, rewards, enabled, include_defenses=False):
     """Lock or unlock human mobile production without changing map objects.
 
     Vinifera evaluates RequiredHouses/ForbiddenHouses against ``ActsLike``.
@@ -67,7 +67,11 @@ def player_infantry_access_rules(mission, rewards, enabled):
     rules = {}
     for unit_id, target in sorted(catalogue.items()):
         if (
-            target.get('category') not in {'infantry', 'vehicles', 'aircraft'}
+            target.get('category') not in (
+                {'infantry', 'vehicles', 'aircraft', 'defenses'}
+                if include_defenses
+                else {'infantry', 'vehicles', 'aircraft'}
+            )
             or not target.get('rewardable')
             or unit_id.startswith('AI')
             or unit_id in ALWAYS_AVAILABLE_MOBILE_IDS
@@ -88,4 +92,14 @@ def player_infantry_access_rules(mission, rewards, enabled):
         if forbidden != original:
             rules[unit_id] = {'ForbiddenHouses': forbidden}
         report['locked'].append(unit_id)
+    # DTA maps sometimes expose the older 2TNKMSL identity. It represents the
+    # same reward as TTNKMSL, so keep the legacy production entry locked and
+    # let the canonical TTNKMSL player clone be the only rewarded sidebar item.
+    legacy_missile = effective_section(installed, '2TNKMSL')
+    legacy_forbidden = _forbidden_houses(
+        legacy_missile, production_house, locked=True
+    )
+    if legacy_forbidden != str(legacy_missile.get('ForbiddenHouses') or ''):
+        rules['2TNKMSL'] = {'ForbiddenHouses': legacy_forbidden}
+    report['locked'].append('2TNKMSL')
     return rules, report

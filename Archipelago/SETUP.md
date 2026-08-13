@@ -6,4 +6,4 @@
 4. Generate the multiworld with the matching APWorld.
 5. Connect from the launcher's Archipelago tab before starting missions.
 
-The APWorld and launcher version must match. This first DTA port needs live end-to-end multiworld verification.
+The APWorld and launcher version must match. Live end-to-end multiworld behavior still needs verification.

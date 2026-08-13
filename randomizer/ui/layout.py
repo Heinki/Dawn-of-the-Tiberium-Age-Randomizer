@@ -325,7 +325,7 @@ def _build_right_panel(self, main_frame):
 
     self.rewards_per_check_label = ttk.Label(
         options_row,
-        text='Rewards per objective',
+        text='Rewards per mission',
     )
     self.rewards_per_check_label.grid(row=4, column=0, sticky='w', pady=(6, 0), padx=(0, 8))
     self.rewards_per_check_spinbox = ttk.Spinbox(
@@ -338,33 +338,13 @@ def _build_right_panel(self, main_frame):
         validatecommand=(self.register(self.validate_rewards_per_check), '%P'),
     )
     self.rewards_per_check_spinbox.grid(row=4, column=1, sticky='w', pady=(6, 0))
-    self.rewards_on_victory_only_check = ttk.Checkbutton(
-        options_row,
-        text='Rewards only when mission is finished',
-        variable=self.rewards_on_victory_only_var,
-        command=self.refresh_rewards_per_check_message,
-    )
-    self.rewards_on_victory_only_check.grid(
-        row=5,
-        column=0,
-        columnspan=2,
-        sticky='w',
-        pady=(6, 0),
-    )
-    WidgetTooltip(
-        self.rewards_on_victory_only_check,
-        'Objectives remain tracked but grant no rewards. Victory grants '
-        'Rewards per mission, with mission weight applied only when the '
-        'Act-based multiplier option is enabled. '
-        'Missions with more objectives do not produce more rewards.',
-    )
     self.use_act_reward_multipliers_check = ttk.Checkbutton(
         options_row,
         text='Use Act-based reward multipliers',
         variable=self.use_act_reward_multipliers_var,
     )
     self.use_act_reward_multipliers_check.grid(
-        row=6,
+        row=5,
         column=0,
         columnspan=2,
         sticky='w',
@@ -384,9 +364,10 @@ def _build_right_panel(self, main_frame):
     self.buff_allied_helpers_check.grid(row=7, column=0, columnspan=2, sticky='w', pady=(6, 0))
     WidgetTooltip(
         self.buff_allied_helpers_check,
-        'Gives reviewed allied AI helpers safe country buffs and compatible '
-        'earned unit clones through extra Autocreate teams. Native units, '
-        'TaskForces, timing, and scripts stay intact.',
+        'Routes earned unit buffs to isolated allied-AI clones for map units '
+        'and helper-only TaskForces. Safe native AI production receives the '
+        'same buffs and remains available so campaign attack teams can still '
+        'assemble; hostile production families remain unchanged.',
     )
     self.rewards_per_check_message_label = ttk.Label(
         options_row,

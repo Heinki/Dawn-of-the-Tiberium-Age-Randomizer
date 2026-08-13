@@ -75,6 +75,16 @@ def canonical_reward(reward):
     current_reward = REWARD_BY_NAME.get(reward_name)
     if current_reward:
         return current_reward
+    if reward.get('kind') == 'superweapon' or reward.get('dta_player_power'):
+        return {
+            'name': f'{reward_name} (retired: unavailable DTA power)',
+            'description': (
+                'Disabled because this power is not part of the DTA '
+                'Randomizer reward pool.'
+            ),
+            'kind': 'retired',
+            'retired_reward': True,
+        }
     if reward.get('kind') == 'buff' and reward.get('power_buff_type'):
         if reward.get('power_buff_type') not in power_buff_type_ids(
             reward.get('superweapon')
@@ -153,6 +163,7 @@ def valid_choice(value, choices, default):
 HOUSE_CATEGORY_SUFFIXES = {
     'infantry': 'Infantry',
     'units': 'Units',
+    'vehicles': 'Units',
     'aircraft': 'Aircraft',
     'buildings': 'Buildings',
     'defenses': 'Defenses',
@@ -336,6 +347,9 @@ def _uncached_buff_stack_limit(reward):
         ))
     if buff_type == 'speed':
         target = BUFF_TARGETS.get(reward.get('unit'), {})
+        configured = stacking_stack_limit('speed')
+        if target.get('global_buff'):
+            return configured
         safe_ceiling = movement_speed_ceiling(target)
         if safe_ceiling is not None:
             base_speed = max(1, int(round(float(target.get('speed', 1)))))
@@ -343,7 +357,8 @@ def _uncached_buff_stack_limit(reward):
                 return 1
             for stacks in range(1, 257):
                 if capped_movement_speed(target, stacks) >= safe_ceiling:
-                    return stacks
+                    return min(stacks, configured) if configured else stacks
+        return configured
     if buff_type in {'open_topped', 'cloak', 'sensors', 'veteran'}:
         return 1
     return None
@@ -433,6 +448,13 @@ def buff_effect_lines(reward, count=1, include_label=True, include_stack=True):
         )) if base_cost else 0
         return [stacked(f'{prefix}Cost {cheaper}% cheaper')]
     if buff_type == 'speed':
+        if target.get('global_buff'):
+            return [stacked(
+                f'{prefix}Global and unit speed stacks combine, then stop at '
+                'safe ceilings '
+                '(infantry 8; vehicles 12; aircraft 30; naturally faster '
+                'units unchanged)'
+            )]
         safe_ceiling = movement_speed_ceiling(target)
         if safe_ceiling is not None:
             base_speed = int(round(float(target.get('speed', 1))))

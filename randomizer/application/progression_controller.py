@@ -274,7 +274,7 @@ class ProgressionController:
         checks = self.mission_checks(code)
         if not checks:
             return (0, 0)
-        if self.state.get('rewards_on_victory_only', False):
+        if self.state.get('rewards_on_victory_only', True):
             done = sum(
                 len(check_rewards(check))
                 for check in checks

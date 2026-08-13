@@ -13,6 +13,9 @@ PROGRESSION_MODES = list(_UI_CONFIG['progression_modes'])
 DEFAULT_PROGRESSION_MODE = str(_UI_CONFIG['default_progression_mode'])
 PLAYER_COLORS = list(_UI_CONFIG['player_colors'])
 RAINBOWIZER_COLORS = list(_UI_CONFIG['rainbowizer_colors'])
+PLAYER_COLOR_ENGINE_VALUES = dict(
+    _UI_CONFIG.get('player_color_engine_values', {})
+)
 
 # Voice tags are one source of truth. Dict insertion order controls menu order;
 # adding/removing/renaming one entry updates both choices and map tag lookup.

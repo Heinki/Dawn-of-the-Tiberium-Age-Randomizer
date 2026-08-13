@@ -104,7 +104,7 @@ class AdvancedSettingsController:
                 )
                 target = BUFF_TARGETS.get(unit_id, {})
                 if target.get('category') not in {
-                    'infantry', 'units', 'aircraft', 'defenses',
+                    'infantry', 'units', 'vehicles', 'aircraft', 'defenses',
                     'special_buildings',
                 }:
                     continue
@@ -141,7 +141,8 @@ class AdvancedSettingsController:
             unit_id = str(reward['unit']).upper()
             target = BUFF_TARGETS.get(unit_id, {})
             if target.get('category') not in {
-                'infantry', 'units', 'aircraft', 'defenses', 'special_buildings',
+                'infantry', 'units', 'vehicles', 'aircraft', 'defenses',
+                'special_buildings',
             }:
                 continue
             entry = entries.setdefault(unit_id, {
@@ -623,29 +624,30 @@ class AdvancedSettingsController:
                 traceback=traceback.format_exc(),
             )
         self.advanced_power_cameo_paths = power_paths
-        power_frame = self.advanced_pool_frames['powers']
-        power_columns = self.advanced_pool_column_count('powers')
-        for index, entry in enumerate(power_entries):
-            reward = entry['reward']
-            asset_name = reward.get('superweapon_sidebar_image')
-            if asset_name:
-                try:
-                    path = custom_sidebar_preview(asset_name)
-                except Exception:
-                    path = None
-            else:
-                path = power_paths.get(
-                    str(reward.get('cameo_superweapon', entry['id'])).upper()
+        if 'powers' in self.advanced_pool_frames:
+            power_frame = self.advanced_pool_frames['powers']
+            power_columns = self.advanced_pool_column_count('powers')
+            for index, entry in enumerate(power_entries):
+                reward = entry['reward']
+                asset_name = reward.get('superweapon_sidebar_image')
+                if asset_name:
+                    try:
+                        path = custom_sidebar_preview(asset_name)
+                    except Exception:
+                        path = None
+                else:
+                    path = power_paths.get(
+                        str(reward.get('cameo_superweapon', entry['id'])).upper()
+                    )
+                photo = self.advanced_pool_photo(f'power:{entry["id"]}', path)
+                self.draw_advanced_pool_card(
+                    power_frame,
+                    index // power_columns,
+                    index % power_columns,
+                    entry,
+                    'powers',
+                    photo,
                 )
-            photo = self.advanced_pool_photo(f'power:{entry["id"]}', path)
-            self.draw_advanced_pool_card(
-                power_frame,
-                index // power_columns,
-                index % power_columns,
-                entry,
-                'powers',
-                photo,
-            )
 
         self.refresh_advanced_buff_view()
         self.refresh_advanced_power_buff_view()
@@ -658,13 +660,15 @@ class AdvancedSettingsController:
         visible_unit_ids = {entry['id'] for entry in unit_entries}
         included_units = len(visible_unit_ids - self.excluded_unit_access_ids)
         visible_power_ids = {entry['id'] for entry in power_entries}
-        included_powers = len(visible_power_ids - self.excluded_superweapon_ids)
+        included_powers = len(
+            visible_power_ids - self.excluded_superweapon_ids
+        )
         self.advanced_pool_status_label.configure(
             text=(
                 f'{ARSENAL_MODE if arsenal_mode else selected_campaign}: '
                 f'missions {included_missions}/{len(visible_missions)}, '
-                f'units/buildings {included_units}/{len(visible_unit_ids)}, '
-                f'superpowers {included_powers}/{len(visible_power_ids)} included'
+                f'units {included_units}/{len(visible_unit_ids)}, '
+                f'powers {included_powers}/{len(visible_power_ids)} included'
             )
         )
 
@@ -855,9 +859,8 @@ class AdvancedSettingsController:
         else:
             self.share_chaos_role_buffs_check.grid_remove()
         self.share_chaos_role_buffs_check.configure(state='normal' if buffs_enabled else 'disabled')
-        reward_source_enabled = bool(self.randomize_unit_access_var.get()) or buffs_enabled
         self.buff_allied_helpers_check.configure(
-            state='normal' if reward_source_enabled else 'disabled'
+            state='normal' if buffs_enabled else 'disabled'
         )
         for check in getattr(self, 'buff_type_checks', []):
             check.configure(state='normal' if buffs_enabled else 'disabled')
@@ -968,40 +971,19 @@ class AdvancedSettingsController:
         )
         self.refresh_progression_setting_states()
         unsupported_vars = (
-            self.start_with_tier_one_units_var,
-            self.start_with_tier_one_defenses_var,
-            self.include_defensive_buildings_var,
             self.include_special_buildings_var,
-            self.include_special_rewards_var,
             self.unlimited_hero_units_var,
             self.share_chaos_role_buffs_var,
-            self.include_superweapon_rewards_var,
-            self.include_secondary_superweapon_rewards_var,
-            self.include_aid_power_rewards_var,
-            self.include_power_buff_rewards_var,
-            self.enemy_reward_pool_var,
         )
         for variable in unsupported_vars:
             variable.set(False)
         for control in (
-            self.start_with_tier_one_units_check,
-            self.start_with_tier_one_defenses_check,
-            self.include_defensive_buildings_check,
             self.include_special_buildings_check,
-            self.include_special_rewards_check,
             self.unlimited_hero_units_check,
             self.share_chaos_role_buffs_check,
-            self.include_superweapon_rewards_check,
-            self.include_secondary_superweapon_rewards_check,
-            self.include_aid_power_rewards_check,
-            self.include_power_buff_rewards_check,
-            self.starting_reward_count_spinbox,
-            self.starting_unlocks_settings_button,
-            self.enemy_reward_pool_check,
-            self.enemy_objective_rewards_spinbox,
-            self.enemy_mission_rewards_spinbox,
         ):
             control.configure(state='disabled')
+            control.grid_remove()
         if (
             hasattr(self, 'workspace_tabs')
             and hasattr(self, 'advanced_tab')

@@ -15,11 +15,6 @@ STARTING_REWARD_TYPE_DEFINITIONS = (
         'description': 'Offensive superweapon unlocks.',
     },
     {
-        'id': 'secondary_superweapon',
-        'label': 'Secondary powers',
-        'description': 'Secondary superweapon unlocks.',
-    },
-    {
         'id': 'aid_power',
         'label': 'Support / aid powers',
         'description': 'Support, aid, drop, mine, and grid power unlocks.',
@@ -76,7 +71,6 @@ def starting_reward_type(reward):
         return None
     if reward.get('kind') == 'superweapon':
         return {
-            'secondary': 'secondary_superweapon',
             'aid': 'aid_power',
         }.get(reward.get('power_category'), 'superweapon')
     return 'access'

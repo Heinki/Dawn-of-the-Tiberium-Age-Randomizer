@@ -66,7 +66,7 @@ from ._dependencies import (
     traceback,
 )
 from randomizer.dta.maps import (
-    mission_difficulty_modifiers,
+    mission_source_lines,
     newest_debug_log,
     prepare_spawn_map,
     score_screen_loaded,
@@ -74,7 +74,13 @@ from randomizer.dta.maps import (
 from randomizer.dta.difficulty import resolve_mission_difficulty
 from randomizer.dta.access import player_infantry_access_rules
 from randomizer.dta.clones import unit_specific_buff_rules
-from randomizer.dta.rewards import human_modifier_rules
+from randomizer.dta.enemies import enemy_buff_rules
+from randomizer.dta.powers import player_power_rules
+from randomizer.maps.settings import mission_house_color_rules
+from randomizer.ui.config import (
+    PLAYER_COLOR_ENGINE_VALUES,
+    RAINBOWIZER_COLORS,
+)
 
 class LaunchController:
 
@@ -941,68 +947,115 @@ throw "Map $name was not found in expandmo*.mix"
         game_speed_value,
     ):
         scenario = mission['scenario']
+        mission_code = mission.get('code', '')
         try:
             # DTA owns its generated global Rules.ini. The randomizer writes a
             # disposable map-local copy only.
             self.disable_generated_rules_for_client()
             self.cleanup_generated_root_maps()
-            # Legacy Mental Omega engine rules are not forwarded. Only DTA
-            # house modifiers and guarded Vinifera production clones enter the
-            # disposable generated map.
-            human_section = (
-                'Normal' if mission.get('player_always_normal')
-                else {0: 'Easy', 1: 'Normal', 2: 'Difficult'}[
-                    difficulty.engine_value
-                ]
-            )
+            # Only DTA player-production clones and player-only power grants
+            # enter the disposable generated map.
             active_rewards = (
-                self.launch_rewards_for_mission(mission_code)
+                list(self.launch_rewards_for_mission(mission_code))
                 if self.state else ()
             )
-            dta_rules = human_modifier_rules(
-                active_rewards,
-                mission_difficulty_modifiers(mission, human_section),
-                human_section,
-            )
+            if self.state:
+                starter_ids = set(self.active_starting_tier_one_expanded_ids())
+                starter_ids.update(
+                    self.active_starting_tier_one_defense_expanded_ids()
+                )
+                existing_access = {
+                    str(reward.get('unit') or '').upper()
+                    for reward in active_rewards
+                    if reward.get('dta_production_access')
+                }
+                active_rewards.extend(
+                    reward for reward in REWARD_POOL
+                    if reward.get('dta_production_access')
+                    and str(reward.get('unit') or '').upper() in starter_ids
+                    and str(reward.get('unit') or '').upper() not in existing_access
+                )
+            dta_rules = {}
             clone_rules, clone_report = unit_specific_buff_rules(
                 mission,
                 active_rewards,
                 access_randomized=self.randomize_unit_access_enabled(),
+                buff_allied_helpers=self.active_reward_settings().get(
+                    'buff_allied_helpers', False
+                ),
             )
             access_rules, access_report = player_infantry_access_rules(
                 mission,
                 active_rewards,
                 self.randomize_unit_access_enabled(),
+                include_defenses=self.active_reward_settings().get(
+                    'include_defensive_buildings', False
+                ),
             )
             for section, values in access_rules.items():
                 dta_rules.setdefault(section, {}).update(values)
             for section, values in clone_rules.items():
                 dta_rules.setdefault(section, {}).update(values)
+            power_rules, power_actions, power_report = player_power_rules(
+                mission, active_rewards
+            )
+            for section, values in power_rules.items():
+                dta_rules.setdefault(section, {}).update(values)
+            enemy_rules, enemy_report = enemy_buff_rules(mission, active_rewards)
+            for section, values in enemy_rules.items():
+                dta_rules.setdefault(section, {}).update(values)
+
+            source_lines = mission_source_lines(scenario)
+            selected_color = str(self.player_color_var.get() or 'Default')
+            engine_color = PLAYER_COLOR_ENGINE_VALUES.get(
+                selected_color, selected_color
+            )
+            rainbow_colors = [
+                PLAYER_COLOR_ENGINE_VALUES.get(color, color)
+                for color in RAINBOWIZER_COLORS
+            ]
+            color_rules = mission_house_color_rules(
+                source_lines,
+                player_color=engine_color,
+                rainbowizer=bool(self.rainbowizer_var.get()),
+                rainbow_colors=rainbow_colors,
+                random_key=f'{self.state.get("seed", "")}|{mission_code}',
+            )
+            for section, values in color_rules.items():
+                dta_rules.setdefault(section, {}).update(values)
             hook = prepare_spawn_map(
                 mission,
                 difficulty,
                 extra_rules=dta_rules,
+                power_actions=power_actions,
+                power_house=power_report['player_house'],
             )
-            if dta_rules:
-                broad_values = dta_rules.get(human_section, {})
-                if broad_values:
-                    self.append_log(
-                        'Applied DTA player-only house modifiers: '
-                        + ', '.join(
-                            f'{key}={broad_values[key]}'
-                            for key in sorted(broad_values)
-                        )
-                        + f' in [{human_section}]'
-                        + '.'
-                    )
             if clone_report['applied']:
+                rewritten_count = clone_report.get('map_objects_rewritten', 0)
                 self.append_log(
                     'Applied DTA unit-specific buffs: '
                     + ', '.join(
                         f'{item["unit"]} ({item["route"]})'
                         for item in clone_report['applied']
                     )
-                    + '. Authored map objects were not rewritten.'
+                    + (
+                        f'. Re-routed {rewritten_count} player/allied-helper '
+                        'map references to isolated buff clones.'
+                        if rewritten_count
+                        else '. Authored map objects were not rewritten.'
+                    )
+                )
+            if power_report['applied']:
+                self.append_log(
+                    'Granted DTA player-only power clones: '
+                    + ', '.join(item['power'] for item in power_report['applied'])
+                    + f' to {power_report["player_house"]}. Enemy houses received none.'
+                )
+            if enemy_report['applied']:
+                self.append_log(
+                    'Applied DTA enemy-only buffs to production families: '
+                    + ', '.join(enemy_report['hostile_families'])
+                    + '. Player/allied families were excluded.'
                 )
             orphan_buffs = [
                 item for item in clone_report['skipped']
@@ -1038,6 +1091,7 @@ throw "Map $name was not found in expandmo*.mix"
                     )
             hook['unit_clone_report'] = clone_report
             hook['infantry_access_report'] = access_report
+            hook['power_report'] = power_report
             existing_log = newest_debug_log(DEBUG_LOG)
             if existing_log is not None:
                 hook['debug_path'] = str(existing_log)

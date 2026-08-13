@@ -189,9 +189,9 @@ def parse_missions(path, fallback_objective_count=FALLBACK_OBJECTIVE_COUNT):
         scenario = section.get('Scenario') or section.get('SCENARIO')
         if not scenario:
             continue
-        # DTA has no uniform objective-completion signal. Keep objective slots
-        # empty until a map-specific registry has verified runtime hooks;
-        # otherwise rewards could be generated for checks that never report.
+        # DTA has no uniform runtime signal for completed sub-objectives.
+        # Victory is the only reliably observable completion event, so do not
+        # generate objective checks that the launcher cannot report.
         objectives = []
         missions.append({
             'index': len(missions) + 1,

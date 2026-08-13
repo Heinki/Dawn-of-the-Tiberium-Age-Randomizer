@@ -505,7 +505,7 @@ def plan_seed_rewards(
             return metadata['unit_access']
         return any(
             BUFF_TARGETS.get(unit_id, {}).get('category')
-            in {'infantry', 'units', 'aircraft'}
+            in {'infantry', 'units', 'vehicles', 'aircraft'}
             for unit_id in tech_ids_for_rewards([reward])
         )
 

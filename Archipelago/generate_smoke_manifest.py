@@ -20,8 +20,9 @@ def main():
     state = json.loads(Path(args.state).read_text(encoding="utf-8"))
     manifest = build_run_manifest(state, load_config())
     output = Path(args.yaml)
+    output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(
-        serialize_player_yaml(manifest, "MOFullSmoke"),
+        serialize_player_yaml(manifest, "DTAFullSmoke"),
         encoding="utf-8",
         newline="\n",
     )

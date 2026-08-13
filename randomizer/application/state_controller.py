@@ -89,6 +89,9 @@ class StateController:
         if not self.state:
             return
         changed = normalize_archipelago_activation(self.state)
+        if self.state.get('rewards_on_victory_only') is not True:
+            self.state['rewards_on_victory_only'] = True
+            changed = True
         ap_config = self.config.setdefault('archipelago', {})
         ap_enabled = bool(
             isinstance(self.state.get('archipelago'), dict)
@@ -176,7 +179,7 @@ class StateController:
                 ),
                 rewards_per_check=self.state.get('rewards_per_check', DEFAULT_REWARDS_PER_CHECK),
                 rewards_on_victory_only=bool(
-                    self.state.get('rewards_on_victory_only', False)
+                    self.state.get('rewards_on_victory_only', True)
                 ),
                 use_act_based_reward_multipliers=bool(
                     self.state.get('use_act_based_reward_multipliers', True)
@@ -336,9 +339,7 @@ class StateController:
         )
         include_buffs = bool(generation_config.get('include_buff_rewards', 'buff' in enabled_reward_types))
         include_superweapons = bool(generation_config.get('include_superweapon_rewards', True))
-        include_secondary_superweapons = bool(
-            generation_config.get('include_secondary_superweapon_rewards', True)
-        )
+        include_secondary_superweapons = False
         include_aid_powers = bool(generation_config.get('include_aid_power_rewards', True))
         include_power_buffs = bool(
             generation_config.get('include_power_buff_rewards', True)
@@ -463,20 +464,22 @@ class StateController:
                 for power_type in ARSENAL_POWER_TYPES
             },
         })
-        start_with_tier_one_units = False
-        start_with_tier_one_defenses = False
-        include_defensive_buildings = False
+        start_with_tier_one_units = bool(self.start_with_tier_one_units_var.get())
+        start_with_tier_one_defenses = bool(self.start_with_tier_one_defenses_var.get())
+        include_defensive_buildings = bool(self.include_defensive_buildings_var.get())
         include_special_buildings = False
         include_special_rewards = bool(self.include_special_rewards_var.get())
         unlimited_hero_units = False
         share_chaos_role_buffs = False
-        buff_allied_helpers = False
+        buff_allied_helpers = bool(self.buff_allied_helpers_var.get())
         failure_assistance = bool(self.failure_assistance_var.get())
         include_buffs = bool(self.include_buff_rewards_var.get())
-        include_superweapons = False
-        include_secondary_superweapons = False
-        include_aid_powers = False
-        include_power_buffs = False
+        include_superweapons = bool(self.include_superweapon_rewards_var.get())
+        include_secondary_superweapons = bool(
+            self.include_secondary_superweapon_rewards_var.get()
+        )
+        include_aid_powers = bool(self.include_aid_power_rewards_var.get())
+        include_power_buffs = bool(self.include_power_buff_rewards_var.get())
         enabled_buff_types = [
             buff_type['id']
             for buff_type in BUFF_TYPES
@@ -507,10 +510,7 @@ class StateController:
                 for weight_id, _label in POWER_BUFF_WEIGHT_TYPES
             },
         })
-        try:
-            enemy_objective_rewards = self.enemy_objective_rewards_var.get()
-        except Exception:
-            enemy_objective_rewards = 0
+        enemy_objective_rewards = 0
         try:
             enemy_mission_rewards = self.enemy_mission_rewards_var.get()
         except Exception:
@@ -534,9 +534,19 @@ class StateController:
             'randomize_unit_access': randomize_access,
             'start_with_tier_one_units': start_with_tier_one_units,
             'start_with_tier_one_defenses': start_with_tier_one_defenses,
-            'starting_reward_count': 0,
-            'starting_reward_types': [],
-            'starting_unlock_rewards': [],
+            'starting_reward_count': normalize_starting_reward_count(
+                self.starting_reward_count_var.get()
+            ),
+            'starting_reward_types': normalize_starting_reward_types(
+                [
+                    definition['id']
+                    for definition in STARTING_REWARD_TYPE_DEFINITIONS
+                    if self.starting_reward_type_vars[definition['id']].get()
+                ]
+            ),
+            'starting_unlock_rewards': self.filter_permanent_starting_unlock_names(
+                self.manual_starting_reward_names
+            ),
             'include_defensive_buildings': include_defensive_buildings,
             'include_special_buildings': include_special_buildings,
             'include_special_rewards': include_special_rewards,
@@ -628,29 +638,19 @@ class StateController:
         # isolation is mandatory now, so the stored flag is deliberately ignored.
         settings.pop('experimental_player_unit_clones', None)
         settings.update({
-            'start_with_tier_one_units': False,
-            'start_with_tier_one_defenses': False,
-            'starting_reward_count': 0,
-            'starting_reward_types': [],
-            'starting_unlock_rewards': [],
-            'include_defensive_buildings': False,
             'include_special_buildings': False,
             'unlimited_hero_units': False,
             'share_chaos_role_buffs': False,
             'buff_allied_helpers': False,
             'failure_assistance': False,
-            'include_superweapon_rewards': False,
-            'include_secondary_superweapon_rewards': False,
-            'include_aid_power_rewards': False,
-            'include_power_buff_rewards': False,
         })
         settings.setdefault('include_buff_rewards', True)
-        settings.setdefault('include_superweapon_rewards', False)
-        settings.setdefault('include_secondary_superweapon_rewards', False)
-        settings.setdefault('include_aid_power_rewards', False)
+        settings.setdefault('include_superweapon_rewards', True)
+        settings['include_secondary_superweapon_rewards'] = False
+        settings.setdefault('include_aid_power_rewards', True)
         # Old generated runs contain no power-buff rewards. Keep their saved
         # pool policy unchanged while new launcher configs default this on.
-        settings.setdefault('include_power_buff_rewards', False)
+        settings.setdefault('include_power_buff_rewards', True)
         settings.setdefault('excluded_unit_access_ids', [])
         settings.setdefault('excluded_superweapon_ids', [])
         settings.setdefault('excluded_unit_buff_types', {})
@@ -665,13 +665,7 @@ class StateController:
             settings.get('reward_weights')
         )
         settings['enemy_scaling'] = normalize_enemy_scaling_settings(
-            {
-                'reward_enabled': False,
-                'rewards_per_completed_objective': 0,
-                'rewards_per_completed_mission': 0,
-                'allowed_buff_ids': [],
-                'caps': {},
-            }
+            settings.get('enemy_scaling')
         )
         if source is not None:
             self._active_reward_settings_cache = (
@@ -863,7 +857,7 @@ class StateController:
             str(unit_id).upper()
             for unit_id in unit_ids
             if BUFF_TARGETS.get(str(unit_id).upper(), {}).get('category')
-            in {'infantry', 'units', 'aircraft'}
+            in {'infantry', 'units', 'vehicles', 'aircraft'}
         })
         cached = self.state.setdefault('mission_assistance_units', {})
         if cached.get(code) == normalized:
@@ -952,9 +946,7 @@ class StateController:
             self.unlock_all_grid_rewards_var.get()
         )
         self.config['rewards_per_objective'] = rewards_per_check
-        self.config['rewards_on_victory_only'] = bool(
-            self.rewards_on_victory_only_var.get()
-        )
+        self.config['rewards_on_victory_only'] = True
         self.config['use_act_based_reward_multipliers'] = bool(
             self.use_act_reward_multipliers_var.get()
         )
@@ -1154,9 +1146,7 @@ class StateController:
                 'rewards_per_objective', DEFAULT_REWARDS_PER_CHECK
             )),
         )))
-        self.rewards_on_victory_only_var.set(bool(
-            self.config.get('rewards_on_victory_only', False)
-        ))
+        self.rewards_on_victory_only_var.set(True)
         self.use_act_reward_multipliers_var.set(bool(
             self.config.get('use_act_based_reward_multipliers', True)
         ))
@@ -1274,9 +1264,7 @@ class StateController:
 
         enemy_settings = reward_settings['enemy_scaling']
         self.enemy_reward_pool_var.set(enemy_settings['reward_enabled'])
-        self.enemy_objective_rewards_var.set(
-            enemy_settings['rewards_per_completed_objective']
-        )
+        self.enemy_objective_rewards_var.set(0)
         self.enemy_mission_rewards_var.set(
             enemy_settings['rewards_per_completed_mission']
         )

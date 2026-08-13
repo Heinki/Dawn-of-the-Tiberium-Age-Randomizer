@@ -140,3 +140,33 @@ def stacking_stack_limit(effect):
         if calculator(effect, count) == calculator(effect, count + 1):
             return count
     raise ValueError(f'Buff effect {effect!r} does not reach its configured cap')
+
+
+def movement_speed_ceiling(target):
+    """Return configured movement ceiling for one reward target."""
+    category = target.get('category') if isinstance(target, dict) else target
+    category = {'vehicles': 'units'}.get(str(category or ''), str(category or ''))
+    value = BUFF_EFFECTS['movement_speed']['safe_ceilings'].get(category)
+    return int(value) if value is not None else None
+
+
+def capped_movement_speed(target, count):
+    """Apply earned speed stacks without exceeding reviewed engine-safe values."""
+    base_speed = max(1, int(round(float(target.get('speed', 1)))))
+    safe_ceiling = movement_speed_ceiling(target)
+    if safe_ceiling is None:
+        return base_speed
+    stack_limit = stacking_stack_limit('speed')
+    count = max(0, int(count))
+    if stack_limit is not None:
+        count = min(count, stack_limit)
+    ceiling = max(base_speed, safe_ceiling)
+    factor = float(BUFF_EFFECTS['speed']['factor_per_stack'])
+    return min(
+        ceiling,
+        max(
+            base_speed,
+            base_speed + count,
+            int(round(base_speed * (factor ** count))),
+        ),
+    )

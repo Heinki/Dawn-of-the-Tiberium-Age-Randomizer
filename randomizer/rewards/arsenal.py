@@ -99,7 +99,7 @@ def arsenal_unit_type(unit_id, target=None):
         return 'infantry'
     if category == 'aircraft':
         return 'aircraft'
-    if category == 'units':
+    if category in {'units', 'vehicles'}:
         return 'naval' if str(unit_id).upper() in NAVAL_UNIT_IDS else 'vehicles'
     return ''
 
@@ -357,6 +357,8 @@ def reward_matches_arsenal(reward, arsenal):
         return True
     if reward.get('dta_house_modifier'):
         return True
+    if reward.get('dta_global_clone_buff'):
+        return bool(arsenal_unit_ids(arsenal))
     if reward.get('kind') != 'buff':
         return False
     unit_id = str(reward.get('unit') or '').upper()

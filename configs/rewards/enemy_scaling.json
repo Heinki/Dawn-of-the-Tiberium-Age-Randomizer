@@ -1,15 +1,40 @@
 {
   "schema_version": 1,
-  "description": "AI rewards are disabled until DTA/Vinifera behavior is verified in live missions.",
+  "description": "DTA enemy-only country bonuses, disabled by default.",
   "sections": {
     "defaults": {
       "stack_model_version": 2,
       "reward_enabled": false,
       "rewards_per_completed_objective": 0,
       "rewards_per_completed_mission": 0,
-      "allowed_buff_ids": [],
-      "caps": {}
+      "allowed_buff_ids": ["enemy_armor", "enemy_production"],
+      "caps": {
+        "enemy_armor": 5,
+        "enemy_production": 5
+      }
     },
-    "buffs": []
+    "buffs": [
+      {
+        "id": "enemy_armor",
+        "name": "Enemy Armor I",
+        "type": "stat",
+        "category": "enemy",
+        "effect": "armor",
+        "country_suffix": "Armor",
+        "per_stack_percent": 10,
+        "maximum_stacks": 5
+      },
+      {
+        "id": "enemy_production",
+        "name": "Enemy Production I",
+        "type": "production",
+        "category": "enemy",
+        "effect": "production",
+        "country_suffix": "BuildTime",
+        "per_stack_percent": 10,
+        "minimum_engine_multiplier": 0.5,
+        "maximum_stacks": 5
+      }
+    ]
   }
 }

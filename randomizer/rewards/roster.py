@@ -517,7 +517,7 @@ def validate_unit_buff_application_contracts():
             trainable = _case_insensitive_item(template, 'Trainable')[1]
             if (
                 target.get('category')
-                not in {'infantry', 'units', 'aircraft', 'defenses'}
+                not in {'infantry', 'units', 'vehicles', 'aircraft', 'defenses'}
                 or str(trainable or 'yes').lower() in {'no', 'false', '0'}
             ):
                 errors.append(f'{unit_id}/veteran is not trainable')

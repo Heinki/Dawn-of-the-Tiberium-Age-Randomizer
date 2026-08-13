@@ -93,6 +93,10 @@ def _reward_names(values):
     return result
 
 
+def _active_reward_dicts(values):
+    return [deepcopy(REWARD_BY_NAME[name]) for name in _reward_names(values)]
+
+
 def _goal_for_state(state, mission_order):
     mode = state.get("progression_mode")
     if mode == "Mission List":
@@ -166,9 +170,7 @@ def _launcher_snapshot_for_state(state, config):
             state.get("unlock_all_rewards_after_final_grid_mission", False)
         ),
         "rewards_per_objective": int(state.get("rewards_per_check") or 1),
-        "rewards_on_victory_only": bool(
-            state.get("rewards_on_victory_only", False)
-        ),
+        "rewards_on_victory_only": True,
         "use_act_based_reward_multipliers": bool(
             state.get("use_act_based_reward_multipliers", True)
         ),
@@ -189,15 +191,31 @@ def _server_state_snapshot(state):
     snapshot["mission_failure_stacks"] = {}
     snapshot["mission_assistance_units"] = {}
     snapshot["earned_rewards"] = []
+    for key in (
+        "starting_rewards",
+        "manual_starting_rewards",
+        "random_starting_rewards",
+    ):
+        snapshot[key] = _active_reward_dicts(snapshot.get(key))
     snapshot["enemy_progress_earned"] = []
     snapshot["enemy_reward_applications"] = {}
+    reward_queue = []
     for checks in snapshot.get("mission_checks", {}).values():
         if not isinstance(checks, list):
             continue
         for check in checks:
             if isinstance(check, dict):
+                rewards = _active_reward_dicts(
+                    check.get("rewards") or (
+                        [check.get("reward")] if check.get("reward") else []
+                    )
+                )
+                check["rewards"] = rewards
+                check.pop("reward", None)
                 check.pop("unlocked", None)
                 check.pop("released", None)
+                reward_queue.extend(rewards)
+    snapshot["reward_queue"] = reward_queue
     grid = snapshot.get("grid")
     if isinstance(grid, dict):
         for node in grid.get("nodes", {}).values():
@@ -318,7 +336,7 @@ def build_run_manifest(state, launcher_config=None):
         "frozen_settings": {
             "reward_mode": state.get("reward_mode"),
             "rewards_per_check": state.get("rewards_per_check"),
-            "rewards_on_victory_only": state.get("rewards_on_victory_only"),
+            "rewards_on_victory_only": True,
             "use_act_based_reward_multipliers": bool(
                 state.get("use_act_based_reward_multipliers", True)
             ),

@@ -210,10 +210,7 @@ class LauncherApp(
         )
         self.rewards_per_check_var = tk.IntVar(value=default_rewards_per_check)
         self.rewards_on_victory_only_var = tk.BooleanVar(
-            value=bool(self.state.get(
-                'rewards_on_victory_only',
-                self.config.get('rewards_on_victory_only', False),
-            ))
+            value=True
         )
         self.use_act_reward_multipliers_var = tk.BooleanVar(
             value=bool(self.state.get(
@@ -345,7 +342,7 @@ class LauncherApp(
             value=enemy_settings['reward_enabled']
         )
         self.enemy_objective_rewards_var = tk.IntVar(
-            value=enemy_settings['rewards_per_completed_objective']
+            value=0
         )
         self.enemy_mission_rewards_var = tk.IntVar(
             value=enemy_settings['rewards_per_completed_mission']
@@ -413,7 +410,7 @@ class LauncherApp(
             value=reward_settings['include_superweapon_rewards']
         )
         self.include_secondary_superweapon_rewards_var = tk.BooleanVar(
-            value=reward_settings['include_secondary_superweapon_rewards']
+            value=False
         )
         self.include_aid_power_rewards_var = tk.BooleanVar(
             value=reward_settings['include_aid_power_rewards']
