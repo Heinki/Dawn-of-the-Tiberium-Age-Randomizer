@@ -1,0 +1,45 @@
+{
+  "status": "prepared",
+  "prepared_at": "2026-08-13T11:48:17.783917+00:00",
+  "mission_code": "M_TUTORIAL2",
+  "mission_title": "Tutorial Mission 2",
+  "source_map": "C:\\Spiele\\Dawn of the Tiberium Age\\Maps\\Missions\\tutorial2.map",
+  "source_hash": "b98ff2668dcab9f44a3e2dc67ae1960d56592faa484946557bc1c26877a655d3",
+  "generated_map": "C:\\Spiele\\Dawn of the Tiberium Age\\RandomizerLauncher\\generated_maps\\live_infantry_access_spawnmap.ini",
+  "generated_hash": "94b9ef8fd73f52bfc330c4caa0bdbf216c5081c489316fbffec538f9746d4a37",
+  "player_house": "TutorialGDI",
+  "unit_unlocked": "E2",
+  "player_clone": "E2_PLAYER",
+  "weapon_clone": "E2_GRENADE_PLAYER",
+  "locked_control": "E3",
+  "validation": {
+    "source_map_unchanged": true,
+    "map_objects_untouched": true,
+    "player_clone_route": true,
+    "acts_like_gdi_route": true,
+    "clone_has_unit_buffs": true,
+    "clone_has_no_build_restrictions": true,
+    "global_production_buff_present": true,
+    "generated_sections_present": true
+  },
+  "manual_checks": {
+    "player_clone_visible": "pending",
+    "player_clone_builds_without_tech_gate": "pending",
+    "locked_control_hidden": "pending",
+    "unit_damage_buff_works": "pending",
+    "unit_production_buff_works": "pending",
+    "global_production_buff_includes_clone": "pending",
+    "save_load_preserves_clone": "pending",
+    "enemy_or_map_identity_regression": "pending"
+  },
+  "instructions": [
+    "Open the GDI Barracks in Tutorial Mission 2.",
+    "Confirm E2_PLAYER is visible and buildable immediately.",
+    "Confirm unearned E3 is not buildable.",
+    "Confirm the clone has its unit-specific production and damage rewards.",
+    "Confirm the global production reward also affects the clone.",
+    "Build the clone, save, load, and confirm it still exists and works.",
+    "Do not judge map units by clone behavior; authored units must remain original.",
+    "Close or finish the mission after checks."
+  ]
+}
