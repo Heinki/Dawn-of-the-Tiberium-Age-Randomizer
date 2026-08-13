@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "description": "DTA exposes only verified player-house modifier rewards; unsupported engine rewards are empty.",
+  "sections": {
+    "unit_unlock_rewards": [],
+    "extra_unit_unlock_rewards": [],
+    "faction_access_rules": {},
+    "buff_types": [],
+    "superweapon_unlock_rewards": [],
+    "secondary_superweapon_unlock_rewards": [],
+    "aid_power_rewards": [],
+    "aid_power_map_configs": [],
+    "retired_reward_by_name": {},
+    "access_reward_aliases": {}
+  }
+}

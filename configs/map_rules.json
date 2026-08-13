@@ -1,0 +1,51 @@
+{
+    "schema_version":  1,
+    "description":  "DTA compatibility constants retained for the preserved generic map modules; the DTA launch adapter bypasses legacy map rewriting.",
+    "sections":  {
+                     "extra_tech_locks":  [
+
+                                          ],
+                     "scripted_tech_lock_exclusions":  [
+
+                                                       ],
+                     "techno_type_lists":  {
+                                               "infantry":  "InfantryTypes",
+                                               "units":  "VehicleTypes",
+                                               "aircraft":  "AircraftTypes",
+                                               "defenses":  "BuildingTypes",
+                                               "special_buildings":  "BuildingTypes"
+                                           },
+                     "engineer_clone_safety":  {
+                                                   "identity_fields":  {
+
+                                                                       },
+                                                   "removed_fields":  [
+
+                                                                      ]
+                                               },
+                     "randomized_superweapon_buildings":  {
+                                                              "offensive":  [
+
+                                                                            ],
+                                                              "secondary":  [
+
+                                                                            ]
+                                                          },
+                     "engine_limits":  {
+                                           "scripted_tech_build_limit":  "0",
+                                           "locked_tech_level":  "11",
+                                           "unlocked_tech_level":  "1",
+                                           "mission_assistance_categories":  [
+                                                                                 "Infantry",
+                                                                                 "Units",
+                                                                                 "Aircraft"
+                                                                             ],
+                                           "max_map_action_line_length":  511,
+                                           "max_country_veteran_value_length":  480,
+                                           "superweapon_actions_per_trigger":  8,
+                                           "randomizer_type_list_key_start":  20000,
+                                           "randomizer_superweapon_prefix":  "MOR",
+                                           "max_ares_type_id_length":  24
+                                       }
+                 }
+}

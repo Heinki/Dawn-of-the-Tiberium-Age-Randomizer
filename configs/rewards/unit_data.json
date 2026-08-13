@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "description": "DTA runtime unit data is discovered from INI/Rules.ini. Static exceptions remain intentionally empty.",
+  "sections": {
+    "faction_unit_rosters": {
+      "GDI": {
+        "infantry": {},
+        "units": {},
+        "aircraft": {}
+      },
+      "Nod": {
+        "infantry": {},
+        "units": {},
+        "aircraft": {}
+      },
+      "Allies": {
+        "infantry": {},
+        "units": {},
+        "aircraft": {}
+      },
+      "Soviet": {
+        "infantry": {},
+        "units": {},
+        "aircraft": {}
+      }
+    },
+    "special_reward_unit_ids": [],
+    "unit_sidebar_images": {},
+    "unit_base_stats": {},
+    "transport_base_stats": {},
+    "unit_role_equivalence_groups": [],
+    "linked_buff_variants": {},
+    "faction_defense_rosters": {
+      "GDI": {},
+      "Nod": {},
+      "Allies": {},
+      "Soviet": {}
+    },
+    "defense_base_stats": {},
+    "defense_weapon_stats": {},
+    "buff_targets": {},
+    "unit_labels": {},
+    "limited_hero_build_limits": {},
+    "standalone_weapon_templates": {},
+    "special_damage_fields": {}
+  }
+}

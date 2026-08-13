@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "description": "AI rewards are disabled until DTA/Vinifera behavior is verified in live missions.",
+  "sections": {
+    "defaults": {
+      "stack_model_version": 2,
+      "reward_enabled": false,
+      "rewards_per_completed_objective": 0,
+      "rewards_per_completed_mission": 0,
+      "allowed_buff_ids": [],
+      "caps": {}
+    },
+    "buffs": []
+  }
+}
