@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "description": "Subfaction-aware Tier 1 unit and defensive-structure starters.",
+  "sections": {
+    "role_units": {
+      "ground_infantry": {
+        "gdi": [
+          "E1",
+          "infantry"
+        ],
+        "nod": [
+          "E1N",
+          "infantry"
+        ],
+        "allies": [
+          "E1A",
+          "infantry"
+        ],
+        "soviet": [
+          "E1S",
+          "infantry"
+        ]
+      },
+      "anti_air_infantry": {
+        "gdi": [
+          "E3",
+          "infantry"
+        ],
+        "nod": [
+          "E3N",
+          "infantry"
+        ],
+        "allies": [
+          "E3A",
+          "infantry"
+        ],
+        "soviet": [
+          "E3S",
+          "infantry"
+        ]
+      },
+      "ground_vehicle": {
+        "gdi": [
+          "JEEP",
+          "vehicles"
+        ],
+        "nod": [
+          "BGGY",
+          "vehicles"
+        ],
+        "allies": [
+          "RANG",
+          "vehicles"
+        ],
+        "soviet": [
+          "3TNK",
+          "vehicles"
+        ]
+      },
+      "anti_air_vehicle": {
+        "gdi": [
+          "MSAM",
+          "vehicles"
+        ],
+        "nod": [
+          "BIKE",
+          "vehicles"
+        ],
+        "allies": [
+          "MFLAK",
+          "vehicles"
+        ],
+        "soviet": [
+          "APC",
+          "vehicles"
+        ]
+      },
+      "basic_aircraft": {
+        "gdi": [
+          "ORCA",
+          "air"
+        ],
+        "nod": [
+          "APACHE",
+          "air"
+        ],
+        "allies": [
+          "HELI",
+          "air"
+        ],
+        "soviet": [
+          "HIND",
+          "air"
+        ]
+      }
+    },
+    "role_markers": {
+      "ground_infantry": "T1_GROUND_INFANTRY",
+      "anti_air_infantry": "T1_ANTI_AIR_INFANTRY",
+      "ground_vehicle": "T1_GROUND_VEHICLE",
+      "anti_air_vehicle": "T1_ANTI_AIR_VEHICLE",
+      "basic_aircraft": "T1_BASIC_AIRCRAFT"
+    },
+    "defense_marker": "T1_BASIC_DEFENSES",
+    "defense_role_units": {
+      "ground_defense": {
+        "gdi": "TWR",
+        "nod": "GUN",
+        "allies": "RAPBOX",
+        "soviet": "RAFTUR"
+      },
+      "anti_air_defense": {
+        "gdi": "TWR",
+        "nod": "SAM",
+        "allies": "RAAGUN",
+        "soviet": "RASAM"
+      }
+    },
+    "defense_roles": [
+      "ground_defense",
+      "anti_air_defense"
+    ],
+    "defense_units": {
+      "gdi": [
+        "TWR"
+      ],
+      "nod": [
+        "GUN",
+        "SAM"
+      ],
+      "allies": [
+        "RAPBOX",
+        "RAAGUN"
+      ],
+      "soviet": [
+        "RAFTUR",
+        "RASAM"
+      ]
+    },
+    "subfaction_units": {},
+    "ground_roles": [
+      "ground_infantry",
+      "anti_air_infantry",
+      "ground_vehicle",
+      "anti_air_vehicle"
+    ],
+    "standard_families": [
+      "gdi",
+      "nod",
+      "allies",
+      "soviet"
+    ],
+    "airfields": {
+      "gdi": "GHPAD",
+      "nod": "NHPAD",
+      "allies": "AHPAD",
+      "soviet": "RAASTRP"
+    },
+    "production_aliases": {
+      "gdi": {},
+      "nod": {},
+      "allies": {},
+      "soviet": {}
+    }
+  }
+}

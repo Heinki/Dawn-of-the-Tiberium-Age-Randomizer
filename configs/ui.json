@@ -1,0 +1,194 @@
+{
+  "schema_version": 1,
+  "description": "Launcher choices, labels, faction colors, and light/dark palettes.",
+  "sections": {
+    "difficulties": [
+      [
+        "Easy",
+        0
+      ],
+      [
+        "Normal",
+        1
+      ],
+      [
+        "Hard",
+        2
+      ],
+      [
+        "Brutal",
+        3
+      ],
+      [
+        "Extreme",
+        4
+      ],
+      [
+        "Ultimate",
+        5
+      ],
+      [
+        "Impossible",
+        6
+      ]
+    ],
+    "game_speeds": [
+      [
+        "0 - Slowest",
+        6
+      ],
+      [
+        "1 - Slower",
+        5
+      ],
+      [
+        "2 - Slow",
+        4
+      ],
+      [
+        "3 - Medium",
+        3
+      ],
+      [
+        "4 - Fast",
+        2
+      ],
+      [
+        "5 - Faster",
+        1
+      ],
+      [
+        "6 - Fastest",
+        0
+      ]
+    ],
+    "campaign_filters": [
+      "All Campaigns",
+      "Tutorial",
+      "PTTP",
+      "CR",
+      "Toxic Diversion",
+      "It Came From Red Alert!",
+      "Creeping Destruction",
+      "Special Ops"
+    ],
+    "reward_modes": [
+      "Standard",
+      "Chaos",
+      "Randomizer Arsenal"
+    ],
+    "progression_modes": [
+      "Classic",
+      "Mission List",
+      "Grid Mode"
+    ],
+    "default_progression_mode": "Mission List",
+    "player_colors": [
+      "Default",
+      "Gold",
+      "Red",
+      "DarkBlue",
+      "Green",
+      "Orange",
+      "Sky",
+      "Purple",
+      "Pink",
+      "Teal",
+      "Aqua",
+      "Lime",
+      "Magenta",
+      "Crimson",
+      "Brown2",
+      "DarkGreen",
+      "DarkRed",
+      "LightBlue",
+      "NeonGreen",
+      "Olive",
+      "Purple2",
+      "Purple3",
+      "Russet",
+      "Yellow"
+    ],
+    "rainbowizer_colors": [
+      "Gold",
+      "Red",
+      "DarkBlue",
+      "Green",
+      "Orange",
+      "Sky",
+      "Purple",
+      "Pink",
+      "Teal",
+      "Aqua",
+      "Lime",
+      "Magenta",
+      "Crimson",
+      "Brown2",
+      "DarkGreen",
+      "DarkRed",
+      "LightBlue",
+      "NeonGreen",
+      "Olive",
+      "Purple2",
+      "Purple3",
+      "Russet",
+      "Yellow"
+    ],
+    "eva_voice_tags": {
+      "GDI": "GDI",
+      "Nod": "Nod",
+      "Allied": "Allied",
+      "Soviet": "Soviet"
+    },
+    "eva_appearance_profiles": {},
+    "rewards_per_check_messages": {
+      "maximum": "Ok that is now enough...",
+      "thresholds": [
+        [
+          20,
+          "So you don't feel powerful enough?"
+        ],
+        [
+          10,
+          "Wanting to feel good eh?"
+        ]
+      ]
+    },
+    "faction_tile_colors": {
+      "GDI": "#d7b52c",
+      "Nod": "#9f2020",
+      "Allies": "#285f9e",
+      "Soviet": "#a53636"
+    },
+    "light_palette": {
+      "background": "#f0f0f0",
+      "panel": "#ffffff",
+      "canvas": "#e9ecef",
+      "foreground": "#202124",
+      "muted": "#555555",
+      "field": "#ffffff",
+      "border": "#b8bec5",
+      "select": "#3478bd",
+      "select_foreground": "#ffffff",
+      "busy": "#edf3f8",
+      "busy_card": "#f9fcff",
+      "busy_title": "#172a3a",
+      "busy_detail": "#4c6172"
+    },
+    "dark_palette": {
+      "background": "#171a1f",
+      "panel": "#20242b",
+      "canvas": "#12151a",
+      "foreground": "#e8eaed",
+      "muted": "#aeb6c2",
+      "field": "#111419",
+      "border": "#49515c",
+      "select": "#315f91",
+      "select_foreground": "#ffffff",
+      "busy": "#111419",
+      "busy_card": "#202a34",
+      "busy_title": "#f2f7fb",
+      "busy_detail": "#b9c7d4"
+    }
+  }
+}

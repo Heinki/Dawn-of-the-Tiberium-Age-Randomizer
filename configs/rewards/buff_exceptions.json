@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "description": "DTA unit-specific buffs are disabled pending production-clone verification.",
+  "sections": {
+    "excluded_buff_type_ids": {}
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "description": "DTA unit policy is generated from Rules.ini; clone exceptions require map-specific evidence.",
+  "sections": {
+    "existing_capability_ids": {},
+    "noncombat_weapon_target_ids": [],
+    "nontrainable_unit_ids": [],
+    "always_available_core_unit_ids": [],
+    "always_available_building_ids": [],
+    "trainable_defense_ids": [],
+    "naval_unit_ids": [],
+    "additional_production_prerequisites": {},
+    "linked_access_variants": {},
+    "ammo_display_labels": {}
+  }
+}

@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "description": "Faction production, engineers, transports, and technology ordering.",
+  "sections": {
+    "default_unlock_build_houses": "GDI,Nod,Allies,Soviet",
+    "engineer_by_family": {
+      "gdi": "ENGINEER",
+      "nod": "ENGINEER",
+      "allies": "ENGINEER",
+      "soviet": "ENGINEER"
+    },
+    "engineer_installed_forbidden_houses": {},
+    "conyard_by_mcv": {
+      "GMCV": "GFACT",
+      "NMCV": "NFACT",
+      "AMCV": "AFACT",
+      "SMCV": "SFACT"
+    },
+    "stalins_fist_factory": "",
+    "stalins_fist_placement_ids": [],
+    "stalins_fist_taskforce_ids": [],
+    "stalins_fist_families": [],
+    "amphibious_transports": {
+      "gdi": [
+        "LST",
+        "GSYRD"
+      ],
+      "nod": [
+        "NLST",
+        "NSYRD"
+      ],
+      "allies": [
+        "ALST",
+        "ASYRD"
+      ],
+      "soviet": [
+        "SLST",
+        "RASPEN"
+      ]
+    },
+    "miners": {
+      "gdi": [
+        "TDHARV",
+        "WEAP",
+        "TDPROC"
+      ],
+      "nod": [
+        "TDHARV",
+        "AFLD",
+        "TDPROC"
+      ],
+      "allies": [
+        "RAHARV",
+        "AWEAP",
+        "RAPROC"
+      ],
+      "soviet": [
+        "RAHARV",
+        "SWEAP",
+        "RAPROC"
+      ]
+    },
+    "production_buildings": {
+      "gdi": {
+        "base": [
+          "GFACT"
+        ],
+        "infantry": [
+          "PYLE"
+        ],
+        "vehicles": [
+          "WEAP"
+        ],
+        "air": [
+          "GHPAD"
+        ],
+        "naval": [
+          "GSYRD"
+        ]
+      },
+      "nod": {
+        "base": [
+          "NFACT"
+        ],
+        "infantry": [
+          "HAND"
+        ],
+        "vehicles": [
+          "AFLD"
+        ],
+        "air": [
+          "NHPAD"
+        ],
+        "naval": [
+          "NSYRD"
+        ]
+      },
+      "allies": {
+        "base": [
+          "AFACT"
+        ],
+        "infantry": [
+          "RATENT"
+        ],
+        "vehicles": [
+          "AWEAP"
+        ],
+        "air": [
+          "AHPAD"
+        ],
+        "naval": [
+          "ASYRD"
+        ]
+      },
+      "soviet": {
+        "base": [
+          "SFACT"
+        ],
+        "infantry": [
+          "RABARR"
+        ],
+        "vehicles": [
+          "SWEAP"
+        ],
+        "air": [
+          "RAASTRP"
+        ],
+        "naval": [
+          "RASPEN"
+        ]
+      }
+    },
+    "chaos_primary_production": {
+      "gdi": {
+        "base": "GFACT",
+        "infantry": "PYLE",
+        "vehicles": "WEAP",
+        "air": "GHPAD",
+        "naval": "GSYRD"
+      },
+      "nod": {
+        "base": "NFACT",
+        "infantry": "HAND",
+        "vehicles": "AFLD",
+        "air": "NHPAD",
+        "naval": "NSYRD"
+      },
+      "allies": {
+        "base": "AFACT",
+        "infantry": "RATENT",
+        "vehicles": "AWEAP",
+        "air": "AHPAD",
+        "naval": "ASYRD"
+      },
+      "soviet": {
+        "base": "SFACT",
+        "infantry": "RABARR",
+        "vehicles": "SWEAP",
+        "air": "RAASTRP",
+        "naval": "RASPEN"
+      }
+    },
+    "tech_order": [
+      "ENGINEER",
+      "E1",
+      "E1N",
+      "E1A",
+      "E1S",
+      "E3",
+      "E3N",
+      "E3A",
+      "E3S",
+      "JEEP",
+      "BGGY",
+      "RANG",
+      "3TNK"
+    ]
+  }
+}

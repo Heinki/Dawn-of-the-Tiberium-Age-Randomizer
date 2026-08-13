@@ -1,0 +1,174 @@
+param(
+    [string]$Output = "..\DTARandomizer.exe"
+)
+
+$ErrorActionPreference = "Stop"
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$outputPath = if ([IO.Path]::IsPathRooted($Output)) {
+    [IO.Path]::GetFullPath($Output)
+} else {
+    [IO.Path]::GetFullPath((Join-Path $scriptDir $Output))
+}
+$outputDir = Split-Path -Parent $outputPath
+$runtimePath = [IO.Path]::GetFullPath((Join-Path $outputDir "RandomizerLauncherRuntime"))
+$distDir = Join-Path $scriptDir "dist"
+$workDir = Join-Path $scriptDir "build"
+$iconPath = Join-Path $scriptDir "..\Resources\gameicon.ico"
+$staticConfigPath = Join-Path $scriptDir "configs"
+$puzzlePath = Join-Path $scriptDir "DTA Puzzle.png"
+$versionInfoPath = Join-Path ([IO.Path]::GetTempPath()) "DTARandomizer-$PID-version.txt"
+$configManifestDir = Join-Path ([IO.Path]::GetTempPath()) "DTARandomizer-$PID-config"
+$configManifestPath = Join-Path $configManifestDir "bundle_manifest.json"
+
+New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+
+if (-not (python -m PyInstaller --version 2>$null)) {
+    throw "PyInstaller is required. Install build dependencies with: python -m pip install -r requirements-build.txt"
+}
+$websocketsVersion = (& python -c "import websockets; print(websockets.__version__)" 2>$null).Trim()
+if ($LASTEXITCODE -ne 0 -or $websocketsVersion -ne '17.0') {
+    throw "websockets 17.0 is required. Install build dependencies with: python -m pip install -r requirements-build.txt"
+}
+if (-not (Test-Path -LiteralPath $iconPath -PathType Leaf)) {
+    throw "Launcher icon is missing: $iconPath"
+}
+if (-not (Test-Path -LiteralPath $staticConfigPath -PathType Container)) {
+    throw "Static config directory is missing: $staticConfigPath"
+}
+if (-not (Test-Path -LiteralPath $puzzlePath -PathType Leaf)) {
+    throw "DTA puzzle image is missing: $puzzlePath"
+}
+
+python -c "from randomizer.config.static import REQUIRED_STATIC_CONFIGS, validate_static_configs; validate_static_configs(REQUIRED_STATIC_CONFIGS); print('Static config preflight passed.')"
+if ($LASTEXITCODE -ne 0) {
+    throw "Static config preflight failed; EXE was not built."
+}
+
+$appVersion = (& python -c "from randomizer.core.version import APP_VERSION; print(APP_VERSION)").Trim()
+if ($LASTEXITCODE -ne 0 -or $appVersion -notmatch '^\d+\.\d+(\.\d+)?$') {
+    throw "Invalid APP_VERSION in randomizer/core/version.py: $appVersion"
+}
+$versionParts = @($appVersion.Split('.') | ForEach-Object { [int]$_ })
+while ($versionParts.Count -lt 4) {
+    $versionParts += 0
+}
+$versionTuple = $versionParts -join ', '
+$versionInfo = @"
+VSVersionInfo(
+  ffi=FixedFileInfo(
+    filevers=($versionTuple),
+    prodvers=($versionTuple),
+    mask=0x3f,
+    flags=0x0,
+    OS=0x40004,
+    fileType=0x1,
+    subtype=0x0,
+    date=(0, 0)
+  ),
+  kids=[
+    StringFileInfo([
+      StringTable(
+        u'040904B0',
+        [
+          StringStruct(u'CompanyName', u'DTA Randomizer contributors'),
+          StringStruct(u'FileDescription', u'DTA Randomizer Launcher'),
+          StringStruct(u'FileVersion', u'$appVersion'),
+          StringStruct(u'InternalName', u'DTARandomizer'),
+          StringStruct(u'OriginalFilename', u'DTARandomizer.exe'),
+          StringStruct(u'ProductName', u'DTA Randomizer Launcher'),
+          StringStruct(u'ProductVersion', u'$appVersion')
+        ]
+      )
+    ]),
+    VarFileInfo([VarStruct(u'Translation', [1033, 1200])])
+  ]
+)
+"@
+[IO.File]::WriteAllText($versionInfoPath, $versionInfo, [Text.UTF8Encoding]::new($false))
+
+$manifestFiles = [ordered]@{}
+$staticConfigPrefix = [IO.Path]::GetFullPath($staticConfigPath).TrimEnd('\') + '\'
+Get-ChildItem -LiteralPath $staticConfigPath -Recurse -File |
+    Where-Object {
+        ($_.Extension -eq '.json' -or $_.Name -like 'Randomizer*.ini') -and
+        $_.FullName -notlike "$staticConfigPath\player\*"
+    } |
+    Sort-Object FullName |
+    ForEach-Object {
+        $fullConfigPath = [IO.Path]::GetFullPath($_.FullName)
+        if (-not $fullConfigPath.StartsWith(
+            $staticConfigPrefix,
+            [StringComparison]::OrdinalIgnoreCase
+        )) {
+            throw "Refusing config outside source root: $fullConfigPath"
+        }
+        $relativePath = $fullConfigPath.Substring(
+            $staticConfigPrefix.Length
+        ).Replace('\', '/')
+        $manifestFiles[$relativePath] = (
+            Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256
+        ).Hash.ToLowerInvariant()
+    }
+$configManifest = [ordered]@{
+    format = 1
+    files = $manifestFiles
+} | ConvertTo-Json -Depth 4
+New-Item -ItemType Directory -Path $configManifestDir -Force | Out-Null
+[IO.File]::WriteAllText(
+    $configManifestPath,
+    $configManifest,
+    [Text.UTF8Encoding]::new($false)
+)
+
+# Archipelago uses compressed ws/wss connections. Keep SSL, HTTP, and email
+# available for the bundled websockets handshake implementation.
+try {
+    python -m PyInstaller `
+        --noconfirm `
+        --clean `
+        --onefile `
+        --noupx `
+        --optimize 1 `
+        --windowed `
+        --icon $iconPath `
+        --version-file $versionInfoPath `
+        --add-data "$iconPath;." `
+        --add-data "$puzzlePath;." `
+        --add-data "$staticConfigPath\*.json;configs" `
+        --add-data "$staticConfigPath\README.md;configs" `
+        --add-data "$staticConfigPath\rewards;configs\rewards" `
+        --add-data "$configManifestPath;configs" `
+        --exclude-module logging.handlers `
+        --exclude-module ftplib `
+        --exclude-module smtplib `
+        --name DTARandomizer `
+        --distpath $distDir `
+        --workpath $workDir `
+        --specpath $workDir `
+        (Join-Path $scriptDir "launcher_gui.py")
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "PyInstaller build failed with exit code $LASTEXITCODE."
+    }
+} finally {
+    Remove-Item -LiteralPath $versionInfoPath -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $configManifestPath -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $configManifestDir -Force -ErrorAction SilentlyContinue
+}
+
+$builtExe = Join-Path $distDir "DTARandomizer.exe"
+Copy-Item -Force $builtExe $outputPath
+
+# Remove the support folder created by older on-directory builds. Guard the
+# resolved path because this is the only recursive deletion in the build.
+if (Test-Path $runtimePath) {
+    $expectedParent = [IO.Path]::GetFullPath($outputDir).TrimEnd('\') + '\'
+    if (
+        -not $runtimePath.StartsWith($expectedParent, [StringComparison]::OrdinalIgnoreCase) -or
+        [IO.Path]::GetFileName($runtimePath) -ne 'RandomizerLauncherRuntime'
+    ) {
+        throw "Refusing to remove unexpected runtime path: $runtimePath"
+    }
+    Remove-Item -LiteralPath $runtimePath -Recurse -Force
+}
+Write-Host "Built single-file launcher v$appVersion $outputPath"
