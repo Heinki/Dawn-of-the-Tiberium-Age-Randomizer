@@ -914,6 +914,30 @@ throw "Map $name was not found in expandmo*.mix"
                 f'using {difficulty.label}.'
             )
         game_speed_value = self.get_selected_game_speed_value()
+        ap_snapshot_active = self._begin_archipelago_mission_preparation(
+            mission
+        )
+
+        def finish_launch(hook):
+            try:
+                self.start_mission_process(
+                    mission,
+                    hook,
+                    difficulty,
+                    game_speed_value,
+                    launch_note,
+                )
+            finally:
+                if ap_snapshot_active:
+                    self._finish_archipelago_mission_preparation(mission)
+
+        def fail_launch(exc, detail):
+            try:
+                self.handle_mission_prepare_error(exc, detail)
+            finally:
+                if ap_snapshot_active:
+                    self._finish_archipelago_mission_preparation(mission)
+
         self.run_in_background(
             'Starting game, please wait…',
             'Preparing the mission and applying earned rewards.',
@@ -923,14 +947,8 @@ throw "Map $name was not found in expandmo*.mix"
                 difficulty,
                 game_speed_value,
             ),
-            lambda hook: self.start_mission_process(
-                mission,
-                hook,
-                difficulty,
-                game_speed_value,
-                launch_note,
-            ),
-            self.handle_mission_prepare_error,
+            finish_launch,
+            fail_launch,
         )
 
     def handle_mission_prepare_error(self, _exc, detail):

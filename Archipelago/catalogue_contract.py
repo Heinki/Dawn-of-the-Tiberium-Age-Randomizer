@@ -103,6 +103,11 @@ def runtime_catalogue_checksum():
     return projection_checksum(build_catalogue_projection())
 
 
+def runtime_catalogue_is_compatible(checksum):
+    """Accept only DTA catalogues with the exact runtime projection."""
+    return str(checksum or '') == runtime_catalogue_checksum()
+
+
 def _preserved_ids(existing, key):
     values = existing.get(key, ()) if isinstance(existing, dict) else ()
     return {
