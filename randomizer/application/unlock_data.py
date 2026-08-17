@@ -10,6 +10,7 @@ from ._dependencies import (
     REWARD_POOL,
     SPECIAL_BUILDING_DEFINITIONS,
     buff_effect_lines,
+    buff_group_key,
     buff_stack_limit,
     canonical_reward,
     check_rewards,
@@ -1207,10 +1208,7 @@ class UnlockDataController:
                 active_effect_rewards = ()
             for reward in active_effect_rewards:
                 if reward.get('kind') == 'buff':
-                    key = (
-                        reward.get('buff_type')
-                        or reward.get('power_buff_type')
-                    )
+                    key = buff_group_key(reward)
                     display_reward = dict(reward)
                     if entry.get('kind') == 'unit':
                         display_reward['unit'] = entry['id']
@@ -1243,7 +1241,7 @@ class UnlockDataController:
         if inactive_arsenal_buffs:
             deferred = {}
             for reward in inactive_arsenal_buffs:
-                key = reward.get('buff_type') or reward.get('power_buff_type')
+                key = buff_group_key(reward)
                 deferred.setdefault(
                     key, {'reward': reward, 'count': 0}
                 )['count'] += 1

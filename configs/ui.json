@@ -70,7 +70,7 @@
       "Toxic Diversion",
       "It Came From Red Alert!",
       "Creeping Destruction",
-      "Special Ops"
+      "Stand-Alone Missions"
     ],
     "reward_modes": [
       "Standard",
@@ -136,10 +136,13 @@
       ]
     },
     "faction_tile_colors": {
-      "GDI": "#d7b52c",
-      "Nod": "#9f2020",
+      "GDI": "#817229",
+      "Nod": "#801f30",
       "Allies": "#285f9e",
-      "Soviet": "#a53636"
+      "Soviet": "#985036"
+    },
+    "campaign_tile_colors": {
+      "CR": "#247a4b"
     },
     "light_palette": {
       "background": "#f0f0f0",

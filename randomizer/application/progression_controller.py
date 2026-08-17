@@ -1,6 +1,7 @@
 """Mission visibility, Grid state, selection, and launch validation."""
 
 from ._dependencies import (
+    CAMPAIGN_TILE_COLORS,
     DEFAULT_PROGRESSION_MODE,
     FACTION_TILE_COLORS,
     GRID_COMPLETED,
@@ -118,7 +119,10 @@ class ProgressionController:
             for widget in widgets.values():
                 widget.configure(cursor='hand2')
             faction = normalize_faction(mission.get('side', ''))
-            faction_color = FACTION_TILE_COLORS.get(faction, '#315b82')
+            faction_color = CAMPAIGN_TILE_COLORS.get(
+                mission.get('campaign'),
+                FACTION_TILE_COLORS.get(faction, '#315b82'),
+            )
             started = self.is_mission_started(code)
             if state == GRID_LOCKED:
                 background, foreground = '#3f454b', '#aeb5bc'

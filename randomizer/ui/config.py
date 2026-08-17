@@ -34,5 +34,6 @@ REWARDS_PER_CHECK_MESSAGE_THRESHOLDS = tuple(
 )
 
 FACTION_TILE_COLORS = dict(_UI_CONFIG['faction_tile_colors'])
+CAMPAIGN_TILE_COLORS = dict(_UI_CONFIG['campaign_tile_colors'])
 LIGHT_UI_PALETTE = dict(_UI_CONFIG['light_palette'])
 DARK_UI_PALETTE = dict(_UI_CONFIG['dark_palette'])

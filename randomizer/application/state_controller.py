@@ -68,6 +68,20 @@ from ._dependencies import (
     valid_choice,
     write_portable_settings,
 )
+
+
+def disabled_enemy_scaling_settings(source=None):
+    """Keep the unfinished hostile-AI reward feature inert."""
+    settings = normalize_enemy_scaling_settings(source)
+    settings.update({
+        'reward_enabled': False,
+        'rewards_per_completed_objective': 0,
+        'rewards_per_completed_mission': 0,
+        'allowed_buff_ids': [],
+    })
+    return settings
+
+
 class StateController:
     def load_state(self):
         if not STATE_PATH.exists():
@@ -89,6 +103,17 @@ class StateController:
         if not self.state:
             return
         changed = normalize_archipelago_activation(self.state)
+        if self.state.get('campaign_filter') == 'Special Ops':
+            self.state['campaign_filter'] = 'Stand-Alone Missions'
+            changed = True
+        for field in ('campaign_mission_counts', 'campaign_mission_limits'):
+            campaign_values = self.state.get(field)
+            if not isinstance(campaign_values, dict) or 'Special Ops' not in campaign_values:
+                continue
+            campaign_values['Stand-Alone Missions'] = campaign_values.pop(
+                'Special Ops'
+            )
+            changed = True
         if self.state.get('rewards_on_victory_only') is not True:
             self.state['rewards_on_victory_only'] = True
             changed = True
@@ -110,11 +135,19 @@ class StateController:
                 ) < 2
             except (AttributeError, TypeError, ValueError):
                 enemy_stack_model_changed = True
-            normalized_enemy = normalize_enemy_scaling_settings(
+            normalized_enemy = disabled_enemy_scaling_settings(
                 enemy_source
             )
             if reward_settings.get('enemy_scaling') != normalized_enemy:
                 reward_settings['enemy_scaling'] = normalized_enemy
+                changed = True
+        for field, empty_value in (
+            ('enemy_progress_plan', []),
+            ('enemy_progress_earned', []),
+            ('enemy_reward_applications', {}),
+        ):
+            if self.state.get(field) not in (None, empty_value):
+                self.state[field] = empty_value.copy()
                 changed = True
         if self.state.get('reward_mode') == 'Chaos (Experimental)':
             self.state['reward_mode'] = 'Chaos'
@@ -368,7 +401,7 @@ class StateController:
         reward_weights = normalize_reward_weights(
             generation_config.get('reward_weights')
         )
-        enemy_scaling = normalize_enemy_scaling_settings(
+        enemy_scaling = disabled_enemy_scaling_settings(
             generation_config.get('enemy_scaling')
         )
         if generation_config.get('reward_mode') in {
@@ -469,7 +502,7 @@ class StateController:
         include_defensive_buildings = bool(self.include_defensive_buildings_var.get())
         include_special_buildings = False
         include_special_rewards = bool(self.include_special_rewards_var.get())
-        unlimited_hero_units = False
+        unlimited_hero_units = bool(self.unlimited_hero_units_var.get())
         share_chaos_role_buffs = False
         buff_allied_helpers = bool(self.buff_allied_helpers_var.get())
         failure_assistance = bool(self.failure_assistance_var.get())
@@ -515,7 +548,7 @@ class StateController:
             enemy_mission_rewards = self.enemy_mission_rewards_var.get()
         except Exception:
             enemy_mission_rewards = 0
-        enemy_scaling = normalize_enemy_scaling_settings({
+        enemy_scaling = disabled_enemy_scaling_settings({
             'reward_enabled': self.enemy_reward_pool_var.get(),
             'rewards_per_completed_objective': enemy_objective_rewards,
             'rewards_per_completed_mission': enemy_mission_rewards,
@@ -639,9 +672,7 @@ class StateController:
         settings.pop('experimental_player_unit_clones', None)
         settings.update({
             'include_special_buildings': False,
-            'unlimited_hero_units': False,
             'share_chaos_role_buffs': False,
-            'buff_allied_helpers': False,
             'failure_assistance': False,
         })
         settings.setdefault('include_buff_rewards', True)
@@ -664,7 +695,7 @@ class StateController:
         settings['reward_weights'] = normalize_reward_weights(
             settings.get('reward_weights')
         )
-        settings['enemy_scaling'] = normalize_enemy_scaling_settings(
+        settings['enemy_scaling'] = disabled_enemy_scaling_settings(
             settings.get('enemy_scaling')
         )
         if source is not None:
@@ -705,7 +736,7 @@ class StateController:
             'Toxic Diversion': ('gdi',),
             'It Came From Red Alert!': ('allies',),
             'Creeping Destruction': ('soviet',),
-            'Special Ops': ('gdi', 'nod', 'allies', 'soviet'),
+            'Stand-Alone Missions': ('gdi', 'nod', 'allies', 'soviet'),
             'All Campaigns': ('gdi', 'nod', 'allies', 'soviet'),
         }.get(selected, ('gdi', 'nod', 'allies', 'soviet'))
         return [

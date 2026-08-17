@@ -199,7 +199,7 @@ def parse_missions(path, fallback_objective_count=FALLBACK_OBJECTIVE_COUNT):
             'scenario': scenario,
             'title': section.get('UIName') or section.get('Description') or section.get('description') or code,
             'side': section.get('SideName') or section.get('Side') or '',
-            'campaign': campaign or 'Special Ops',
+            'campaign': campaign or 'Stand-Alone Missions',
             'objectives': objectives,
             'objective_count': len(objectives) or fallback_objective_count,
             'build_classification': MISSION_BUILD_CLASSIFICATIONS.get(code, BASE_BUILD),

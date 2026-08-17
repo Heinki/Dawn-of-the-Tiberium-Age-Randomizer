@@ -11,21 +11,23 @@ LEGACY_CONFIG_PATH = LEGACY_CONFIG_DIR / CONFIG_PATH.name
 DEFAULT_CONFIG = static_config_section(
     'default_player_config.json', 'defaults', dict
 )
-UNIT_BUFF_CATALOGUE_VERSION = 3
+UNIT_BUFF_CATALOGUE_VERSION = 4
 UNIT_BUFF_TYPES_INTRODUCED = {
     1: ('passenger_capacity', 'open_topped'),
     2: ('health', 'range', 'sight', 'ammo', 'passenger_capacity', 'cloak', 'sensors'),
     3: ('self_healing',),
+    4: ('build_limit',),
 }
-POWER_BUFF_CATALOGUE_VERSION = 3
+POWER_BUFF_CATALOGUE_VERSION = 4
 POWER_BUFF_TYPES_INTRODUCED = {
     1: ('vision',),
     2: ('recharge',),
     3: ('damage', 'area'),
+    4: ('payload',),
 }
 ENEMY_STACK_MODEL_VERSION = 2
 INFANTRY_ACCESS_CATALOGUE_VERSION = 1
-DTA_POWER_CATALOGUE_VERSION = 3
+DTA_POWER_CATALOGUE_VERSION = 4
 
 
 def deep_copy(value):

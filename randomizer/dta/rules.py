@@ -27,15 +27,23 @@ CAMPAIGN_SPECIAL_MOBILE_IDS = frozenset({
     # Reviewed hidden DTA skirmish identities. These are registered in the
     # installed faction rosters and have native DTA art, but use TechLevel=-1
     # until a map or the randomizer explicitly unlocks them.
-    'GRENL', 'THIEF', 'HIJACK', 'CYBORG', 'CYP', 'JUMPJET',
+    'GRENL', 'THIEF', 'HIJACK', 'CYBORG', 'CYP',
     'RAIDER', 'MRV', 'STAPC', 'MFLAK', 'TNKD',
     'SCARAB', 'TORPCAT', 'FLAKCORV',
 })
+NORMAL_REWARD_MOBILE_IDS = frozenset({
+    # These normal roster units are hidden behind campaign progression in
+    # Rules.ini, but belong in the ordinary randomizer roster.
+    'SHILKA', 'MFLAK',
+})
+RANDOMIZER_UNIT_LABELS = {}
 EXCLUDED_MOBILE_IDS = frozenset({
     # Registered TS leftovers without native DTA cameo assets or DTA roster use.
-    'HTNKMSAM', 'SMECH', 'UTNK',
+    'HTNKMSAM', 'SMECH', 'UTNK', 'JUMPJET',
     # Older Missile Tank identity. TTNKMSL is the canonical DTA reward unit.
     '2TNKMSL',
+    # Campaign prop without useful player behavior.
+    'MHQ',
 })
 SPECIAL_MOBILE_FACTION_OVERRIDES = {
     # Campaign-only units use broad Rules.ini owners so any mission can place
@@ -50,7 +58,6 @@ SPECIAL_MOBILE_FACTION_OVERRIDES = {
     'MWAVEMSAM': ('Nod',),
     'BRIG': ('Allies',),
     'MSA': ('GDI',),
-    'MHQ': ('GDI',),
     # MRV is listed in DTA's Nod vehicle block despite broad placement owners.
     'MRV': ('Nod',),
 }
@@ -178,9 +185,16 @@ def techno_catalogue():
                     'range': decimal_value(weapon_values, 'Range'),
                     'buff_safe': weapon_buff_safe,
                 }
+            special_reward = (
+                campaign_special
+                and type_id.upper() not in NORMAL_REWARD_MOBILE_IDS
+            )
             records.append({
                 'id': type_id.upper(),
-                'label': values.get('Name') or values.get('UIName') or type_id,
+                'label': RANDOMIZER_UNIT_LABELS.get(
+                    type_id.upper(),
+                    values.get('Name') or values.get('UIName') or type_id,
+                ),
                 'editor_name': editor_name,
                 'editor_category': editor_category,
                 'buildability': buildability,
@@ -200,6 +214,7 @@ def techno_catalogue():
                 'sight': numeric_value(values, 'Sight'),
                 'ammo': numeric_value(values, 'Ammo'),
                 'passengers': numeric_value(values, 'Passengers'),
+                'build_limit': max(0, numeric_value(values, 'BuildLimit')),
                 'cloakable': values.get('Cloakable', '').casefold() in {
                     'yes', 'true', '1',
                 },
@@ -218,7 +233,7 @@ def techno_catalogue():
                 'naval': values.get('Naval', '').casefold() in {
                     'yes', 'true', '1',
                 },
-                'special': campaign_special,
+                'special': special_reward,
                 'obsolete': obsolete,
                 'ai_only': ai_only,
                 'rewardable': rewardable,

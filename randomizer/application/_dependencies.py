@@ -143,6 +143,7 @@ from randomizer.rewards.catalogue import (
     REWARD_BY_NAME,
     REWARD_POOL,
     SPECIAL_BUILDING_DEFINITIONS,
+    buff_group_key,
     buff_stack_limit,
     buff_effect_lines,
     canonical_reward,
@@ -227,6 +228,7 @@ from randomizer.missions.overrides import (
 )
 from randomizer.ui.config import (
     CAMPAIGN_FILTERS,
+    CAMPAIGN_TILE_COLORS,
     DARK_UI_PALETTE,
     DEFAULT_PROGRESSION_MODE,
     DIFFICULTIES,

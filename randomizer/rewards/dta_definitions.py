@@ -92,6 +92,12 @@ BUFF_TYPES = [
         'description': '{plural} carry one additional passenger.',
     },
     {
+        'id': 'build_limit',
+        'name': 'Command Capacity',
+        'setting_label': 'Unique / hero unit limit',
+        'description': 'The simultaneous build limit for {plural} increases by one.',
+    },
+    {
         'id': 'cloak',
         'name': 'Stealth Field',
         'setting_label': 'Cloaking',
@@ -220,6 +226,8 @@ def _allowed_buff_types(record):
         allowed.append('ammo')
     if record.get('passengers', 0) > 0:
         allowed.append('passenger_capacity')
+    if record.get('build_limit', 0) > 0:
+        allowed.append('build_limit')
     if not record.get('cloakable'):
         allowed.append('cloak')
     if not record.get('sensors'):
@@ -242,6 +250,7 @@ for _record in _MOBILE_RECORDS:
         'sight': _record['sight'],
         'ammo': _record['ammo'],
         'passengers': _record['passengers'],
+        'build_limit': _record.get('build_limit', 0),
         'weapons': dict(_record.get('weapons', {})),
         'allowed_buff_types': _allowed_buff_types(_record),
         'dta_production_clone': True,
@@ -452,7 +461,10 @@ ALWAYS_AVAILABLE_BUILDING_IDS = set()
 ALWAYS_AVAILABLE_TECH_IDS = set(ALWAYS_AVAILABLE_MOBILE_IDS)
 ENGINEER_UNIT_IDS = frozenset()
 AMPHIBIOUS_TRANSPORT_UNIT_IDS = frozenset()
-LIMITED_HERO_UNIT_IDS = frozenset()
+LIMITED_HERO_UNIT_IDS = frozenset(
+    record['id'] for record in _MOBILE_RECORDS
+    if record.get('build_limit', 0) > 0
+)
 NONTRAINABLE_UNIT_IDS = frozenset()
 MANDATORY_EXCLUDED_BUFF_TYPE_IDS = {}
 SPECIAL_REWARD_UNIT_IDS = frozenset()
@@ -461,6 +473,7 @@ CLONE_REQUIRED_BUFF_TYPES = frozenset(
         'production', 'cost', 'speed', 'armor', 'health', 'damage', 'reload',
         'range', 'sight', 'ammo', 'passenger_capacity', 'cloak', 'sensors',
         'self_healing',
+        'build_limit',
     }
 )
 HOUSE_SCOPED_BUFF_TYPES = frozenset()

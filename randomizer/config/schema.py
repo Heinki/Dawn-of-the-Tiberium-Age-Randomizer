@@ -91,6 +91,7 @@ REQUIRED_SECTIONS = {
         'eva_voice_tags': dict,
         'rewards_per_check_messages': dict,
         'faction_tile_colors': dict,
+        'campaign_tile_colors': dict,
         'light_palette': dict,
         'dark_palette': dict,
     },

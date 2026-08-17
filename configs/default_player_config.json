@@ -99,8 +99,8 @@
         "include_power_buff_rewards": true,
         "unit_buff_catalogue_version": 3,
         "infantry_access_catalogue_version": 1,
-        "power_buff_catalogue_version": 3,
-        "dta_power_catalogue_version": 3,
+        "power_buff_catalogue_version": 4,
+        "dta_power_catalogue_version": 4,
         "enabled_buff_types": [
           "production",
           "cost",
@@ -113,11 +113,12 @@
           "sight",
           "ammo",
           "passenger_capacity",
+          "build_limit",
           "cloak",
           "sensors",
           "self_healing"
         ],
-        "enabled_power_buff_types": ["recharge", "damage", "area"],
+        "enabled_power_buff_types": ["recharge", "damage", "area", "payload"],
         "reward_weights": {
           "main": {
             "unit_unlocks": 100,

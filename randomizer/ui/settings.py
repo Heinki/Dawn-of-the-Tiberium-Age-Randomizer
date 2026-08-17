@@ -1,7 +1,6 @@
 """Advanced and gameplay settings widgets."""
 
 from .starting_unlocks import build_starting_unlocks_tab
-from .enemy_scaling import build_enemy_scaling_settings
 from .general_settings import build_general_settings
 
 from ._builder_dependencies import (
@@ -670,7 +669,7 @@ def _build_gameplay_settings(self, settings_frame):
     )
     self.include_operation_missions_check = ttk.Checkbutton(
         mission_pool_frame,
-        text='Include Special Ops missions',
+        text='Include stand-alone missions',
         variable=self.include_operation_missions_var,
         command=self.on_mission_pool_settings_changed,
     )
@@ -679,7 +678,7 @@ def _build_gameplay_settings(self, settings_frame):
     )
     WidgetTooltip(
         self.include_operation_missions_check,
-        'Includes DTA stand-alone missions grouped under the Special Ops campaign.',
+        'Includes missions from DTA\'s STAND-ALONE MISSIONS category.',
     )
     self.prioritize_no_build_missions_check = ttk.Checkbutton(
         mission_pool_frame,
@@ -796,7 +795,7 @@ def _build_gameplay_settings(self, settings_frame):
         reward_frame,
         text='Unlimited unique / hero units',
         variable=self.unlimited_hero_units_var,
-        command=self.refresh_setting_states,
+        command=self.on_unlimited_hero_units_changed,
     )
     self.unlimited_hero_units_check.grid(row=8, column=0, sticky='w', pady=(4, 0))
     WidgetTooltip(
@@ -809,7 +808,7 @@ def _build_gameplay_settings(self, settings_frame):
         reward_frame,
         text='Include offensive superweapon rewards',
         variable=self.include_superweapon_rewards_var,
-        command=self.on_unlimited_hero_units_changed,
+        command=self.refresh_setting_states,
     )
     self.include_superweapon_rewards_check.grid(row=9, column=0, sticky='w', pady=(4, 0))
     WidgetTooltip(
@@ -825,7 +824,7 @@ def _build_gameplay_settings(self, settings_frame):
     self.include_aid_power_rewards_check.grid(row=11, column=0, sticky='w', pady=(4, 0))
     WidgetTooltip(
         self.include_aid_power_rewards_check,
-        'Adds DTA Chrono Tank and Paratroopers support-power unlocks. Each reward grants a map-local copy only to the scenario player house.',
+        'Adds the DTA Paratroopers support-power unlock. The reward grants a map-local copy only to the scenario player house.',
     )
     self.include_power_buff_rewards_check = ttk.Checkbutton(
         reward_frame,
@@ -907,8 +906,6 @@ def _build_gameplay_settings(self, settings_frame):
             definition['description']
             + ' Existing pool toggles, exclusions, weights, prerequisites, and caps still apply.',
         )
-
-    build_enemy_scaling_settings(self, reward_frame)
 
     arsenal_frame = ttk.LabelFrame(
         settings_frame,

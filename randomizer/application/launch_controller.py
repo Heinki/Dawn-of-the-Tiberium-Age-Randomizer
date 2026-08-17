@@ -75,7 +75,7 @@ from randomizer.dta.difficulty import resolve_mission_difficulty
 from randomizer.dta.access import player_infantry_access_rules
 from randomizer.dta.clones import unit_specific_buff_rules
 from randomizer.dta.enemies import enemy_buff_rules
-from randomizer.dta.powers import player_power_rules
+from randomizer.dta.powers import ensure_power_action_types, player_power_rules
 from randomizer.maps.settings import mission_house_color_rules
 from randomizer.ui.config import (
     PLAYER_COLOR_ENGINE_VALUES,
@@ -612,6 +612,9 @@ throw "Map $name was not found in expandmo*.mix"
                 'MissionInternalName': mission.get('code', ''),
                 'DifficultyName': difficulty.label,
                 'ClientDifficulty': difficulty.client_rank,
+                # DTA can hold the human house at Normal while still scaling
+                # AI Houses from the selected campaign difficulty.
+                'DifficultyModeComputer': abs(difficulty.engine_value - 2),
             })
             SPAWN_INI.write_text(
                 spawn_ini_text(
@@ -627,6 +630,7 @@ throw "Map $name was not found in expandmo*.mix"
                 'Written DTA spawn.ini: Scenario=spawnmap.ini, '
                 f'Side={mission.get("side", 0)}, Difficulty={difficulty.label}, '
                 f'DifficultyModeHuman={human_difficulty}, '
+                f'DifficultyModeComputer={options["DifficultyModeComputer"]}, '
                 f'GameSpeed={game_speed_value}'
             )
         except Exception:
@@ -1001,6 +1005,9 @@ throw "Map $name was not found in expandmo*.mix"
                 buff_allied_helpers=self.active_reward_settings().get(
                     'buff_allied_helpers', False
                 ),
+                unlimited_hero_units=self.active_reward_settings().get(
+                    'unlimited_hero_units', False
+                ),
             )
             access_rules, access_report = player_infantry_access_rules(
                 mission,
@@ -1014,8 +1021,26 @@ throw "Map $name was not found in expandmo*.mix"
                 dta_rules.setdefault(section, {}).update(values)
             for section, values in clone_rules.items():
                 dta_rules.setdefault(section, {}).update(values)
+            updated_power_actions = ensure_power_action_types()
+            if updated_power_actions:
+                self.append_log(
+                    'Installed randomizer power actions: '
+                    + ', '.join(updated_power_actions)
+                )
             power_rules, power_actions, power_report = player_power_rules(
-                mission, active_rewards
+                mission,
+                active_rewards,
+                launch_building_ids=[
+                    item['output_type'] for item in clone_report['applied']
+                    if item.get('category') in {'buildings', 'defenses'}
+                ],
+                paratrooper_unit_id=next((
+                    item.get('output_type', '')
+                    for item in clone_report['applied']
+                    if item.get('unit') == 'E1S'
+                    and item.get('output_type') != 'E1S'
+                ), ''),
+                reserved_rules=dta_rules,
             )
             for section, values in power_rules.items():
                 dta_rules.setdefault(section, {}).update(values)

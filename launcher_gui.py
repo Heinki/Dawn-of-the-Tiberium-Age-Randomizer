@@ -64,7 +64,11 @@ def run_self_check():
     )
     from randomizer.dta.difficulty import resolve_mission_difficulty
     from randomizer.dta.enemies import enemy_buff_rules
-    from randomizer.dta.powers import POWER_SPECS, player_power_rules
+    from randomizer.dta.powers import (
+        POWER_CLONE_ACTION_TYPES,
+        POWER_SPECS,
+        player_power_rules,
+    )
     from randomizer.dta.rules import (
         ALWAYS_AVAILABLE_MOBILE_IDS,
         DEFENSE_BUILDING_IDS,
@@ -76,7 +80,9 @@ def run_self_check():
     )
     from randomizer.launch.options import spawn_ini_text
     from randomizer.maps.settings import mission_house_color_rules
+    from randomizer.application.unlock_data import UnlockDataController
     from randomizer.ui.config import (
+        CAMPAIGN_TILE_COLORS,
         GAME_SPEEDS,
         PLAYER_COLOR_ENGINE_VALUES,
         RAINBOWIZER_COLORS,
@@ -85,6 +91,7 @@ def run_self_check():
         ALWAYS_AVAILABLE_TECH_IDS,
         BUFF_TARGETS,
         REWARD_POOL,
+        buff_group_key,
         canonical_reward,
     )
     from randomizer.config.tuning import movement_speed_ceiling
@@ -94,6 +101,10 @@ def run_self_check():
     )
     from randomizer.rewards.planning import plan_seed_rewards
     from randomizer.rewards.rules import tech_ids_for_rewards
+    from randomizer.rewards.dta_power_buffs import (
+        POWER_BUFF_TYPES,
+        power_buff_stack_limit,
+    )
     from randomizer.missions.catalogue import (
         campaign_mission_counts,
         parse_missions,
@@ -134,6 +145,24 @@ def run_self_check():
                 'ClientDifficulty': default_difficulty.client_rank,
             },
         ) if missions else ''
+        player_normal_mission = next(
+            (mission for mission in missions if mission['code'] == 'M_CRC14'),
+            None,
+        )
+        player_normal_difficulty = (
+            resolve_mission_difficulty(player_normal_mission, 'Hard')
+            if player_normal_mission else None
+        )
+        player_normal_spawn_text = spawn_ini_text(
+            'spawnmap.ini',
+            1,
+            3,
+            {
+                'DifficultyModeComputer': abs(
+                    player_normal_difficulty.engine_value - 2
+                ),
+            },
+        ) if player_normal_difficulty else ''
         counts = campaign_mission_counts(missions)
         reward_names = [reward['name'] for reward in REWARD_POOL]
         damage_reward = next(
@@ -417,19 +446,54 @@ def run_self_check():
         ion_reward = next(
             reward for reward in REWARD_POOL
             if reward.get('superweapon') == 'IonCannonSpecial'
+            and reward.get('dta_player_power')
+        )
+        ion_damage_buff = next(
+            reward for reward in REWARD_POOL
+            if reward.get('superweapon') == 'IonCannonSpecial'
+            and reward.get('power_buff_type') == 'damage'
+        )
+        ion_area_buff = next(
+            reward for reward in REWARD_POOL
+            if reward.get('superweapon') == 'IonCannonSpecial'
+            and reward.get('power_buff_type') == 'area'
         )
         power_rules, power_actions, power_report = player_power_rules(
-            tutorial_two, [ion_reward]
-        )
-        chrono_reward = next(
-            reward for reward in REWARD_POOL
-            if reward.get('superweapon') == 'HuntSeekSpecial'
+            tutorial_two, [ion_reward, ion_damage_buff, ion_area_buff]
         )
         allied_power_mission = next(
             mission for mission in missions if mission['code'] == 'M_CRC14'
         )
-        chrono_rules, chrono_actions, chrono_report = player_power_rules(
-            allied_power_mission, [chrono_reward]
+        allied_factory_rules, _allied_factory_report = (
+            unit_specific_buff_rules(
+                allied_power_mission,
+                [production_reward],
+            )
+        )
+        vortex_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('superweapon') == 'VortexSpecial'
+            and reward.get('dta_player_power')
+        )
+        vortex_rules, vortex_actions, vortex_report = player_power_rules(
+            allied_power_mission,
+            [vortex_reward],
+            launch_building_ids=['RAPROC_PLAYER'],
+        )
+        paradrop_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('superweapon') == 'DropPodSpecial'
+            and reward.get('dta_player_power')
+        )
+        paradrop_payload_buff = next(
+            reward for reward in REWARD_POOL
+            if reward.get('superweapon') == 'DropPodSpecial'
+            and reward.get('power_buff_type') == 'payload'
+        )
+        paradrop_rules, paradrop_actions, paradrop_report = player_power_rules(
+            allied_power_mission,
+            [paradrop_reward, paradrop_payload_buff],
+            paratrooper_unit_id='E1S_PLAYER',
         )
         crash_clone_rules = {}
         crash_clone_reports = {}
@@ -480,6 +544,21 @@ def run_self_check():
             [artillery_cloak_reward],
             buff_allied_helpers=True,
         )
+        route_c13_mission = next(
+            mission for mission in missions if mission['code'] == 'M_CRC13'
+        )
+        aa_truck_speed_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('unit') == 'MFLAK'
+            and reward.get('buff_type') == 'speed'
+        )
+        route_c13_helper_rules, route_c13_helper_report = (
+            unit_specific_buff_rules(
+                route_c13_mission,
+                [aa_truck_speed_reward],
+                buff_allied_helpers=True,
+            )
+        )
         harvester_speed_reward = next(
             reward for reward in REWARD_POOL
             if reward.get('unit') == 'RAHARV'
@@ -495,6 +574,35 @@ def run_self_check():
         }
         refinery_rules, refinery_report = unit_specific_buff_rules(
             allied_helper_mission, [refinery_production_reward]
+        )
+        economy_rules, economy_report = unit_specific_buff_rules(
+            allied_helper_mission,
+            [harvester_speed_reward, refinery_production_reward],
+        )
+        enforcer_rewards = [
+            next(
+                reward for reward in REWARD_POOL
+                if reward.get('unit') == 'BFRT'
+                and (
+                    reward.get('dta_production_access')
+                    if selector == 'access'
+                    else reward.get('buff_type') == selector
+                )
+            )
+            for selector in ('access', 'health', 'damage', 'build_limit')
+        ]
+        enforcer_rules, enforcer_report = unit_specific_buff_rules(
+            allied_helper_mission,
+            enforcer_rewards,
+            access_randomized=True,
+        )
+        unlimited_enforcer_rules, unlimited_enforcer_report = (
+            unit_specific_buff_rules(
+                allied_helper_mission,
+                [enforcer_rewards[0]],
+                access_randomized=True,
+                unlimited_hero_units=True,
+            )
         )
         defense_access_reward = next(
             reward for reward in REWARD_POOL
@@ -540,6 +648,62 @@ def run_self_check():
         nuclear_rules, nuclear_actions, nuclear_report = player_power_rules(
             tutorial_two,
             [nuclear_reward, nuclear_damage_buff, nuclear_area_buff],
+        )
+        _capped_damage_rules, _capped_damage_actions, capped_damage_report = (
+            player_power_rules(
+                tutorial_two,
+                [nuclear_reward] + [nuclear_damage_buff] * 15,
+            )
+        )
+        tooltip_controller = object.__new__(UnlockDataController)
+
+        def power_tooltip_smoke(power_id):
+            unlock = next(
+                reward for reward in REWARD_POOL
+                if reward.get('dta_player_power')
+                and reward.get('superweapon') == power_id
+            )
+            buffs = [
+                reward for reward in REWARD_POOL
+                if reward.get('dta_player_power_buff')
+                and reward.get('superweapon') == power_id
+            ]
+            return tooltip_controller.unlock_dashboard_tooltip({
+                'label': unlock['name'],
+                'status': 'unlocked',
+                'kind': 'power',
+                'condition': '',
+                'privacy': False,
+                'reward': unlock,
+                'sources': {
+                    'earned': [('Self-check', unlock)] + [
+                        ('Self-check', reward) for reward in buffs
+                    ],
+                    'available': [],
+                    'available_unlocks': [],
+                },
+            })
+
+        ion_tooltip = power_tooltip_smoke('IonCannonSpecial')
+        paradrop_tooltip = power_tooltip_smoke('DropPodSpecial')
+        all_power_rewards = [
+            reward for reward in REWARD_POOL
+            if reward.get('kind') == 'superweapon'
+            and reward.get('dta_player_power')
+        ]
+        all_power_rules, all_power_actions, all_power_report = (
+            player_power_rules(
+                tutorial_two,
+                all_power_rewards,
+                reserved_rules=allied_factory_rules,
+            )
+        )
+        retired_power_rules, retired_power_actions, retired_power_report = (
+            player_power_rules(tutorial_two, [{
+                'kind': 'superweapon',
+                'superweapon': 'HuntSeekSpecial',
+                'dta_player_power': True,
+            }])
         )
         nuclear_animation = next(
             (
@@ -673,8 +837,11 @@ def run_self_check():
                 'Toxic Diversion': 7,
                 'It Came From Red Alert!': 3,
                 'Creeping Destruction': 8,
-                'Special Ops': 20,
+                'Stand-Alone Missions': 20,
             },
+            'cr_grid_uses_campaign_green': (
+                CAMPAIGN_TILE_COLORS.get('CR') == '#247a4b'
+            ),
             'dta_puzzle_exists': DTA_PUZZLE_PATH.is_file(),
             'objective_reward_mode': (
                 'victory-only; DTA has no uniform objective-completion signal'
@@ -751,12 +918,47 @@ def run_self_check():
                 } == (
                     {'recharge', 'damage', 'area'}
                     if spec['id'] in {
-                        'AirstrikeSpecial', 'ChemicalSpecial',
+                        'IonCannonSpecial', 'AirstrikeSpecial', 'ChemicalSpecial',
                         'MultiSpecial', 'VortexSpecial',
                     }
+                    else {'recharge', 'payload'}
+                    if spec['id'] == 'DropPodSpecial'
                     else {'recharge'}
                 )
                 for spec in POWER_SPECS
+            ),
+            'dta_power_stack_limits_valid': (
+                {
+                    definition['id']: definition.get('maximum_stacks')
+                    for definition in POWER_BUFF_TYPES
+                } == {
+                    'recharge': 40,
+                    'damage': 10,
+                    'area': 40,
+                    'payload': 40,
+                }
+                and all(
+                    power_buff_stack_limit(reward) == (
+                        10
+                        if reward.get('power_buff_type') == 'damage'
+                        else 40
+                    )
+                    for reward in REWARD_POOL
+                    if reward.get('dta_player_power_buff')
+                )
+                and capped_damage_report['applied'][0]['damage_buffs'] == 10
+                and {
+                    buff_group_key(reward)
+                    for reward in REWARD_POOL
+                    if reward.get('dta_player_power_buff')
+                } == {'recharge', 'damage', 'area', 'payload'}
+            ),
+            'unlock_dashboard_tooltips_render': (
+                'Recharge time 10.0% faster.' in ion_tooltip
+                and 'Damage 15.0% higher.' in ion_tooltip
+                and 'Effect radius +0.5 cells.' in ion_tooltip
+                and 'Recharge time 10.0% faster.' in paradrop_tooltip
+                and 'Delivered infantry +1.' in paradrop_tooltip
             ),
             'dta_power_cameos_complete': (
                 {spec['id'].upper() for spec in POWER_SPECS}
@@ -785,11 +987,23 @@ def run_self_check():
                     for reward in REWARD_POOL
                 )
             ),
+            'dta_retired_chrono_tank_power_ignored': (
+                not retired_power_rules
+                and not retired_power_actions
+                and not retired_power_report['applied']
+                and retired_power_report['skipped'] == [{
+                    'power': 'HuntSeekSpecial',
+                    'reason': 'unsupported_or_retired_power',
+                }]
+            ),
             'dta_power_damage_area_clones_valid': (
                 len(nuclear_actions) == 1
                 and nuclear_report['enemy_grants'] == 0
                 and nuclear_report['applied'][0]['damage_buffs'] == 1
                 and nuclear_report['applied'][0]['area_buffs'] == 1
+                and nuclear_report['applied'][0]['grant_mode'] == 'provider'
+                and nuclear_report['applied'][0]['provider']
+                in nuclear_rules
                 and nuclear_animation.get('ExplosionDamage') == '767'
                 and nuclear_area_warhead.get('CellSpread') == '4.5'
                 and str(nuclear_power_clone.get('WeaponType', '')).startswith(
@@ -798,6 +1012,90 @@ def run_self_check():
                 and not {'ATOMEXPL', 'AtomicWH', 'NukeWeaponS2'}.intersection(
                     nuclear_rules
                 )
+            ),
+            'dta_power_actions_are_unique_and_callable': (
+                len(all_power_actions) == len(POWER_SPECS)
+                and len(all_power_report['applied']) == len(POWER_SPECS)
+                and len({
+                    item.get('action')
+                    for item in all_power_report['applied']
+                    if item.get('action')
+                }) == len(POWER_SPECS)
+                and all(
+                    not item.get('action')
+                    or (
+                        all_power_rules.get(item['clone'], {}).get('Action')
+                        == item['action']
+                        and ini_sections(
+                            GAME_ROOT / 'INI' / 'Action.ini'
+                        ).get('ActionTypes', {}).get(item['action'])
+                        == POWER_CLONE_ACTION_TYPES[item['power'].upper()][1]
+                    )
+                    for item in all_power_report['applied']
+                )
+                and not {
+                    item.get('action')
+                    for item in all_power_report['applied']
+                    if item.get('action')
+                }.intersection({
+                    effective_section(
+                        installed_sections, spec['id']
+                    ).get('Action')
+                    for spec in POWER_SPECS
+                })
+                and {
+                    item[0] for item in POWER_CLONE_ACTION_TYPES.values()
+                } == {
+                    item.get('action')
+                    for item in all_power_report['applied']
+                    if item.get('action')
+                }
+                and len(all_power_report['provider_buildings']) == 4
+                and all(action[0] == '34' for action in all_power_actions)
+            ),
+            'dta_power_lists_preserve_war_factory_clones': (
+                'AWEAP_PLAYER' in allied_factory_rules.get(
+                    'BuildingTypes', {}
+                ).values()
+                and not set(
+                    allied_factory_rules.get('BuildingTypes', {})
+                ).intersection(all_power_rules.get('BuildingTypes', {}))
+            ),
+            'dta_ion_cannon_damage_and_area_buffs_work': (
+                power_rules.get('CombatDamage', {}).get('IonCannonDamage')
+                == '690'
+                and str(power_rules.get('CombatDamage', {}).get(
+                    'IonCannonWarhead', ''
+                )).startswith('DTAIONCANNONWH')
+                and any(
+                    values.get('CellSpread') == '0.8125'
+                    for values in power_rules.values()
+                )
+                and power_report['applied'][0]['damage_buffs'] == 1
+                and power_report['applied'][0]['area_buffs'] == 1
+            ),
+            'dta_paradrop_payload_and_unit_clone_work': (
+                len(paradrop_actions) == 1
+                and paradrop_rules.get('General', {}).get(
+                    'DropPodInfantryMinimum'
+                ) == '2'
+                and paradrop_rules.get('General', {}).get(
+                    'DropPodInfantryMaximum'
+                ) == '2'
+                and paradrop_rules.get('General', {}).get('Paratrooper')
+                == 'E1S_PLAYER'
+                and paradrop_rules.get(
+                    paradrop_report['applied'][0]['clone'], {}
+                ).get('DropPodInfantryMinimum') == '2'
+                and paradrop_rules.get(
+                    paradrop_report['applied'][0]['clone'], {}
+                ).get('DropPodInfantryMaximum') == '2'
+                and paradrop_rules.get(
+                    paradrop_report['applied'][0]['clone'], {}
+                ).get('Paratrooper') == 'E1S_PLAYER'
+                and paradrop_report.get('paratrooper_unit') == 'E1S_PLAYER'
+                and paradrop_report['applied'][0]['payload_buffs'] == 1
+                and paradrop_report['applied'][0]['payload_units'] == '2'
             ),
             'dta_enemy_buffs_exclude_player_family': (
                 enemy_rules.get('Nod', {}).get('Armor') == '1.1'
@@ -824,8 +1122,16 @@ def run_self_check():
                 == {spec['id'].upper() for spec in POWER_SPECS}
             ),
             'dta_ts_leftovers_excluded': not {
-                'HTNKMSAM', 'SMECH', 'UTNK'
+                'HTNKMSAM', 'SMECH', 'UTNK', 'JUMPJET', 'MHQ'
             }.intersection(mobile_ids),
+            'dta_mobile_hq_removed_from_pool': (
+                'MHQ' not in mobile_ids
+                and 'MHQ' not in BUFF_TARGETS
+                and not any(
+                    str(reward.get('unit') or '').upper() == 'MHQ'
+                    for reward in REWARD_POOL
+                )
+            ),
             'dta_special_factions_curated': all(
                 set(BUFF_TARGETS[unit_id]['factions']) == expected
                 for unit_id, expected in {
@@ -840,7 +1146,6 @@ def run_self_check():
                     'BRIG': {'Allies'},
                     'MGI': {'Allies'},
                     'MSA': {'GDI'},
-                    'MHQ': {'GDI'},
                 }.items()
             ) and all(
                 len(target.get('factions', ())) == 1
@@ -936,7 +1241,11 @@ def run_self_check():
                         'BuildTimeMultiplier', 1
                     )
                 )
-                and legacy_refinery.get('FreeUnit') == 'TDHARV'
+                and legacy_refinery.get('FreeUnit')
+                == legacy_outputs.get('TDHARV')
+                and legacy_stack_rules.get(
+                    legacy_outputs.get('TDHARV'), {}
+                ).get('Harvester') == 'yes'
                 and all(
                     'Speed' not in legacy_stack_rules.get(output_id, {})
                     for unit_id, output_id in legacy_outputs.items()
@@ -990,18 +1299,35 @@ def run_self_check():
                 and 'Nod,<none>,DTA Randomizer Earned Powers' not in power_generated_text
                 and '[DTAIONCANNONRNG]' in power_generated_text
             ),
-            'allied_chrono_tank_power_deploys_unit': (
-                len(chrono_report['applied']) == 1
-                and len(chrono_actions) == 1
-                and bool(
-                    chrono_unit := chrono_rules.get('AlliesSide', {}).get(
-                        'HunterSeeker'
-                    )
-                )
-                and chrono_rules.get(chrono_unit, {}).get('HunterSeeker')
+            'missile_powers_use_unrestricted_player_providers': (
+                len(vortex_report['applied']) == 1
+                and len(vortex_actions) == 1
+                and bool(vortex_report['provider_buildings'])
+                and (
+                    vortex_provider := vortex_report[
+                        'provider_buildings'
+                    ][0]['provider']
+                ) in vortex_rules
+                and vortex_rules[vortex_provider].get('NukeSilo')
                 == 'yes'
-                and chrono_unit in chrono_rules.get('VehicleTypes', {}).values()
-                and 'General' not in chrono_rules
+                and vortex_rules[vortex_provider].get('SuperWeapon')
+                == vortex_report['applied'][0]['clone']
+                and vortex_report['applied'][0].get('provider_source')
+                == 'RAPDOX'
+                and vortex_rules[vortex_provider].get('Immune') == 'yes'
+                and vortex_rules[
+                    vortex_report['applied'][0]['clone']
+                ].get('Range') == '9999'
+                and vortex_rules.get(
+                    vortex_rules[
+                        vortex_report['applied'][0]['clone']
+                    ].get('WeaponType'), {}
+                ).get('Range') == '9999'
+                and any(
+                    f'{vortex_report["player_house"]},{vortex_provider},'
+                    in value
+                    for value in vortex_rules.get('Structures', {}).values()
+                )
             ),
             'crashing_unit_weapons_registered': all(
                 (
@@ -1053,7 +1379,7 @@ def run_self_check():
             'reported_roster_corrections_active': (
                 {
                     'TTNKMSL', 'MGI', 'BRIG', 'MFLAK', 'CYBORG',
-                    'GRENL', 'THIEF', 'HIJACK', 'CYP', 'JUMPJET',
+                    'GRENL', 'THIEF', 'HIJACK', 'CYP',
                     'RAIDER', 'MRV', 'STAPC', 'TNKD',
                     'SCARAB', 'TORPCAT', 'FLAKCORV',
                 }.issubset(mobile_ids)
@@ -1065,6 +1391,34 @@ def run_self_check():
                     'name': 'Unlock Missile Tank (2TNKMSL)'
                 }).get('unit') == 'TTNKMSL'
                 and not {'TNKN', 'BRIG'}.intersection(cameo_paths)
+            ),
+            'dta_anti_air_roster_matches_installed_ini': (
+                BUFF_TARGETS.get('SHILKA', {}).get('label') == 'Quad Tank'
+                and set(BUFF_TARGETS.get('SHILKA', {}).get('factions', ()))
+                == {'Soviet'}
+                and BUFF_TARGETS.get('SHILKA', {}).get('special_reward')
+                is False
+                and BUFF_TARGETS.get('MFLAK', {}).get('label')
+                == 'Anti-Aircraft Truck'
+                and set(BUFF_TARGETS.get('MFLAK', {}).get('factions', ()))
+                == {'Allies'}
+                and BUFF_TARGETS.get('MFLAK', {}).get('special_reward')
+                is False
+                and any(
+                    reward.get('unit') == 'MFLAK'
+                    and reward.get('dta_production_access')
+                    for reward in REWARD_POOL
+                )
+            ),
+            'dta_aa_truck_cameo_uses_mflak_art': (
+                'MFLAK' in cameo_paths
+                and cameo_paths['MFLAK'].is_file()
+                and 'SHILKA' in cameo_paths
+                and cameo_paths['MFLAK'].resolve()
+                != cameo_paths['SHILKA'].resolve()
+                and ini_sections(GAME_ROOT / 'INI' / 'Art.ini').get(
+                    'MFLAK', {}
+                ).get('Cameo') == 'MFLKICON'
             ),
             'dta_e1_cameo_extracted': (
                 'E1' in cameo_paths and cameo_paths['E1'].is_file()
@@ -1104,6 +1458,17 @@ def run_self_check():
                     for route in item.get('allied_helper_routes', ())
                 )
             ),
+            'dta_route_c13_ai_aliases_use_buffed_clones': (
+                route_c13_helper_rules.get('MFLAK_PLAYER', {}).get('Speed')
+                == '7'
+                and any(
+                    reference.get('source_type') == 'AIMFLAK'
+                    and route.get('output_type') == 'MFLAK_PLAYER'
+                    for item in route_c13_helper_report['applied']
+                    for route in item.get('allied_helper_routes', ())
+                    for reference in route.get('references_rewritten', ())
+                )
+            ),
             'dta_harvester_clones_keep_harvester_identity': (
                 'RAHARV_PLAYER' in comma_items(
                     harvester_rules.get('General', {}).get('HarvesterUnit')
@@ -1130,6 +1495,40 @@ def run_self_check():
                 )
                 and 'Allies' not in comma_items(
                     refinery_rules.get('RAHARV', {}).get('ForbiddenHouses')
+                )
+            ),
+            'dta_refinery_spawns_working_harvester_clone': (
+                economy_rules.get('RAPROC_PLAYER', {}).get('FreeUnit')
+                == 'RAHARV_PLAYER'
+                and economy_rules.get('RAHARV_PLAYER', {}).get('Harvester')
+                == 'yes'
+                and economy_rules.get('RAHARV_PLAYER', {}).get('Storage')
+                == '28'
+                and 'RAHARV_PLAYER' in comma_items(
+                    economy_rules.get('General', {}).get('HarvesterUnit')
+                )
+                and bool(economy_report['applied'])
+            ),
+            'dta_enforcer_deploy_form_keeps_buffs': (
+                bool(enforcer_report['applied'])
+                and enforcer_rules.get('BFRT_PLAYER', {}).get('BuildLimit')
+                == '2'
+                and enforcer_rules.get('BFRT_PLAYER', {}).get('DeploysInto')
+                == 'DBFRT_PLAYER'
+                and enforcer_rules.get('DBFRT_PLAYER', {}).get('UndeploysInto')
+                == 'BFRT_PLAYER'
+                and int(enforcer_rules.get('DBFRT_PLAYER', {}).get(
+                    'Strength', 0
+                )) > int(effective_section(
+                    installed_sections, 'DBFRT'
+                ).get('Strength', 0))
+                and enforcer_rules.get('DBFRT_PLAYER', {}).get('Primary')
+                != effective_section(installed_sections, 'DBFRT').get('Primary')
+            ),
+            'dta_unlimited_heroes_remove_build_limit': (
+                bool(unlimited_enforcer_report['applied'])
+                and 'BuildLimit' not in unlimited_enforcer_rules.get(
+                    'BFRT_PLAYER', {}
                 )
             ),
             'map_unit_preservation_policy_active': (
@@ -1309,6 +1708,10 @@ def run_self_check():
                     'ClientDifficulty=30',
                 )
             ),
+            'player_normal_keeps_selected_ai_difficulty': (
+                'DifficultyModeHuman=1' in player_normal_spawn_text
+                and 'DifficultyModeComputer=2' in player_normal_spawn_text
+            ),
             'legacy_map_rules_isolated': True,
             'dta_reward_adapter_status': (
                 'all buffs use guarded player-production clones; powers use '
@@ -1323,10 +1726,13 @@ def run_self_check():
             'battle_ini_exists', 'rules_ini_exists', 'window_icon_exists',
             'static_configs_valid', 'all_mission_maps_exist',
             'campaign_grouping_valid', 'dta_puzzle_exists',
+            'cr_grid_uses_campaign_green',
             'no_unreportable_objective_checks',
             'generated_map_has_difficulty_overlay',
             'generated_map_enables_score_screen', 'original_map_unchanged',
-            'spawn_contract_valid', 'legacy_map_rules_isolated',
+            'spawn_contract_valid',
+            'player_normal_keeps_selected_ai_difficulty',
+            'legacy_map_rules_isolated',
             'safe_reward_pool_only',
             'global_buffs_use_player_clones_only',
             'global_armor_removed',
@@ -1343,24 +1749,38 @@ def run_self_check():
             'dta_allied_helpers_use_buffed_clones',
             'dta_harvester_clones_keep_harvester_identity',
             'dta_harvesters_survive_refinery_clones',
+            'dta_refinery_spawns_working_harvester_clone',
+            'dta_enforcer_deploy_form_keeps_buffs',
+            'dta_unlimited_heroes_remove_build_limit',
             'dta_mobile_access_reward_count_valid',
             'dta_essential_mobile_units_always_available',
             'dta_obsolete_aliases_removed', 'dta_special_roster_present',
             'dta_all_mobile_buff_targets_present',
             'dta_arsenal_all_mobile_access_present',
             'dta_power_rewards_present',
-            'allied_chrono_tank_power_deploys_unit',
+            'missile_powers_use_unrestricted_player_providers',
             'dta_power_buff_matrix_valid',
+            'dta_power_stack_limits_valid',
+            'unlock_dashboard_tooltips_render',
             'dta_power_cameos_complete',
             'dta_defense_rewards_complete',
             'dta_firestorm_removed',
+            'dta_retired_chrono_tank_power_ignored',
             'dta_power_damage_area_clones_valid',
+            'dta_power_actions_are_unique_and_callable',
+            'dta_power_lists_preserve_war_factory_clones',
+            'dta_ion_cannon_damage_and_area_buffs_work',
+            'dta_paradrop_payload_and_unit_clone_work',
             'dta_enemy_buffs_exclude_player_family',
             'dta_player_color_list_valid',
             'dta_loose_mission_launch_source_valid',
             'dta_arsenal_power_pool_complete',
             'dta_ts_leftovers_excluded',
+            'dta_mobile_hq_removed_from_pool',
             'dta_special_factions_curated',
+            'dta_anti_air_roster_matches_installed_ini',
+            'dta_aa_truck_cameo_uses_mflak_art',
+            'dta_route_c13_ai_aliases_use_buffed_clones',
             'vinifera_production_clone_generated',
             'all_unit_specific_buffs_use_production_clones',
             'dta_extended_unit_buffs_work',

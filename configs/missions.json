@@ -16,7 +16,7 @@
         "Toxic Diversion",
         "It Came From Red Alert!",
         "Creeping Destruction",
-        "Special Ops"
+        "Stand-Alone Missions"
       ],
       "campaign_by_header": {
         "HEADER_TUTORIAL": "Tutorial",
@@ -29,7 +29,7 @@
         "HEADER_CLASSIC_CAMPAIGNS": "Toxic Diversion",
         "HEADER_ICFRA": "It Came From Red Alert!",
         "HEADER_CD": "Creeping Destruction",
-        "HEADER_STAND_ALONE_MISSIONS": "Special Ops"
+        "HEADER_STAND_ALONE_MISSIONS": "Stand-Alone Missions"
       },
       "fallback_objective_count": 0,
       "starting_unlocked_missions": 3,
@@ -298,7 +298,7 @@
       "Creeping Destruction": [
         "soviet"
       ],
-      "Special Ops": [
+      "Stand-Alone Missions": [
         "gdi",
         "nod",
         "allies",

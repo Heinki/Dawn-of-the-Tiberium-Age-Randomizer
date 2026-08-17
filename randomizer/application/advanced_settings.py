@@ -1174,14 +1174,12 @@ class AdvancedSettingsController:
         self.refresh_progression_setting_states()
         unsupported_vars = (
             self.include_special_buildings_var,
-            self.unlimited_hero_units_var,
             self.share_chaos_role_buffs_var,
         )
         for variable in unsupported_vars:
             variable.set(False)
         for control in (
             self.include_special_buildings_check,
-            self.unlimited_hero_units_check,
             self.share_chaos_role_buffs_check,
         ):
             control.configure(state='disabled')

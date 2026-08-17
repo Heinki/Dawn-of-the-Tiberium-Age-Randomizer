@@ -594,31 +594,6 @@ def _build_info_tabs(self, info_tabs):
     self.bind_all('<F3>', self.find_unlock_next, add='+')
     self.bind_all('<Shift-F3>', self.find_unlock_previous, add='+')
 
-    enemy_buffs_page = ttk.Frame(info_tabs, padding=(8, 8, 8, 8))
-    self.enemy_buffs_tab = enemy_buffs_page
-    enemy_buffs_page.columnconfigure(0, weight=1)
-    enemy_buffs_page.rowconfigure(2, weight=1)
-    info_tabs.add(enemy_buffs_page, text='Enemy Rewards')
-    ttk.Label(
-        enemy_buffs_page,
-        text='Applied AI bonuses',
-        font=('Segoe UI', 10, 'bold'),
-        justify='left',
-    ).grid(row=0, column=0, sticky='ew')
-    ttk.Label(
-        enemy_buffs_page,
-        text='A bonus appears here only after a generated map applies it.',
-        style='Muted.TLabel',
-        wraplength=820,
-        justify='left',
-    ).grid(row=1, column=0, sticky='ew', pady=(1, 6))
-    self.enemy_buff_catalogue_frame = ttk.Frame(enemy_buffs_page)
-    self.enemy_buff_catalogue_frame.grid(
-        row=2, column=0, sticky='nsew'
-    )
-    self.enemy_buff_catalogue_frame.bind(
-        '<Configure>', self.layout_enemy_buff_cards, add='+'
-    )
     info_tabs.bind(
         '<<NotebookTabChanged>>',
         self.on_info_tab_changed,

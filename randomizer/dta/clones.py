@@ -270,9 +270,42 @@ def _allied_helper_context(authored, player_context):
     return {'houses': helper_houses, 'families': families}
 
 
-def _helper_unit_references(authored, unit_id, helper_context):
+def _derived_techno_ids(sections, unit_id):
+    """Return registered TechnoTypes inheriting from one canonical unit."""
+    unit_id = str(unit_id or '').upper()
+    lookup = {
+        str(name).casefold(): (str(name), values)
+        for name, values in sections.items()
+    }
+    registered = {
+        str(value).strip()
+        for list_name in ('InfantryTypes', 'VehicleTypes', 'AircraftTypes')
+        for value in sections.get(list_name, {}).values()
+        if str(value).strip()
+    }
+    matches = {unit_id}
+    for candidate in registered:
+        current = candidate
+        seen = set()
+        while current and current.casefold() not in seen:
+            seen.add(current.casefold())
+            item = lookup.get(current.casefold())
+            if item is None:
+                break
+            base = str(item[1].get('BaseSection') or '').strip()
+            if not base:
+                break
+            if base.casefold() == unit_id.casefold():
+                matches.add(candidate.upper())
+                break
+            current = base
+    return matches
+
+
+def _helper_unit_references(authored, sections, unit_id, helper_context):
     """Find helper placements and helper-exclusive TaskForce entries."""
     unit_id = str(unit_id or '').upper()
+    reference_ids = _derived_techno_ids(sections, unit_id)
     house_families = helper_context['houses']
     by_family = {
         family: {'placements': [], 'taskforce_entries': []}
@@ -281,12 +314,15 @@ def _helper_unit_references(authored, unit_id, helper_context):
     for section in ('Infantry', 'Units', 'Aircraft'):
         for key, value in authored.get(section, {}).items():
             fields = comma_items(value)
-            if len(fields) < 2 or fields[1].upper() != unit_id:
+            if len(fields) < 2 or fields[1].upper() not in reference_ids:
                 continue
             family = house_families.get(fields[0].casefold())
             if family:
                 by_family[family]['placements'].append({
-                    'section': section, 'key': key, 'house': fields[0],
+                    'section': section,
+                    'key': key,
+                    'house': fields[0],
+                    'source_type': fields[1].upper(),
                 })
 
     consumers = {}
@@ -315,9 +351,11 @@ def _helper_unit_references(authored, unit_id, helper_context):
         )
         for key, value in authored.get(section_name, {}).items():
             fields = comma_items(value)
-            if len(fields) >= 2 and fields[1].upper() == unit_id:
+            if len(fields) >= 2 and fields[1].upper() in reference_ids:
                 by_family[family]['taskforce_entries'].append({
-                    'section': section_name, 'key': key,
+                    'section': section_name,
+                    'key': key,
+                    'source_type': fields[1].upper(),
                 })
     return by_family
 
@@ -358,6 +396,17 @@ def _can_player_produce(values, production_house):
 
 def _unit_overrides(values, counts, target):
     overrides = {}
+    if counts['build_limit']:
+        try:
+            base_limit = int(float(
+                values.get('BuildLimit', target.get('build_limit', 0))
+            ))
+        except (TypeError, ValueError):
+            base_limit = 0
+        if base_limit > 0:
+            overrides['BuildLimit'] = str(
+                base_limit + int(counts['build_limit'])
+            )
     if counts['production']:
         try:
             base = float(values.get('BuildTimeMultiplier', 1.0))
@@ -593,6 +642,7 @@ def unit_specific_buff_rules(
     rewards,
     access_randomized=False,
     buff_allied_helpers=False,
+    unlimited_hero_units=False,
 ):
     """Build map-local original buffs or player production clones.
 
@@ -663,13 +713,26 @@ def unit_specific_buff_rules(
             or buff_type not in {
                 'production', 'cost', 'speed', 'armor', 'health', 'damage',
                 'reload', 'range', 'sight', 'ammo', 'passenger_capacity',
-                'cloak', 'sensors', 'self_healing',
+                'build_limit', 'cloak', 'sensors', 'self_healing',
             }
         ):
             continue
         counts_by_unit.setdefault(unit_id, Counter())[buff_type] += 1
 
     catalogue = catalogue_by_id()
+    unlimited_units = set()
+    if unlimited_hero_units:
+        for unit_id, target in catalogue.items():
+            if target.get('build_limit', 0) <= 0:
+                continue
+            values = effective_section(combined, unit_id)
+            if (
+                (access_randomized and unit_id in access_units)
+                or (not access_randomized and _can_player_produce(
+                    values, production_house
+                ))
+            ):
+                unlimited_units.add(unit_id)
     if global_counts:
         for unit_id, target in catalogue.items():
             if (
@@ -706,9 +769,15 @@ def unit_specific_buff_rules(
     occupied = {name.casefold() for name in combined}
     list_offsets = {}
     rules = {}
-    for unit_id in sorted(set(counts_by_unit) | access_units):
+    for unit_id in sorted(
+        set(counts_by_unit) | access_units | unlimited_units
+    ):
         target = catalogue.get(unit_id)
-        if not target or target.get('category') not in TYPE_LIST_BY_CATEGORY:
+        if (
+            not target
+            or not target.get('rewardable')
+            or target.get('category') not in TYPE_LIST_BY_CATEGORY
+        ):
             report['skipped'].append({'unit': unit_id, 'reason': 'unsupported_type'})
             continue
         values = effective_section(combined, unit_id)
@@ -724,12 +793,13 @@ def unit_specific_buff_rules(
             combined,
         )
         production_access = unit_id in access_units
+        unlimited_build_limit = unit_id in unlimited_units
         player_mobile_placements = [
             entry for entry in collision['player_placements']
             if entry['section'] in {'Infantry', 'Units', 'Aircraft'}
         ]
         helper_references = _helper_unit_references(
-            authored, unit_id, helper_context
+            authored, combined, unit_id, helper_context
         )
         is_harvester = unit_id in {
             item.upper()
@@ -774,6 +844,7 @@ def unit_specific_buff_rules(
         use_clone = (
             bool(counts)
             or production_access
+            or unlimited_build_limit
             or identity_collision
             or weapon_collision
         )
@@ -811,21 +882,6 @@ def unit_specific_buff_rules(
                 'collisions': collision['reasons'],
             })
             continue
-        if (
-            use_clone
-            and not production_access
-            and not is_harvester
-            and (
-                values.get('DeploysInto', '').casefold() not in {'', 'none'}
-                or values.get('UndeploysInto', '').casefold() not in {'', 'none'}
-            )
-        ):
-            report['skipped'].append({
-                'unit': unit_id,
-                'reason': 'linked_deploy_identity_not_routed',
-                'collisions': collision['reasons'],
-            })
-            continue
         if not use_clone and not producible and not collision['player_placements']:
             report['skipped'].append({
                 'unit': unit_id,
@@ -844,12 +900,16 @@ def unit_specific_buff_rules(
                 for key in list(clone_values):
                     if (
                         key.casefold() in {
-                            'owner', 'requiredhouses', 'builtat', 'buildlimit',
+                            'owner', 'requiredhouses', 'builtat',
                         }
                         or key.casefold().startswith('prerequisite')
                     ):
                         clone_values.pop(key, None)
                 clone_values['TechLevel'] = '1'
+            if unlimited_build_limit:
+                for key in list(clone_values):
+                    if key.casefold() == 'buildlimit':
+                        clone_values.pop(key, None)
             unit_rules = {
                 **clone_values,
                 'Image': values.get('Image', unit_id),
@@ -917,6 +977,78 @@ def unit_specific_buff_rules(
                     ] = clone_id
                     weapon_clones[marker] = clone_id
                 unit_rules[weapon_key] = clone_id
+
+        linked_route = None
+        if use_clone and not is_harvester:
+            for link_key, reverse_key in (
+                ('DeploysInto', 'UndeploysInto'),
+                ('UndeploysInto', 'DeploysInto'),
+            ):
+                linked_source = str(values.get(link_key) or '').strip()
+                if linked_source.casefold() in {'', 'none'}:
+                    continue
+                linked_values = effective_section(combined, linked_source)
+                linked_target = catalogue.get(linked_source.upper())
+                if not linked_values or not linked_target:
+                    continue
+                linked_output = _clone_id(linked_source, 'PLAYER', occupied)
+                linked_rules = dict(linked_values)
+                linked_rules.pop('BaseSection', None)
+                linked_rules.pop('ForbiddenHouses', None)
+                linked_rules['Image'] = linked_values.get('Image', linked_source)
+                linked_rules['Owner'] = production_house
+                linked_rules['RequiredHouses'] = production_house
+                linked_rules['TechLevel'] = '-1'
+                linked_counts = Counter({
+                    buff_type: count
+                    for buff_type, count in counts.items()
+                    if buff_type in {
+                        'armor', 'health', 'damage', 'reload', 'range',
+                        'sight', 'cloak', 'sensors', 'self_healing',
+                    }
+                })
+                linked_rules.update(
+                    _unit_overrides(linked_values, linked_counts, target)
+                )
+                linked_rules[reverse_key] = output_id
+                for weapon_key in WEAPON_KEYS:
+                    weapon_id = str(linked_values.get(weapon_key) or '').strip()
+                    if not weapon_id:
+                        continue
+                    overrides = _weapon_overrides(
+                        effective_section(combined, weapon_id), linked_counts
+                    )
+                    if not overrides:
+                        continue
+                    linked_weapon = _clone_id(
+                        f'{linked_source}_{weapon_id}', 'PLAYER', occupied
+                    )
+                    linked_weapon_values = dict(
+                        effective_section(combined, weapon_id)
+                    )
+                    linked_weapon_values.pop('BaseSection', None)
+                    linked_weapon_values.update(overrides)
+                    rules[linked_weapon] = linked_weapon_values
+                    weapon_list_key = _next_list_key(
+                        installed, authored, 'WeaponTypes', list_offsets
+                    )
+                    rules.setdefault('WeaponTypes', {})[
+                        weapon_list_key
+                    ] = linked_weapon
+                    linked_rules[weapon_key] = linked_weapon
+                rules[linked_output] = linked_rules
+                list_name = TYPE_LIST_BY_CATEGORY[linked_target['category']]
+                list_key = _next_list_key(
+                    installed, authored, list_name, list_offsets
+                )
+                rules.setdefault(list_name, {})[list_key] = linked_output
+                unit_rules[link_key] = linked_output
+                linked_route = {
+                    'source_type': linked_source.upper(),
+                    'output_type': linked_output,
+                    'link': link_key,
+                }
+                break
 
         helper_original_safe = bool(
             helper_family_fallback_needed
@@ -1029,6 +1161,7 @@ def unit_specific_buff_rules(
         report['applied'].append({
             'unit': unit_id,
             'output_type': output_id,
+            'category': target.get('category'),
             'route': (
                 'player_placement_clone'
                 if placement_only
@@ -1042,9 +1175,29 @@ def unit_specific_buff_rules(
             'production_access': production_access,
             'player_placements_rewritten': rewritten_placements,
             'allied_helper_routes': helper_routes,
+            'linked_deploy_route': linked_route,
             'collisions': collision['reasons'],
         })
     _rewrite_building_references(rules, report, catalogue, combined)
+    output_by_source = {
+        item['unit'].upper(): item['output_type']
+        for item in report['applied']
+    }
+    for refinery_id, refinery_values in combined.items():
+        if (
+            refinery_values.get('Refinery', '').casefold()
+            not in {'yes', 'true', '1'}
+            or '_AI' in refinery_id.upper()
+        ):
+            continue
+        free_unit = str(refinery_values.get('FreeUnit') or '').upper()
+        harvester_output = output_by_source.get(free_unit)
+        if not harvester_output:
+            continue
+        refinery_output = output_by_source.get(
+            refinery_id.upper(), refinery_id
+        )
+        rules.setdefault(refinery_output, {})['FreeUnit'] = harvester_output
     harvester_sources = {
         item.upper()
         for item in comma_items(

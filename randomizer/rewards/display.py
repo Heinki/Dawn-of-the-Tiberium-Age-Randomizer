@@ -125,6 +125,18 @@ def canonical_reward(reward):
             'kind': 'retired',
             'retired_reward': True,
         }
+    if reward.get('dta_production_access'):
+        unit_id = str(reward.get('unit') or '').upper()
+        if unit_id and unit_id not in BUFF_TARGETS:
+            return {
+                'name': f'{reward_name} (retired: unavailable DTA unit)',
+                'description': (
+                    'Disabled because this unit is not part of the DTA '
+                    'Randomizer reward pool.'
+                ),
+                'kind': 'retired',
+                'retired_reward': True,
+            }
     return reward
 
 
@@ -184,6 +196,13 @@ CLONE_REQUIRED_BUFF_TYPES = (
     MAP_GUARDED_BUFF_TYPES
     | {'cost', 'armor', 'speed', 'build_limit', 'building_limit'}
 )
+
+
+def buff_group_key(reward):
+    """Keep each power-buff effect separate despite buff_type='power'."""
+    return reward.get('power_buff_type') or reward.get('buff_type')
+
+
 def reward_display_name(reward):
     reward = canonical_reward(reward)
     if reward.get('enemy_reward'):

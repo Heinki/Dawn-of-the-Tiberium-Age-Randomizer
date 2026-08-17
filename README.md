@@ -7,7 +7,7 @@ This project is the randomizer launcher for DTA 15.1.0 and Vinifera. It reuses t
 ## Current DTA integration
 
 - Reads all 81 installed campaign entries from `INI/Battle.ini`.
-- Groups missions by the installed DTA campaigns: Tutorial, PTTP, CR, Toxic Diversion, It Came From Red Alert!, Creeping Destruction, and Special Ops.
+- Groups missions by the installed DTA campaigns and its STAND-ALONE MISSIONS category.
 - Reads each mission's DTA difficulty labels from `INI/Battle.ini`, including Brutal, Extreme, Ultimate, and Impossible. An unavailable selection falls back to the closest lower label supported by that mission.
 - Generates `spawnmap.ini` from the selected loose DTA mission map without changing the source map.
 - Applies DTA's Easy, Medium, or Hard map-code overlay.
@@ -22,9 +22,9 @@ This project is the randomizer launcher for DTA 15.1.0 and Vinifera. It reuses t
 - Removes obsolete mission aliases such as `E1N`, `E3N`, and `APCN` from the dashboard. Shared units appear in each faction tab that can use them; global house rewards alone use Neutral. Duplicate display names use faction/editor-qualified labels.
 - Excludes the base Tiberian Sun Devil's Tongue, Wolverine, and Disruptor types that are not part of DTA's active roster. Campaign-only units use curated faction ownership instead of appearing under every faction solely because their map-editor definitions list every house.
 - Uses native DTA cameos for active rewards. Railgun Tank and Battle Rig use text-only entries because DTA has no correct native cameo for them.
-- Includes five offensive powers and two support powers. Each is cloned into the generated map and granted only to the exact scenario player house.
+- Includes five offensive powers and one support power. Each is cloned into the generated map and granted only to the exact scenario player house.
 - Includes 12 defensive-building unlocks and their supported production, cost, durability, weapon, range, sight, cloaking, sensor, and self-healing buffs.
-- Offers stackable recharge-speed rewards for all seven powers. Airstrike, both nuclear strikes, and Chrono Vortex also offer player-only damage and effect-radius buffs through cloned weapon, warhead, and animation chains.
+- Offers up to 40 stacks of recharge-speed rewards for all six powers. Airstrike, both nuclear strikes, Chrono Vortex, and Ion Cannon also offer up to 10 damage stacks and up to 40 effect-radius stacks. Paratroopers can gain up to 40 additional deployed infantry, and delivered infantry use the player's buff clone when available.
 - Offers optional enemy armor and production-speed rewards. These target only active hostile production families; any family used by the player or a direct ally is excluded.
 - Uses the 12 colors exposed by DTA's multiplayer options. The Pink UI choice writes DTA's `DarkMagenta` engine color.
 - Awards mission rewards at the observable score-screen victory event. DTA maps do not expose one uniform runtime signal for their varied sub-objectives, so the launcher does not create or display objective-reward checks.
@@ -59,7 +59,7 @@ The self-check does not launch DTA and writes its report to `RandomizerLauncher/
 
 ## Status
 
-The mission catalogue, cameos, map generation, launch contract, broad buffs, unit and defense buffs, production access, player-production clones, seven power unlocks, supported power buffs, optional enemy buffs, Randomizer Arsenal, and Archipelago catalogue are implemented and covered by the non-invasive self-check. Access clones use `TechLevel=1` and remove inherited prerequisites, `BuiltAt`, and `BuildLimit`. Standard mode activates only rewards matching the selected mission's faction; Chaos retains cross-faction access. Old buffs for still-locked units are ignored at launch instead of granting access.
+The mission catalogue, cameos, map generation, launch contract, broad buffs, unit and defense buffs, production access, player-production clones, six power unlocks, supported power buffs, optional enemy buffs, Randomizer Arsenal, and Archipelago catalogue are implemented and covered by the non-invasive self-check. Access clones use `TechLevel=1` and remove inherited prerequisites, `BuiltAt`, and `BuildLimit`. Standard mode activates only rewards matching the selected mission's faction; Chaos retains cross-faction access. Old buffs for still-locked units are ignored at launch instead of granting access.
 
 All 81 active mission maps were checked for map-local power types. The obsolete duplicate `EMPulseSpecial` alias is not a reward.
 
