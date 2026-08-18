@@ -81,7 +81,6 @@ from randomizer.rewards.catalogue import (
     unit_role_equivalents,
 )
 
-from randomizer.rewards.weapon_stats import WEAPON_USER_IDS
 
 from randomizer.config.static import load_static_config
 
@@ -162,9 +161,6 @@ _COMPACT_CLONE_ID_SECOND = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 _FIXED_PLAYER_CLONE_IDS = frozenset({'CHITZ', 'VOLKOV'})
 
-SHARED_WEAPON_USER_IDS = {
-    weapon_id: set(unit_ids)
-    for weapon_id, unit_ids in WEAPON_USER_IDS.items()
-}
+SHARED_WEAPON_USER_IDS = {}
 
 TECHNO_TYPE_LISTS = dict(_MAP_CONFIG['techno_type_lists'])

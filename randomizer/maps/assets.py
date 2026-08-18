@@ -211,20 +211,6 @@ def remove_generated_runtime_assets():
         if definition.get('image') and definition.get('pcx')
         and not definition.get('source_pcx')
     ]
-    try:
-        from randomizer.config.static import load_static_config
-        custom_specs.extend(
-            {
-                'image': config.get('sidebar_image'),
-                'pcx': (config.get('values') or {}).get('SidebarPCX'),
-            }
-            for config in load_static_config(
-                'rewards/catalogue.json'
-            ).get('aid_power_map_configs', ())
-            if config.get('sidebar_image')
-        )
-    except (OSError, ValueError):
-        pass
     for definition in custom_specs:
         try:
             image_name = _asset_name(definition.get('image'), '.png')

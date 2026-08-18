@@ -431,69 +431,11 @@ def ensure_requested_cameos(requested):
 
 
 def ensure_unit_cameos(unit_ids):
-    from randomizer.dta import GAME_ID
-    if GAME_ID == 'dta':
-        from randomizer.dta.cameos import ensure_unit_cameos as ensure_dta_cameos
-        return ensure_dta_cameos(unit_ids)
-
-    from randomizer.maps.assets import custom_sidebar_preview
-    from randomizer.rewards.catalogue import UNIT_SIDEBAR_IMAGES
-
-    cameo_names = art_cameo_names()
-    art_names = rules_art_names()
-    try:
-        from randomizer.rewards.roster import randomizer_unit_roster
-        _paths, _clone_ids, templates = randomizer_unit_roster()
-    except (FileNotFoundError, ValueError):
-        templates = {}
-    requested = {}
-    result = {}
-    for unit_id in unit_ids:
-        unit_id = str(unit_id).upper()
-        sidebar_config = UNIT_SIDEBAR_IMAGES.get(unit_id, {})
-        custom_image = sidebar_config.get('image')
-        if custom_image:
-            result[unit_id] = custom_sidebar_preview(custom_image)
-            continue
-        source_pcx = sidebar_config.get('source_pcx')
-        if source_pcx:
-            requested[unit_id] = source_pcx
-            continue
-        art_id = art_names.get(unit_id)
-        if not art_id:
-            template = templates.get(unit_id, {})
-            art_id = next(
-                (
-                    value
-                    for key, value in template.items()
-                    if str(key).lower() == 'image' and value
-                ),
-                unit_id,
-            )
-        cameo_name = cameo_names.get(str(art_id).upper())
-        if cameo_name:
-            requested[unit_id] = cameo_name
-    result.update(ensure_requested_cameos(requested))
-    return result
+    from randomizer.dta.cameos import ensure_unit_cameos as ensure_dta_cameos
+    return ensure_dta_cameos(unit_ids)
 
 
 def ensure_superweapon_cameos(superweapon_ids, sidebar_overrides=None):
     """Resolve the installed sidebar icon for each requested superweapon."""
-    from randomizer.dta import GAME_ID
-    if GAME_ID == 'dta':
-        from randomizer.dta.cameos import ensure_superweapon_cameos as ensure_dta_cameos
-        return ensure_dta_cameos(superweapon_ids, sidebar_overrides)
-
-    sidebar_names = rules_sidebar_names()
-    sidebar_names.update({
-        str(superweapon_id).upper(): str(cameo_name)
-        for superweapon_id, cameo_name in (sidebar_overrides or {}).items()
-        if cameo_name
-    })
-    requested = {}
-    for superweapon_id in superweapon_ids:
-        superweapon_id = str(superweapon_id).upper()
-        cameo_name = sidebar_names.get(superweapon_id)
-        if cameo_name:
-            requested[superweapon_id] = cameo_name
-    return ensure_requested_cameos(requested)
+    from randomizer.dta.cameos import ensure_superweapon_cameos as ensure_dta_cameos
+    return ensure_dta_cameos(superweapon_ids, sidebar_overrides)

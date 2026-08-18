@@ -10,6 +10,13 @@
       "id": 81063942
     },
     {
+      "name": "A-10 Warthog (A10) Command Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065916
+    },
+    {
       "name": "A-10 Warthog (A10) Drill I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -386,13 +393,6 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064500
-    },
-    {
-      "name": "Allied Chrono Tank Rapid Charging I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81065448
     },
     {
       "name": "Allied Chrono Vortex Amplified Payload I",
@@ -1354,6 +1354,13 @@
       "id": 81065581
     },
     {
+      "name": "Battle Rig (BRIG) Command Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065917
+    },
+    {
       "name": "Battle Rig (BRIG) Drill I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -1522,6 +1529,13 @@
       "id": 81064571
     },
     {
+      "name": "Behemoth Tank (BEHEMOTH) Command Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065918
+    },
+    {
       "name": "Behemoth Tank (BEHEMOTH) Drill I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -1597,6 +1611,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064582
+    },
+    {
+      "name": "Beluminator (BEHEPLSM) Command Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065919
     },
     {
       "name": "Beluminator (BEHEPLSM) Drill I",
@@ -1975,6 +1996,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064028
+    },
+    {
+      "name": "Chrono Tank (CTNK) Command Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065920
     },
     {
       "name": "Chrono Tank (CTNK) Drill I",
@@ -2397,6 +2425,13 @@
       "id": 81065639
     },
     {
+      "name": "Cyborg Prototype (CYP) Command Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065921
+    },
+    {
       "name": "Cyborg Prototype (CYP) Drill I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -2780,6 +2815,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064682
+    },
+    {
+      "name": "Enforcer (BFRT) Command Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065922
     },
     {
       "name": "Enforcer (BFRT) Drill I",
@@ -3496,6 +3538,20 @@
       "id": 81064737
     },
     {
+      "name": "GDI Ion Cannon Amplified Payload I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81065923
+    },
+    {
+      "name": "GDI Ion Cannon Expanded Blast I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81065924
+    },
+    {
       "name": "GDI Ion Cannon Rapid Charging I",
       "classification": "useful",
       "category": "power_buffs",
@@ -4133,6 +4189,13 @@
       "id": 81064778
     },
     {
+      "name": "Harbinger (SCRINTNK) Command Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065925
+    },
+    {
       "name": "Harbinger (SCRINTNK) Drill I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -4467,6 +4530,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065683
+    },
+    {
+      "name": "Hijacker (HIJACK) Command Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065926
     },
     {
       "name": "Hijacker (HIJACK) Drill I",
@@ -4861,6 +4931,13 @@
       "id": 81064837
     },
     {
+      "name": "Ilhemoth (ILHEMOTH) Command Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065927
+    },
+    {
       "name": "Ilhemoth (ILHEMOTH) Drill I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -4945,6 +5022,13 @@
       "id": 81064848
     },
     {
+      "name": "Illuminator (PLSM) Command Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065928
+    },
+    {
       "name": "Illuminator (PLSM) Drill I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -5020,90 +5104,6 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064858
-    },
-    {
-      "name": "Jumpjet Infantry (JUMPJET) Armor Plating I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065691
-    },
-    {
-      "name": "Jumpjet Infantry (JUMPJET) Drill I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065692
-    },
-    {
-      "name": "Jumpjet Infantry (JUMPJET) Firepower I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065693
-    },
-    {
-      "name": "Jumpjet Infantry (JUMPJET) Logistics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065694
-    },
-    {
-      "name": "Jumpjet Infantry (JUMPJET) Mobility I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065695
-    },
-    {
-      "name": "Jumpjet Infantry (JUMPJET) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065696
-    },
-    {
-      "name": "Jumpjet Infantry (JUMPJET) Regeneration I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065846
-    },
-    {
-      "name": "Jumpjet Infantry (JUMPJET) Reinforcement I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065697
-    },
-    {
-      "name": "Jumpjet Infantry (JUMPJET) Sensor Array I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065698
-    },
-    {
-      "name": "Jumpjet Infantry (JUMPJET) Stealth Field I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065699
-    },
-    {
-      "name": "Jumpjet Infantry (JUMPJET) Targeting I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065700
-    },
-    {
-      "name": "Jumpjet Infantry (JUMPJET) Weapon Tuning I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065701
     },
     {
       "name": "Laser Corvette (LASCOR) Armor Plating I",
@@ -5356,6 +5356,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064176
+    },
+    {
+      "name": "M.A.D. Tank (QTNK) Command Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065929
     },
     {
       "name": "M.A.D. Tank (QTNK) Drill I",
@@ -6280,69 +6287,6 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065613
-    },
-    {
-      "name": "Mobile HQ (MHQ) Armor Plating I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064954
-    },
-    {
-      "name": "Mobile HQ (MHQ) Drill I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064955
-    },
-    {
-      "name": "Mobile HQ (MHQ) Logistics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064956
-    },
-    {
-      "name": "Mobile HQ (MHQ) Mobility I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064957
-    },
-    {
-      "name": "Mobile HQ (MHQ) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064958
-    },
-    {
-      "name": "Mobile HQ (MHQ) Regeneration I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065860
-    },
-    {
-      "name": "Mobile HQ (MHQ) Reinforcement I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064959
-    },
-    {
-      "name": "Mobile HQ (MHQ) Sensor Array I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064960
-    },
-    {
-      "name": "Mobile HQ (MHQ) Stealth Field I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064961
     },
     {
       "name": "Mobile Repair Vehicle (MRV) Armor Plating I",
@@ -7584,6 +7528,13 @@
       "id": 81065061
     },
     {
+      "name": "Phase Tank (PTNK) Command Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065930
+    },
+    {
       "name": "Phase Tank (PTNK) Drill I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -7773,6 +7724,13 @@
       "id": 81064290
     },
     {
+      "name": "Project 941 (P941) Command Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065931
+    },
+    {
       "name": "Project 941 (P941) Drill I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -7925,6 +7883,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065087
+    },
+    {
+      "name": "Railgun Tank (TNKN) Command Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065932
     },
     {
       "name": "Railgun Tank (TNKN) Drill I",
@@ -9446,6 +9411,13 @@
       "id": 81065548
     },
     {
+      "name": "Soviet Paratroopers Expanded Deployment I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81065933
+    },
+    {
       "name": "Soviet Paratroopers Rapid Charging I",
       "classification": "useful",
       "category": "power_buffs",
@@ -10804,13 +10776,6 @@
       "id": 81065281
     },
     {
-      "name": "Unlock Allied Chrono Tank",
-      "classification": "progression",
-      "category": "power_unlocks",
-      "repeatable": false,
-      "id": 81065430
-    },
-    {
       "name": "Unlock Allied Chrono Vortex",
       "classification": "progression",
       "category": "power_unlocks",
@@ -10862,7 +10827,7 @@
     {
       "name": "Unlock Anti-Aircraft Truck (MFLAK)",
       "classification": "progression",
-      "category": "special_unlocks",
+      "category": "unit_unlocks",
       "repeatable": false,
       "id": 81065775
     },
@@ -11203,13 +11168,6 @@
       "id": 81065319
     },
     {
-      "name": "Unlock Jumpjet Infantry (JUMPJET)",
-      "classification": "progression",
-      "category": "special_unlocks",
-      "repeatable": false,
-      "id": 81065782
-    },
-    {
       "name": "Unlock Laser Corvette (LASCOR)",
       "classification": "progression",
       "category": "unit_unlocks",
@@ -11313,13 +11271,6 @@
       "category": "special_unlocks",
       "repeatable": false,
       "id": 81065616
-    },
-    {
-      "name": "Unlock Mobile HQ (MHQ)",
-      "classification": "progression",
-      "category": "special_unlocks",
-      "repeatable": false,
-      "id": 81065332
     },
     {
       "name": "Unlock Mobile Repair Vehicle (MRV)",
@@ -11443,7 +11394,7 @@
     {
       "name": "Unlock Quad Tank (SHILKA)",
       "classification": "progression",
-      "category": "special_unlocks",
+      "category": "unit_unlocks",
       "repeatable": false,
       "id": 81065344
     },
@@ -11887,6 +11838,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065391
+    },
+    {
+      "name": "X-O Power Suit (XO) Command Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065934
     },
     {
       "name": "X-O Power Suit (XO) Drill I",
@@ -13193,7 +13151,7 @@
       ]
     }
   ],
-  "catalogue_checksum": "3faafec2facb69815bbbc0467fa3621acd1f04fdc6fecd607d226b694c64cd6e",
+  "catalogue_checksum": "6b101fef3f2d326fe7add3e37e8bc9b8b28a474091113144dc6a7f3deb2fa463",
   "locations": [
     {
       "name": "Tutorial Mission 1 - Mission Complete - Reward 1",

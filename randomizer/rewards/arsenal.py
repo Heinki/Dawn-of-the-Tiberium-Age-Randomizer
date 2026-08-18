@@ -105,23 +105,8 @@ def arsenal_unit_type(unit_id, target=None):
 
 
 def _template_tech_levels():
-    from randomizer.dta import GAME_ID
-    if GAME_ID == 'dta':
-        return {}
-    from randomizer.rewards.roster import randomizer_unit_roster
-
-    _paths, _clone_ids, templates = randomizer_unit_roster()
-    levels = {}
-    for unit_id, values in templates.items():
-        raw = next(
-            (value for key, value in values.items() if str(key).lower() == 'techlevel'),
-            1,
-        )
-        try:
-            levels[unit_id.upper()] = max(1, int(raw))
-        except (TypeError, ValueError):
-            levels[unit_id.upper()] = 1
-    return levels
+    # DTA rewards come from installed Rules.ini rather than MO roster snapshots.
+    return {}
 
 
 def _root_unit_for_reward(reward, tech_ids):

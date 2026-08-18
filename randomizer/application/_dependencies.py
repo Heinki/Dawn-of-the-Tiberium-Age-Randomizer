@@ -216,7 +216,6 @@ from randomizer.missions.safety import (
     tier_one_unit_ids,
     tier_one_role_label,
 )
-from randomizer.maps.pipeline import prepare_hooked_map as prepare_hooked_mission_map
 from randomizer.maps.progress_hooks import NEXT_OBJECTIVE_CHECK_ID
 from randomizer.missions.overrides import (
     MISSION_ORIGINAL_MCV_ACCESS_IDS,

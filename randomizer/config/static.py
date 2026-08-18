@@ -135,6 +135,16 @@ def _synchronize_packaged_configs():
         if previous_hash == target_hash and target_hash != bundled_hash:
             shutil.copy2(bundled, target)
 
+    # Remove obsolete bundled defaults only when user has not edited them.
+    # This keeps old MO placeholder JSON files from surviving DTA upgrades.
+    if previous_hashes is not None:
+        for relative_name, previous_hash in previous_hashes.items():
+            if relative_name in bundled_hashes:
+                continue
+            target = STATIC_CONFIG_DIR / Path(relative_name)
+            if target.is_file() and _file_sha256(target) == previous_hash:
+                target.unlink()
+
     _write_visible_manifest(bundled_hashes)
     _PACKAGED_CONFIGS_SYNCHRONIZED = True
 

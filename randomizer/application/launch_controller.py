@@ -51,7 +51,6 @@ from ._dependencies import (
     mix_reader_assembly_paths,
     patch_large_ini_key,
     powershell_mix_reader_load_script,
-    prepare_hooked_mission_map,
     read_text,
     remove_generated_unit_art,
     set_ini_value_lines,
@@ -595,9 +594,6 @@ throw "Map $name was not found in expandmo*.mix"
                 section_rules.pop('BuildLimit', None)
             section_rules.update(values)
         return rule_sections
-
-    def prepare_hooked_map(self, mission, extra_rules=None):
-        return prepare_hooked_mission_map(self, mission, extra_rules=extra_rules)
 
     def write_spawn_ini(self, mission, difficulty, game_speed_value):
         try:
