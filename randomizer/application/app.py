@@ -457,6 +457,8 @@ class LauncherApp(
             if build_limit_var is not None:
                 build_limit_var.set(False)
         self.log_visible_var = tk.BooleanVar(value=False)
+        self.mission_search_var = tk.StringVar(value='')
+        self.unlock_dashboard_search_var = tk.StringVar(value='')
         self.unlock_search_var = tk.StringVar(value='')
         self.header_summary_var = tk.StringVar(value='')
         self.unlock_search_current = None
