@@ -2,57 +2,20 @@
 
 from hashlib import sha1
 
+from randomizer.config.static import static_config_section
 from randomizer.core.paths import GAME_ROOT
 from randomizer.dta.clones import _player_production_context
 from randomizer.dta.maps import mission_source_path
 from randomizer.dta.rules import effective_section, ini_sections
 
-
+POWER_SPECS = tuple(static_config_section(
+    'rewards/powers.json', 'powers', list
+))
+POWER_SPEC_BY_ID = {spec['id'].upper(): spec for spec in POWER_SPECS}
 POWER_EFFECT_CHAINS = {
-    'AIRSTRIKESPECIAL': {
-        'root': 'AIRSINIT',
-        'animations': (
-            'AIRSINIT', 'AIRSTIMR', 'AIRSBOMB', 'AIRSEXPL', 'AIRSSPRD',
-            'AIRSSTRT', 'AIRSAPPR', 'AIRSSHOT', 'AIRSMISS', 'AIRSATTK',
-            'AIRSEXIT',
-        ),
-        'damage_fields': {'AIRSEXPL': 'Damage', 'AIRSSPRD': 'Damage'},
-        'radius_fields': {'AIRSEXPL': 'DamageRadius', 'AIRSSPRD': 'DamageRadius'},
-    },
-    'CHEMICALSPECIAL': {
-        'root': 'NUKEINIT',
-        'animations': ('NUKEINIT', 'NUKEDOWN', 'ATOMEXPL'),
-        'damage_fields': {'ATOMEXPL': 'ExplosionDamage'},
-        'area_warheads': {'ATOMEXPL': 'AtomicWH'},
-    },
-    'MULTISPECIAL': {
-        'root': 'NUKEINIT',
-        'animations': ('NUKEINIT', 'NUKEDOWN', 'ATOMEXPL'),
-        'damage_fields': {'ATOMEXPL': 'ExplosionDamage'},
-        'area_warheads': {'ATOMEXPL': 'AtomicWH'},
-    },
-    'VORTEXSPECIAL': {
-        'root': 'REVERSED_CHRONOSHIFT',
-        'animations': (
-            'REVERSED_CHRONOSHIFT', 'R_CHRONOSHIFT_OUTER',
-            'CHRONO_VORTEX', 'CHRONO_VORTEX_CENTER',
-            'CHRONO_VORTEX_SHADOW', 'CHRONO_VORTEX_LIGHTNING',
-        ),
-        'damage_fields': {
-            'CHRONO_VORTEX': 'Damage',
-            'CHRONO_VORTEX_LIGHTNING': 'Damage',
-        },
-        'area_warheads': {'CHRONO_VORTEX': 'VortexWH'},
-    },
-}
-
-# Missile powers need a real silo-class provider. Copying the power's native
-# launch building preserves engine-specific behavior before player isolation.
-POWER_PROVIDER_SOURCES = {
-    'AIRSTRIKESPECIAL': 'BUILDCONST',
-    'CHEMICALSPECIAL': 'TMPL',
-    'MULTISPECIAL': 'RAMSLO',
-    'VORTEXSPECIAL': 'RAPDOX',
+    spec['id'].upper(): spec['effect']
+    for spec in POWER_SPECS
+    if spec.get('effect')
 }
 
 ANIMATION_REFERENCE_FIELDS = {
@@ -64,73 +27,12 @@ ANIMATION_REFERENCE_FIELDS = {
 # loads ActionTypes from Action.ini before it reads the scenario, so these
 # stable identities are installed there before starting the game.
 POWER_CLONE_ACTION_TYPES = {
-    'IONCANNONSPECIAL': (
-        'DTAIONCANNONSPECIALACT', 'ChemBomb,ChemBomb'
-    ),
-    'AIRSTRIKESPECIAL': (
-        'DTAAIRSTRIKESPECIALACT', 'NuclearBomb,NuclearBomb'
-    ),
-    'CHEMICALSPECIAL': (
-        'DTACHEMICALSPECIALACT', 'AirStrike,AirStrike'
-    ),
-    'VORTEXSPECIAL': (
-        'DTAVORTEXSPECIALACT', 'EMPulse,EMPulse'
-    ),
-    'MULTISPECIAL': (
-        'DTAMULTISPECIALACT', 'AirStrike,AirStrike'
-    ),
-    'DROPPODSPECIAL': (
-        'DTADROPPODSPECIALACT', 'NuclearBomb,NuclearBomb'
-    ),
+    spec['id'].upper(): (
+        spec['action']['id'],
+        f'{spec["action"]["cursor"]},{spec["action"]["no_cursor"]}',
+    )
+    for spec in POWER_SPECS
 }
-
-
-POWER_SPECS = (
-    {
-        'id': 'IonCannonSpecial',
-        'label': 'GDI Ion Cannon',
-        'description': 'Grants a repeating player-only Ion Cannon.',
-        'factions': ('GDI',),
-        'category': 'offensive',
-    },
-    {
-        'id': 'AirstrikeSpecial',
-        'label': 'GDI Airstrike',
-        'description': 'Grants a repeating player-only Airstrike.',
-        'factions': ('GDI',),
-        'category': 'offensive',
-    },
-    {
-        'id': 'ChemicalSpecial',
-        'label': 'Nod Nuclear Strike',
-        'description': 'Grants a repeating player-only Nod Nuclear Strike.',
-        'factions': ('Nod',),
-        'category': 'offensive',
-    },
-    {
-        'id': 'VortexSpecial',
-        'label': 'Allied Chrono Vortex',
-        'description': 'Grants a repeating player-only Chrono Vortex.',
-        'factions': ('Allies',),
-        'category': 'offensive',
-    },
-    {
-        'id': 'MultiSpecial',
-        'label': 'Soviet Nuclear Strike',
-        'description': 'Grants a repeating player-only Soviet Nuclear Strike.',
-        'factions': ('Soviet',),
-        'category': 'offensive',
-    },
-    {
-        'id': 'DropPodSpecial',
-        'label': 'Soviet Paratroopers',
-        'description': 'Grants the repeating Soviet Paratroopers support power.',
-        'factions': ('Soviet',),
-        'category': 'aid',
-    },
-)
-
-POWER_SPEC_BY_ID = {spec['id'].upper(): spec for spec in POWER_SPECS}
 MAX_TYPE_ID_LENGTH = 23
 
 
@@ -206,6 +108,142 @@ def ensure_power_action_types(path=None):
     return changed
 
 
+def _without_managed_blocks(lines, marker):
+    start = f'; BEGIN {marker}'
+    end = f'; END {marker}'
+    output = []
+    skipping = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith(start):
+            skipping = True
+            continue
+        if skipping and stripped.startswith(end):
+            skipping = False
+            continue
+        if not skipping:
+            output.append(line)
+    return output
+
+
+def _write_managed_ini_types(path, list_entries, sections, marker):
+    """Replace isolated randomizer type blocks without touching native data."""
+    raw = path.read_text(encoding='cp1252')
+    newline = '\r\n' if '\r\n' in raw else '\n'
+    trailing_newline = raw.endswith(('\r', '\n'))
+    lines = _without_managed_blocks(raw.splitlines(), marker)
+
+    for list_name, type_ids in list_entries.items():
+        type_ids = list(dict.fromkeys(
+            str(type_id).strip() for type_id in type_ids
+            if str(type_id).strip()
+        ))
+        if not type_ids:
+            continue
+        section_start = next(
+            (
+                index for index, line in enumerate(lines)
+                if line.strip().casefold() == f'[{list_name}]'.casefold()
+            ),
+            None,
+        )
+        if section_start is None:
+            if lines and lines[-1].strip():
+                lines.append('')
+            lines.append(f'[{list_name}]')
+            section_start = len(lines) - 1
+        section_end = next(
+            (
+                index for index in range(section_start + 1, len(lines))
+                if lines[index].strip().startswith('[')
+                and lines[index].strip().endswith(']')
+            ),
+            len(lines),
+        )
+        keys = []
+        for line in lines[section_start + 1:section_end]:
+            content = line.split(';', 1)[0]
+            key, separator, _value = content.partition('=')
+            if separator and key.strip().isdigit():
+                keys.append(int(key.strip()))
+        next_key = max(keys, default=0) + 1
+        block = [f'; BEGIN {marker} {list_name}']
+        block.extend(
+            f'{next_key + offset}={type_id}'
+            for offset, type_id in enumerate(type_ids)
+        )
+        block.append(f'; END {marker} {list_name}')
+        insertion_index = section_end
+        while (
+            insertion_index > section_start + 1
+            and not lines[insertion_index - 1].strip()
+        ):
+            insertion_index -= 1
+        lines[insertion_index:insertion_index] = block
+
+    if sections:
+        if lines and lines[-1].strip():
+            lines.append('')
+        lines.append(f'; BEGIN {marker} Sections')
+        for section, values in sections.items():
+            lines.append(f'[{section}]')
+            lines.extend(
+                f'{key}={value}' for key, value in values.items()
+                if value is not None
+            )
+            lines.append('')
+        if lines and not lines[-1].strip():
+            lines.pop()
+        lines.append(f'; END {marker} Sections')
+
+    output = newline.join(lines)
+    if trailing_newline:
+        output += newline
+    if output == raw:
+        return False
+    temporary = path.with_name(f'{path.name}.randomizer.tmp')
+    temporary.write_bytes(output.encode('cp1252'))
+    temporary.replace(path)
+    return True
+
+
+def ensure_power_runtime_types(rule_sections, art_sections, rules_path=None, art_path=None):
+    """Install dynamic helper types where DTA's Rules and Art loaders see them."""
+    rules_path = rules_path or GAME_ROOT / 'INI' / 'Rules.ini'
+    art_path = art_path or GAME_ROOT / 'INI' / 'Art.ini'
+    rule_sections = {
+        section: dict(values)
+        for section, values in (rule_sections or {}).items()
+    }
+    art_sections = {
+        section: dict(values)
+        for section, values in (art_sections or {}).items()
+    }
+    rule_lists = {
+        list_name: list(rule_sections.pop(list_name, {}).values())
+        for list_name in ('WeaponTypes', 'Warheads')
+    }
+    art_lists = {
+        'Animations': list(art_sections.pop('Animations', {}).values())
+    }
+    changed = []
+    if _write_managed_ini_types(
+        rules_path,
+        rule_lists,
+        rule_sections,
+        'DTA Randomizer Power Rules',
+    ):
+        changed.append(rules_path.name)
+    if _write_managed_ini_types(
+        art_path,
+        art_lists,
+        art_sections,
+        'DTA Randomizer Power Art',
+    ):
+        changed.append(art_path.name)
+    return changed
+
+
 def _clone_type_id(source_id, occupied):
     stem = str(source_id).upper().removesuffix('SPECIAL')
     candidate = f'DTA{stem}RNG'
@@ -277,26 +315,27 @@ def _clone_power_effect_chain(
     occupied,
     list_offsets,
 ):
-    """Clone animation damage/radius chains for one player-only power."""
+    """Build isolated Rules.ini and Art.ini helpers for one buffed power."""
     chain = POWER_EFFECT_CHAINS.get(source_id.upper())
     damage_count = buff_counts.get('damage', 0)
     area_count = buff_counts.get('area', 0)
     weapon_id = str(power_values.get('WeaponType') or '').strip()
-    if not chain or not weapon_id:
-        return {}, power_values
+    if not chain or not weapon_id or not (damage_count or area_count):
+        return {}, {}, power_values
 
     mission_rules = {
         section: dict(values) for section, values in installed.items()
     }
     for section, values in authored.items():
         mission_rules.setdefault(section, {}).update(values)
-    output = {}
+    rule_output = {}
+    art_output = {}
 
     def register(list_name, type_id):
         key = _next_list_key(
             installed, authored, list_name, list_offsets
         )
-        output.setdefault(list_name, {})[key] = type_id
+        rule_output.setdefault(list_name, {})[key] = type_id
 
     cloned_warheads = {}
 
@@ -316,7 +355,7 @@ def _clone_power_effect_chain(
                 clone_values['CellSpread'] = f'{spread:.3f}'.rstrip('0').rstrip('.')
             except (TypeError, ValueError):
                 pass
-        output[clone_id] = clone_values
+        rule_output[clone_id] = clone_values
         register('Warheads', clone_id)
         cloned_warheads[marker] = clone_id
         return clone_id
@@ -355,15 +394,18 @@ def _clone_power_effect_chain(
             clone_values['Warhead'] = clone_warhead(
                 area_warhead, expand_area=True
             )
-        output[animation_ids[animation_id]] = clone_values
-        register('Animations', animation_ids[animation_id])
+        art_output[animation_ids[animation_id]] = clone_values
+        animation_key = str(len(art_output))
+        art_output.setdefault('Animations', {})[
+            animation_key
+        ] = animation_ids[animation_id]
 
     weapon_values = effective_section(mission_rules, weapon_id)
     impact_warhead = str(weapon_values.get('Warhead') or '').strip()
     if not impact_warhead:
-        return {}, power_values
+        return {}, {}, power_values
     impact_clone = clone_warhead(impact_warhead)
-    output[impact_clone]['AnimList'] = animation_ids[chain['root']]
+    rule_output[impact_clone]['AnimList'] = animation_ids[chain['root']]
     weapon_clone = _clone_auxiliary_id(weapon_id, 'WP', occupied)
     weapon_clone_values = dict(weapon_values)
     weapon_clone_values.pop('BaseSection', None)
@@ -371,12 +413,12 @@ def _clone_power_effect_chain(
     # The hidden launch provider is placed near the player's home cell. Native
     # launch-weapon ranges otherwise make distant targets silently fail.
     weapon_clone_values['Range'] = '9999'
-    output[weapon_clone] = weapon_clone_values
+    rule_output[weapon_clone] = weapon_clone_values
     register('WeaponTypes', weapon_clone)
     enhanced_power = dict(power_values)
     enhanced_power['WeaponType'] = weapon_clone
     enhanced_power['Range'] = '9999'
-    return output, enhanced_power
+    return rule_output, art_output, enhanced_power
 
 
 def _clone_ion_cannon_effect(
@@ -426,16 +468,51 @@ def _clone_ion_cannon_effect(
     return output
 
 
-def _mission_home_coordinates(authored):
-    home_waypoint = str(authored.get('Basic', {}).get('HomeCell') or '').strip()
-    raw_cell = str(authored.get('Waypoints', {}).get(home_waypoint) or '').strip()
-    if not raw_cell:
-        raw_cell = next(iter(authored.get('Waypoints', {}).values()), '')
+def _provider_coordinates(authored, reserved):
+    """Choose an unused cell in TS's off-map diamond buffer."""
+    raw_size = str(authored.get('Map', {}).get('Size') or '0,0,100,100')
     try:
-        packed = int(raw_cell)
+        _map_x, _map_y, width, height = (
+            int(part.strip()) for part in raw_size.split(',')[:4]
+        )
     except (TypeError, ValueError):
-        return 1, 1
-    return packed // 1000, packed % 1000
+        width, height = 100, 100
+    width = max(32, width)
+    height = max(32, height)
+    occupied = set(reserved)
+    for section in ('Structures', 'Units', 'Infantry', 'Aircraft'):
+        for value in authored.get(section, {}).values():
+            parts = [item.strip() for item in str(value).split(',')]
+            if len(parts) < 5:
+                continue
+            try:
+                occupied.add((int(parts[3]), int(parts[4])))
+            except (TypeError, ValueError):
+                continue
+    # TS map cells are a diamond transformed from rectangular map coordinates:
+    # iso_x = height + rect_x - rect_y; iso_y = rect_x + rect_y. A negative
+    # rect_x lies in the allocated buffer just outside the playable left edge.
+    # DTA uses the same buffer for PASTRP helper buildings. Keeping launchers
+    # here prevents them from occupying or colliding with a mission base.
+    margin = 8
+    spacing = 12
+    for index in range(32):
+        lane = index // 8
+        slot = index % 8
+        rect_x = -margin - lane * 2
+        rect_y = 20 + slot * spacing
+        if rect_y >= height - 8:
+            rect_y = 8 + slot * max(4, (height - 16) // 8)
+        candidate = (
+            height + rect_x - rect_y,
+            rect_x + rect_y,
+        )
+        if candidate[0] > 0 and candidate[1] > 0 and candidate not in occupied:
+            reserved.add(candidate)
+            return candidate
+    candidate = (max(1, height - margin - 20), max(1, 20 - margin))
+    reserved.add(candidate)
+    return candidate
 
 
 def player_power_rules(
@@ -497,6 +574,7 @@ def player_power_rules(
         str(section).casefold()
         for section in set(installed) | set(authored) | set(art)
         | set(reserved_rules)
+        if not str(section).upper().startswith('DTA')
     }
     list_offsets = {}
     list_keys = set(installed.get('SuperWeaponTypes', {})) | set(
@@ -505,9 +583,10 @@ def player_power_rules(
     numeric_keys = [int(key) for key in list_keys if str(key).isdigit()]
     next_key = max(numeric_keys, default=0) + 1
     rules = {}
+    runtime_rule_sections = {}
+    runtime_art_sections = {}
     actions = []
-    provider_x, provider_y = _mission_home_coordinates(authored)
-    provider_count = 0
+    provider_cells = set()
     seen = set()
     power_buff_counts = {}
     # Local import avoids the definition module's catalogue-time import of
@@ -537,19 +616,12 @@ def player_power_rules(
                 'reason': 'unsupported_or_retired_power',
             })
             continue
-        source_values = effective_section(mission_rules, source_id)
-        if not source_values or not source_values.get('Type'):
-            source_values = dict(spec.get('template', {}))
-        if not source_values or not source_values.get('Type'):
+        configured_values = spec.get('values')
+        if not isinstance(configured_values, dict) or not configured_values.get('Type'):
             report['skipped'].append({'power': source_id, 'reason': 'missing_power_rules'})
             continue
         clone_id = _clone_type_id(source_id, occupied)
-        clone_values = dict(source_values)
-        clone_values.pop('BaseSection', None)
-        clone_values['IsPowered'] = 'false'
-        clone_values['Name'] = POWER_SPEC_BY_ID.get(
-            source_id.upper(), {}
-        ).get('label', clone_values.get('Name', source_id))
+        clone_values = dict(configured_values)
         clone_action, _cursor_pair = POWER_CLONE_ACTION_TYPES.get(
             source_id.upper(), ('', '')
         )
@@ -565,7 +637,7 @@ def player_power_rules(
                 )
             except (TypeError, ValueError):
                 pass
-        effect_rules, clone_values = _clone_power_effect_chain(
+        effect_rules, effect_art, clone_values = _clone_power_effect_chain(
             source_id,
             clone_values,
             buff_counts,
@@ -576,7 +648,14 @@ def player_power_rules(
             list_offsets,
         )
         for section, values in effect_rules.items():
-            rules.setdefault(section, {}).update(values)
+            runtime_rule_sections.setdefault(section, {}).update(values)
+        for section, values in effect_art.items():
+            if section == 'Animations':
+                registered = runtime_art_sections.setdefault(section, {})
+                for animation_id in values.values():
+                    registered[str(len(registered) + 1)] = animation_id
+            else:
+                runtime_art_sections.setdefault(section, {}).update(values)
         if source_id.upper() == 'IONCANNONSPECIAL':
             ion_rules = _clone_ion_cannon_effect(
                 buff_counts,
@@ -588,27 +667,33 @@ def player_power_rules(
             for section, values in ion_rules.items():
                 rules.setdefault(section, {}).update(values)
         rules[clone_id] = clone_values
-        if source_id.upper() == 'DROPPODSPECIAL':
+        payload = spec.get('payload')
+        payload_units = ''
+        if payload:
             payload_count = buff_counts.get('payload', 0)
-            general = effective_section(mission_rules, 'General')
-            payload_totals = {}
-            for key in ('DropPodInfantryMinimum', 'DropPodInfantryMaximum'):
-                try:
-                    base_count = int(float(general.get(key, 1)))
-                except (TypeError, ValueError):
-                    base_count = 1
-                payload_totals[key] = str(max(1, base_count + payload_count))
-            # DTA reads these globally; keep them on the cloned power as well so
-            # Vinifera builds that support per-power values receive the same data.
-            rules.setdefault('General', {}).update(payload_totals)
-            clone_values.update(payload_totals)
-            paratrooper_unit_id = str(paratrooper_unit_id or '').strip()
-            if paratrooper_unit_id:
-                rules.setdefault('General', {})['Paratrooper'] = (
-                    paratrooper_unit_id
-                )
-                clone_values['Paratrooper'] = paratrooper_unit_id
-                report['paratrooper_unit'] = paratrooper_unit_id
+            aircraft_id = payload['aircraft_id']
+            capacity_field = payload['capacity_field']
+            aircraft = effective_section(mission_rules, aircraft_id)
+            try:
+                base_capacity = int(float(aircraft.get(
+                    capacity_field, payload['baseline_capacity']
+                )))
+            except (TypeError, ValueError):
+                base_capacity = int(payload['baseline_capacity'])
+            payload_total = max(
+                1,
+                base_capacity
+                + payload_count * int(payload['units_per_buff']),
+            )
+            # DTA's Vinifera paradrop hook constructs one BADGER task force and
+            # hardcodes its infantry quantity to BADGER->Max_Passengers(). The
+            # vanilla General keys and cloned SuperWeaponType payload keys are
+            # never read by this implementation.
+            rules.setdefault(aircraft_id, {})[capacity_field] = str(
+                payload_total
+            )
+            payload_units = str(payload_total)
+            report['paratrooper_unit'] = 'E1'
         rules.setdefault('SuperWeaponTypes', {})[str(next_key)] = clone_id
         runtime_index = len(runtime_types)
         runtime_types.append(clone_id)
@@ -616,28 +701,23 @@ def player_power_rules(
         next_key += 1
         provider_id = ''
         grant_mode = 'trigger'
-        if clone_values.get('Type', '').casefold() in {
-            'multimissile', 'chemmissile'
-        }:
+        provider = spec.get('provider')
+        if provider:
             provider_id = _clone_auxiliary_id(source_id, 'PROVIDER', occupied)
-            provider_source = POWER_PROVIDER_SOURCES.get(
-                source_id.upper(), 'BUILDCONST'
+            provider_source = str(provider.get('source') or '').strip()
+            source_provider_values = effective_section(
+                mission_rules, provider_source
             )
-            provider_values = dict(
-                effective_section(mission_rules, provider_source)
-            )
-            provider_values.pop('BaseSection', None)
-            provider_values.pop('BridgeRepairHut', None)
-            for key in (
-                'Prerequisite', 'PrerequisiteOverride', 'ForbiddenHouses',
-                'BuildLimit', 'AIBuildThis', 'Factory', 'WeaponsFactory',
-                'IsTemple', 'Capturable', 'Crewed', 'PoweredSpecial',
-            ):
-                provider_values.pop(key, None)
+            provider_values = {
+                'BaseSection': provider_source,
+                'Image': str(
+                    source_provider_values.get('Image') or provider_source
+                ),
+            }
+            provider_values.update(provider.get('values') or {})
             provider_values.update({
-                'Image': 'INLITE',
                 'Name': f'{clone_values["Name"]} Provider',
-                'Strength': '1',
+                'Strength': '60000',
                 'Owner': context['production_house'],
                 'RequiredHouses': context['production_house'],
                 'TechLevel': '-1',
@@ -664,13 +744,14 @@ def player_power_rules(
             structure_key = _next_list_key(
                 installed, allocation_authored, 'Structures', list_offsets
             )
-            offset = provider_count
-            provider_count += 1
+            provider_x, provider_y = _provider_coordinates(
+                authored, provider_cells
+            )
             rules.setdefault('Structures', {})[structure_key] = ','.join((
                 player_house,
                 provider_id,
                 '256',
-                str(provider_x + offset),
+                str(provider_x),
                 str(provider_y),
                 '0', 'None', '0', '0', '1', '0', '0',
                 'None', 'None', 'None', '1', '0',
@@ -680,11 +761,13 @@ def player_power_rules(
                 'provider': provider_id,
                 'source': provider_source,
                 'house': player_house,
+                'coordinates': [provider_x, provider_y],
             })
             grant_mode = 'provider'
-        actions.append([
-            '34', '0', str(runtime_index), '0', '0', '0', '0', 'A'
-        ])
+        else:
+            actions.append([
+                '34', '0', str(runtime_index), '0', '0', '0', '0', 'A'
+            ])
         report['applied'].append({
             'power': source_id,
             'clone': clone_id,
@@ -694,15 +777,17 @@ def player_power_rules(
             'grant_mode': grant_mode,
             'provider': provider_id,
             'provider_source': (
-                POWER_PROVIDER_SOURCES.get(source_id.upper(), '')
-                if provider_id else ''
+                provider_source if provider_id else ''
             ),
             'recharge_buffs': buff_count,
             'damage_buffs': buff_counts.get('damage', 0),
             'area_buffs': buff_counts.get('area', 0),
             'payload_buffs': buff_counts.get('payload', 0),
-            'payload_units': clone_values.get(
-                'DropPodInfantryMaximum', ''
+            'payload_units': payload_units,
+            'payload_aircraft': (
+                payload['aircraft_id'] if payload else ''
             ),
         })
+    report['_runtime_rules'] = runtime_rule_sections
+    report['_runtime_art'] = runtime_art_sections
     return rules, actions, report

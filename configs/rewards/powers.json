@@ -1,0 +1,218 @@
+{
+  "schema_version": 1,
+  "description": "Explicit DTA player-power implementations. These definitions replace generic SuperWeaponType cloning; missile effects use managed Rules.ini and Art.ini helper types while the generated power and provider remain mission-local.",
+  "sections": {
+    "powers": [
+      {
+        "id": "IonCannonSpecial",
+        "label": "GDI Ion Cannon",
+        "description": "Grants a repeating player-only Ion Cannon.",
+        "factions": ["GDI"],
+        "category": "offensive",
+        "values": {
+          "Name": "GDI Ion Cannon",
+          "Type": "IonCannon",
+          "IsPowered": "false",
+          "RechargeVoice": "00-I156",
+          "ChargingVoice": "IONCHRG1",
+          "ImpatientVoice": "NOREDY1",
+          "SuspendVoice": "",
+          "RechargeTime": "8.5",
+          "SidebarImage": "IONICON"
+        },
+        "action": {
+          "id": "DTAIONCANNONSPECIALACT",
+          "cursor": "ChemBomb",
+          "no_cursor": "ChemBomb"
+        },
+        "buffs": ["recharge", "damage", "area"]
+      },
+      {
+        "id": "AirstrikeSpecial",
+        "label": "GDI Airstrike",
+        "description": "Grants a repeating player-only Airstrike.",
+        "factions": ["GDI"],
+        "category": "offensive",
+        "values": {
+          "Name": "GDI Airstrike",
+          "Type": "MultiMissile",
+          "IsPowered": "false",
+          "RechargeVoice": "00-N160",
+          "ChargingVoice": "",
+          "ImpatientVoice": "NOREDY1",
+          "SuspendVoice": "",
+          "RechargeTime": "9",
+          "SidebarImage": "BOMBICON",
+          "WeaponType": "MultiLauncher"
+        },
+        "action": {
+          "id": "DTAAIRSTRIKESPECIALACT",
+          "cursor": "NuclearBomb",
+          "no_cursor": "NuclearBomb"
+        },
+        "provider": {
+          "source": "RAMSLO",
+          "values": {
+            "TogglePower": "no",
+            "NukeSilo": "yes"
+          }
+        },
+        "effect": {
+          "root": "AIRSINIT",
+          "animations": ["AIRSINIT", "AIRSTIMR", "AIRSBOMB", "AIRSEXPL", "AIRSSPRD", "AIRSSTRT", "AIRSAPPR", "AIRSSHOT", "AIRSMISS", "AIRSATTK", "AIRSEXIT"],
+          "damage_fields": {"AIRSEXPL": "Damage", "AIRSSPRD": "Damage"},
+          "radius_fields": {"AIRSEXPL": "DamageRadius", "AIRSSPRD": "DamageRadius"}
+        },
+        "buffs": ["recharge", "damage", "area"]
+      },
+      {
+        "id": "ChemicalSpecial",
+        "label": "Nod Nuclear Strike",
+        "description": "Grants a repeating player-only Nod Nuclear Strike.",
+        "factions": ["Nod"],
+        "category": "offensive",
+        "values": {
+          "Name": "Nod Nuclear Strike",
+          "EditorName": "Nod Nuclear Strike",
+          "Type": "ChemMissile",
+          "IsPowered": "false",
+          "RechargeVoice": "00-I154",
+          "ChargingVoice": "",
+          "ImpatientVoice": "NOREDY1",
+          "SuspendVoice": "",
+          "RechargeTime": "9.5",
+          "SidebarImage": "ATOMICON",
+          "WeaponType": "NukeWeaponS2"
+        },
+        "action": {
+          "id": "DTACHEMICALSPECIALACT",
+          "cursor": "AirStrike",
+          "no_cursor": "AirStrike"
+        },
+        "provider": {
+          "source": "TMPL",
+          "values": {
+            "TogglePower": "no",
+            "NukeSilo": "yes",
+            "IsTemple": "yes"
+          }
+        },
+        "effect": {
+          "root": "NUKEINIT",
+          "animations": ["NUKEINIT", "NUKEDOWN", "ATOMEXPL"],
+          "damage_fields": {"ATOMEXPL": "ExplosionDamage"},
+          "area_warheads": {"ATOMEXPL": "AtomicWH"}
+        },
+        "buffs": ["recharge", "damage", "area"]
+      },
+      {
+        "id": "VortexSpecial",
+        "label": "Allied Chrono Vortex",
+        "description": "Grants a repeating player-only Chrono Vortex.",
+        "factions": ["Allies"],
+        "category": "offensive",
+        "values": {
+          "Name": "Allied Chrono Vortex",
+          "Type": "MultiMissile",
+          "IsPowered": "false",
+          "RechargeVoice": "00-I158",
+          "ChargingVoice": "",
+          "ImpatientVoice": "NOREDY1",
+          "SuspendVoice": "",
+          "RechargeTime": "8.5",
+          "SidebarImage": "CVRTXICN",
+          "WeaponType": "VortexWeapon",
+          "MissileLaunchedVoice": "DUMMY"
+        },
+        "action": {
+          "id": "DTAVORTEXSPECIALACT",
+          "cursor": "EMPulse",
+          "no_cursor": "EMPulse"
+        },
+        "provider": {
+          "source": "RAPDOX",
+          "values": {
+            "TogglePower": "no",
+            "NukeSilo": "yes"
+          }
+        },
+        "effect": {
+          "root": "REVERSED_CHRONOSHIFT",
+          "animations": ["REVERSED_CHRONOSHIFT", "R_CHRONOSHIFT_OUTER", "CHRONO_VORTEX", "CHRONO_VORTEX_CENTER", "CHRONO_VORTEX_SHADOW", "CHRONO_VORTEX_LIGHTNING"],
+          "damage_fields": {"CHRONO_VORTEX": "Damage", "CHRONO_VORTEX_LIGHTNING": "Damage"},
+          "area_warheads": {"CHRONO_VORTEX": "VortexWH"}
+        },
+        "buffs": ["recharge", "damage", "area"]
+      },
+      {
+        "id": "MultiSpecial",
+        "label": "Soviet Nuclear Strike",
+        "description": "Grants a repeating player-only Soviet Nuclear Strike.",
+        "factions": ["Soviet"],
+        "category": "offensive",
+        "values": {
+          "Name": "Soviet Nuclear Strike",
+          "EditorName": "Soviet Nuclear Strike",
+          "Type": "MultiMissile",
+          "IsPowered": "false",
+          "RechargeVoice": "00-I154",
+          "ChargingVoice": "",
+          "ImpatientVoice": "NOREDY1",
+          "SuspendVoice": "",
+          "RechargeTime": "9.5",
+          "SidebarImage": "ATOMICON",
+          "WeaponType": "NukeWeaponS2"
+        },
+        "action": {
+          "id": "DTAMULTISPECIALACT",
+          "cursor": "AirStrike",
+          "no_cursor": "AirStrike"
+        },
+        "provider": {
+          "source": "RAMSLO",
+          "values": {
+            "TogglePower": "no",
+            "NukeSilo": "yes"
+          }
+        },
+        "effect": {
+          "root": "NUKEINIT",
+          "animations": ["NUKEINIT", "NUKEDOWN", "ATOMEXPL"],
+          "damage_fields": {"ATOMEXPL": "ExplosionDamage"},
+          "area_warheads": {"ATOMEXPL": "AtomicWH"}
+        },
+        "buffs": ["recharge", "damage", "area"]
+      },
+      {
+        "id": "DropPodSpecial",
+        "label": "Soviet Paratroopers",
+        "description": "Grants the repeating Soviet Paratroopers support power.",
+        "factions": ["Soviet"],
+        "category": "aid",
+        "values": {
+          "Name": "Soviet Paratroopers",
+          "Type": "DropPod",
+          "IsPowered": "false",
+          "RechargeVoice": "",
+          "ChargingVoice": "",
+          "ImpatientVoice": "",
+          "SuspendVoice": "",
+          "RechargeTime": "7",
+          "SidebarImage": "PINFICON"
+        },
+        "action": {
+          "id": "DTADROPPODSPECIALACT",
+          "cursor": "NuclearBomb",
+          "no_cursor": "NuclearBomb"
+        },
+        "payload": {
+          "aircraft_id": "BADGER",
+          "capacity_field": "Passengers",
+          "baseline_capacity": 5,
+          "units_per_buff": 1
+        },
+        "buffs": ["recharge", "payload"]
+      }
+    ]
+  }
+}

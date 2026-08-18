@@ -105,6 +105,9 @@ REQUIRED_SECTIONS = {
         'defaults': dict,
         'buffs': list,
     },
+    'rewards/powers.json': {
+        'powers': list,
+    },
 }
 
 
@@ -1050,6 +1053,93 @@ def _validate_catalogue(sections, path):
         _invalid('Duplicate aid-power map SuperWeaponType config', path)
 
 
+def _validate_dta_powers(sections, path):
+    powers = sections['powers']
+    if not powers:
+        _invalid('DTA power list cannot be empty', path)
+    seen_ids = set()
+    seen_actions = set()
+    allowed_buffs = {'recharge', 'damage', 'area', 'payload'}
+    for power in powers:
+        if not isinstance(power, dict):
+            _invalid('Invalid DTA power entry', path)
+        power_id = power.get('id')
+        action = power.get('action')
+        values = power.get('values')
+        buffs = power.get('buffs')
+        if (
+            not _is_nonempty_string(power_id)
+            or not _is_nonempty_string(power.get('label'))
+            or not _is_nonempty_string(power.get('description'))
+            or power.get('category') not in {'offensive', 'aid'}
+            or not isinstance(power.get('factions'), list)
+            or not power['factions']
+            or not all(_is_nonempty_string(item) for item in power['factions'])
+            or not isinstance(values, dict)
+            or not all(_is_nonempty_string(key) for key in values)
+            or not _is_nonempty_string(values.get('Type'))
+            or not isinstance(action, dict)
+            or not all(
+                _is_nonempty_string(action.get(key))
+                for key in ('id', 'cursor', 'no_cursor')
+            )
+            or not isinstance(buffs, list)
+            or not buffs
+            or set(buffs) - allowed_buffs
+            or len(buffs) != len(set(buffs))
+        ):
+            _invalid(f'Invalid DTA power definition {power_id!r}', path)
+        normalized_id = power_id.casefold()
+        normalized_action = action['id'].casefold()
+        if normalized_id in seen_ids or normalized_action in seen_actions:
+            _invalid('Duplicate DTA power or action identity', path)
+        seen_ids.add(normalized_id)
+        seen_actions.add(normalized_action)
+
+        provider = power.get('provider')
+        if provider is not None and (
+            not isinstance(provider, dict)
+            or not _is_nonempty_string(provider.get('source'))
+            or not isinstance(provider.get('values'), dict)
+            or provider['values'].get('NukeSilo') != 'yes'
+        ):
+            _invalid(f'Invalid DTA power provider {power_id!r}', path)
+        effect = power.get('effect')
+        if effect is not None and (
+            not isinstance(effect, dict)
+            or not _is_nonempty_string(effect.get('root'))
+            or not isinstance(effect.get('animations'), list)
+            or effect['root'] not in effect['animations']
+            or not all(
+                _is_nonempty_string(item) for item in effect['animations']
+            )
+            or any(
+                not isinstance(effect.get(key, {}), dict)
+                for key in ('damage_fields', 'radius_fields', 'area_warheads')
+            )
+        ):
+            _invalid(f'Invalid DTA power effect chain {power_id!r}', path)
+        payload = power.get('payload')
+        if payload is not None and (
+            not isinstance(payload, dict)
+            or not all(
+                _is_nonempty_string(payload.get(key))
+                for key in ('aircraft_id', 'capacity_field')
+            )
+            or not isinstance(payload.get('baseline_capacity'), int)
+            or payload['baseline_capacity'] < 1
+            or not isinstance(payload.get('units_per_buff'), int)
+            or payload['units_per_buff'] < 1
+        ):
+            _invalid(f'Invalid DTA power payload {power_id!r}', path)
+        if ('payload' in buffs) != (payload is not None):
+            _invalid(f'DTA payload contract mismatch {power_id!r}', path)
+        if ({'damage', 'area'} & set(buffs)) and not (
+            effect is not None or power_id.casefold() == 'ioncannonspecial'
+        ):
+            _invalid(f'DTA effect buff contract mismatch {power_id!r}', path)
+
+
 CONFIG_VALIDATORS = {
     'missions.json': _validate_missions,
     'ui.json': _validate_ui,
@@ -1057,6 +1147,7 @@ CONFIG_VALIDATORS = {
     'tier_one.json': _validate_tier_one,
     'rewards/power_buffs.json': _validate_power_buffs,
     'rewards/enemy_scaling.json': _validate_enemy_scaling,
+    'rewards/powers.json': _validate_dta_powers,
 }
 
 

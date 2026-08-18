@@ -74,7 +74,11 @@ from randomizer.dta.difficulty import resolve_mission_difficulty
 from randomizer.dta.access import player_infantry_access_rules
 from randomizer.dta.clones import unit_specific_buff_rules
 from randomizer.dta.enemies import enemy_buff_rules
-from randomizer.dta.powers import ensure_power_action_types, player_power_rules
+from randomizer.dta.powers import (
+    ensure_power_action_types,
+    ensure_power_runtime_types,
+    player_power_rules,
+)
 from randomizer.maps.settings import mission_house_color_rules
 from randomizer.ui.config import (
     PLAYER_COLOR_ENGINE_VALUES,
@@ -419,6 +423,22 @@ class LaunchController:
                 if result.returncode != 0 and callable(self.__dict__.get('append_log')) and 'log_text' in self.__dict__:
                     detail = (result.stderr or 'Remove-Item failed.').strip()
                     self.append_log(f'Could not remove generated hooked map {path.name}: {detail}', error=True)
+
+    def clear_power_runtime_types(self):
+        """Remove isolated dynamic power helpers after DTA stops using them."""
+        try:
+            changed = ensure_power_runtime_types({}, {})
+        except OSError as exc:
+            self.append_log(
+                f'Could not remove randomizer power helpers: {exc}',
+                error=True,
+            )
+            return
+        if changed:
+            self.append_log(
+                'Removed randomizer power helpers from: '
+                + ', '.join(changed)
+            )
 
     def extract_campaign_map(self, scenario):
         EXTRACTED_MAP_DIR.mkdir(parents=True, exist_ok=True)
@@ -892,6 +912,7 @@ throw "Map $name was not found in expandmo*.mix"
         self.active_mission_attempt = None
         self.cleanup_generated_root_maps()
         self.disable_generated_rules_for_client()
+        self.clear_power_runtime_types()
         if getattr(self, '_close_after_game', False):
             self.destroy()
 
@@ -1038,6 +1059,17 @@ throw "Map $name was not found in expandmo*.mix"
                 ), ''),
                 reserved_rules=dta_rules,
             )
+            runtime_power_rules = power_report.pop('_runtime_rules', {})
+            runtime_power_art = power_report.pop('_runtime_art', {})
+            updated_power_runtime = ensure_power_runtime_types(
+                runtime_power_rules,
+                runtime_power_art,
+            )
+            if updated_power_runtime:
+                self.append_log(
+                    'Installed randomizer power helpers: '
+                    + ', '.join(updated_power_runtime)
+                )
             for section, values in power_rules.items():
                 dta_rules.setdefault(section, {}).update(values)
             enemy_rules, enemy_report = enemy_buff_rules(mission, active_rewards)
@@ -1140,6 +1172,7 @@ throw "Map $name was not found in expandmo*.mix"
         except Exception:
             self.cleanup_generated_root_maps()
             self.disable_generated_rules_for_client()
+            self.clear_power_runtime_types()
             raise
         return hook
 
@@ -1201,6 +1234,7 @@ throw "Map $name was not found in expandmo*.mix"
         except Exception:
             self.cleanup_generated_root_maps()
             self.disable_generated_rules_for_client()
+            self.clear_power_runtime_types()
             self.append_log('Failed to launch game process:', error=True)
             self.append_log(traceback.format_exc(), error=True)
             messagebox.showerror('Launch Failed', 'Failed to launch the game. See log for details.')

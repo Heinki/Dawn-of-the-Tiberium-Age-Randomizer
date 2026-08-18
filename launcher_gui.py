@@ -66,6 +66,7 @@ def run_self_check():
     from randomizer.dta.enemies import enemy_buff_rules
     from randomizer.dta.powers import (
         POWER_CLONE_ACTION_TYPES,
+        POWER_SPEC_BY_ID,
         POWER_SPECS,
         player_power_rules,
     )
@@ -698,6 +699,15 @@ def run_self_check():
                 reserved_rules=allied_factory_rules,
             )
         )
+        all_power_providers = {
+            item['power'].upper(): item
+            for item in all_power_report['provider_buildings']
+        }
+        tutorial_two_map_height = int(
+            ini_sections(mission_source_path(tutorial_two['scenario']))[
+                'Map'
+            ]['Size'].split(',')[3]
+        )
         retired_power_rules, retired_power_actions, retired_power_report = (
             player_power_rules(tutorial_two, [{
                 'kind': 'superweapon',
@@ -705,16 +715,18 @@ def run_self_check():
                 'dta_player_power': True,
             }])
         )
+        nuclear_runtime_rules = nuclear_report.get('_runtime_rules', {})
+        nuclear_runtime_art = nuclear_report.get('_runtime_art', {})
         nuclear_animation = next(
             (
-                values for values in nuclear_rules.values()
+                values for values in nuclear_runtime_art.values()
                 if 'ExplosionDamage' in values
             ),
             {},
         )
         nuclear_area_warhead = next(
             (
-                values for values in nuclear_rules.values()
+                values for values in nuclear_runtime_rules.values()
                 if values.get('CellSpread') == '4.5'
             ),
             {},
@@ -997,7 +1009,7 @@ def run_self_check():
                 }]
             ),
             'dta_power_damage_area_clones_valid': (
-                len(nuclear_actions) == 1
+                not nuclear_actions
                 and nuclear_report['enemy_grants'] == 0
                 and nuclear_report['applied'][0]['damage_buffs'] == 1
                 and nuclear_report['applied'][0]['area_buffs'] == 1
@@ -1010,11 +1022,15 @@ def run_self_check():
                     'DTANUKEWEAPONS2WP'
                 )
                 and not {'ATOMEXPL', 'AtomicWH', 'NukeWeaponS2'}.intersection(
-                    nuclear_rules
+                    set(nuclear_rules)
+                    | set(nuclear_runtime_rules)
+                    | set(nuclear_runtime_art)
                 )
             ),
             'dta_power_actions_are_unique_and_callable': (
-                len(all_power_actions) == len(POWER_SPECS)
+                len(all_power_actions) == sum(
+                    1 for spec in POWER_SPECS if not spec.get('provider')
+                )
                 and len(all_power_report['applied']) == len(POWER_SPECS)
                 and len({
                     item.get('action')
@@ -1051,7 +1067,31 @@ def run_self_check():
                     if item.get('action')
                 }
                 and len(all_power_report['provider_buildings']) == 4
+                and all(
+                    (
+                        provider_record := all_power_providers.get(
+                            spec['id'].upper()
+                        )
+                    )
+                    and provider_record['source']
+                    == spec['provider']['source']
+                    and all_power_rules[provider_record['provider']].get(
+                        'BaseSection'
+                    ) == spec['provider']['source']
+                    and sum(provider_record['coordinates'])
+                    < tutorial_two_map_height
+                    for spec in POWER_SPECS
+                    if spec.get('provider')
+                )
                 and all(action[0] == '34' for action in all_power_actions)
+                and all(
+                    item['grant_mode'] == (
+                        'provider'
+                        if POWER_SPEC_BY_ID[item['power'].upper()].get('provider')
+                        else 'trigger'
+                    )
+                    for item in all_power_report['applied']
+                )
             ),
             'dta_power_lists_preserve_war_factory_clones': (
                 'AWEAP_PLAYER' in allied_factory_rules.get(
@@ -1074,28 +1114,22 @@ def run_self_check():
                 and power_report['applied'][0]['damage_buffs'] == 1
                 and power_report['applied'][0]['area_buffs'] == 1
             ),
-            'dta_paradrop_payload_and_unit_clone_work': (
+            'dta_paradrop_payload_uses_badger_capacity': (
                 len(paradrop_actions) == 1
-                and paradrop_rules.get('General', {}).get(
-                    'DropPodInfantryMinimum'
-                ) == '2'
-                and paradrop_rules.get('General', {}).get(
-                    'DropPodInfantryMaximum'
-                ) == '2'
-                and paradrop_rules.get('General', {}).get('Paratrooper')
-                == 'E1S_PLAYER'
-                and paradrop_rules.get(
+                and paradrop_rules.get('BADGER', {}).get('Passengers') == '6'
+                and 'General' not in paradrop_rules
+                and not {
+                    'DropPodInfantryMinimum',
+                    'DropPodInfantryMaximum',
+                    'Paratrooper',
+                }.intersection(paradrop_rules.get(
                     paradrop_report['applied'][0]['clone'], {}
-                ).get('DropPodInfantryMinimum') == '2'
-                and paradrop_rules.get(
-                    paradrop_report['applied'][0]['clone'], {}
-                ).get('DropPodInfantryMaximum') == '2'
-                and paradrop_rules.get(
-                    paradrop_report['applied'][0]['clone'], {}
-                ).get('Paratrooper') == 'E1S_PLAYER'
-                and paradrop_report.get('paratrooper_unit') == 'E1S_PLAYER'
+                ))
+                and paradrop_report.get('paratrooper_unit') == 'E1'
                 and paradrop_report['applied'][0]['payload_buffs'] == 1
-                and paradrop_report['applied'][0]['payload_units'] == '2'
+                and paradrop_report['applied'][0]['payload_units'] == '6'
+                and paradrop_report['applied'][0]['payload_aircraft']
+                == 'BADGER'
             ),
             'dta_enemy_buffs_exclude_player_family': (
                 enemy_rules.get('Nod', {}).get('Armor') == '1.1'
@@ -1299,9 +1333,9 @@ def run_self_check():
                 and 'Nod,<none>,DTA Randomizer Earned Powers' not in power_generated_text
                 and '[DTAIONCANNONRNG]' in power_generated_text
             ),
-            'missile_powers_use_unrestricted_player_providers': (
+            'missile_powers_use_native_offmap_launchers': (
                 len(vortex_report['applied']) == 1
-                and len(vortex_actions) == 1
+                and not vortex_actions
                 and bool(vortex_report['provider_buildings'])
                 and (
                     vortex_provider := vortex_report[
@@ -1314,20 +1348,22 @@ def run_self_check():
                 == vortex_report['applied'][0]['clone']
                 and vortex_report['applied'][0].get('provider_source')
                 == 'RAPDOX'
+                and vortex_rules[vortex_provider].get('BaseSection')
+                == 'RAPDOX'
+                and vortex_rules[vortex_provider].get('Image') == 'RAPDOX'
                 and vortex_rules[vortex_provider].get('Immune') == 'yes'
                 and vortex_rules[
                     vortex_report['applied'][0]['clone']
-                ].get('Range') == '9999'
-                and vortex_rules.get(
-                    vortex_rules[
-                        vortex_report['applied'][0]['clone']
-                    ].get('WeaponType'), {}
-                ).get('Range') == '9999'
+                ].get('WeaponType') == 'VortexWeapon'
+                and not vortex_report.get('_runtime_rules')
+                and not vortex_report.get('_runtime_art')
                 and any(
                     f'{vortex_report["player_house"]},{vortex_provider},'
                     in value
                     for value in vortex_rules.get('Structures', {}).values()
                 )
+                and vortex_report['provider_buildings'][0]['coordinates'][1]
+                < 20
             ),
             'crashing_unit_weapons_registered': all(
                 (
@@ -1758,7 +1794,7 @@ def run_self_check():
             'dta_all_mobile_buff_targets_present',
             'dta_arsenal_all_mobile_access_present',
             'dta_power_rewards_present',
-            'missile_powers_use_unrestricted_player_providers',
+            'missile_powers_use_native_offmap_launchers',
             'dta_power_buff_matrix_valid',
             'dta_power_stack_limits_valid',
             'unlock_dashboard_tooltips_render',
@@ -1770,7 +1806,7 @@ def run_self_check():
             'dta_power_actions_are_unique_and_callable',
             'dta_power_lists_preserve_war_factory_clones',
             'dta_ion_cannon_damage_and_area_buffs_work',
-            'dta_paradrop_payload_and_unit_clone_work',
+            'dta_paradrop_payload_uses_badger_capacity',
             'dta_enemy_buffs_exclude_player_family',
             'dta_player_color_list_valid',
             'dta_loose_mission_launch_source_valid',

@@ -87,15 +87,5 @@ def power_buff_type_ids(power_id=None):
     power_id = str(power_id or '').upper()
     if not power_id:
         return tuple(item['id'] for item in POWER_BUFF_TYPES)
-    if power_id in POWER_SPEC_BY_ID:
-        supported = ['recharge']
-        if power_id in {
-            'IONCANNONSPECIAL', 'AIRSTRIKESPECIAL',
-            'CHEMICALSPECIAL', 'MULTISPECIAL',
-            'VORTEXSPECIAL',
-        }:
-            supported.extend(('damage', 'area'))
-        if power_id == 'DROPPODSPECIAL':
-            supported.append('payload')
-        return tuple(supported)
-    return ()
+    spec = POWER_SPEC_BY_ID.get(power_id)
+    return tuple(spec.get('buffs', ())) if spec else ()
