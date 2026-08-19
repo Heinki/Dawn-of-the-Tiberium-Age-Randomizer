@@ -106,6 +106,7 @@ REQUIRED_SECTIONS = {
         'buffs': list,
     },
     'rewards/powers.json': {
+        'settings': dict,
         'powers': list,
     },
 }
@@ -1054,6 +1055,17 @@ def _validate_catalogue(sections, path):
 
 
 def _validate_dta_powers(sections, path):
+    settings = sections['settings']
+    if (
+        set(settings) != {'area_cells_per_stack', 'payload_maximum_stacks'}
+        or not isinstance(settings['area_cells_per_stack'], (int, float))
+        or isinstance(settings['area_cells_per_stack'], bool)
+        or settings['area_cells_per_stack'] <= 0
+        or not isinstance(settings['payload_maximum_stacks'], int)
+        or isinstance(settings['payload_maximum_stacks'], bool)
+        or settings['payload_maximum_stacks'] < 1
+    ):
+        _invalid('Invalid DTA power settings', path)
     powers = sections['powers']
     if not powers:
         _invalid('DTA power list cannot be empty', path)
@@ -1115,7 +1127,32 @@ def _validate_dta_powers(sections, path):
             )
             or any(
                 not isinstance(effect.get(key, {}), dict)
-                for key in ('damage_fields', 'radius_fields', 'area_warheads')
+                for key in (
+                    'damage_fields', 'radius_fields', 'area_warheads',
+                    'animation_overrides', 'damage_source',
+                )
+            )
+            or (
+                effect.get('impact_warhead') is not None
+                and not _is_nonempty_string(effect['impact_warhead'])
+            )
+            or any(
+                key in effect and not isinstance(effect[key], bool)
+                for key in ('expand_impact_area', 'always_clone')
+            )
+            or any(
+                animation_id not in effect['animations']
+                or not isinstance(overrides, dict)
+                for animation_id, overrides in effect.get(
+                    'animation_overrides', {}
+                ).items()
+            )
+            or (
+                effect.get('damage_source')
+                and not all(
+                    _is_nonempty_string(effect['damage_source'].get(key))
+                    for key in ('section', 'field')
+                )
             )
         ):
             _invalid(f'Invalid DTA power effect chain {power_id!r}', path)
@@ -1134,9 +1171,7 @@ def _validate_dta_powers(sections, path):
             _invalid(f'Invalid DTA power payload {power_id!r}', path)
         if ('payload' in buffs) != (payload is not None):
             _invalid(f'DTA payload contract mismatch {power_id!r}', path)
-        if ({'damage', 'area'} & set(buffs)) and not (
-            effect is not None or power_id.casefold() == 'ioncannonspecial'
-        ):
+        if ({'damage', 'area'} & set(buffs)) and effect is None:
             _invalid(f'DTA effect buff contract mismatch {power_id!r}', path)
 
 

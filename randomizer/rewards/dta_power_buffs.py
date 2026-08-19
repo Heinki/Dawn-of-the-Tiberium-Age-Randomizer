@@ -1,6 +1,6 @@
 """Reviewed DTA support-power buff definitions."""
 
-from randomizer.dta.powers import POWER_SPEC_BY_ID
+from randomizer.dta.powers import POWER_SETTINGS, POWER_SPEC_BY_ID
 
 
 POWER_BUFF_TYPES = ({
@@ -19,14 +19,17 @@ POWER_BUFF_TYPES = ({
     'id': 'area',
     'name': 'Expanded Blast',
     'setting_label': 'Effect radius',
-    'description': 'Increases supported power radius by 0.5 cells per stack.',
+    'description': (
+        'Increases supported power radius by '
+        f'{POWER_SETTINGS["area_cells_per_stack"]:g} cell per stack.'
+    ),
     'maximum_stacks': 40,
 }, {
     'id': 'payload',
     'name': 'Expanded Deployment',
     'setting_label': 'Delivered units',
     'description': 'Adds one infantry unit to each Paratroopers deployment.',
-    'maximum_stacks': 40,
+    'maximum_stacks': int(POWER_SETTINGS['payload_maximum_stacks']),
 })
 
 
@@ -35,7 +38,7 @@ POWER_BUFF_CONFIG = {
     'cost': {'factor_per_stack': 1.0, 'minimum_absolute': 0},
     'area': {
         'rectangle_amount_per_stack': 0,
-        'amount_per_stack': 0.5,
+        'amount_per_stack': float(POWER_SETTINGS['area_cells_per_stack']),
         'direct_fields': {},
         'warhead_fields': {},
     },
@@ -64,7 +67,8 @@ def power_buff_effect_text(reward, stack_count=1):
         increase = ((1.15 ** count) - 1.0) * 100.0
         return f'Damage {increase:.1f}% higher.'
     if buff_type == 'area':
-        return f'Effect radius +{0.5 * count:g} cells.'
+        amount = float(POWER_SETTINGS['area_cells_per_stack']) * count
+        return f'Effect radius +{amount:g} cells.'
     if buff_type == 'payload':
         return f'Delivered infantry +{count}.'
     reduction = (1.0 - (0.9 ** count)) * 100.0

@@ -35,6 +35,30 @@ WEAPON_KEYS = (
     'Primary', 'Secondary', 'Elite', 'ElitePrimary', 'EliteSecondary',
 )
 MAX_TYPE_ID_LENGTH = 23
+FACTION_CAMEO_PRIORITIES = {
+    'GDI': 400,
+    'Nod': 300,
+    'Allies': 200,
+    'Soviet': 100,
+}
+DEFENSE_CAMEO_PRIORITY_OFFSET = 1000
+
+
+def _faction_cameo_priority(target):
+    """Return a sidebar priority band that keeps one-faction tech together."""
+    factions = tuple(
+        target.get('playable_owners')
+        or target.get('owners')
+        or target.get('factions')
+        or ()
+    )
+    if len(factions) == 1:
+        priority = FACTION_CAMEO_PRIORITIES.get(str(factions[0]), 0)
+    else:
+        priority = 0
+    if target.get('category') == 'defenses':
+        priority -= DEFENSE_CAMEO_PRIORITY_OFFSET
+    return priority
 
 
 def _number(value):
@@ -915,6 +939,7 @@ def unit_specific_buff_rules(
                 'Image': values.get('Image', unit_id),
                 'Owner': production_house,
                 'RequiredHouses': production_house,
+                'CameoPriority': str(_faction_cameo_priority(target)),
                 **unit_rules,
             }
             if placement_only:
@@ -1009,6 +1034,9 @@ def unit_specific_buff_rules(
                 })
                 linked_rules.update(
                     _unit_overrides(linked_values, linked_counts, target)
+                )
+                linked_rules['CameoPriority'] = str(
+                    _faction_cameo_priority(linked_target)
                 )
                 linked_rules[reverse_key] = output_id
                 for weapon_key in WEAPON_KEYS:

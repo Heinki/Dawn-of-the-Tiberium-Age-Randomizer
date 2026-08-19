@@ -66,7 +66,6 @@ def run_self_check():
     from randomizer.dta.enemies import enemy_buff_rules
     from randomizer.dta.powers import (
         POWER_CLONE_ACTION_TYPES,
-        POWER_SPEC_BY_ID,
         POWER_SPECS,
         player_power_rules,
     )
@@ -348,6 +347,35 @@ def run_self_check():
                 access_randomized=True,
             )
         )
+        faction_priority_sources = {
+            'MTNK': 400,
+            'BGGY': 300,
+            '1TNK': 200,
+            '3TNK': 100,
+            'TWR': -600,
+            'GUN': -700,
+            'RAPBOX': -800,
+            'RAFTUR': -900,
+        }
+        faction_priority_rewards = [
+            next(
+                reward for reward in REWARD_POOL
+                if reward.get('dta_production_access')
+                and str(reward.get('unit') or '').upper() == unit_id
+            )
+            for unit_id in faction_priority_sources
+        ]
+        faction_priority_rules, faction_priority_report = (
+            unit_specific_buff_rules(
+                tutorial_two,
+                faction_priority_rewards,
+                access_randomized=True,
+            )
+        )
+        faction_priority_outputs = {
+            item['unit']: item['output_type']
+            for item in faction_priority_report['applied']
+        }
         installed_sections = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
         installed_e2 = effective_section(installed_sections, 'E2')
         installed_e2_weapon = effective_section(
@@ -449,18 +477,8 @@ def run_self_check():
             if reward.get('superweapon') == 'IonCannonSpecial'
             and reward.get('dta_player_power')
         )
-        ion_damage_buff = next(
-            reward for reward in REWARD_POOL
-            if reward.get('superweapon') == 'IonCannonSpecial'
-            and reward.get('power_buff_type') == 'damage'
-        )
-        ion_area_buff = next(
-            reward for reward in REWARD_POOL
-            if reward.get('superweapon') == 'IonCannonSpecial'
-            and reward.get('power_buff_type') == 'area'
-        )
         power_rules, power_actions, power_report = player_power_rules(
-            tutorial_two, [ion_reward, ion_damage_buff, ion_area_buff]
+            tutorial_two, [ion_reward]
         )
         allied_power_mission = next(
             mission for mission in missions if mission['code'] == 'M_CRC14'
@@ -470,16 +488,6 @@ def run_self_check():
                 allied_power_mission,
                 [production_reward],
             )
-        )
-        vortex_reward = next(
-            reward for reward in REWARD_POOL
-            if reward.get('superweapon') == 'VortexSpecial'
-            and reward.get('dta_player_power')
-        )
-        vortex_rules, vortex_actions, vortex_report = player_power_rules(
-            allied_power_mission,
-            [vortex_reward],
-            launch_building_ids=['RAPROC_PLAYER'],
         )
         paradrop_reward = next(
             reward for reward in REWARD_POOL
@@ -495,6 +503,13 @@ def run_self_check():
             allied_power_mission,
             [paradrop_reward, paradrop_payload_buff],
             paratrooper_unit_id='E1S_PLAYER',
+            reserved_rules={
+                'E1S_PLAYER': {
+                    'Strength': '750',
+                    'Sight': '5',
+                    'Primary': 'E1S_PLAYER_WEAPON',
+                },
+            },
         )
         crash_clone_rules = {}
         crash_clone_reports = {}
@@ -629,33 +644,6 @@ def run_self_check():
             [defense_access_reward, defense_buff_reward],
             access_randomized=True,
         )
-        nuclear_reward = next(
-            reward for reward in REWARD_POOL
-            if reward.get('dta_player_power')
-            and reward.get('superweapon') == 'MultiSpecial'
-        )
-        nuclear_damage_buff = next(
-            reward for reward in REWARD_POOL
-            if reward.get('dta_player_power_buff')
-            and reward.get('superweapon') == 'MultiSpecial'
-            and reward.get('power_buff_type') == 'damage'
-        )
-        nuclear_area_buff = next(
-            reward for reward in REWARD_POOL
-            if reward.get('dta_player_power_buff')
-            and reward.get('superweapon') == 'MultiSpecial'
-            and reward.get('power_buff_type') == 'area'
-        )
-        nuclear_rules, nuclear_actions, nuclear_report = player_power_rules(
-            tutorial_two,
-            [nuclear_reward, nuclear_damage_buff, nuclear_area_buff],
-        )
-        _capped_damage_rules, _capped_damage_actions, capped_damage_report = (
-            player_power_rules(
-                tutorial_two,
-                [nuclear_reward] + [nuclear_damage_buff] * 15,
-            )
-        )
         tooltip_controller = object.__new__(UnlockDataController)
 
         def power_tooltip_smoke(power_id):
@@ -699,15 +687,6 @@ def run_self_check():
                 reserved_rules=allied_factory_rules,
             )
         )
-        all_power_providers = {
-            item['power'].upper(): item
-            for item in all_power_report['provider_buildings']
-        }
-        tutorial_two_map_height = int(
-            ini_sections(mission_source_path(tutorial_two['scenario']))[
-                'Map'
-            ]['Size'].split(',')[3]
-        )
         retired_power_rules, retired_power_actions, retired_power_report = (
             player_power_rules(tutorial_two, [{
                 'kind': 'superweapon',
@@ -715,28 +694,23 @@ def run_self_check():
                 'dta_player_power': True,
             }])
         )
-        nuclear_runtime_rules = nuclear_report.get('_runtime_rules', {})
-        nuclear_runtime_art = nuclear_report.get('_runtime_art', {})
-        nuclear_animation = next(
+        ion_runtime_rules = power_report.get('_runtime_rules', {})
+        ion_runtime_art = power_report.get('_runtime_art', {})
+        ion_power_clone = next(
             (
-                values for values in nuclear_runtime_art.values()
-                if 'ExplosionDamage' in values
+                values for section, values in power_rules.items()
+                if section.startswith('DTAIONCANNONRNG')
             ),
             {},
         )
-        nuclear_area_warhead = next(
-            (
-                values for values in nuclear_runtime_rules.values()
-                if values.get('CellSpread') == '4.5'
-            ),
-            {},
+        paradrop_team = paradrop_rules.get(
+            paradrop_report.get('paradrop_team', ''), {}
         )
-        nuclear_power_clone = next(
-            (
-                values for section, values in nuclear_rules.items()
-                if section.startswith('DTAMULTIRNG')
-            ),
-            {},
+        paradrop_taskforce = paradrop_rules.get(
+            paradrop_team.get('TaskForce', ''), {}
+        )
+        paradrop_aircraft = paradrop_rules.get(
+            paradrop_report.get('paradrop_aircraft', ''), {}
         )
         launch_color_source = mission_source_lines(tutorial_two['scenario'])
         enemy_reward = next(
@@ -928,12 +902,7 @@ def run_self_check():
                     if reward.get('dta_player_power_buff')
                     and reward.get('superweapon') == spec['id']
                 } == (
-                    {'recharge', 'damage', 'area'}
-                    if spec['id'] in {
-                        'IonCannonSpecial', 'AirstrikeSpecial', 'ChemicalSpecial',
-                        'MultiSpecial', 'VortexSpecial',
-                    }
-                    else {'recharge', 'payload'}
+                    {'recharge', 'payload'}
                     if spec['id'] == 'DropPodSpecial'
                     else {'recharge'}
                 )
@@ -947,28 +916,25 @@ def run_self_check():
                     'recharge': 40,
                     'damage': 10,
                     'area': 40,
-                    'payload': 40,
+                    'payload': 20,
                 }
                 and all(
                     power_buff_stack_limit(reward) == (
-                        10
-                        if reward.get('power_buff_type') == 'damage'
+                        10 if reward.get('power_buff_type') == 'damage'
+                        else 20 if reward.get('power_buff_type') == 'payload'
                         else 40
                     )
                     for reward in REWARD_POOL
                     if reward.get('dta_player_power_buff')
                 )
-                and capped_damage_report['applied'][0]['damage_buffs'] == 10
                 and {
                     buff_group_key(reward)
                     for reward in REWARD_POOL
                     if reward.get('dta_player_power_buff')
-                } == {'recharge', 'damage', 'area', 'payload'}
+                } == {'recharge', 'payload'}
             ),
             'unlock_dashboard_tooltips_render': (
                 'Recharge time 10.0% faster.' in ion_tooltip
-                and 'Damage 15.0% higher.' in ion_tooltip
-                and 'Effect radius +0.5 cells.' in ion_tooltip
                 and 'Recharge time 10.0% faster.' in paradrop_tooltip
                 and 'Delivered infantry +1.' in paradrop_tooltip
             ),
@@ -1007,25 +973,6 @@ def run_self_check():
                     'power': 'HuntSeekSpecial',
                     'reason': 'unsupported_or_retired_power',
                 }]
-            ),
-            'dta_power_damage_area_clones_valid': (
-                not nuclear_actions
-                and nuclear_report['enemy_grants'] == 0
-                and nuclear_report['applied'][0]['damage_buffs'] == 1
-                and nuclear_report['applied'][0]['area_buffs'] == 1
-                and nuclear_report['applied'][0]['grant_mode'] == 'provider'
-                and nuclear_report['applied'][0]['provider']
-                in nuclear_rules
-                and nuclear_animation.get('ExplosionDamage') == '767'
-                and nuclear_area_warhead.get('CellSpread') == '4.5'
-                and str(nuclear_power_clone.get('WeaponType', '')).startswith(
-                    'DTANUKEWEAPONS2WP'
-                )
-                and not {'ATOMEXPL', 'AtomicWH', 'NukeWeaponS2'}.intersection(
-                    set(nuclear_rules)
-                    | set(nuclear_runtime_rules)
-                    | set(nuclear_runtime_art)
-                )
             ),
             'dta_power_actions_are_unique_and_callable': (
                 len(all_power_actions) == sum(
@@ -1066,30 +1013,10 @@ def run_self_check():
                     for item in all_power_report['applied']
                     if item.get('action')
                 }
-                and len(all_power_report['provider_buildings']) == 4
-                and all(
-                    (
-                        provider_record := all_power_providers.get(
-                            spec['id'].upper()
-                        )
-                    )
-                    and provider_record['source']
-                    == spec['provider']['source']
-                    and all_power_rules[provider_record['provider']].get(
-                        'BaseSection'
-                    ) == spec['provider']['source']
-                    and sum(provider_record['coordinates'])
-                    < tutorial_two_map_height
-                    for spec in POWER_SPECS
-                    if spec.get('provider')
-                )
+                and not all_power_report['provider_buildings']
                 and all(action[0] == '34' for action in all_power_actions)
                 and all(
-                    item['grant_mode'] == (
-                        'provider'
-                        if POWER_SPEC_BY_ID[item['power'].upper()].get('provider')
-                        else 'trigger'
-                    )
+                    item['grant_mode'] == 'trigger'
                     for item in all_power_report['applied']
                 )
             ),
@@ -1101,22 +1028,21 @@ def run_self_check():
                     allied_factory_rules.get('BuildingTypes', {})
                 ).intersection(all_power_rules.get('BuildingTypes', {}))
             ),
-            'dta_ion_cannon_damage_and_area_buffs_work': (
-                power_rules.get('CombatDamage', {}).get('IonCannonDamage')
-                == '690'
-                and str(power_rules.get('CombatDamage', {}).get(
-                    'IonCannonWarhead', ''
-                )).startswith('DTAIONCANNONWH')
-                and any(
-                    values.get('CellSpread') == '0.8125'
-                    for values in power_rules.values()
-                )
-                and power_report['applied'][0]['damage_buffs'] == 1
-                and power_report['applied'][0]['area_buffs'] == 1
+            'dta_native_ion_cannon_trigger_grant_works': (
+                'CombatDamage' not in power_rules
+                and ion_power_clone.get('Type') == 'IonCannon'
+                and 'WeaponType' not in ion_power_clone
+                and not ion_runtime_rules
+                and not ion_runtime_art
+                and power_report['applied'][0]['grant_mode'] == 'trigger'
+                and power_report['applied'][0]['recharge_buffs'] == 0
+                and power_report['applied'][0]['damage_buffs'] == 0
+                and power_report['applied'][0]['area_buffs'] == 0
             ),
             'dta_paradrop_payload_uses_badger_capacity': (
                 len(paradrop_actions) == 1
-                and paradrop_rules.get('BADGER', {}).get('Passengers') == '6'
+                and 'BADGER' not in paradrop_rules
+                and 'E1' not in paradrop_rules
                 and 'General' not in paradrop_rules
                 and not {
                     'DropPodInfantryMinimum',
@@ -1125,7 +1051,19 @@ def run_self_check():
                 }.intersection(paradrop_rules.get(
                     paradrop_report['applied'][0]['clone'], {}
                 ))
-                and paradrop_report.get('paratrooper_unit') == 'E1'
+                and paradrop_report.get('paratrooper_unit') == 'E1S_PLAYER'
+                and paradrop_report.get('paratrooper_buff_source')
+                == 'E1S_PLAYER'
+                and paradrop_report.get('paradrop_team', '').startswith(
+                    'PARADROPINF_'
+                )
+                and paradrop_team.get('House')
+                == paradrop_report['player_house']
+                and paradrop_team.get('Waypoint') == '100'
+                and paradrop_taskforce.get('0') == '6,E1S_PLAYER'
+                and paradrop_taskforce.get('1')
+                == f'1,{paradrop_report["paradrop_aircraft"]}'
+                and paradrop_aircraft.get('Passengers') == '6'
                 and paradrop_report['applied'][0]['payload_buffs'] == 1
                 and paradrop_report['applied'][0]['payload_units'] == '6'
                 and paradrop_report['applied'][0]['payload_aircraft']
@@ -1329,41 +1267,52 @@ def run_self_check():
                 and power_report['player_house'] == 'TutorialGDI'
                 and power_report['enemy_grants'] == 0
                 and len(power_actions) == 1
-                and f'TutorialGDI,<none>,DTA Randomizer Earned Powers' in power_generated_text
+                and power_actions[0][0] == '34'
+                and not power_report['provider_buildings']
+                and power_report['applied'][0]['grant_mode'] == 'trigger'
                 and 'Nod,<none>,DTA Randomizer Earned Powers' not in power_generated_text
                 and '[DTAIONCANNONRNG]' in power_generated_text
+                and '[CombatDamage]' not in power_rules
             ),
-            'missile_powers_use_native_offmap_launchers': (
-                len(vortex_report['applied']) == 1
-                and not vortex_actions
-                and bool(vortex_report['provider_buildings'])
-                and (
-                    vortex_provider := vortex_report[
-                        'provider_buildings'
-                    ][0]['provider']
-                ) in vortex_rules
-                and vortex_rules[vortex_provider].get('NukeSilo')
-                == 'yes'
-                and vortex_rules[vortex_provider].get('SuperWeapon')
-                == vortex_report['applied'][0]['clone']
-                and vortex_report['applied'][0].get('provider_source')
-                == 'RAPDOX'
-                and vortex_rules[vortex_provider].get('BaseSection')
-                == 'RAPDOX'
-                and vortex_rules[vortex_provider].get('Image') == 'RAPDOX'
-                and vortex_rules[vortex_provider].get('Immune') == 'yes'
-                and vortex_rules[
-                    vortex_report['applied'][0]['clone']
-                ].get('WeaponType') == 'VortexWeapon'
-                and not vortex_report.get('_runtime_rules')
-                and not vortex_report.get('_runtime_art')
-                and any(
-                    f'{vortex_report["player_house"]},{vortex_provider},'
-                    in value
-                    for value in vortex_rules.get('Structures', {}).values()
+            'dta_only_stable_powers_enabled': (
+                {spec['id'] for spec in POWER_SPECS}
+                == {'IonCannonSpecial', 'DropPodSpecial'}
+                and not {
+                    'AirstrikeSpecial', 'ChemicalSpecial',
+                    'MultiSpecial', 'VortexSpecial',
+                }.intersection({
+                    str(reward.get('superweapon') or '')
+                    for reward in REWARD_POOL
+                })
+                and not {
+                    'DTAAIRSTRIKESPECIALACT',
+                    'DTACHEMICALSPECIALACT',
+                    'DTAMULTISPECIALACT',
+                    'DTAVORTEXSPECIALACT',
+                }.intersection(
+                    ini_sections(
+                        GAME_ROOT / 'INI' / 'Action.ini'
+                    ).get('ActionTypes', {})
                 )
-                and vortex_report['provider_buildings'][0]['coordinates'][1]
-                < 20
+                and not all_power_report['provider_buildings']
+            ),
+            'dta_sidebar_factions_and_defenses_sorted': (
+                set(faction_priority_outputs) == set(faction_priority_sources)
+                and all(
+                    faction_priority_rules.get(
+                        faction_priority_outputs[unit_id], {}
+                    ).get('CameoPriority') == str(priority)
+                    for unit_id, priority in faction_priority_sources.items()
+                )
+                and max(
+                    priority for unit_id, priority
+                    in faction_priority_sources.items()
+                    if BUFF_TARGETS[unit_id]['category'] == 'defenses'
+                ) < min(
+                    priority for unit_id, priority
+                    in faction_priority_sources.items()
+                    if BUFF_TARGETS[unit_id]['category'] != 'defenses'
+                )
             ),
             'crashing_unit_weapons_registered': all(
                 (
@@ -1794,7 +1743,8 @@ def run_self_check():
             'dta_all_mobile_buff_targets_present',
             'dta_arsenal_all_mobile_access_present',
             'dta_power_rewards_present',
-            'missile_powers_use_native_offmap_launchers',
+            'dta_only_stable_powers_enabled',
+            'dta_sidebar_factions_and_defenses_sorted',
             'dta_power_buff_matrix_valid',
             'dta_power_stack_limits_valid',
             'unlock_dashboard_tooltips_render',
@@ -1802,10 +1752,9 @@ def run_self_check():
             'dta_defense_rewards_complete',
             'dta_firestorm_removed',
             'dta_retired_chrono_tank_power_ignored',
-            'dta_power_damage_area_clones_valid',
             'dta_power_actions_are_unique_and_callable',
             'dta_power_lists_preserve_war_factory_clones',
-            'dta_ion_cannon_damage_and_area_buffs_work',
+            'dta_native_ion_cannon_trigger_grant_works',
             'dta_paradrop_payload_uses_badger_capacity',
             'dta_enemy_buffs_exclude_player_family',
             'dta_player_color_list_valid',

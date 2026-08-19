@@ -7,9 +7,15 @@ The active static configuration targets Dawn of the Tiberium Age.
 - `ui.json` defines DTA campaign filters, colors, difficulty choices, and preserved UI modes.
 - `default_player_config.json` keeps the existing settings structure with conservative DTA defaults.
 - `rewards/tuning.json` and `rewards/enemy_scaling.json` contain active DTA reward tuning.
-- `rewards/powers.json` defines each supported DTA player power explicitly: sidebar action, engine type, native launch-provider source, payload capacity, and buffable effect chain. Missile effects use isolated managed helper types in installed `Rules.ini` and `Art.ini`; generated SuperWeaponTypes and hidden off-map launch providers remain mission-local.
+- `rewards/powers.json` enables only the stable native Ion Cannon and Paratroopers powers. Both generated SuperWeaponTypes remain mission-local and are granted by startup trigger action 34.
 
-DTA unit and defense catalogues are derived from installed game data at runtime. Power behavior is not inferred by cloning an installed SuperWeaponType. DTA's Vinifera missile routine requires a live `NukeSilo=yes` BuildingClass whose `SuperWeapon` exactly matches the selected power, so the randomizer derives invisible launchers from `TMPL`, `RAMSLO`, or `RAPDOX` and places them in the map's off-map buffer. DTA's paradrop routine ignores `DropPodInfantryMinimum`, `DropPodInfantryMaximum`, and `Paratrooper`; delivered quantity is the configured `BADGER` passenger capacity.
+DTA unit and defense catalogues are derived from installed game data at runtime. The Airstrike, both Nuclear Strikes, and Chrono Vortex are disabled until their engine-specific launch paths can be supported without instability.
+
+Generated unit and building clones receive fixed `CameoPriority` bands in GDI, Nod, Allies, Soviet order. Defensive buildings use a separate lower set of faction bands, keeping every defense below normal buildings on the construction sidebar.
+
+The Ion Cannon uses its native `IonCannon` engine type and supports recharge buffs. Paratroopers support recharge and payload-size buffs.
+
+DTA's paradrop hook first searches for a team named `PARADROPINF_<player house heap ID>`. The generated map supplies that player-only team with a cloned `BADGER` and the player's buffed Soviet rifle-infantry clone. This bypasses the hook's global hardcoded `E1` and native `BADGER` fallback without changing enemy paradrops.
 
 Installed DTA techno identities and cameo mappings come from `INI/Rules.ini`, `INI/Art.ini`, and the native MIX archives at runtime. They are not copied from the source game's roster snapshots.
 
