@@ -395,27 +395,6 @@
       "id": 81064500
     },
     {
-      "name": "Allied Chrono Vortex Amplified Payload I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81065573
-    },
-    {
-      "name": "Allied Chrono Vortex Expanded Blast I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81065574
-    },
-    {
-      "name": "Allied Chrono Vortex Rapid Charging I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81065449
-    },
-    {
       "name": "Allied Gun Turret (RAGUN) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -3363,27 +3342,6 @@
       "id": 81064087
     },
     {
-      "name": "GDI Airstrike Amplified Payload I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81065575
-    },
-    {
-      "name": "GDI Airstrike Expanded Blast I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81065576
-    },
-    {
-      "name": "GDI Airstrike Rapid Charging I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81065488
-    },
-    {
       "name": "GDI Grenadier (E2) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -3536,20 +3494,6 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064737
-    },
-    {
-      "name": "GDI Ion Cannon Amplified Payload I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81065923
-    },
-    {
-      "name": "GDI Ion Cannon Expanded Blast I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81065924
     },
     {
       "name": "GDI Ion Cannon Rapid Charging I",
@@ -7129,27 +7073,6 @@
       "id": 81065030
     },
     {
-      "name": "Nod Nuclear Strike Amplified Payload I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81065577
-    },
-    {
-      "name": "Nod Nuclear Strike Expanded Blast I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81065578
-    },
-    {
-      "name": "Nod Nuclear Strike Rapid Charging I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81065509
-    },
-    {
       "name": "Nod Repair Ship (ESCORTN) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -9390,27 +9313,6 @@
       "id": 81065197
     },
     {
-      "name": "Soviet Nuclear Strike Amplified Payload I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81065579
-    },
-    {
-      "name": "Soviet Nuclear Strike Expanded Blast I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81065580
-    },
-    {
-      "name": "Soviet Nuclear Strike Rapid Charging I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81065548
-    },
-    {
       "name": "Soviet Paratroopers Expanded Deployment I",
       "classification": "useful",
       "category": "power_buffs",
@@ -10776,13 +10678,6 @@
       "id": 81065281
     },
     {
-      "name": "Unlock Allied Chrono Vortex",
-      "classification": "progression",
-      "category": "power_unlocks",
-      "repeatable": false,
-      "id": 81065431
-    },
-    {
       "name": "Unlock Allied Gun Turret (RAGUN)",
       "classification": "progression",
       "category": "unit_unlocks",
@@ -11019,13 +10914,6 @@
       "category": "unit_unlocks",
       "repeatable": false,
       "id": 81065304
-    },
-    {
-      "name": "Unlock GDI Airstrike",
-      "classification": "progression",
-      "category": "power_unlocks",
-      "repeatable": false,
-      "id": 81065432
     },
     {
       "name": "Unlock GDI Grenadier (E2)",
@@ -11336,13 +11224,6 @@
       "id": 81065338
     },
     {
-      "name": "Unlock Nod Nuclear Strike",
-      "classification": "progression",
-      "category": "power_unlocks",
-      "repeatable": false,
-      "id": 81065436
-    },
-    {
       "name": "Unlock Nod Repair Ship (ESCORTN)",
       "classification": "progression",
       "category": "unit_unlocks",
@@ -11516,13 +11397,6 @@
       "category": "unit_unlocks",
       "repeatable": false,
       "id": 81065356
-    },
-    {
-      "name": "Unlock Soviet Nuclear Strike",
-      "classification": "progression",
-      "category": "power_unlocks",
-      "repeatable": false,
-      "id": 81065437
     },
     {
       "name": "Unlock Soviet Paratroopers",
@@ -13151,7 +13025,7 @@
       ]
     }
   ],
-  "catalogue_checksum": "6b101fef3f2d326fe7add3e37e8bc9b8b28a474091113144dc6a7f3deb2fa463",
+  "catalogue_checksum": "6bef6644ed2cfb65d2d40eaac21d97fd9984e80f7b874700fe6a235f29d1d58f",
   "locations": [
     {
       "name": "Tutorial Mission 1 - Mission Complete - Reward 1",
