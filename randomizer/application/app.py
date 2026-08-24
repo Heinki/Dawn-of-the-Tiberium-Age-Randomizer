@@ -14,7 +14,6 @@ from ._dependencies import (
     DEFAULT_PROGRESSION_MODE,
     DEFAULT_REWARDS_PER_CHECK,
     DIFFICULTIES,
-    EVA_VOICE_CHOICES,
     ENEMY_BUFF_DEFINITIONS,
     ENEMY_BUFF_GROUP_DEFINITIONS,
     GAME_SPEEDS,
@@ -194,11 +193,6 @@ class LauncherApp(
         self.rainbowizer_var = tk.BooleanVar(
             value=bool(self.config.get('rainbowizer', False))
         )
-        self.eva_voice_var = tk.StringVar(value=valid_choice(
-            self.config.get('eva_voice'),
-            EVA_VOICE_CHOICES,
-            EVA_VOICE_CHOICES[0],
-        ))
         self.seed_var = tk.StringVar(value=self.state.get('seed', self.config.get('seed', '')))
         default_goal = self.state.get('mission_goal', self.config.get('mission_goal', DEFAULT_MISSION_GOAL))
         self.mission_goal_var = tk.IntVar(value=int(default_goal or DEFAULT_MISSION_GOAL))

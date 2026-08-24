@@ -10,7 +10,7 @@ Start with [README.md](README.md) for current scope and runtime behavior. This g
 - `randomizer/dta/maps.py`: source-map resolution, difficulty overlay, and `spawnmap.ini` preparation.
 - `randomizer/dta/difficulty.py`: DTA label, client-rank, and engine-value translation.
 - `randomizer/dta/clones.py`: Vinifera player-production access, Player Army buffs, and unit-specific clone rules.
-- `randomizer/dta/powers.py`: DTA power catalogue, map-local player-only grants, and cloned damage/radius effect chains.
+- `randomizer/dta/powers.py`: DTA power catalogue, map-local player-only grants, exclusive native Ion effects, and cloned auxiliary effect chains.
 - `randomizer/dta/enemies.py`: hostile-family detection and enemy-only country bonuses.
 - `randomizer/dta/cameos.py`: DTA MIX and TS SHP cameo extraction.
 
@@ -30,7 +30,7 @@ Start with [README.md](README.md) for current scope and runtime behavior. This g
 - `randomizer/config/player.py`: `dta_randomizer.yaml` loading, saving, and migration.
 - `configs/missions.json`: 81 mission classifications and campaign policy.
 - `configs/factions.json`: DTA production families and permanent essentials.
-- `configs/ui.json`: DTA campaigns, difficulties, speeds, voices, colors, and preserved progression modes.
+- `configs/ui.json`: DTA campaigns, difficulties, speeds, colors, and preserved progression modes.
 - `configs/rewards/`: active DTA reward tuning and policy.
 
 Read [configs/README.md](configs/README.md) before changing static data.
@@ -62,10 +62,11 @@ Pure modules must not import `randomizer/application`. Tk variables stay on the 
 
 - Preserve deterministic RNG call order. New deterministic behavior needs a named stream.
 - Preserve serialized reward, mission, and check IDs unless an explicit migration exists.
+- Treat `VehicleTypes` A_/B_/C_/D_ registrations as authoritative ground-unit factions; `Owner` can be broader for scenario placement.
 - Never edit installed source mission maps.
 - Never replace authored placed-unit, TaskForce, TeamType, trigger, script, or reinforcement identities.
 - Resolve scenario houses through Vinifera `ActsLike` before writing production masks.
-- Skip access or clone routing when exact player-only isolation is unsafe.
+- Resolve shared `ActsLike` collisions through map-local HouseType-bit isolation before access or clone routing. Fail launch visibly if exact player-only isolation cannot be established; never silently discard earned access.
 - Keep all 81 installed mission codes explicitly classified.
 - Keep mission INI order, repeated entries, comments, and line-ending behavior intact.
 - Put data-driven mission exceptions in `configs/missions.json` when possible.

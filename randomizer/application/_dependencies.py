@@ -196,7 +196,11 @@ from randomizer.maps.rules import (
     player_house_from_map,
     map_house_records,
 )
-from randomizer.rewards.rules import tech_ids_for_rewards, unlocked_reward_tech_ids
+from randomizer.rewards.rules import (
+    expand_equivalent_role_buffs,
+    tech_ids_for_rewards,
+    unlocked_reward_tech_ids,
+)
 from randomizer.missions.safety import (
     always_available_miner_rules,
     always_available_transport_rules,
@@ -231,7 +235,6 @@ from randomizer.ui.config import (
     DARK_UI_PALETTE,
     DEFAULT_PROGRESSION_MODE,
     DIFFICULTIES,
-    EVA_VOICE_CHOICES,
     FACTION_TILE_COLORS,
     GAME_SPEEDS,
     LIGHT_UI_PALETTE,

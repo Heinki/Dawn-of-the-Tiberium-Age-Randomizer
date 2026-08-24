@@ -62,6 +62,7 @@ def plan_seed_rewards(
     initial_rewards=(),
     require_access_for_unit_buffs=True,
     share_role_buffs=False,
+    collapse_equivalent_access=False,
     reward_weights=None,
     rng_namespace='seed-rewards',
     avoid_unlocked_access=False,
@@ -97,6 +98,20 @@ def plan_seed_rewards(
     reward_metadata = {}
     buff_eligible_unit_ids = set(seed_unlocked_tech_ids)
     buff_equivalents_by_unit = {}
+
+    def equivalent_access_ids_for_tech_ids(tech_ids):
+        if not collapse_equivalent_access:
+            return set()
+        ids = {str(unit_id).upper() for unit_id in tech_ids}
+        return {
+            equivalent
+            for unit_id in ids
+            for equivalent in unit_role_equivalents(unit_id)
+        }
+
+    used_access_equivalent_ids = equivalent_access_ids_for_tech_ids(
+        seed_unlocked_tech_ids
+    )
     plan = {
         code: [None] * max(0, int(slots_by_code.get(code, 0)))
         for code in mission_codes
@@ -194,6 +209,11 @@ def plan_seed_rewards(
         name = reward.get('name')
         if name:
             used_access_names.add(name)
+        used_access_equivalent_ids.update(
+            equivalent_access_ids_for_tech_ids(
+                tech_ids_for_rewards([reward])
+            )
+        )
         if reward.get('kind') == 'superweapon' and reward.get('superweapon'):
             seed_unlocked_power_ids.add(
                 str(reward['superweapon']).upper()
@@ -211,6 +231,9 @@ def plan_seed_rewards(
     reserved_tech_ids = set(tech_ids_for_rewards(
         canonical_reserved_rewards
     ))
+    reserved_access_equivalent_ids = equivalent_access_ids_for_tech_ids(
+        reserved_tech_ids
+    )
     reserved_power_ids = {
         str(reward.get('superweapon') or '').upper()
         for reward in canonical_reserved_rewards
@@ -517,6 +540,15 @@ def plan_seed_rewards(
             if name in used_access_names:
                 access.pop(index)
                 continue
+            metadata = reward_metadata.get(id(reward), {})
+            reward_tech_ids = metadata.get('tech_ids')
+            if reward_tech_ids is None:
+                reward_tech_ids = tech_ids_for_rewards([reward])
+            if equivalent_access_ids_for_tech_ids(reward_tech_ids).intersection(
+                used_access_equivalent_ids | reserved_access_equivalent_ids
+            ):
+                access.pop(index)
+                continue
             if not reward_prerequisites_met(reward):
                 continue
             if access_already_unlocked(reward):
@@ -526,6 +558,9 @@ def plan_seed_rewards(
                 continue
             access.pop(index)
             used_access_names.add(name)
+            used_access_equivalent_ids.update(
+                equivalent_access_ids_for_tech_ids(reward_tech_ids)
+            )
             return dict(reward)
         return None
 
@@ -626,6 +661,16 @@ def plan_seed_rewards(
                 and name in used_access_names
             ):
                 continue
+            if (
+                reward.get('kind') != 'buff'
+                and equivalent_access_ids_for_tech_ids(
+                    metadata.get('tech_ids', tech_ids_for_rewards([reward]))
+                ).intersection(
+                    used_access_equivalent_ids
+                    | reserved_access_equivalent_ids
+                )
+            ):
+                continue
             if not reward_prerequisites_met(reward):
                 continue
             if access_already_unlocked(reward):
@@ -713,6 +758,11 @@ def plan_seed_rewards(
                 )
         else:
             used_access_names.add(reward.get('name'))
+            used_access_equivalent_ids.update(
+                equivalent_access_ids_for_tech_ids(
+                    tech_ids_for_rewards([reward])
+                )
+            )
         return reward
 
     def weighted_choice(items, weight_for):
@@ -740,6 +790,13 @@ def plan_seed_rewards(
                 continue
             if not metadata['is_buff']:
                 if metadata['name'] in used_access_names:
+                    continue
+                if equivalent_access_ids_for_tech_ids(
+                    metadata['tech_ids']
+                ).intersection(
+                    used_access_equivalent_ids
+                    | reserved_access_equivalent_ids
+                ):
                     continue
                 if not reward_prerequisites_met(reward):
                     continue
@@ -846,6 +903,11 @@ def plan_seed_rewards(
             balanced_target_groups_by_pool_id.clear()
         else:
             used_access_names.add(reward.get('name'))
+            used_access_equivalent_ids.update(
+                equivalent_access_ids_for_tech_ids(
+                    tech_ids_for_rewards([reward])
+                )
+            )
         return reward
 
     slot_order = []

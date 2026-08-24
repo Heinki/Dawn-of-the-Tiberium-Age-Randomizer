@@ -1,9 +1,10 @@
-"""Prepare and run a reversible Tutorial #2 Vinifera clone experiment.
+"""Prepare and run a reversible Vinifera player-clone experiment.
 
-The test unlocks one GDI unit through the same player-production clone used by
-normal randomizer runs. Production and damage rewards are applied to that clone,
-plus a broad player production reward. Another GDI unit remains locked as the
-control. Authored map identities are never rewritten.
+The test unlocks one unit through the same player-production clone used by
+normal randomizer runs. Unit-specific and Player Army production rewards plus a
+damage reward are applied to that clone. Another unit remains locked as the
+control. Shared ActsLike production families are isolated first. Authored map
+identities are never rewritten.
 """
 
 from __future__ import annotations
@@ -34,16 +35,21 @@ from randomizer.core.paths import (  # noqa: E402
     SPAWN_MAP_INI,
 )
 from randomizer.dta.access import player_infantry_access_rules  # noqa: E402
-from randomizer.dta.clones import unit_specific_buff_rules  # noqa: E402
+from randomizer.dta.clones import (  # noqa: E402
+    player_production_isolation_rules,
+    unit_specific_buff_rules,
+)
 from randomizer.dta.difficulty import resolve_mission_difficulty  # noqa: E402
 from randomizer.dta.maps import (  # noqa: E402
-    mission_difficulty_modifiers,
     newest_debug_log,
     prepare_spawn_map,
     score_screen_loaded,
 )
-from randomizer.dta.rewards import human_modifier_rules  # noqa: E402
-from randomizer.dta.rules import effective_section, ini_sections  # noqa: E402
+from randomizer.dta.rules import (  # noqa: E402
+    catalogue_by_id,
+    effective_section,
+    ini_sections,
+)
 from randomizer.launch.options import spawn_ini_text  # noqa: E402
 from randomizer.missions.catalogue import parse_missions  # noqa: E402
 from randomizer.rewards.catalogue import REWARD_POOL  # noqa: E402
@@ -169,30 +175,38 @@ def prepare_experiment(args):
     )
     global_production = next(
         reward for reward in REWARD_POOL
-        if reward.get('dta_house_modifier')
+        if reward.get('global_buff')
+        and reward.get('dta_global_clone_buff')
         and reward.get('buff_type') == 'production'
     )
     rewards = [
         unit_access, unit_damage, unit_production, global_production,
     ]
+    isolation_rules, isolation_report = player_production_isolation_rules(
+        mission
+    )
+    if isolation_report.get('isolation_error'):
+        raise RuntimeError(
+            'Could not isolate randomized player production: '
+            + isolation_report['isolation_error']
+        )
     access_rules, access_report = player_infantry_access_rules(
-        mission, rewards, True
+        mission,
+        rewards,
+        True,
+        production_context=isolation_report,
+        rule_overlays=isolation_rules,
     )
     clone_rules, clone_report = unit_specific_buff_rules(
-        mission, rewards, access_randomized=True
-    )
-    human_section = (
-        'Normal' if mission.get('player_always_normal')
-        else {0: 'Easy', 1: 'Normal', 2: 'Difficult'}[
-            difficulty.engine_value
-        ]
-    )
-    broad_rules = human_modifier_rules(
+        mission,
         rewards,
-        mission_difficulty_modifiers(mission, human_section),
-        human_section,
+        access_randomized=True,
+        production_context=isolation_report,
+        rule_overlays=isolation_rules,
     )
-    rules = merge_rules(broad_rules, access_rules, clone_rules)
+    rules = merge_rules(
+        isolation_rules, access_rules, clone_rules
+    )
     clone_entry = next(
         entry for entry in clone_report['applied']
         if entry['unit'] == args.unit.upper()
@@ -217,6 +231,9 @@ def prepare_experiment(args):
     installed_weapon = effective_section(
         installed_sections, installed_unit.get('Primary', '')
     )
+    expected_build_limit = int(
+        catalogue_by_id()[args.unit.upper()].get('build_limit', 0)
+    )
     production_house = access_report['production_house']
     required_fragments = (
         f'[{player_clone}]',
@@ -229,7 +246,7 @@ def prepare_experiment(args):
     )
     forbidden_clone_fields = {
         key for key in clone_values
-        if key.casefold() in {'buildlimit', 'builtat'}
+        if key.casefold() == 'builtat'
         or key.casefold().startswith('prerequisite')
     }
     validation = {
@@ -241,25 +258,35 @@ def prepare_experiment(args):
         'player_clone_route': (
             clone_entry['route'] == 'production_access_clone'
         ),
-        'acts_like_gdi_route': (
-            access_report['player_house'] == 'TutorialGDI'
-            and production_house == 'GDI'
-            and access_report['acts_like'] == 0
+        'production_route_isolated': (
+            not access_report['shared_hostile_houses']
+            and not isolation_report['isolation_error']
+            and (
+                isolation_report['isolation_applied']
+                == bool(
+                    isolation_report['original_shared_hostile_houses']
+                )
+            )
         ),
         'clone_has_unit_buffs': (
             clone_entry['buffs'].get('damage') == 1
-            and clone_entry['buffs'].get('production') == 1
+            and clone_entry['buffs'].get('production') == 2
             and float(clone_values.get('BuildTimeMultiplier', 1)) < 1
             and float(weapon_values.get('Damage', 0)) > float(
                 installed_weapon.get('Damage', 0)
             )
         ),
-        'clone_has_no_build_restrictions': (
+        'clone_has_safe_production_gates': (
             clone_values.get('TechLevel') == '1'
             and not forbidden_clone_fields
+            and (
+                clone_values.get('BuildLimit') == str(expected_build_limit)
+                if expected_build_limit > 0
+                else 'BuildLimit' not in clone_values
+            )
         ),
         'global_production_buff_present': (
-            float(broad_rules.get(human_section, {}).get('BuildTime', 1)) < 1
+            clone_entry['buffs'].get('production') == 2
         ),
         'generated_sections_present': all(
             fragment in generated_text for fragment in required_fragments
@@ -271,6 +298,7 @@ def prepare_experiment(args):
         'mission': mission,
         'difficulty': difficulty,
         'rewards': rewards,
+        'isolation_report': isolation_report,
         'access_report': access_report,
         'clone_report': clone_report,
         'source': source,
@@ -279,7 +307,6 @@ def prepare_experiment(args):
         'generated_hash': file_hash(generated),
         'player_clone': player_clone,
         'weapon_clone': weapon_id,
-        'human_section': human_section,
         'validation': validation,
     }
 
@@ -296,6 +323,7 @@ def report_template(args, experiment):
         'generated_map': str(experiment['generated']),
         'generated_hash': experiment['generated_hash'],
         'player_house': experiment['access_report']['player_house'],
+        'production_isolation': experiment['isolation_report'],
         'unit_unlocked': args.unit.upper(),
         'player_clone': experiment['player_clone'],
         'weapon_clone': experiment['weapon_clone'],
@@ -312,7 +340,7 @@ def report_template(args, experiment):
             'enemy_or_map_identity_regression': 'pending',
         },
         'instructions': [
-            'Open the GDI Barracks in Tutorial Mission 2.',
+            'Open the appropriate player production sidebar.',
             f'Confirm {experiment["player_clone"]} is visible and buildable immediately.',
             f'Confirm unearned {args.locked.upper()} is not buildable.',
             'Confirm the clone has its unit-specific production and damage rewards.',

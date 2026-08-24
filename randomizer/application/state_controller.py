@@ -16,7 +16,6 @@ from ._dependencies import (
     DEFAULT_MISSION_GOAL,
     DEFAULT_REWARDS_PER_CHECK,
     DIFFICULTIES,
-    EVA_VOICE_CHOICES,
     ENEMY_BUFF_DEFINITIONS,
     ENEMY_BUFF_BY_ID,
     GAME_SPEEDS,
@@ -503,7 +502,9 @@ class StateController:
         include_special_buildings = False
         include_special_rewards = bool(self.include_special_rewards_var.get())
         unlimited_hero_units = bool(self.unlimited_hero_units_var.get())
-        share_chaos_role_buffs = False
+        share_chaos_role_buffs = bool(
+            self.share_chaos_role_buffs_var.get()
+        )
         buff_allied_helpers = bool(self.buff_allied_helpers_var.get())
         failure_assistance = bool(self.failure_assistance_var.get())
         include_buffs = bool(self.include_buff_rewards_var.get())
@@ -672,8 +673,6 @@ class StateController:
         settings.pop('experimental_player_unit_clones', None)
         settings.update({
             'include_special_buildings': False,
-            'share_chaos_role_buffs': False,
-            'failure_assistance': False,
         })
         settings.setdefault('include_buff_rewards', True)
         settings.setdefault('include_superweapon_rewards', True)
@@ -985,7 +984,6 @@ class StateController:
         self.config['game_speed'] = self.game_speed_var.get()
         self.config['player_color'] = self.player_color_var.get()
         self.config['rainbowizer'] = bool(self.rainbowizer_var.get())
-        self.config['eva_voice'] = self.eva_voice_var.get()
         reward_settings = self.current_reward_settings()
         self.config.setdefault('generation', {})['starting_unlocked_missions'] = STARTING_UNLOCKED_MISSIONS
         self.config['generation']['include_no_build_missions'] = bool(
@@ -1199,12 +1197,6 @@ class StateController:
         self.rainbowizer_var.set(bool(
             self.config.get('rainbowizer', False)
         ))
-        self.eva_voice_var.set(valid_choice(
-            self.config.get('eva_voice'),
-            EVA_VOICE_CHOICES,
-            EVA_VOICE_CHOICES[0],
-        ))
-
         self.include_no_build_missions_var.set(bool(
             generation.get('include_no_build_missions', True)
         ))

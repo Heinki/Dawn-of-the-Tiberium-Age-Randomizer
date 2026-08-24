@@ -10,7 +10,7 @@
       {
         "id": "IonCannonSpecial",
         "label": "GDI Ion Cannon",
-        "description": "Grants the native repeating player-only Ion Cannon.",
+        "description": "Grants an exclusive repeating player-only Ion Cannon.",
         "factions": ["GDI"],
         "category": "offensive",
         "values": {
@@ -29,7 +29,8 @@
           "cursor": "ChemBomb",
           "no_cursor": "ChemBomb"
         },
-        "buffs": ["recharge"]
+        "exclusive_player": true,
+        "buffs": ["recharge", "damage", "area"]
       },
       {
         "id": "DropPodSpecial",

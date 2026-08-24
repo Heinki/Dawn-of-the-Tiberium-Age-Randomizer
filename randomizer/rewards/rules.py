@@ -1,6 +1,7 @@
 """Translate serialized rewards into launch-time technology/buff scope."""
 
 from randomizer.rewards.catalogue import (
+    BUFF_TARGETS,
     canonical_reward,
     canonical_rewards,
     unit_role_equivalents,
@@ -89,6 +90,11 @@ def expand_equivalent_role_buffs(rewards, enabled=False, allowed_unit_ids=None):
                 continue
             equivalent = dict(reward)
             equivalent['unit'] = unit_id
+            equivalent['factions'] = list(
+                BUFF_TARGETS.get(unit_id, {}).get(
+                    'factions', equivalent.get('factions', ())
+                )
+            )
             equivalent['_runtime_canonical'] = True
             expanded.append(equivalent)
     return expanded

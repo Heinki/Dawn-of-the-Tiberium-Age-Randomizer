@@ -219,7 +219,6 @@ class UnlockViewController:
         photos = {}
         for entry in entries:
             cache_key = entry['id'] if entry['kind'] == 'unit' else entry['key']
-            photo = self.cameo_photo_cache.get(cache_key)
             path = None
             if entry['kind'] == 'unit':
                 path = unit_paths.get(entry['id'])
@@ -233,6 +232,14 @@ class UnlockViewController:
                 else:
                     cameo_id = entry['reward'].get('cameo_superweapon', entry['id'])
                     path = power_paths.get(str(cameo_id).upper())
+            photo = self.cameo_photo_cache.get(cache_key) if path else None
+            if entry['kind'] == 'unit' and not path:
+                # A corrected text-only unit must not retain an inherited
+                # cameo loaded earlier in the same launcher process.
+                self.cameo_photo_cache.pop(cache_key, None)
+                self.cameo_photo_cache.pop(
+                    f'dashboard-scale:{cache_key}', None
+                )
             if photo is None and path:
                 try:
                     photo = tk.PhotoImage(file=str(path))

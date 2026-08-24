@@ -17,14 +17,6 @@ PLAYER_COLOR_ENGINE_VALUES = dict(
     _UI_CONFIG.get('player_color_engine_values', {})
 )
 
-# Voice tags are one source of truth. Dict insertion order controls menu order;
-# adding/removing/renaming one entry updates both choices and map tag lookup.
-EVA_VOICE_TAGS = dict(_UI_CONFIG['eva_voice_tags'])
-EVA_VOICE_CHOICES = ['Mission default', *EVA_VOICE_TAGS, 'Random']
-EVA_APPEARANCE_PROFILES = dict(
-    _UI_CONFIG.get('eva_appearance_profiles', {})
-)
-
 REWARDS_PER_CHECK_MAXIMUM_MESSAGE = str(
     _UI_CONFIG['rewards_per_check_messages']['maximum']
 )

@@ -42,6 +42,7 @@ from ._dependencies import (
     is_generated_hooked_map,
     is_generated_rules_file,
     launch_rules_for_reward,
+    linked_buff_variant_ids,
     log_event,
     logging,
     messagebox,
@@ -72,7 +73,11 @@ from randomizer.dta.maps import (
 )
 from randomizer.dta.difficulty import resolve_mission_difficulty
 from randomizer.dta.access import player_infantry_access_rules
-from randomizer.dta.clones import unit_specific_buff_rules
+from randomizer.dta.clones import (
+    mission_assistance_rewards,
+    player_production_isolation_rules,
+    unit_specific_buff_rules,
+)
 from randomizer.dta.enemies import enemy_buff_rules
 from randomizer.dta.powers import (
     ensure_power_action_types,
@@ -743,8 +748,16 @@ throw "Map $name was not found in expandmo*.mix"
             for line in text.splitlines():
                 if not score_screen_loaded(line):
                     continue
-                if self.unlock_mission_check(code, 'victory', 'DTA score screen'):
-                    self.active_hook.setdefault('seen', set()).add('ScoreScreen: Loaded')
+                # A randomizer replay of an already-completed mission still
+                # needs to stop at the score screen. Unlocking is idempotent,
+                # but game cleanup must run for both new and prior victories.
+                unlocked = self.unlock_mission_check(
+                    code, 'victory', 'DTA score screen'
+                )
+                if unlocked or self.is_mission_complete(code):
+                    self.active_hook.setdefault('seen', set()).add(
+                        'ScoreScreen: Loaded'
+                    )
                     self.schedule_game_close_after_victory()
                 break
             return
@@ -1014,10 +1027,77 @@ throw "Map $name was not found in expandmo*.mix"
                     and str(reward.get('unit') or '').upper() in starter_ids
                     and str(reward.get('unit') or '').upper() not in existing_access
                 )
-            dta_rules = {}
+                existing_access.update(
+                    str(reward.get('unit') or '').upper()
+                    for reward in active_rewards
+                    if reward.get('dta_production_access')
+                )
+                access_sources = [
+                    reward for reward in REWARD_POOL
+                    if reward.get('dta_production_access')
+                ]
+                for starter_id in sorted(starter_ids - existing_access):
+                    source = next((
+                        reward for reward in access_sources
+                        if starter_id in linked_buff_variant_ids(
+                            reward.get('unit')
+                        )
+                    ), None)
+                    if source is None:
+                        continue
+                    source_id = str(source.get('unit') or '').upper()
+                    variant = dict(source)
+                    variant['unit'] = starter_id
+                    variant['rules'] = {
+                        starter_id: dict(
+                            source.get('rules', {}).get(source_id, {})
+                        )
+                    }
+                    variant['_runtime_canonical'] = True
+                    active_rewards.append(variant)
+            linked_buff_rewards = []
+            for reward in active_rewards:
+                if reward.get('kind') != 'buff':
+                    continue
+                source_id = str(reward.get('unit') or '').upper()
+                for variant_id in sorted(
+                    linked_buff_variant_ids(source_id) - {source_id}
+                ):
+                    variant = dict(reward)
+                    variant['unit'] = variant_id
+                    variant['_runtime_canonical'] = True
+                    linked_buff_rewards.append(variant)
+            active_rewards.extend(linked_buff_rewards)
+            isolation_rules, isolation_report = (
+                player_production_isolation_rules(mission)
+            )
+            if isolation_report.get('isolation_error'):
+                raise RuntimeError(
+                    'Could not isolate randomized player production: '
+                    + isolation_report['isolation_error']
+                )
+            dta_rules = {
+                section: dict(values)
+                for section, values in isolation_rules.items()
+            }
+            assistance_stacks = (
+                self.mission_failure_stack(mission_code)
+                if self.failure_assistance_enabled()
+                else 0
+            )
+            assistance_rewards, assistance_unit_ids = (
+                mission_assistance_rewards(
+                    mission,
+                    active_rewards,
+                    assistance_stacks,
+                    access_randomized=self.randomize_unit_access_enabled(),
+                    production_context=isolation_report,
+                    rule_overlays=isolation_rules,
+                )
+            )
             clone_rules, clone_report = unit_specific_buff_rules(
                 mission,
-                active_rewards,
+                [*active_rewards, *assistance_rewards],
                 access_randomized=self.randomize_unit_access_enabled(),
                 buff_allied_helpers=self.active_reward_settings().get(
                     'buff_allied_helpers', False
@@ -1025,6 +1105,8 @@ throw "Map $name was not found in expandmo*.mix"
                 unlimited_hero_units=self.active_reward_settings().get(
                     'unlimited_hero_units', False
                 ),
+                production_context=isolation_report,
+                rule_overlays=isolation_rules,
             )
             access_rules, access_report = player_infantry_access_rules(
                 mission,
@@ -1033,6 +1115,8 @@ throw "Map $name was not found in expandmo*.mix"
                 include_defenses=self.active_reward_settings().get(
                     'include_defensive_buildings', False
                 ),
+                production_context=isolation_report,
+                rule_overlays=isolation_rules,
             )
             for section, values in access_rules.items():
                 dta_rules.setdefault(section, {}).update(values)
@@ -1058,6 +1142,8 @@ throw "Map $name was not found in expandmo*.mix"
                     and item.get('output_type') != 'E1S'
                 ), ''),
                 reserved_rules=dta_rules,
+                production_context=isolation_report,
+                rule_overlays=isolation_rules,
             )
             runtime_power_rules = power_report.pop('_runtime_rules', {})
             runtime_power_art = power_report.pop('_runtime_art', {})
@@ -1101,6 +1187,19 @@ throw "Map $name was not found in expandmo*.mix"
                 power_actions=power_actions,
                 power_house=power_report['player_house'],
             )
+            if isolation_report.get('isolation_applied'):
+                details = ', '.join(
+                    f'{item["house"]} ActsLike {item["old_acts_like"]} to '
+                    f'{item["new_acts_like"]} '
+                    f'({item["new_production_house"]})'
+                    for item in isolation_report['isolated_houses']
+                )
+                self.append_log(
+                    'Applied DTA exact player-production isolation: '
+                    + details
+                    + '. Scenario-house identities and authored references '
+                    'were preserved.'
+                )
             if clone_report['applied']:
                 rewritten_count = clone_report.get('map_objects_rewritten', 0)
                 self.append_log(
@@ -1115,6 +1214,18 @@ throw "Map $name was not found in expandmo*.mix"
                         if rewritten_count
                         else '. Authored map objects were not rewritten.'
                     )
+                )
+            if assistance_stacks:
+                applied_assistance = sorted({
+                    item['unit']
+                    for item in clone_report['applied']
+                    if item['unit'] in assistance_unit_ids
+                    and item.get('buffs')
+                })
+                self.append_log(
+                    f'Applied {assistance_stacks} retry assistance stack(s) '
+                    f'to {len(applied_assistance)} player unit type(s) for '
+                    f'{mission_code}.'
                 )
             if power_report['applied']:
                 self.append_log(
@@ -1161,6 +1272,8 @@ throw "Map $name was not found in expandmo*.mix"
                         'Authored map identities were not rewritten.'
                     )
             hook['unit_clone_report'] = clone_report
+            hook['mission_assistance_stacks'] = assistance_stacks
+            hook['mission_assistance_unit_ids'] = assistance_unit_ids
             hook['infantry_access_report'] = access_report
             hook['power_report'] = power_report
             existing_log = newest_debug_log(DEBUG_LOG)

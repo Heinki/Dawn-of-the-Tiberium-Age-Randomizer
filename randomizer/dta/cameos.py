@@ -8,6 +8,13 @@ from pathlib import Path
 from randomizer.core.paths import CAMEO_CACHE_DIR, GAME_ROOT
 
 
+TEXT_ONLY_CAMEO_IDS = frozenset({
+    # No dedicated native cameo exists for these registered types. Art.ini
+    # either omits Cameo or points at a different unit's labelled artwork.
+    'BRIG', 'RAPARTY',
+    'CYP', 'ILHEMOTH', 'TNKN', 'BEHEPLSM', 'FLAKCORV',
+})
+
 
 def _ini_sections(path):
     sections = {}
@@ -221,12 +228,16 @@ def ensure_unit_cameos(unit_ids):
     if palette is None:
         return {}
     result = {}
-    # DTA does not provide correct cameos for these units. TNKN points at the
-    # Tank Destroyer icon and BRIG has none; the UI intentionally uses text.
-    text_only_ids = {'TNKN', 'BRIG'}
     for raw_unit_id in unit_ids:
         unit_id = str(raw_unit_id or '').upper()
-        if unit_id in text_only_ids:
+        output = CAMEO_CACHE_DIR / f'{unit_id.lower()}-dta.png'
+        if unit_id in TEXT_ONLY_CAMEO_IDS:
+            # Older builds may have cached the incorrect inherited cameo.
+            # Remove it so every UI surface is forced back to its text card.
+            try:
+                output.unlink(missing_ok=True)
+            except OSError:
+                pass
             continue
         art_id = rules.get(unit_id, {}).get('image', unit_id).upper()
         cameo = _effective_art_value(art, art_id, 'cameo')
@@ -237,7 +248,6 @@ def ensure_unit_cameos(unit_ids):
             (payload for filename in filenames if (payload := mix_asset(filename)) is not None),
             None,
         )
-        output = CAMEO_CACHE_DIR / f'{unit_id.lower()}-dta.png'
         try:
             if shp is None:
                 continue

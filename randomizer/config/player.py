@@ -49,10 +49,13 @@ def deep_merge(defaults, loaded):
 
 
 def migrate_loaded_config(loaded):
-    """Enable newly introduced buff types once without restoring old toggles."""
+    """Migrate persisted options without restoring old user toggles."""
     if not isinstance(loaded, dict):
         return False
     changed = False
+    if 'eva_voice' in loaded:
+        loaded.pop('eva_voice', None)
+        changed = True
     archipelago = loaded.get('archipelago')
     if isinstance(archipelago, dict):
         server = str(archipelago.get('server') or '').strip()

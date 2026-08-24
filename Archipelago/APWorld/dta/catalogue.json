@@ -395,6 +395,76 @@
       "id": 81064500
     },
     {
+      "name": "Allied Artillery Emplacement (ART) Armor Plating I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065938
+    },
+    {
+      "name": "Allied Artillery Emplacement (ART) Drill I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065939
+    },
+    {
+      "name": "Allied Artillery Emplacement (ART) Firepower I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065940
+    },
+    {
+      "name": "Allied Artillery Emplacement (ART) Logistics I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065941
+    },
+    {
+      "name": "Allied Artillery Emplacement (ART) Optics I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065942
+    },
+    {
+      "name": "Allied Artillery Emplacement (ART) Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065943
+    },
+    {
+      "name": "Allied Artillery Emplacement (ART) Reinforcement I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065944
+    },
+    {
+      "name": "Allied Artillery Emplacement (ART) Stealth Field I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065945
+    },
+    {
+      "name": "Allied Artillery Emplacement (ART) Targeting I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065946
+    },
+    {
+      "name": "Allied Artillery Emplacement (ART) Weapon Tuning I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065947
+    },
+    {
       "name": "Allied Gun Turret (RAGUN) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -841,174 +911,6 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064533
-    },
-    {
-      "name": "Allied Rifle Infantry (E1A) Armor Plating I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064534
-    },
-    {
-      "name": "Allied Rifle Infantry (E1A) Drill I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064535
-    },
-    {
-      "name": "Allied Rifle Infantry (E1A) Firepower I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064536
-    },
-    {
-      "name": "Allied Rifle Infantry (E1A) Logistics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064537
-    },
-    {
-      "name": "Allied Rifle Infantry (E1A) Mobility I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064538
-    },
-    {
-      "name": "Allied Rifle Infantry (E1A) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064539
-    },
-    {
-      "name": "Allied Rifle Infantry (E1A) Regeneration I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065801
-    },
-    {
-      "name": "Allied Rifle Infantry (E1A) Reinforcement I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064540
-    },
-    {
-      "name": "Allied Rifle Infantry (E1A) Sensor Array I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064541
-    },
-    {
-      "name": "Allied Rifle Infantry (E1A) Stealth Field I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064542
-    },
-    {
-      "name": "Allied Rifle Infantry (E1A) Targeting I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064543
-    },
-    {
-      "name": "Allied Rifle Infantry (E1A) Weapon Tuning I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064544
-    },
-    {
-      "name": "Allied Rocket Soldier (E3A) Armor Plating I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064545
-    },
-    {
-      "name": "Allied Rocket Soldier (E3A) Drill I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064546
-    },
-    {
-      "name": "Allied Rocket Soldier (E3A) Firepower I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064547
-    },
-    {
-      "name": "Allied Rocket Soldier (E3A) Logistics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064548
-    },
-    {
-      "name": "Allied Rocket Soldier (E3A) Mobility I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064549
-    },
-    {
-      "name": "Allied Rocket Soldier (E3A) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064550
-    },
-    {
-      "name": "Allied Rocket Soldier (E3A) Regeneration I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065802
-    },
-    {
-      "name": "Allied Rocket Soldier (E3A) Reinforcement I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064551
-    },
-    {
-      "name": "Allied Rocket Soldier (E3A) Sensor Array I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064552
-    },
-    {
-      "name": "Allied Rocket Soldier (E3A) Stealth Field I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064553
-    },
-    {
-      "name": "Allied Rocket Soldier (E3A) Targeting I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064554
-    },
-    {
-      "name": "Allied Rocket Soldier (E3A) Weapon Tuning I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064555
     },
     {
       "name": "Anti-Aircraft Truck (MFLAK) Armor Plating I",
@@ -2066,6 +1968,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064034
+    },
+    {
+      "name": "Commando (RMBO) Command Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065935
     },
     {
       "name": "Commando (RMBO) Drill I",
@@ -3496,6 +3405,20 @@
       "id": 81064737
     },
     {
+      "name": "GDI Ion Cannon Amplified Payload I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066004
+    },
+    {
+      "name": "GDI Ion Cannon Expanded Blast I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066005
+    },
+    {
       "name": "GDI Ion Cannon Rapid Charging I",
       "classification": "useful",
       "category": "power_buffs",
@@ -3802,6 +3725,69 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064761
+    },
+    {
+      "name": "Gap Generator (RAGAP) Armor Plating I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065948
+    },
+    {
+      "name": "Gap Generator (RAGAP) Command Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065949
+    },
+    {
+      "name": "Gap Generator (RAGAP) Drill I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065950
+    },
+    {
+      "name": "Gap Generator (RAGAP) Logistics I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065951
+    },
+    {
+      "name": "Gap Generator (RAGAP) Optics I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065952
+    },
+    {
+      "name": "Gap Generator (RAGAP) Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065953
+    },
+    {
+      "name": "Gap Generator (RAGAP) Reinforcement I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065954
+    },
+    {
+      "name": "Gap Generator (RAGAP) Sensor Array I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065955
+    },
+    {
+      "name": "Gap Generator (RAGAP) Stealth Field I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065956
     },
     {
       "name": "Gatling Tank (GTNK) Armor Plating I",
@@ -5048,6 +5034,55 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064858
+    },
+    {
+      "name": "Land Mine (VMINE) Armor Plating I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065957
+    },
+    {
+      "name": "Land Mine (VMINE) Drill I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065958
+    },
+    {
+      "name": "Land Mine (VMINE) Logistics I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065959
+    },
+    {
+      "name": "Land Mine (VMINE) Optics I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065960
+    },
+    {
+      "name": "Land Mine (VMINE) Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065961
+    },
+    {
+      "name": "Land Mine (VMINE) Reinforcement I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065962
+    },
+    {
+      "name": "Land Mine (VMINE) Targeting I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065963
     },
     {
       "name": "Laser Corvette (LASCOR) Armor Plating I",
@@ -8123,6 +8158,90 @@
       "id": 81064313
     },
     {
+      "name": "Rifle Infantry (E1A) Armor Plating I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065978
+    },
+    {
+      "name": "Rifle Infantry (E1A) Drill I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065979
+    },
+    {
+      "name": "Rifle Infantry (E1A) Firepower I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065980
+    },
+    {
+      "name": "Rifle Infantry (E1A) Logistics I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065981
+    },
+    {
+      "name": "Rifle Infantry (E1A) Mobility I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065982
+    },
+    {
+      "name": "Rifle Infantry (E1A) Optics I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065983
+    },
+    {
+      "name": "Rifle Infantry (E1A) Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065984
+    },
+    {
+      "name": "Rifle Infantry (E1A) Reinforcement I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065985
+    },
+    {
+      "name": "Rifle Infantry (E1A) Sensor Array I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065986
+    },
+    {
+      "name": "Rifle Infantry (E1A) Stealth Field I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065987
+    },
+    {
+      "name": "Rifle Infantry (E1A) Targeting I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065988
+    },
+    {
+      "name": "Rifle Infantry (E1A) Weapon Tuning I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065989
+    },
+    {
       "name": "Rocket Hum-vee (JEEPPTNK) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -8282,6 +8401,90 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064331
+    },
+    {
+      "name": "Rocket Soldier (E3A) Armor Plating I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065990
+    },
+    {
+      "name": "Rocket Soldier (E3A) Drill I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065991
+    },
+    {
+      "name": "Rocket Soldier (E3A) Firepower I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065992
+    },
+    {
+      "name": "Rocket Soldier (E3A) Logistics I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065993
+    },
+    {
+      "name": "Rocket Soldier (E3A) Mobility I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065994
+    },
+    {
+      "name": "Rocket Soldier (E3A) Optics I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065995
+    },
+    {
+      "name": "Rocket Soldier (E3A) Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065996
+    },
+    {
+      "name": "Rocket Soldier (E3A) Reinforcement I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065997
+    },
+    {
+      "name": "Rocket Soldier (E3A) Sensor Array I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065998
+    },
+    {
+      "name": "Rocket Soldier (E3A) Stealth Field I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065999
+    },
+    {
+      "name": "Rocket Soldier (E3A) Targeting I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066000
+    },
+    {
+      "name": "Rocket Soldier (E3A) Weapon Tuning I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066001
     },
     {
       "name": "SAM Site (RASAM) Armor Plating I",
@@ -8830,90 +9033,6 @@
       "id": 81064367
     },
     {
-      "name": "Soviet APC (APC2) Armor Plating I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065149
-    },
-    {
-      "name": "Soviet APC (APC2) Drill I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065150
-    },
-    {
-      "name": "Soviet APC (APC2) Expanded Transport I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065151
-    },
-    {
-      "name": "Soviet APC (APC2) Firepower I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065152
-    },
-    {
-      "name": "Soviet APC (APC2) Logistics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065153
-    },
-    {
-      "name": "Soviet APC (APC2) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065155
-    },
-    {
-      "name": "Soviet APC (APC2) Regeneration I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065892
-    },
-    {
-      "name": "Soviet APC (APC2) Reinforcement I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065156
-    },
-    {
-      "name": "Soviet APC (APC2) Sensor Array I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065157
-    },
-    {
-      "name": "Soviet APC (APC2) Stealth Field I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065158
-    },
-    {
-      "name": "Soviet APC (APC2) Targeting I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065159
-    },
-    {
-      "name": "Soviet APC (APC2) Weapon Tuning I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065160
-    },
-    {
       "name": "Soviet Flamethrower Infantry (E4S) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -9327,172 +9446,74 @@
       "id": 81065549
     },
     {
-      "name": "Soviet Rifle Infantry (E1S) Armor Plating I",
+      "name": "Soviet Shore Artillery (RAPARTY) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065198
+      "id": 81065964
     },
     {
-      "name": "Soviet Rifle Infantry (E1S) Drill I",
+      "name": "Soviet Shore Artillery (RAPARTY) Drill I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065199
+      "id": 81065965
     },
     {
-      "name": "Soviet Rifle Infantry (E1S) Firepower I",
+      "name": "Soviet Shore Artillery (RAPARTY) Firepower I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065200
+      "id": 81065966
     },
     {
-      "name": "Soviet Rifle Infantry (E1S) Logistics I",
+      "name": "Soviet Shore Artillery (RAPARTY) Logistics I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065201
+      "id": 81065967
     },
     {
-      "name": "Soviet Rifle Infantry (E1S) Mobility I",
+      "name": "Soviet Shore Artillery (RAPARTY) Optics I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065202
+      "id": 81065968
     },
     {
-      "name": "Soviet Rifle Infantry (E1S) Optics I",
+      "name": "Soviet Shore Artillery (RAPARTY) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065203
+      "id": 81065969
     },
     {
-      "name": "Soviet Rifle Infantry (E1S) Regeneration I",
+      "name": "Soviet Shore Artillery (RAPARTY) Reinforcement I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065897
+      "id": 81065970
     },
     {
-      "name": "Soviet Rifle Infantry (E1S) Reinforcement I",
+      "name": "Soviet Shore Artillery (RAPARTY) Stealth Field I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065204
+      "id": 81065971
     },
     {
-      "name": "Soviet Rifle Infantry (E1S) Sensor Array I",
+      "name": "Soviet Shore Artillery (RAPARTY) Targeting I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065205
+      "id": 81065972
     },
     {
-      "name": "Soviet Rifle Infantry (E1S) Stealth Field I",
+      "name": "Soviet Shore Artillery (RAPARTY) Weapon Tuning I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065206
-    },
-    {
-      "name": "Soviet Rifle Infantry (E1S) Targeting I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065207
-    },
-    {
-      "name": "Soviet Rifle Infantry (E1S) Weapon Tuning I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065208
-    },
-    {
-      "name": "Soviet Rocket Soldier (E3S) Armor Plating I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065209
-    },
-    {
-      "name": "Soviet Rocket Soldier (E3S) Drill I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065210
-    },
-    {
-      "name": "Soviet Rocket Soldier (E3S) Firepower I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065211
-    },
-    {
-      "name": "Soviet Rocket Soldier (E3S) Logistics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065212
-    },
-    {
-      "name": "Soviet Rocket Soldier (E3S) Mobility I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065213
-    },
-    {
-      "name": "Soviet Rocket Soldier (E3S) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065214
-    },
-    {
-      "name": "Soviet Rocket Soldier (E3S) Regeneration I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065898
-    },
-    {
-      "name": "Soviet Rocket Soldier (E3S) Reinforcement I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065215
-    },
-    {
-      "name": "Soviet Rocket Soldier (E3S) Sensor Array I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065216
-    },
-    {
-      "name": "Soviet Rocket Soldier (E3S) Stealth Field I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065217
-    },
-    {
-      "name": "Soviet Rocket Soldier (E3S) Targeting I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065218
-    },
-    {
-      "name": "Soviet Rocket Soldier (E3S) Weapon Tuning I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065219
+      "id": 81065973
     },
     {
       "name": "Spy (SPY) Armor Plating I",
@@ -10039,6 +10060,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064406
+    },
+    {
+      "name": "Tanya (TANYA) Command Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065936
     },
     {
       "name": "Tanya (TANYA) Drill I",
@@ -10678,6 +10706,13 @@
       "id": 81065281
     },
     {
+      "name": "Unlock Allied Artillery Emplacement (ART)",
+      "classification": "progression",
+      "category": "unit_unlocks",
+      "repeatable": false,
+      "id": 81065974
+    },
+    {
       "name": "Unlock Allied Gun Turret (RAGUN)",
       "classification": "progression",
       "category": "unit_unlocks",
@@ -10704,20 +10739,6 @@
       "category": "unit_unlocks",
       "repeatable": false,
       "id": 81065284
-    },
-    {
-      "name": "Unlock Allied Rifle Infantry (E1A)",
-      "classification": "progression",
-      "category": "unit_unlocks",
-      "repeatable": false,
-      "id": 81065285
-    },
-    {
-      "name": "Unlock Allied Rocket Soldier (E3A)",
-      "classification": "progression",
-      "category": "unit_unlocks",
-      "repeatable": false,
-      "id": 81065286
     },
     {
       "name": "Unlock Anti-Aircraft Truck (MFLAK)",
@@ -10951,6 +10972,13 @@
       "id": 81065308
     },
     {
+      "name": "Unlock Gap Generator (RAGAP)",
+      "classification": "progression",
+      "category": "unit_unlocks",
+      "repeatable": false,
+      "id": 81065975
+    },
+    {
       "name": "Unlock Gatling Tank (GTNK)",
       "classification": "progression",
       "category": "special_unlocks",
@@ -11054,6 +11082,13 @@
       "category": "special_unlocks",
       "repeatable": false,
       "id": 81065319
+    },
+    {
+      "name": "Unlock Land Mine (VMINE)",
+      "classification": "progression",
+      "category": "unit_unlocks",
+      "repeatable": false,
+      "id": 81065976
     },
     {
       "name": "Unlock Laser Corvette (LASCOR)",
@@ -11308,6 +11343,13 @@
       "id": 81065348
     },
     {
+      "name": "Unlock Rifle Infantry (E1A)",
+      "classification": "progression",
+      "category": "unit_unlocks",
+      "repeatable": false,
+      "id": 81066002
+    },
+    {
       "name": "Unlock Rocket Hum-vee (JEEPPTNK)",
       "classification": "progression",
       "category": "special_unlocks",
@@ -11320,6 +11362,13 @@
       "category": "unit_unlocks",
       "repeatable": false,
       "id": 81065350
+    },
+    {
+      "name": "Unlock Rocket Soldier (E3A)",
+      "classification": "progression",
+      "category": "unit_unlocks",
+      "repeatable": false,
+      "id": 81066003
     },
     {
       "name": "Unlock SAM Site (RASAM)",
@@ -11371,13 +11420,6 @@
       "id": 81064463
     },
     {
-      "name": "Unlock Soviet APC (APC2)",
-      "classification": "progression",
-      "category": "unit_unlocks",
-      "repeatable": false,
-      "id": 81065354
-    },
-    {
       "name": "Unlock Soviet Flamethrower Infantry (E4S)",
       "classification": "progression",
       "category": "unit_unlocks",
@@ -11406,18 +11448,11 @@
       "id": 81065438
     },
     {
-      "name": "Unlock Soviet Rifle Infantry (E1S)",
+      "name": "Unlock Soviet Shore Artillery (RAPARTY)",
       "classification": "progression",
       "category": "unit_unlocks",
       "repeatable": false,
-      "id": 81065357
-    },
-    {
-      "name": "Unlock Soviet Rocket Soldier (E3S)",
-      "classification": "progression",
-      "category": "unit_unlocks",
-      "repeatable": false,
-      "id": 81065358
+      "id": 81065977
     },
     {
       "name": "Unlock Spy (SPY)",
@@ -11635,6 +11670,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064434
+    },
+    {
+      "name": "Volkov (VOLKOV) Command Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81065937
     },
     {
       "name": "Volkov (VOLKOV) Drill I",
@@ -13025,7 +13067,7 @@
       ]
     }
   ],
-  "catalogue_checksum": "a4df144b4be072fa3387de6805b49adb4f30116123c211ca98526fad49b9c937",
+  "catalogue_checksum": "96ef60cefce07ad07ac6cf083e649a8b868fa5e7f793ff12cb6457630e796d33",
   "locations": [
     {
       "name": "Tutorial Mission 1 - Mission Complete - Reward 1",

@@ -42,7 +42,6 @@ from randomizer.ui.integer_slider import IntegerSlider
 from randomizer.ui.config import (
     CAMPAIGN_FILTERS,
     DIFFICULTIES,
-    EVA_VOICE_CHOICES,
     GAME_SPEEDS,
     PLAYER_COLORS,
     PROGRESSION_MODES,

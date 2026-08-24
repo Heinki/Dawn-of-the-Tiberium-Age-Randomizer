@@ -31,7 +31,6 @@ GAMEPLAY_CONFIG_KEYS = (
     "game_speed",
     "player_color",
     "rainbowizer",
-    "eva_voice",
 )
 
 PLAYER_GENERATION_KEYS = {

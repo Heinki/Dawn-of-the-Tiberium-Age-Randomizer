@@ -10,6 +10,7 @@ from randomizer.config.tuning import (
     stacked_weapon_damage,
     stacked_weapon_rof,
 )
+from randomizer.config.static import load_static_config
 from randomizer.dta.powers import POWER_SPECS, power_unlock_rewards
 from randomizer.dta.rules import ALWAYS_AVAILABLE_MOBILE_IDS, techno_catalogue
 from randomizer.rewards.dta_power_buffs import (
@@ -174,6 +175,13 @@ def _display_label(record):
 _MOBILE_RECORDS = tuple(
     {**record, 'label': _display_label(record)}
     for record in _MOBILE_SOURCE_RECORDS
+)
+
+_MOBILE_ALIAS_RECORDS = tuple(
+    record for record in techno_catalogue()
+    if record.get('rewardable')
+    and record.get('category') in {'infantry', 'vehicles', 'aircraft'}
+    and record.get('duplicate_of')
 )
 
 _MOBILE_ACCESS_RECORDS = tuple(
@@ -480,6 +488,24 @@ HOUSE_SCOPED_BUFF_TYPES = frozenset()
 WEAPON_STAT_BUFF_TYPES = frozenset({'damage', 'range', 'reload'})
 _UNIT_POLICY_CONFIG = {'ammo_display_labels': {}}
 
+_FACTION_CONFIG = load_static_config('factions.json')
+_UNIT_EQUIVALENTS_BY_ID = {}
+for _configured_group in _FACTION_CONFIG['unit_equivalence_groups']:
+    _group = frozenset(str(unit_id).upper() for unit_id in _configured_group)
+    for _unit_id in _group:
+        _UNIT_EQUIVALENTS_BY_ID[_unit_id] = _group
+
+_LINKED_BUFF_VARIANTS_BY_ID = {}
+_linked_aliases_by_source = {}
+for _alias_record in _MOBILE_ALIAS_RECORDS:
+    _alias_id = str(_alias_record['id']).upper()
+    _source_id = str(_alias_record['duplicate_of']).upper()
+    _linked_aliases_by_source.setdefault(_source_id, set()).add(_alias_id)
+for _source_id, _alias_ids in _linked_aliases_by_source.items():
+    _group = frozenset({_source_id, *_alias_ids})
+    for _unit_id in _group:
+        _LINKED_BUFF_VARIANTS_BY_ID[_unit_id] = _group
+
 
 def unit_display_label(unit_id):
     return UNIT_LABELS.get(str(unit_id or '').upper(), str(unit_id or ''))
@@ -487,11 +513,16 @@ def unit_display_label(unit_id):
 
 def unit_role_equivalents(unit_id):
     unit_id = str(unit_id or '').upper()
-    return frozenset((unit_id,)) if unit_id else frozenset()
+    if not unit_id:
+        return frozenset()
+    return _UNIT_EQUIVALENTS_BY_ID.get(unit_id, frozenset((unit_id,)))
 
 
 def linked_buff_variant_ids(unit_id):
-    return unit_role_equivalents(unit_id)
+    unit_id = str(unit_id or '').upper()
+    if not unit_id:
+        return frozenset()
+    return _LINKED_BUFF_VARIANTS_BY_ID.get(unit_id, frozenset((unit_id,)))
 
 
 def movement_speed_ceiling(target):

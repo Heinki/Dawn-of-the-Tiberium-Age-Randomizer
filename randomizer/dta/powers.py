@@ -7,6 +7,7 @@ from randomizer.core.paths import GAME_ROOT
 from randomizer.dta.clones import _player_production_context
 from randomizer.dta.maps import mission_source_path
 from randomizer.dta.rules import effective_section, ini_sections
+from randomizer.maps.ini import action_group_tokens, parse_action_groups
 
 POWER_SETTINGS = static_config_section(
     'rewards/powers.json', 'settings', dict
@@ -491,6 +492,112 @@ def _clone_power_effect_chain(
     return rule_output, art_output, enhanced_power
 
 
+def _clone_ion_cannon_effect(
+    buff_counts,
+    installed,
+    authored,
+    occupied,
+    list_offsets,
+):
+    """Apply native Ion Cannon buffs after its access is player-exclusive."""
+    damage_count = buff_counts.get('damage', 0)
+    area_count = buff_counts.get('area', 0)
+    if not (damage_count or area_count):
+        return {}
+    mission_rules = {
+        section: dict(values) for section, values in installed.items()
+    }
+    for section, values in authored.items():
+        mission_rules.setdefault(section, {}).update(values)
+    combat = effective_section(mission_rules, 'CombatDamage')
+    output = {'CombatDamage': {}}
+    if damage_count:
+        output['CombatDamage']['IonCannonDamage'] = _scaled_integer(
+            combat.get('IonCannonDamage', '600'),
+            1.15 ** damage_count,
+        )
+    if area_count:
+        warhead_id = str(
+            combat.get('IonCannonWarhead') or 'IonCannonWH'
+        ).strip()
+        clone_id = _clone_auxiliary_id(warhead_id, 'ION', occupied)
+        clone_values = dict(effective_section(mission_rules, warhead_id))
+        clone_values.pop('BaseSection', None)
+        try:
+            if 'CellSpread' in clone_values:
+                base_spread = float(clone_values['CellSpread'])
+            else:
+                base_spread = float(clone_values.get('Spread', 0)) / 128.0
+        except (TypeError, ValueError):
+            base_spread = 0.0
+        spread = base_spread + POWER_AREA_CELLS_PER_STACK * area_count
+        clone_values['CellSpread'] = f'{spread:.4f}'.rstrip('0').rstrip('.')
+        output[clone_id] = clone_values
+        key = _next_list_key(installed, authored, 'Warheads', list_offsets)
+        output.setdefault('Warheads', {})[key] = clone_id
+        output['CombatDamage']['IonCannonWarhead'] = clone_id
+    return output
+
+
+def _exclusive_native_power_rules(
+    source_id,
+    native_index,
+    installed,
+    authored,
+):
+    """Remove native providers/grants while keeping the player reward clone."""
+    mission_rules = {
+        section: dict(values) for section, values in installed.items()
+    }
+    for section, values in authored.items():
+        mission_rules.setdefault(section, {}).update(values)
+    output = {}
+    provider_fields_cleared = []
+    source_key = source_id.casefold()
+    for section, values in mission_rules.items():
+        for field in ('SuperWeapon', 'SuperWeapon2', 'SuperWeapons'):
+            if field not in values:
+                continue
+            powers = [
+                item.strip() for item in str(values[field]).split(',')
+                if item.strip()
+            ]
+            if source_key not in {item.casefold() for item in powers}:
+                continue
+            remaining = [
+                item for item in powers if item.casefold() != source_key
+            ]
+            output.setdefault(section, {})[field] = ','.join(remaining)
+            provider_fields_cleared.append(f'{section}.{field}')
+
+    native_grants_removed = 0
+    for action_id, value in authored.get('Actions', {}).items():
+        count, groups = parse_action_groups(str(value))
+        if count <= 0 or not groups:
+            continue
+        changed = False
+        rewritten = []
+        for group in groups:
+            replacement = list(group)
+            try:
+                grants_native = (
+                    replacement[0] in {'33', '34'}
+                    and int(replacement[2]) == native_index
+                )
+            except (TypeError, ValueError, IndexError):
+                grants_native = False
+            if grants_native:
+                replacement = ['0', '0', '0', '0', '0', '0', '0', 'A']
+                native_grants_removed += 1
+                changed = True
+            rewritten.append(replacement)
+        if changed:
+            output.setdefault('Actions', {})[action_id] = (
+                f'{len(rewritten)},{",".join(action_group_tokens(rewritten))}'
+            )
+    return output, provider_fields_cleared, native_grants_removed
+
+
 def _provider_coordinates(authored, reserved):
     """Choose an unused launcher cell inside the playable local map."""
     raw_size = str(authored.get('Map', {}).get('Size') or '0,0,100,100')
@@ -555,6 +662,8 @@ def player_power_rules(
     launch_building_ids=(),
     paratrooper_unit_id='',
     reserved_rules=None,
+    production_context=None,
+    rule_overlays=None,
 ):
     """Clone earned powers and grant only the exact scenario player house."""
     installed = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
@@ -577,7 +686,13 @@ def player_power_rules(
     }
     for section, values in authored.items():
         mission_rules.setdefault(section, {}).update(values)
-    context = _player_production_context(authored)
+    for section, values in (rule_overlays or {}).items():
+        mission_rules.setdefault(section, {}).update(values)
+    context = (
+        dict(production_context)
+        if production_context is not None
+        else _player_production_context(authored)
+    )
     player_house = context['player_house']
     report = {
         'player_house': player_house,
@@ -591,6 +706,8 @@ def player_power_rules(
         'paratrooper_buff_fields': [],
         'paradrop_team': '',
         'paradrop_aircraft': '',
+        'exclusive_native_provider_fields': [],
+        'exclusive_native_grants_removed': 0,
     }
     if not player_house:
         report['skipped'].append({'power': '*', 'reason': 'missing_player_house'})
@@ -695,6 +812,36 @@ def player_power_rules(
                     registered[str(len(registered) + 1)] = animation_id
             else:
                 runtime_art_sections.setdefault(section, {}).update(values)
+        if spec.get('exclusive_player'):
+            native_index = next(
+                (
+                    index for index, type_id in enumerate(runtime_types)
+                    if type_id.casefold() == source_id.casefold()
+                ),
+                -1,
+            )
+            exclusive_rules, cleared_fields, removed_grants = (
+                _exclusive_native_power_rules(
+                    source_id,
+                    native_index,
+                    installed,
+                    allocation_authored,
+                )
+            )
+            for section, values in exclusive_rules.items():
+                rules.setdefault(section, {}).update(values)
+            report['exclusive_native_provider_fields'].extend(cleared_fields)
+            report['exclusive_native_grants_removed'] += removed_grants
+        if source_id.upper() == 'IONCANNONSPECIAL':
+            ion_rules = _clone_ion_cannon_effect(
+                buff_counts,
+                installed,
+                allocation_authored,
+                occupied,
+                list_offsets,
+            )
+            for section, values in ion_rules.items():
+                rules.setdefault(section, {}).update(values)
         rules[clone_id] = clone_values
         payload = spec.get('payload')
         payload_units = ''

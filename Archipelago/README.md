@@ -6,9 +6,9 @@ The generated world contains:
 
 - 81 DTA missions;
 - stable mission-completion reward locations;
-- 117 mobile-unit and 12 defensive-building access rewards with their active buff catalogue;
+- 117 mobile-unit and 16 defensive-building access rewards with their active buff catalogue;
 - the five broad Player Army rewards;
-- five offensive and two support-power rewards with recharge buffs;
+- two power unlocks and five supported power-buff rewards;
 - two optional enemy-only scaling rewards;
 - the existing signed run-manifest, seed, placement, save/load, and client-handshake flow.
 

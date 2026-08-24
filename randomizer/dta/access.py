@@ -23,12 +23,20 @@ def _forbidden_houses(values, player_house, locked):
     return ','.join(houses)
 
 
-def player_infantry_access_rules(mission, rewards, enabled, include_defenses=False):
+def player_infantry_access_rules(
+    mission,
+    rewards,
+    enabled,
+    include_defenses=False,
+    production_context=None,
+    rule_overlays=None,
+):
     """Lock or unlock human mobile production without changing map objects.
 
     Vinifera evaluates RequiredHouses/ForbiddenHouses against ``ActsLike``.
-    Therefore the resolved production HouseType is used, and the adapter safely
-    opts out when a hostile scenario house shares that same production bit.
+    Therefore the resolved production HouseType is used. The launch pipeline
+    first gives conflicting scenario houses distinct production bits; this
+    function retains a fail-closed check for callers that omit that isolation.
     """
     report = {
         'enabled': bool(enabled),
@@ -48,7 +56,15 @@ def player_infantry_access_rules(mission, rewards, enabled, include_defenses=Fal
     source = mission_source_path(mission.get('scenario'))
     installed = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
     authored = ini_sections(source)
-    context = _player_production_context(authored)
+    combined = {section: dict(values) for section, values in installed.items()}
+    for overlay in (authored, rule_overlays or {}):
+        for section, values in overlay.items():
+            combined.setdefault(section, {}).update(values)
+    context = (
+        dict(production_context)
+        if production_context is not None
+        else _player_production_context(authored)
+    )
     report.update(context)
     production_house = context['production_house']
     if not production_house:
@@ -78,7 +94,7 @@ def player_infantry_access_rules(mission, rewards, enabled, include_defenses=Fal
             or target.get('duplicate_of')
         ):
             continue
-        values = effective_section(installed, unit_id)
+        values = effective_section(combined, unit_id)
         # Earned production uses a player-only clone. Keep every randomized
         # original blocked for the player so enemy/map identities and native
         # build rules remain untouched.
@@ -95,7 +111,7 @@ def player_infantry_access_rules(mission, rewards, enabled, include_defenses=Fal
     # DTA maps sometimes expose the older 2TNKMSL identity. It represents the
     # same reward as TTNKMSL, so keep the legacy production entry locked and
     # let the canonical TTNKMSL player clone be the only rewarded sidebar item.
-    legacy_missile = effective_section(installed, '2TNKMSL')
+    legacy_missile = effective_section(combined, '2TNKMSL')
     legacy_forbidden = _forbidden_houses(
         legacy_missile, production_house, locked=True
     )

@@ -10,7 +10,6 @@ from ._builder_dependencies import (
     ARSENAL_UNIT_TYPES,
     BUFF_TYPES,
     CAMPAIGN_FILTERS,
-    EVA_VOICE_CHOICES,
     IntegerSlider,
     MAIN_REWARD_WEIGHT_TYPES,
     MAX_STARTING_REWARD_COUNT,
@@ -693,25 +692,6 @@ def _build_gameplay_settings(self, settings_frame):
         'Assigns deterministic random colors to non-neutral allied and enemy AI houses. '
         'Civilian, neutral, and script-only neutral houses keep their authored colors.',
     )
-    ttk.Label(map_colors_frame, text='EVA voice').grid(
-        row=2, column=0, sticky='w', padx=(0, 8), pady=(5, 0)
-    )
-    self.eva_voice_combo = ttk.Combobox(
-        map_colors_frame,
-        state='readonly',
-        textvariable=self.eva_voice_var,
-        values=EVA_VOICE_CHOICES,
-        width=15,
-    )
-    self.eva_voice_combo.grid(row=2, column=1, sticky='ew', pady=(5, 0))
-    self.eva_voice_combo.bind(
-        '<MouseWheel>', self.on_settings_control_mousewheel, add='+'
-    )
-    WidgetTooltip(
-        self.eva_voice_combo,
-        'Uses one announcer for the whole mission. Random is deterministic for the seed and mission.',
-    )
-
     mission_pool_frame = ttk.LabelFrame(
         settings_frame,
         text='Mission Pool',

@@ -64,6 +64,7 @@ REQUIRED_SECTIONS = {
         'amphibious_transports': dict,
         'production_buildings': dict,
         'chaos_primary_production': dict,
+        'unit_equivalence_groups': list,
         'tech_order': list,
     },
     'tier_one.json': {
@@ -88,7 +89,6 @@ REQUIRED_SECTIONS = {
         'default_progression_mode': str,
         'player_colors': list,
         'rainbowizer_colors': list,
-        'eva_voice_tags': dict,
         'rewards_per_check_messages': dict,
         'faction_tile_colors': dict,
         'campaign_tile_colors': dict,
@@ -270,6 +270,28 @@ def _validate_missions(sections, path):
                             f'{code}:{section}:{key}',
                             path,
                         )
+
+
+def _validate_factions(sections, path):
+    seen = set()
+    for index, group in enumerate(sections['unit_equivalence_groups']):
+        if (
+            not isinstance(group, list)
+            or len(group) < 2
+            or not all(_is_nonempty_string(unit_id) for unit_id in group)
+        ):
+            _invalid(f'Invalid unit equivalence group {index}', path)
+        normalized = [str(unit_id).upper() for unit_id in group]
+        if len(normalized) != len(set(normalized)):
+            _invalid(f'Duplicate ID in unit equivalence group {index}', path)
+        repeated = seen.intersection(normalized)
+        if repeated:
+            _invalid(
+                'Unit equivalence IDs occur in multiple groups: '
+                + ', '.join(sorted(repeated)),
+                path,
+            )
+        seen.update(normalized)
 
 
 def _validate_unit_data(sections, path):
@@ -496,41 +518,6 @@ def _validate_ui(sections, path):
         )
     ):
         _invalid('Invalid rewards-per-check messages', path)
-
-    voice_tags = sections['eva_voice_tags']
-    if not voice_tags or not all(
-        _is_nonempty_string(label) and _is_nonempty_string(tag)
-        for label, tag in voice_tags.items()
-    ):
-        _invalid('Invalid EVA voice tags', path)
-    normalized_labels = [label.casefold() for label in voice_tags]
-    if len(normalized_labels) != len(set(normalized_labels)):
-        _invalid('Duplicate case-insensitive EVA voice labels', path)
-    reserved = {'mission default', 'random'}
-    if reserved.intersection(normalized_labels):
-        _invalid('EVA voice labels use reserved Mission default/Random names', path)
-
-    appearance_profiles = sections.get('eva_appearance_profiles', {})
-    if not isinstance(appearance_profiles, dict):
-        _invalid('Invalid EVA appearance profiles', path)
-    allowed_profile_fields = {
-        'sidebar_mix_file_index',
-        'sidebar_yuri_file_names',
-        'message_text_color',
-    }
-    for label, profile in appearance_profiles.items():
-        if (
-            not _is_nonempty_string(label)
-            or not isinstance(profile, dict)
-            or set(profile) != allowed_profile_fields
-            or not isinstance(profile['sidebar_mix_file_index'], int)
-            or isinstance(profile['sidebar_mix_file_index'], bool)
-            or profile['sidebar_mix_file_index'] < 0
-            or not isinstance(profile['sidebar_yuri_file_names'], bool)
-            or not _is_nonempty_string(profile['message_text_color'])
-        ):
-            _invalid(f'Invalid EVA appearance profile {label!r}', path)
-
 
 def _validate_tuning(sections, path):
     effects = sections['buff_effects']
@@ -1108,6 +1095,12 @@ def _validate_dta_powers(sections, path):
         seen_ids.add(normalized_id)
         seen_actions.add(normalized_action)
 
+        if (
+            'exclusive_player' in power
+            and not isinstance(power['exclusive_player'], bool)
+        ):
+            _invalid(f'Invalid exclusive-player flag for {power_id!r}', path)
+
         provider = power.get('provider')
         if provider is not None and (
             not isinstance(provider, dict)
@@ -1171,12 +1164,21 @@ def _validate_dta_powers(sections, path):
             _invalid(f'Invalid DTA power payload {power_id!r}', path)
         if ('payload' in buffs) != (payload is not None):
             _invalid(f'DTA payload contract mismatch {power_id!r}', path)
-        if ({'damage', 'area'} & set(buffs)) and effect is None:
+        native_ion_effect = (
+            power.get('exclusive_player') is True
+            and str(values.get('Type')).casefold() == 'ioncannon'
+        )
+        if (
+            {'damage', 'area'} & set(buffs)
+            and effect is None
+            and not native_ion_effect
+        ):
             _invalid(f'DTA effect buff contract mismatch {power_id!r}', path)
 
 
 CONFIG_VALIDATORS = {
     'missions.json': _validate_missions,
+    'factions.json': _validate_factions,
     'ui.json': _validate_ui,
     'rewards/tuning.json': _validate_tuning,
     'tier_one.json': _validate_tier_one,

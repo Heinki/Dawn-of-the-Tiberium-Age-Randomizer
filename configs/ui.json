@@ -115,13 +115,6 @@
     "player_color_engine_values": {
       "Pink": "DarkMagenta"
     },
-    "eva_voice_tags": {
-      "GDI": "GDI",
-      "Nod": "Nod",
-      "Allied": "Allied",
-      "Soviet": "Soviet"
-    },
-    "eva_appearance_profiles": {},
     "rewards_per_check_messages": {
       "maximum": "Ok that is now enough...",
       "thresholds": [

@@ -5,6 +5,7 @@ from hashlib import sha1
 
 from randomizer.config.tuning import (
     capped_movement_speed,
+    mission_assistance_stack_count,
     stacked_cost,
     stacked_self_heal_amount,
     stacked_weapon_damage,
@@ -34,6 +35,15 @@ TYPE_LIST_BY_CATEGORY = {
 WEAPON_KEYS = (
     'Primary', 'Secondary', 'Elite', 'ElitePrimary', 'EliteSecondary',
 )
+HOUSE_MASK_FIELDS = {
+    'owner',
+    'requiredhouses',
+    'forbiddenhouses',
+    'factoryowners',
+    'factoryowners.forbidden',
+    'sw.requiredhouses',
+    'sw.forbiddenhouses',
+}
 MAX_TYPE_ID_LENGTH = 23
 FACTION_CAMEO_PRIORITIES = {
     'GDI': 400,
@@ -42,6 +52,10 @@ FACTION_CAMEO_PRIORITIES = {
     'Soviet': 100,
 }
 DEFENSE_CAMEO_PRIORITY_OFFSET = 1000
+MISSION_ASSISTANCE_BUFF_TYPES = (
+    'production', 'cost', 'speed', 'armor', 'health', 'damage', 'reload',
+    'range',
+)
 
 
 def _faction_cameo_priority(target):
@@ -234,6 +248,173 @@ def _active_house_names(authored):
     return active
 
 
+def _house_index_by_name(authored):
+    return {
+        str(name).strip().casefold(): int(index)
+        for index, name in authored.get('Houses', {}).items()
+        if str(index).isdigit() and str(name).strip()
+    }
+
+
+def _house_name_by_index(authored):
+    return {
+        int(index): str(name).strip()
+        for index, name in authored.get('Houses', {}).items()
+        if str(index).isdigit() and str(name).strip()
+    }
+
+
+def _house_acts_like(authored, house_name):
+    try:
+        return int(authored.get(house_name, {}).get('ActsLike', -1))
+    except (TypeError, ValueError):
+        return -1
+
+
+def _append_house_mask(value, source_house, isolated_house):
+    houses = list(comma_items(value))
+    if source_house.casefold() not in {
+        house.casefold() for house in houses
+    }:
+        return None
+    if isolated_house.casefold() not in {
+        house.casefold() for house in houses
+    }:
+        houses.append(isolated_house)
+    return ','.join(houses)
+
+
+def player_production_isolation_rules(mission):
+    """Give shared campaign houses distinct Vinifera production masks.
+
+    Vinifera evaluates TechnoType house masks through ``ActsLike``. When the
+    player and a hostile scenario house share one bit, reward clones cannot be
+    restricted to the player while both keep that bit. Rebase the smaller side
+    of the collision onto an otherwise unique HouseType bit already registered
+    by the mission, then copy its previous Owner/Required/Forbidden membership
+    to the new bit. Exact scenario-house names, placed objects, teams, triggers,
+    alliances, and scripts remain unchanged.
+    """
+    source = mission_source_path(mission.get('scenario'))
+    installed = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
+    authored = ini_sections(source)
+    original_context = _player_production_context(authored)
+    report = {
+        **original_context,
+        'original_player_house': original_context['player_house'],
+        'original_production_house': original_context['production_house'],
+        'original_acts_like': original_context['acts_like'],
+        'original_shared_hostile_houses': list(
+            original_context['shared_hostile_houses']
+        ),
+        'isolation_applied': False,
+        'isolated_houses': [],
+        'isolation_error': '',
+    }
+    shared_houses = list(original_context['shared_hostile_houses'])
+    if not shared_houses:
+        return {}, report
+
+    houses_by_index = _house_name_by_index(authored)
+    indices_by_house = _house_index_by_name(authored)
+    active_houses = _active_house_names(authored)
+    active_house_keys = {house.casefold() for house in active_houses}
+    player_house = original_context['player_house']
+    source_index = original_context['acts_like']
+    source_production_house = original_context['production_house']
+    player_index = indices_by_house.get(player_house.casefold(), -1)
+    shared_indices = {
+        house: indices_by_house.get(house.casefold(), -1)
+        for house in shared_houses
+    }
+
+    # A canonical hostile HouseType cannot move to its own bit because it is
+    # already using that bit. In custom-player missions, moving the one player
+    # house is both smaller and safer than moving every hostile house.
+    move_player = (
+        player_index >= 0
+        and player_index != source_index
+        and any(index == source_index for index in shared_indices.values())
+    )
+    targets = [player_house] if move_player else shared_houses
+    reserved_indices = {
+        _house_acts_like(authored, house)
+        for house in active_houses
+        if _house_acts_like(authored, house) >= 0
+    }
+    assigned_indices = set()
+    assignments = []
+    for target in targets:
+        target_index = indices_by_house.get(target.casefold(), -1)
+        other_active_indices = {
+            _house_acts_like(authored, house)
+            for house in active_houses
+            if house.casefold() != target.casefold()
+            and _house_acts_like(authored, house) >= 0
+        }
+        candidate = target_index
+        if (
+            candidate < 0
+            or candidate >= 31
+            or candidate == source_index
+            or candidate in other_active_indices
+            or candidate in assigned_indices
+        ):
+            candidate = next((
+                index
+                for index, house in sorted(houses_by_index.items())
+                if house.casefold() not in active_house_keys
+                and 0 <= index < 31
+                and index not in reserved_indices
+                and index not in assigned_indices
+                and index != source_index
+            ), -1)
+        if candidate < 0:
+            report['isolation_error'] = (
+                f'no unique HouseType bit is available for {target}'
+            )
+            return {}, report
+        assigned_indices.add(candidate)
+        assignments.append({
+            'house': target,
+            'old_acts_like': _house_acts_like(authored, target),
+            'new_acts_like': candidate,
+            'old_production_house': source_production_house,
+            'new_production_house': houses_by_index[candidate],
+        })
+
+    rules = {}
+    combined = _merged_sections(installed, authored)
+    for assignment in assignments:
+        rules.setdefault(assignment['house'], {})['ActsLike'] = str(
+            assignment['new_acts_like']
+        )
+        old_house = assignment['old_production_house']
+        new_house = assignment['new_production_house']
+        for section, values in combined.items():
+            for key, value in values.items():
+                if key.casefold() not in HOUSE_MASK_FIELDS:
+                    continue
+                current = rules.get(section, {}).get(key, value)
+                translated = _append_house_mask(
+                    current, old_house, new_house
+                )
+                if translated is not None and translated != current:
+                    rules.setdefault(section, {})[key] = translated
+
+    isolated_authored = _merged_sections(authored, rules)
+    isolated_context = _player_production_context(isolated_authored)
+    if isolated_context['shared_hostile_houses']:
+        report['isolation_error'] = (
+            'production mask collision remains after isolation'
+        )
+        return {}, report
+    report.update(isolated_context)
+    report['isolation_applied'] = True
+    report['isolated_houses'] = assignments
+    return rules, report
+
+
 def _allied_helper_context(authored, player_context):
     """Return AI allies whose ActsLike family has no active hostile house."""
     player = player_context['player_house']
@@ -418,15 +599,93 @@ def _can_player_produce(values, production_house):
     )
 
 
+def mission_assistance_rewards(
+    mission,
+    rewards,
+    stacks,
+    access_randomized=False,
+    production_context=None,
+    rule_overlays=None,
+):
+    """Build temporary retry buffs for player-accessible DTA mobile types."""
+    stacks = mission_assistance_stack_count(stacks)
+    if not stacks:
+        return [], []
+
+    source = mission_source_path(mission.get('scenario'))
+    installed = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
+    authored = ini_sections(source)
+    combined = _merged_sections(installed, authored)
+    if rule_overlays:
+        combined = _merged_sections(combined, rule_overlays)
+    context = (
+        dict(production_context)
+        if production_context is not None
+        else _player_production_context(authored)
+    )
+    player_house = str(context.get('player_house') or '').casefold()
+    production_house = str(context.get('production_house') or '')
+    catalogue = catalogue_by_id()
+    unit_ids = {
+        str(reward.get('unit') or '').upper()
+        for reward in rewards or ()
+        if reward.get('dta_production_access')
+    }
+
+    for unit_id, target in catalogue.items():
+        if (
+            not target.get('rewardable')
+            or target.get('duplicate_of')
+            or target.get('category') not in {'infantry', 'vehicles', 'aircraft'}
+        ):
+            continue
+        producible = _can_player_produce(
+            effective_section(combined, unit_id), production_house
+        )
+        if (
+            (not access_randomized and producible)
+            or (unit_id in ALWAYS_AVAILABLE_MOBILE_IDS and producible)
+        ):
+            unit_ids.add(unit_id)
+
+    # Exact player-owned starting units receive placement-only clones when
+    # they are not normally producible. Authored enemy and scripted identities
+    # remain untouched.
+    for section in ('Infantry', 'Units', 'Aircraft'):
+        for value in authored.get(section, {}).values():
+            fields = comma_items(value)
+            if (
+                len(fields) >= 2
+                and fields[0].casefold() == player_house
+                and fields[1].upper() in catalogue
+            ):
+                unit_ids.add(fields[1].upper())
+
+    assistance = [
+        {
+            'kind': 'buff',
+            'unit': unit_id,
+            'buff_type': buff_type,
+            'global_buff': False,
+            'dta_production_clone': True,
+            'mission_assistance': True,
+        }
+        for unit_id in sorted(unit_ids)
+        for _ in range(stacks)
+        for buff_type in MISSION_ASSISTANCE_BUFF_TYPES
+    ]
+    return assistance, sorted(unit_ids)
+
+
 def _unit_overrides(values, counts, target):
     overrides = {}
     if counts['build_limit']:
         try:
-            base_limit = int(float(
-                values.get('BuildLimit', target.get('build_limit', 0))
-            ))
+            base_limit = int(float(values.get('BuildLimit', 0)))
         except (TypeError, ValueError):
             base_limit = 0
+        if base_limit <= 0:
+            base_limit = int(target.get('build_limit', 0))
         if base_limit > 0:
             overrides['BuildLimit'] = str(
                 base_limit + int(counts['build_limit'])
@@ -667,6 +926,8 @@ def unit_specific_buff_rules(
     access_randomized=False,
     buff_allied_helpers=False,
     unlimited_hero_units=False,
+    production_context=None,
+    rule_overlays=None,
 ):
     """Build map-local original buffs or player production clones.
 
@@ -678,7 +939,13 @@ def unit_specific_buff_rules(
     installed = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
     authored = ini_sections(source)
     combined = _merged_sections(installed, authored)
-    production_context = _player_production_context(authored)
+    if rule_overlays:
+        combined = _merged_sections(combined, rule_overlays)
+    production_context = (
+        dict(production_context)
+        if production_context is not None
+        else _player_production_context(authored)
+    )
     helper_context = (
         _allied_helper_context(authored, production_context)
         if buff_allied_helpers
@@ -714,10 +981,13 @@ def unit_specific_buff_rules(
 
     counts_by_unit = {}
     access_units = set()
+    assistance_units = set()
     global_counts = Counter()
     for reward in rewards or ():
         unit_id = str(reward.get('unit') or '').upper()
         buff_type = str(reward.get('buff_type') or '').lower()
+        if unit_id and reward.get('mission_assistance'):
+            assistance_units.add(unit_id)
         if unit_id and reward.get('dta_production_access'):
             access_units.add(unit_id)
             continue
@@ -843,6 +1113,7 @@ def unit_specific_buff_rules(
             and not production_access
             and target.get('category') != 'buildings'
             and unit_id not in ALWAYS_AVAILABLE_MOBILE_IDS
+            and unit_id not in assistance_units
         ):
             report['skipped'].append({
                 'unit': unit_id,
@@ -878,7 +1149,15 @@ def unit_specific_buff_rules(
         placement_only = bool(
             counts
             and player_mobile_placements
-            and production_context['shared_hostile_houses']
+            and (
+                production_context['shared_hostile_houses']
+                or (
+                    access_randomized
+                    and unit_id in assistance_units
+                    and not production_access
+                    and unit_id not in ALWAYS_AVAILABLE_MOBILE_IDS
+                )
+            )
         )
         if (
             use_clone
@@ -920,6 +1199,19 @@ def unit_specific_buff_rules(
             clone_values = dict(values)
             clone_values.pop('BaseSection', None)
             clone_values.pop('ForbiddenHouses', None)
+            try:
+                clone_build_limit = int(float(
+                    clone_values.get('BuildLimit', 0)
+                ))
+            except (TypeError, ValueError):
+                clone_build_limit = 0
+            native_build_limit = int(target.get('build_limit', 0))
+            if native_build_limit > 0 and clone_build_limit <= 0:
+                clone_values['BuildLimit'] = str(native_build_limit)
+            elif production_access and clone_build_limit <= 0:
+                for key in list(clone_values):
+                    if key.casefold() == 'buildlimit':
+                        clone_values.pop(key, None)
             if production_access:
                 for key in list(clone_values):
                     if (

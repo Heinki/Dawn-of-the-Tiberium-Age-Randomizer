@@ -8,11 +8,17 @@ from randomizer.core.paths import GAME_ROOT
 
 
 PLAYABLE_FACTIONS = ('GDI', 'Nod', 'Allies', 'Soviet')
+REGISTERED_ROSTER_PREFIXES = {
+    'A': 'GDI',
+    'B': 'Nod',
+    'C': 'Allies',
+    'D': 'Soviet',
+}
 DEFENSE_BUILDING_IDS = frozenset({
     'TWR', 'ATWR',
     'GUN', 'SAM', 'OBLI',
-    'RAPBOX', 'RAHBOX', 'RAGUN', 'RAAGUN',
-    'RAFTUR', 'RASAM', 'RATSLA',
+    'RAPBOX', 'RAHBOX', 'RAGUN', 'RAAGUN', 'VMINE', 'RAGAP', 'ART',
+    'RAFTUR', 'RASAM', 'RATSLA', 'RAPARTY',
 })
 ALWAYS_AVAILABLE_MOBILE_IDS = frozenset({
     'ENGINEER',
@@ -20,6 +26,15 @@ ALWAYS_AVAILABLE_MOBILE_IDS = frozenset({
     'TDHARV', 'RAHARV',
     'GLST', 'NLST', 'ALST', 'SLST',
 })
+# DTA's three classic commandos are unique hero units, but their installed
+# TechnoTypes omit BuildLimit. Randomizer production clones must supply the
+# intended live-unit cap so access rewards cannot make them unlimited and so
+# Command Capacity rewards can increase that cap consistently.
+CURATED_HERO_BUILD_LIMITS = {
+    'RMBO': 1,
+    'TANYA': 1,
+    'VOLKOV': 1,
+}
 # Installed campaign identities made buildable by mission progression or used
 # as reviewed human reward units despite a global TechLevel of -1.
 CAMPAIGN_SPECIAL_MOBILE_IDS = frozenset({
@@ -31,12 +46,22 @@ CAMPAIGN_SPECIAL_MOBILE_IDS = frozenset({
     'RAIDER', 'MRV', 'STAPC', 'MFLAK', 'TNKD',
     'SCARAB', 'TORPCAT', 'FLAKCORV',
 })
+HIDDEN_DTA_DEFENSE_IDS = frozenset({
+    # DTA registers these defenses globally with TechLevel=-1. ART becomes an
+    # Allied buildable Artillery Emplacement in CR Route C #15; DTA tutorial
+    # text identifies RAPARTY as neo-Soviet Shore Artillery. VMINE and RAGAP
+    # retain explicit Allied owners and native build prerequisites.
+    'ART', 'RAPARTY', 'VMINE', 'RAGAP',
+})
 NORMAL_REWARD_MOBILE_IDS = frozenset({
     # These normal roster units are hidden behind campaign progression in
     # Rules.ini, but belong in the ordinary randomizer roster.
     'SHILKA', 'MFLAK',
 })
-RANDOMIZER_UNIT_LABELS = {}
+RANDOMIZER_UNIT_LABELS = {
+    'ART': 'Allied Artillery Emplacement',
+    'RAPARTY': 'Soviet Shore Artillery',
+}
 EXCLUDED_MOBILE_IDS = frozenset({
     # Registered TS leftovers without native DTA cameo assets or DTA roster use.
     'HTNKMSAM', 'SMECH', 'UTNK', 'JUMPJET',
@@ -60,6 +85,10 @@ SPECIAL_MOBILE_FACTION_OVERRIDES = {
     'MSA': ('GDI',),
     # MRV is listed in DTA's Nod vehicle block despite broad placement owners.
     'MRV': ('Nod',),
+    # Global rules keep campaign emplacements Civilian-owned. Their DTA map
+    # rules and tutorial text provide the playable production identities.
+    'ART': ('Allies',),
+    'RAPARTY': ('Soviet',),
 }
 TYPE_LISTS = {
     'InfantryTypes': 'infantry',
@@ -126,7 +155,7 @@ def techno_catalogue():
     sections = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
     records = []
     for list_name, category in TYPE_LISTS.items():
-        for type_id in sections.get(list_name, {}).values():
+        for roster_key, type_id in sections.get(list_name, {}).items():
             values = effective_section(sections, type_id)
             owners = comma_items(values.get('Owner'))
             required = comma_items(values.get('RequiredHouses'))
@@ -144,6 +173,19 @@ def techno_catalogue():
                 and (not required or faction in required)
                 and faction not in forbidden
             )
+            # DTA's VehicleTypes A_/B_/C_/D_ blocks are its explicit faction
+            # rosters. Owner is sometimes broader for scenario placement or
+            # captured production (for example MSAM and DTRK), so Owner alone
+            # can expose a foreign unit in Randomizer Arsenal.
+            registered_faction = (
+                REGISTERED_ROSTER_PREFIXES.get(
+                    str(roster_key).split('_', 1)[0].upper()
+                )
+                if list_name == 'VehicleTypes'
+                else None
+            )
+            if registered_faction:
+                playable_owners = (registered_faction,)
             playable_owners = SPECIAL_MOBILE_FACTION_OVERRIDES.get(
                 type_id.upper(), playable_owners
             )
@@ -154,6 +196,7 @@ def techno_catalogue():
             ai_only = buildability.casefold() == 'aionly'
             campaign_special = (
                 type_id.upper() in CAMPAIGN_SPECIAL_MOBILE_IDS
+                or type_id.upper() in HIDDEN_DTA_DEFENSE_IDS
                 or editor_category.casefold() == 'special units'
                 or buildability.casefold() == 'humanonly'
             )
@@ -206,6 +249,7 @@ def techno_catalogue():
                 ),
                 'owners': owners,
                 'playable_owners': playable_owners,
+                'registered_faction': registered_faction or '',
                 'prerequisites': comma_items(values.get('Prerequisite')),
                 'tech_level': tech_level,
                 'cost': cost,
@@ -214,7 +258,11 @@ def techno_catalogue():
                 'sight': numeric_value(values, 'Sight'),
                 'ammo': numeric_value(values, 'Ammo'),
                 'passengers': numeric_value(values, 'Passengers'),
-                'build_limit': max(0, numeric_value(values, 'BuildLimit')),
+                'build_limit': max(
+                    0,
+                    numeric_value(values, 'BuildLimit'),
+                    CURATED_HERO_BUILD_LIMITS.get(type_id.upper(), 0),
+                ),
                 'cloakable': values.get('Cloakable', '').casefold() in {
                     'yes', 'true', '1',
                 },
@@ -260,12 +308,17 @@ def techno_catalogue():
             str(record['undeploys_into']).casefold(),
         )
         prior = canonical_by_signature.get(signature)
-        if (
-            prior
-            and set(record['playable_owners']).issubset(
-                prior['playable_owners']
+        if prior and set(record['owners']).issubset(prior['owners']):
+            # Hidden faction aliases such as APCN share one public reward
+            # identity. Preserve every explicit roster membership on that
+            # canonical identity while keeping the alias out of the UI.
+            prior['playable_owners'] = tuple(
+                faction for faction in PLAYABLE_FACTIONS
+                if faction in {
+                    *prior['playable_owners'],
+                    *record['playable_owners'],
+                }
             )
-        ):
             record['duplicate_of'] = prior['id']
             continue
         canonical_by_signature[signature] = record

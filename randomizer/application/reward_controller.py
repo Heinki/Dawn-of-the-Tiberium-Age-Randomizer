@@ -39,6 +39,7 @@ from ._dependencies import (
     unit_role_equivalents,
     unlocked_reward_tech_ids,
     configured_enemy_reward,
+    expand_equivalent_role_buffs,
     campaign_factions,
     normalize_faction,
     normalize_enemy_scaling_settings,
@@ -153,6 +154,10 @@ class RewardController:
 
     def launch_rewards_for_mission(self, code):
         rewards = self.active_launch_rewards()
+        rewards = expand_equivalent_role_buffs(
+            rewards,
+            enabled=self.share_chaos_role_buffs_enabled(),
+        )
         if self.active_reward_mode() == 'Standard':
             allowed_factions = self.reward_factions_for_code(code) | {'Neutral'}
             return [
@@ -298,7 +303,10 @@ class RewardController:
                 self.mission_arsenal(code),
             )
         if reward_mode == 'Chaos':
-            return self.configured_reward_pool()
+            return self.chaos_equivalent_access_pool(
+                self.configured_reward_pool(),
+                self.reward_factions_for_code(code),
+            )
         factions = self.reward_factions_for_code(code)
         pool = [
             reward
@@ -310,6 +318,43 @@ class RewardController:
             )
         ]
         return self.filter_reward_pool(pool)
+
+    @staticmethod
+    def chaos_equivalent_access_pool(pool, preferred_factions=()):
+        """Keep one exact access variant per equivalent-unit group."""
+        preferred = {str(faction) for faction in preferred_factions}
+        collapsed = []
+        group_positions = {}
+        group_scores = {}
+        for reward in pool:
+            if reward.get('kind') in {'buff', 'superweapon'}:
+                collapsed.append(reward)
+                continue
+            tech_ids = tech_ids_for_rewards([reward])
+            if len(tech_ids) != 1:
+                collapsed.append(reward)
+                continue
+            unit_id = next(iter(tech_ids))
+            equivalents = unit_role_equivalents(unit_id)
+            if len(equivalents) < 2:
+                collapsed.append(reward)
+                continue
+            group_key = tuple(sorted(equivalents))
+            score = int(bool(
+                preferred.intersection(
+                    BUFF_TARGETS.get(unit_id, {}).get(
+                        'factions', reward.get('factions', ())
+                    )
+                )
+            ))
+            if group_key not in group_positions:
+                group_positions[group_key] = len(collapsed)
+                group_scores[group_key] = score
+                collapsed.append(reward)
+            elif score > group_scores[group_key]:
+                collapsed[group_positions[group_key]] = reward
+                group_scores[group_key] = score
+        return collapsed
 
     def configured_reward_pool(self):
         settings = self.active_reward_settings()
@@ -337,9 +382,20 @@ class RewardController:
     def configured_manual_starting_rewards(self):
         """Resolve exact selected rewards, omitting duplicate TechnoType access."""
         selected = set(self.active_starting_unlock_names())
+        collapse_equivalents = self.active_reward_mode() == 'Chaos'
+
+        def access_identity_ids(tech_ids):
+            if not collapse_equivalents:
+                return set(tech_ids)
+            return {
+                equivalent
+                for unit_id in tech_ids
+                for equivalent in unit_role_equivalents(unit_id)
+            }
+
         seen_tech_ids = (
-            set(self.active_starting_tier_one_access_ids())
-            | set(ALWAYS_AVAILABLE_TECH_IDS)
+            access_identity_ids(self.active_starting_tier_one_access_ids())
+            | access_identity_ids(ALWAYS_AVAILABLE_TECH_IDS)
         )
         rewards = []
         for source in REWARD_POOL:
@@ -361,11 +417,12 @@ class RewardController:
             ):
                 continue
             tech_ids = tech_ids_for_rewards([reward])
-            if reward.get('kind') != 'buff' and tech_ids & seen_tech_ids:
+            identity_ids = access_identity_ids(tech_ids)
+            if reward.get('kind') != 'buff' and identity_ids & seen_tech_ids:
                 continue
             rewards.append(dict(reward))
             if reward.get('kind') != 'buff':
-                seen_tech_ids.update(tech_ids)
+                seen_tech_ids.update(identity_ids)
         return rewards
 
     def generate_starting_reward_plan(self, seed, initial_rewards=()):
@@ -403,6 +460,9 @@ class RewardController:
             initial_rewards=initial_rewards,
             require_access_for_unit_buffs=self.randomize_unit_access_enabled(),
             share_role_buffs=self.share_chaos_role_buffs_enabled(),
+            collapse_equivalent_access=(
+                self.active_reward_mode() == 'Chaos'
+            ),
             reward_weights=settings.get('reward_weights'),
             rng_namespace='starting-rewards',
             avoid_unlocked_access=True,
@@ -489,6 +549,17 @@ class RewardController:
             if isinstance(buff_types, (list, tuple, set))
         }
         chaos_mode = self.active_reward_mode() == 'Chaos'
+        if chaos_mode:
+            excluded_access_ids = {
+                equivalent
+                for unit_id in excluded_access_ids
+                for equivalent in unit_role_equivalents(unit_id)
+            }
+            starting_access_ids = {
+                equivalent
+                for unit_id in starting_access_ids
+                for equivalent in unit_role_equivalents(unit_id)
+            }
         reward_weights = normalize_reward_weights(
             reward_settings.get('reward_weights')
         )
@@ -994,6 +1065,9 @@ class RewardController:
             initial_rewards=initial_rewards,
             require_access_for_unit_buffs=self.randomize_unit_access_enabled(),
             share_role_buffs=self.share_chaos_role_buffs_enabled(),
+            collapse_equivalent_access=(
+                self.active_reward_mode() == 'Chaos'
+            ),
             reward_weights=self.active_reward_settings().get(
                 'reward_weights'
             ),
