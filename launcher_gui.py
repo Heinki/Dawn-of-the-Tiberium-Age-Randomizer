@@ -164,6 +164,22 @@ def run_self_check():
             },
         ) if player_normal_difficulty else ''
         counts = campaign_mission_counts(missions)
+        late_route_codes = {
+            *(f'M_CRA{number}' for number in range(9, 14)),
+            *(f'M_CRB{number}' for number in range(9, 17)),
+        }
+        finale_reward_codes = {
+            'M_PTTP9',
+            'M_CRA14',
+            'M_CRB17',
+            'M_TTD_THE_TOXIC_TIME_TRIAL',
+            'M_TTD_THE_RECTIFICATION',
+            'M_TTD_THE_RAIN_OF_DEATH',
+            'M_TTD_THE_CONVERSION',
+            'M_ICFRA4',
+            'M_CD8',
+        }
+        route_c_codes = {f'M_CRC{number}' for number in range(9, 17)}
         reward_names = [reward['name'] for reward in REWARD_POOL]
         damage_reward = next(
             reward for reward in REWARD_POOL
@@ -825,6 +841,46 @@ def run_self_check():
                 'Creeping Destruction': 8,
                 'Stand-Alone Missions': 20,
             },
+            'dta_mission_reward_multipliers_valid': (
+                {
+                    'late_route': late_route_codes,
+                    'finale': finale_reward_codes,
+                    'route_c': route_c_codes,
+                } == {
+                    reward_class: {
+                        mission['code'] for mission in missions
+                        if mission['reward_class'] == reward_class
+                    }
+                    for reward_class in ('late_route', 'finale', 'route_c')
+                }
+                and all(
+                    (
+                        mission['reward_class'] == 'route_c'
+                        and mission['reward_multiplier'] == 3
+                    )
+                    if mission['code'] in route_c_codes
+                    else (
+                        mission['reward_class'] == 'finale'
+                        and mission['reward_multiplier'] == 3
+                    )
+                    if mission['code'] in finale_reward_codes
+                    else (
+                        mission['reward_class'] == 'late_route'
+                        and mission['reward_multiplier'] == 2
+                    )
+                    if mission['code'] in late_route_codes
+                    else (
+                        mission['reward_class'] == 'standalone'
+                        and mission['reward_multiplier'] == 2
+                    )
+                    if mission['campaign'] == 'Stand-Alone Missions'
+                    else (
+                        mission['reward_class'] == 'standard'
+                        and mission['reward_multiplier'] == 1
+                    )
+                    for mission in missions
+                )
+            ),
             'cr_grid_uses_campaign_green': (
                 CAMPAIGN_TILE_COLORS.get('CR') == '#247a4b'
             ),
@@ -1711,6 +1767,7 @@ def run_self_check():
             'battle_ini_exists', 'rules_ini_exists', 'window_icon_exists',
             'static_configs_valid', 'all_mission_maps_exist',
             'campaign_grouping_valid', 'dta_puzzle_exists',
+            'dta_mission_reward_multipliers_valid',
             'cr_grid_uses_campaign_green',
             'no_unreportable_objective_checks',
             'generated_map_has_difficulty_overlay',

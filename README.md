@@ -8,6 +8,7 @@ This project is the randomizer launcher for DTA 15.1.0 and Vinifera. It reuses t
 
 - Reads all 81 installed campaign entries from `INI/Battle.ini`.
 - Groups missions by the installed DTA campaigns and its STAND-ALONE MISSIONS category.
+- Uses DTA-specific mission reward multipliers: stand-alone and non-finale CR Route A/B missions grant x2 rewards; campaign finales and every CR Route C mission grant x3; all other missions grant x1.
 - Reads each mission's DTA difficulty labels from `INI/Battle.ini`, including Brutal, Extreme, Ultimate, and Impossible. An unavailable selection falls back to the closest lower label supported by that mission.
 - Generates `spawnmap.ini` from the selected loose DTA mission map without changing the source map.
 - Applies DTA's Easy, Medium, or Hard map-code overlay.

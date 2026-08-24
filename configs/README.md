@@ -2,7 +2,7 @@
 
 The active static configuration targets Dawn of the Tiberium Age.
 
-- `missions.json` contains the 81-entry DTA campaign catalogue metadata and explicit build classifications.
+- `missions.json` contains the 81-entry DTA campaign catalogue metadata, explicit build classifications, and mission reward multipliers. Stand-alone and non-finale CR Route A/B missions use x2; campaign finales and every CR Route C mission use x3; all others use x1.
 - `factions.json` and `tier_one.json` contain DTA faction and production-family identities.
 - `ui.json` defines DTA campaign filters, colors, difficulty choices, and preserved UI modes.
 - `default_player_config.json` keeps the existing settings structure with conservative DTA defaults.

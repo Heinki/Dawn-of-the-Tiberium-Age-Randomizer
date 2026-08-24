@@ -177,7 +177,7 @@ class StateController:
             changed = True
         if 'use_act_based_reward_multipliers' not in self.state:
             # Mission multipliers predate this switch. Legacy runs keep their
-            # existing Act-based reward plan.
+            # existing mission-multiplier reward plan.
             self.state['use_act_based_reward_multipliers'] = True
             changed = True
         old_earned = self.earned_rewards_from_checks(include_starting=False) if self.state.get('starting_rewards') and self.state.get('mission_checks') else self.state.get('earned_rewards', [])

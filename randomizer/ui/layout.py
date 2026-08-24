@@ -360,7 +360,7 @@ def _build_right_panel(self, main_frame):
     self.rewards_per_check_spinbox.grid(row=4, column=1, sticky='w', pady=(6, 0))
     self.use_act_reward_multipliers_check = ttk.Checkbutton(
         options_row,
-        text='Use Act-based reward multipliers',
+        text='Use mission reward multipliers',
         variable=self.use_act_reward_multipliers_var,
     )
     self.use_act_reward_multipliers_check.grid(
@@ -372,9 +372,9 @@ def _build_right_panel(self, main_frame):
     )
     WidgetTooltip(
         self.use_act_reward_multipliers_check,
-        'Act 1 missions grant x1 rewards, Act 2 missions grant x2, and '
-        'Finales grant x3. Disable this to use x1 for every mission. '
-        'Objective rewards remain unchanged.',
+        'Stand-alone and non-finale CR Route A/B missions grant x2 rewards. '
+        'Campaign finales and every CR Route C mission grant x3. All other '
+        'missions grant x1. Disable this to use x1 for every mission.',
     )
     self.buff_allied_helpers_check = ttk.Checkbutton(
         options_row,
