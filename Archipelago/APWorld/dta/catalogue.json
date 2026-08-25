@@ -7668,6 +7668,13 @@
       "id": 81063940
     },
     {
+      "name": "Player Army Optics I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066006
+    },
+    {
       "name": "Player Army Weapon Tuning I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -13067,7 +13074,7 @@
       ]
     }
   ],
-  "catalogue_checksum": "96ef60cefce07ad07ac6cf083e649a8b868fa5e7f793ff12cb6457630e796d33",
+  "catalogue_checksum": "b37ea51a0562ea242729c75fb7432105a775e5d2b49e9ad614451dd2ec226263",
   "locations": [
     {
       "name": "Tutorial Mission 1 - Mission Complete - Reward 1",

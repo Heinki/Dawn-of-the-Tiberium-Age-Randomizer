@@ -77,7 +77,7 @@ BUFF_TYPES = [
     {
         'id': 'sight',
         'name': 'Optics',
-        'setting_label': 'Sight',
+        'setting_label': 'Vision',
         'description': '{plural} can see farther.',
     },
     {
@@ -119,7 +119,7 @@ BUFF_TYPES = [
 ]
 
 _GLOBAL_BUFF_TYPE_IDS = {
-    'production', 'cost', 'speed', 'damage', 'reload',
+    'production', 'cost', 'speed', 'damage', 'reload', 'sight',
 }
 
 _GLOBAL_BUFF_TARGET = {

@@ -995,7 +995,7 @@ def unit_specific_buff_rules(
             reward.get('global_buff')
             and reward.get('dta_global_clone_buff')
             and buff_type in {
-                'production', 'cost', 'speed', 'damage', 'reload',
+                'production', 'cost', 'speed', 'damage', 'reload', 'sight',
             }
         ):
             global_counts[buff_type] += 1

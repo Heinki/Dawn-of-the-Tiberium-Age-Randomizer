@@ -212,6 +212,11 @@ def run_self_check():
             if reward.get('global_buff')
             and reward.get('buff_type') == 'production'
         )
+        vision_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('global_buff')
+            and reward.get('buff_type') == 'sight'
+        )
         catalogue = techno_catalogue()
         catalogue_records = {record['id']: record for record in catalogue}
         registered_rosters = {}
@@ -442,7 +447,7 @@ def run_self_check():
             generated_apc.get('Primary'), {}
         )
         global_clone_rules, global_clone_report = unit_specific_buff_rules(
-            tutorial_two, [damage_reward]
+            tutorial_two, [damage_reward, vision_reward]
         )
         global_e1 = global_clone_rules.get('E1_PLAYER', {})
         global_e1_weapon = global_clone_rules.get(
@@ -1482,10 +1487,15 @@ def run_self_check():
                 for reward in REWARD_POOL
             ),
             'global_buffs_use_player_clones_only': (
-                global_clone_report.get('global_buffs') == {'damage': 1}
+                global_clone_report.get('global_buffs') == {
+                    'damage': 1,
+                    'sight': 1,
+                }
                 and global_e1.get('RequiredHouses') == 'GDI'
                 and int(global_e1.get('Strength', 0))
                 == int(installed_e1.get('Strength', 0))
+                and int(global_e1.get('Sight', 0))
+                == int(installed_e1.get('Sight', 0)) + 1
                 and int(global_e1_weapon.get('Damage', 0))
                 > int(installed_e1_weapon.get('Damage', 0))
                 and set(global_clone_rules.get('E1', {}))
@@ -1935,8 +1945,8 @@ def run_self_check():
                 )
                 and int(generated_apc.get('Strength', 0))
                 > int(installed_apc.get('Strength', 0))
-                and float(generated_apc.get('Sight', 0))
-                > float(installed_apc.get('Sight', 0))
+                and int(generated_apc.get('Sight', 0))
+                == int(installed_apc.get('Sight', 0)) + 1
                 and int(generated_apc.get('Passengers', 0))
                 > int(installed_apc.get('Passengers', 0))
                 and generated_apc.get('Cloakable') == 'yes'
