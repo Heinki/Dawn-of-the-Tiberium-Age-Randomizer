@@ -4,6 +4,9 @@
 
 This project is the randomizer launcher for DTA 15.1.0 and Vinifera. It reuses the proven progression, reward-planning, launcher UI, save/load, and Archipelago structure from the Mental Omega Randomizer, while using DTA missions, factions, units, powers, rules, maps, cameos, difficulty handling, and launch behavior.
 
+For APWorld installation, room generation, connection, and troubleshooting,
+see the [Archipelago player guide](Archipelago/README.md).
+
 ## Current DTA integration
 
 - Reads all 81 installed campaign entries from `INI/Battle.ini`.
@@ -62,6 +65,17 @@ python RandomizerLauncher\launcher_gui.py --self-check
 ```
 
 The self-check does not launch DTA and writes its report to `RandomizerLauncher/self_check.json`.
+
+## AI-assisted development
+
+This project was developed with assistance from OpenAI's ChatGPT, including
+Codex coding assistance. AI tools have been used to analyze DTA's INI and
+mission-map formats, catalogue units, weapons, powers, and image tags for the
+UI, and support implementation, refactoring, debugging, testing, and
+documentation. Generated suggestions are reviewed, adapted, and validated
+against project requirements before inclusion. Final design decisions,
+releases, and project behavior remain the responsibility of the project
+maintainer.
 
 ## Status
 

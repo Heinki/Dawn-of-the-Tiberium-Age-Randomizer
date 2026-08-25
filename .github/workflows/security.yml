@@ -11,8 +11,8 @@ permissions:
   contents: read
 
 jobs:
-  package-build:
-    name: Windows package build
+  source-validation:
+    name: Source and release-file validation
     runs-on: windows-latest
     steps:
       - name: Check out source
@@ -27,9 +27,14 @@ jobs:
         run: python -m pip install --disable-pip-version-check -r requirements-build.txt
       - name: Compile source
         run: python -m compileall -q .
-      - name: Build executable
+      - name: Validate static configuration
+        run: >-
+          python -c "from randomizer.config.static import
+          REQUIRED_STATIC_CONFIGS, validate_static_configs;
+          validate_static_configs(REQUIRED_STATIC_CONFIGS)"
+      - name: Validate versions and committed APWorld
         shell: powershell
-        run: .\build_exe.ps1 -Output 'release\DTARandomizer.exe'
+        run: .\check_release_files.ps1
 
   codeql:
     name: CodeQL (Python)

@@ -1,3 +1,5 @@
-# DTA Multiworld Setup Guide
+# Dawn of the Tiberium Age Multiworld Setup Guide
 
-Install the matching `dta.apworld`, generate the signed YAML/run manifest from the DTA Randomizer, generate the multiworld, then connect through the launcher's Archipelago tab. Launcher and APWorld versions must match.
+The maintained installation, room-generation, connection, continuation, and
+troubleshooting instructions are in the
+[DTA Archipelago player guide](https://github.com/Heinki/Dawn-of-the-Tiberium-Age-Randomizer/blob/main/Archipelago/README.md).

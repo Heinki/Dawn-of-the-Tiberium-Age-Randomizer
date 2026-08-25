@@ -22,7 +22,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Copy-Item -LiteralPath (
-    Join-Path $PSScriptRoot "Archipelago\SETUP.md"
+    Join-Path $PSScriptRoot "Archipelago\README.md"
 ) -Destination $setupPath -Force
 
 $launcherVersion = (& python -c (
