@@ -584,6 +584,13 @@ def _validate_tuning(sections, path):
             or maximum < values['amount_per_stack']
         ):
             _invalid(f'Invalid maximum amount for buff effect {effect!r}', path)
+    sight_maximum = effects['sight'].get('maximum_value')
+    if (
+        not isinstance(sight_maximum, int)
+        or isinstance(sight_maximum, bool)
+        or sight_maximum < 1
+    ):
+        _invalid('Invalid maximum value for sight buff effect', path)
     for effect in (
         'production', 'cost', 'armor', 'health', 'damage', 'reload', 'range',
         'sight', 'ammo',

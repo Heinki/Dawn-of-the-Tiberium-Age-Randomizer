@@ -192,13 +192,6 @@
       "id": 81063976
     },
     {
-      "name": "Aircraft Carrier (CARRIER) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064473
-    },
-    {
       "name": "Aircraft Carrier (CARRIER) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -2089,13 +2082,6 @@
       "id": 81064044
     },
     {
-      "name": "Corvette (DESTROYER) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064623
-    },
-    {
       "name": "Corvette (DESTROYER) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -2171,13 +2157,6 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064050
-    },
-    {
-      "name": "Cruiser (CRUISER) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064628
     },
     {
       "name": "Cruiser (CRUISER) Regeneration I",
@@ -2642,13 +2621,6 @@
       "id": 81064068
     },
     {
-      "name": "Ekranoplan Aircraft Carrier (EKRACARR) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064677
-    },
-    {
       "name": "Ekranoplan Aircraft Carrier (EKRACARR) Reinforcement I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -2878,13 +2850,6 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065654
-    },
-    {
-      "name": "Flak Corvette (FLAKCORV) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065655
     },
     {
       "name": "Flak Corvette (FLAKCORV) Regeneration I",
@@ -3200,13 +3165,6 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064086
-    },
-    {
-      "name": "Frigate (FRIGATE) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064713
     },
     {
       "name": "Frigate (FRIGATE) Regeneration I",
@@ -3755,13 +3713,6 @@
       "id": 81065951
     },
     {
-      "name": "Gap Generator (RAGAP) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065952
-    },
-    {
       "name": "Gap Generator (RAGAP) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -4061,13 +4012,6 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064120
-    },
-    {
-      "name": "Gunboat (BOAT) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064773
     },
     {
       "name": "Gunboat (BOAT) Regeneration I",
@@ -5120,13 +5064,6 @@
       "id": 81064162
     },
     {
-      "name": "Laser Corvette (LASCOR) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064859
-    },
-    {
       "name": "Laser Corvette (LASCOR) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -5286,13 +5223,6 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064174
-    },
-    {
-      "name": "Lun Attack Ekranoplan (LUN) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064869
     },
     {
       "name": "Lun Attack Ekranoplan (LUN) Reinforcement I",
@@ -6058,13 +5988,6 @@
       "id": 81064220
     },
     {
-      "name": "Missile Cruiser (MCRUISE) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064923
-    },
-    {
       "name": "Missile Cruiser (MCRUISE) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -6140,13 +6063,6 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064226
-    },
-    {
-      "name": "Missile Submarine (MSUB) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064928
     },
     {
       "name": "Missile Submarine (MSUB) Regeneration I",
@@ -6525,13 +6441,6 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064985
-    },
-    {
-      "name": "Naval Artillery (COASTARTY) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064986
     },
     {
       "name": "Naval Artillery (COASTARTY) Regeneration I",
@@ -7668,13 +7577,6 @@
       "id": 81063940
     },
     {
-      "name": "Player Army Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81066006
-    },
-    {
       "name": "Player Army Weapon Tuning I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -7722,13 +7624,6 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064294
-    },
-    {
-      "name": "Project 941 (P941) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065072
     },
     {
       "name": "Project 941 (P941) Reinforcement I",
@@ -8767,13 +8662,6 @@
       "id": 81065716
     },
     {
-      "name": "Scarab (SCARAB) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065717
-    },
-    {
       "name": "Scarab (SCARAB) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -8844,13 +8732,6 @@
       "id": 81064353
     },
     {
-      "name": "Scarab Speedboat (SPEEDBOAT) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065134
-    },
-    {
       "name": "Scarab Speedboat (SPEEDBOAT) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -8919,13 +8800,6 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064360
-    },
-    {
-      "name": "Sea Shadow (SBOAT) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065139
     },
     {
       "name": "Sea Shadow (SBOAT) Regeneration I",
@@ -9782,13 +9656,6 @@
       "id": 81064400
     },
     {
-      "name": "Submarine (SS) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065228
-    },
-    {
       "name": "Submarine (SS) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -10545,13 +10412,6 @@
       "id": 81065757
     },
     {
-      "name": "Torpedo Boat (TORPBOAT) (TORPBOAT) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065758
-    },
-    {
       "name": "Torpedo Boat (TORPBOAT) (TORPBOAT) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -10627,13 +10487,6 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065768
-    },
-    {
-      "name": "Torpedo Boat (TORPCAT) (TORPCAT) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065769
     },
     {
       "name": "Torpedo Boat (TORPCAT) (TORPCAT) Regeneration I",
@@ -13074,7 +12927,7 @@
       ]
     }
   ],
-  "catalogue_checksum": "b37ea51a0562ea242729c75fb7432105a775e5d2b49e9ad614451dd2ec226263",
+  "catalogue_checksum": "7c63349459729ee6140ad09427eb76adf3ccbadeb1547810a042c41aad63d7a5",
   "locations": [
     {
       "name": "Tutorial Mission 1 - Mission Complete - Reward 1",

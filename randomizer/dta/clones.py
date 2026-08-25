@@ -5,6 +5,7 @@ from hashlib import sha1
 
 from randomizer.config.tuning import (
     capped_movement_speed,
+    capped_sight_range,
     mission_assistance_stack_count,
     stacked_cost,
     stacked_self_heal_amount,
@@ -733,9 +734,11 @@ def _unit_overrides(values, counts, target):
     if counts['sight']:
         scaled = _scaled_integer(values.get('Sight'), 1.0)
         if scaled is not None:
-            overrides['Sight'] = str(
-                scaled + int(stacking_amount('sight', counts['sight']))
+            final_sight = capped_sight_range(
+                {'sight': scaled}, counts['sight']
             )
+            if final_sight > scaled:
+                overrides['Sight'] = str(final_sight)
     if counts['ammo']:
         scaled = _scaled_integer(values.get('Ammo'), 1.0)
         if scaled is not None and scaled > 0:
@@ -995,7 +998,7 @@ def unit_specific_buff_rules(
             reward.get('global_buff')
             and reward.get('dta_global_clone_buff')
             and buff_type in {
-                'production', 'cost', 'speed', 'damage', 'reload', 'sight',
+                'production', 'cost', 'speed', 'damage', 'reload',
             }
         ):
             global_counts[buff_type] += 1
@@ -1234,6 +1237,11 @@ def unit_specific_buff_rules(
                 'CameoPriority': str(_faction_cameo_priority(target)),
                 **unit_rules,
             }
+            if unit_id == 'MEDIC':
+                # Vanilla recognizes only its fixed Medic type. Vinifera's
+                # generic healer flag preserves infantry healing when the
+                # player receives an isolated Medic clone.
+                unit_rules['OmniHealer'] = 'yes'
             if placement_only:
                 unit_rules['TechLevel'] = '-1'
             helper_family_fallback_needed = bool(

@@ -11,7 +11,7 @@
       "damage": {"factor_per_stack": 1.15, "maximum_multiplier": 6.0, "stack_limit": 13},
       "reload": {"factor_per_stack": 0.9, "stack_limit": 40},
       "range": {"amount_per_stack": 0.5, "maximum_amount": 50.0, "stack_limit": 100},
-      "sight": {"amount_per_stack": 1, "maximum_amount": 100, "stack_limit": 100},
+      "sight": {"amount_per_stack": 1, "maximum_amount": 9, "maximum_value": 10, "stack_limit": 9},
       "ammo": {"amount_per_stack": 1, "stack_limit": 20},
       "sensor_sight_bonus": 2,
       "defense_self_heal_fraction": 0.01,

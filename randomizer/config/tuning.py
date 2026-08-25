@@ -170,3 +170,50 @@ def capped_movement_speed(target, count):
             int(round(base_speed * (factor ** count))),
         ),
     )
+
+
+def movement_speed_stack_limit(target):
+    """Return exact useful speed stacks before configured or engine cap."""
+    configured = stacking_stack_limit('speed')
+    base_speed = max(1, int(round(float(target.get('speed', 1)))))
+    if capped_movement_speed(target, 1) <= base_speed:
+        return 0
+    previous = base_speed
+    for count in range(1, (configured or 256) + 1):
+        current = capped_movement_speed(target, count)
+        if current == previous:
+            return count - 1
+        previous = current
+    return configured
+
+
+def sight_range_ceiling():
+    """Return installed Tiberian Sun/Vinifera sight ceiling."""
+    return max(1, int(BUFF_EFFECTS['sight']['maximum_value']))
+
+
+def capped_sight_range(target, count):
+    """Apply sight stacks without writing values ignored by current engine."""
+    base_sight = max(0, int(round(float(target.get('sight', 0)))))
+    if base_sight <= 0:
+        return base_sight
+    ceiling = max(base_sight, sight_range_ceiling())
+    return min(
+        ceiling,
+        base_sight + int(stacking_amount('sight', count)),
+    )
+
+
+def sight_stack_limit(target):
+    """Return exact useful sight stacks before 10-cell engine ceiling."""
+    configured = stacking_stack_limit('sight')
+    base_sight = max(0, int(round(float(target.get('sight', 0)))))
+    if capped_sight_range(target, 1) <= base_sight:
+        return 0
+    previous = base_sight
+    for count in range(1, (configured or sight_range_ceiling()) + 1):
+        current = capped_sight_range(target, count)
+        if current == previous:
+            return count - 1
+        previous = current
+    return configured

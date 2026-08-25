@@ -71,6 +71,7 @@ from randomizer.rewards.catalogue import (
     STANDALONE_WEAPON_TEMPLATES,
     WEAPON_STAT_BUFF_TYPES,
     capped_movement_speed,
+    capped_sight_range,
     buff_stack_limit,
     canonical_reward,
     canonical_rewards,

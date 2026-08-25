@@ -13,6 +13,7 @@ from ._shared import (
     buff_stack_limit,
     buffs_with_unlocked_access,
     capped_movement_speed,
+    capped_sight_range,
     expand_equivalent_role_buffs,
     linked_buff_variant_ids,
     map_house_records,
@@ -156,9 +157,7 @@ def apply_unit_buff_value(values, target, buff_type, count):
         base_strength = resolved_safe_strength(target)
         set_safe_strength(values, int(round(base_strength * multiplier)))
     elif buff_type == 'sight':
-        values['Sight'] = str(int(round(
-            target['sight'] + stacking_amount('sight', count)
-        )))
+        values['Sight'] = str(capped_sight_range(target, count))
     elif buff_type == 'ammo':
         values['Ammo'] = str(int(round(
             target['ammo'] + stacking_amount('ammo', count)

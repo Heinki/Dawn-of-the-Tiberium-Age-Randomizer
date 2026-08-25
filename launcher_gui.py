@@ -97,10 +97,16 @@ def run_self_check():
         ALWAYS_AVAILABLE_TECH_IDS,
         BUFF_TARGETS,
         REWARD_POOL,
+        buff_stack_limit,
         buff_group_key,
         canonical_reward,
     )
-    from randomizer.config.tuning import movement_speed_ceiling
+    from randomizer.config.tuning import (
+        capped_movement_speed,
+        capped_sight_range,
+        movement_speed_ceiling,
+        sight_range_ceiling,
+    )
     from randomizer.rewards.arsenal import (
         arsenal_power_candidates,
         arsenal_unit_candidates,
@@ -212,11 +218,14 @@ def run_self_check():
             if reward.get('global_buff')
             and reward.get('buff_type') == 'production'
         )
-        vision_reward = next(
-            reward for reward in REWARD_POOL
-            if reward.get('global_buff')
-            and reward.get('buff_type') == 'sight'
-        )
+        retired_global_vision = canonical_reward({
+            'name': 'Player Army Optics I',
+            'kind': 'buff',
+            'unit': 'DTA_PLAYER_ARMY',
+            'buff_type': 'sight',
+            'global_buff': True,
+            'dta_global_clone_buff': True,
+        })
         catalogue = techno_catalogue()
         catalogue_records = {record['id']: record for record in catalogue}
         registered_rosters = {}
@@ -325,6 +334,34 @@ def run_self_check():
                 if entry['unit'] == 'E1A'
             ),
             {},
+        )
+        medic_access_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('dta_production_access')
+            and reward.get('unit') == 'MEDIC'
+        )
+        medic_range_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('unit') == 'MEDIC'
+            and reward.get('buff_type') == 'range'
+        )
+        medic_clone_rules, medic_clone_report = unit_specific_buff_rules(
+            clone_mission,
+            [medic_access_reward, medic_range_reward],
+            access_randomized=True,
+        )
+        medic_clone_entry = next(
+            (
+                entry for entry in medic_clone_report['applied']
+                if entry['unit'] == 'MEDIC'
+            ),
+            {},
+        )
+        medic_clone = medic_clone_rules.get(
+            medic_clone_entry.get('output_type', ''), {}
+        )
+        medic_weapon = medic_clone_rules.get(
+            medic_clone.get('Primary', ''), {}
         )
         access_generated = APP_DIR / '.self_check_access_spawnmap.ini'
         try:
@@ -446,8 +483,50 @@ def run_self_check():
         generated_apc_weapon = apc_buff_rules.get(
             generated_apc.get('Primary'), {}
         )
+        e1_cap_rewards = [
+            reward for reward in REWARD_POOL
+            if reward.get('unit') == 'E1'
+            and reward.get('buff_type') in {'sight', 'speed'}
+        ]
+        e1_cap_plan = plan_seed_rewards(
+            ['M_TUTORIAL2'],
+            'dta-unit-cap-smoke',
+            {'M_TUTORIAL2': 40},
+            progression_mode='Mission List',
+            grid=None,
+            reward_factions_for_code=lambda _code: {'GDI'},
+            reward_pool_for_code=lambda _code: e1_cap_rewards,
+            configured_reward_pool=lambda: e1_cap_rewards,
+            starting_unlocked_tech_ids={'E1'},
+            require_access_for_unit_buffs=True,
+        )['M_TUTORIAL2']
+        e1_cap_counts = Counter(
+            reward.get('buff_type')
+            for reward in e1_cap_plan
+            if reward.get('kind') == 'buff'
+        )
+        e1_speed_reward = next(
+            reward for reward in e1_cap_rewards
+            if reward.get('buff_type') == 'speed'
+        )
+        combined_speed_plan = plan_seed_rewards(
+            ['M_TUTORIAL2'],
+            'dta-combined-speed-cap-smoke',
+            {'M_TUTORIAL2': 20},
+            progression_mode='Mission List',
+            grid=None,
+            reward_factions_for_code=lambda _code: {'GDI'},
+            reward_pool_for_code=lambda _code: [
+                e1_speed_reward, speed_reward,
+            ],
+            configured_reward_pool=lambda: [
+                e1_speed_reward, speed_reward,
+            ],
+            starting_unlocked_tech_ids={'E1'},
+            require_access_for_unit_buffs=True,
+        )['M_TUTORIAL2']
         global_clone_rules, global_clone_report = unit_specific_buff_rules(
-            tutorial_two, [damage_reward, vision_reward]
+            tutorial_two, [damage_reward]
         )
         global_e1 = global_clone_rules.get('E1_PLAYER', {})
         global_e1_weapon = global_clone_rules.get(
@@ -873,6 +952,81 @@ def run_self_check():
         )
         tooltip_controller = object.__new__(UnlockDataController)
 
+        dashboard_access_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('dta_production_access')
+            and reward.get('unit') == 'E1'
+        )
+        dashboard_global_rewards = [
+            reward for reward in REWARD_POOL
+            if reward.get('global_buff')
+            and reward.get('buff_type') in {'production', 'damage'}
+        ]
+
+        class _SelfCheckBooleanVar:
+            def get(self):
+                return False
+
+        class _SelfCheckUnlockDashboard(UnlockDataController):
+            state = {'seed': 'self-check'}
+            hide_locked_grid_missions_var = _SelfCheckBooleanVar()
+
+            def active_progression_mode(self):
+                return 'Mission Order'
+
+            def canonical_earned_rewards(self):
+                return [dashboard_access_reward, *dashboard_global_rewards]
+
+            def starting_reward_source_items(self):
+                return []
+
+            def active_reward_mode(self):
+                return 'Chaos'
+
+            def active_starting_tier_one_access_ids(self):
+                return set()
+
+            def randomize_unit_access_enabled(self):
+                return True
+
+            def share_chaos_role_buffs_enabled(self):
+                return False
+
+            def foehn_standard_bundles_enabled(self):
+                return False
+
+            def unlock_dashboard_sources(self):
+                def source_data(rewards, access=False):
+                    items = [('Self-check', reward) for reward in rewards]
+                    return {
+                        'assigned': list(items),
+                        'earned': list(items),
+                        'earned_unlocks': list(items) if access else [],
+                        'available': [],
+                        'available_unlocks': [],
+                        'available_codes': [],
+                    }
+
+                return {
+                    'unit:E1': source_data(
+                        [dashboard_access_reward], access=True
+                    ),
+                    'unit:DTA_PLAYER_ARMY': source_data(
+                        dashboard_global_rewards
+                    ),
+                }
+
+        dashboard_controller = _SelfCheckUnlockDashboard()
+        dashboard_entries = dashboard_controller.unlock_dashboard_entries()
+        global_dashboard_entries = [
+            entry for entry in dashboard_entries
+            if entry.get('id') == 'DTA_PLAYER_ARMY'
+        ]
+        chaos_rifle_entries = [
+            entry for entry in dashboard_entries
+            if entry.get('id') in {'E1', 'E1A'}
+        ]
+
         def power_tooltip_smoke(power_id):
             unlock = next(
                 reward for reward in REWARD_POOL
@@ -1212,6 +1366,29 @@ def run_self_check():
                 and 'Recharge time 10.0% faster.' in paradrop_tooltip
                 and 'Delivered infantry +1.' in paradrop_tooltip
             ),
+            'unlock_dashboard_global_buffs_visible': (
+                len(global_dashboard_entries) == 1
+                and global_dashboard_entries[0].get('faction') == 'Neutral'
+                and global_dashboard_entries[0].get('category')
+                == 'Global Buffs'
+                and global_dashboard_entries[0].get('status') == 'unlocked'
+                and {
+                    'unit:DTA_PLAYER_ARMY',
+                    'house:all:production',
+                }.issubset(dashboard_controller.unlock_dashboard_reward_keys(
+                    next(
+                        reward for reward in dashboard_global_rewards
+                        if reward.get('buff_type') == 'production'
+                    )
+                ))
+            ),
+            'unlock_dashboard_chaos_equivalents_collapsed': (
+                any(entry.get('id') == 'E1' for entry in chaos_rifle_entries)
+                and not any(
+                    entry.get('id') == 'E1A'
+                    for entry in chaos_rifle_entries
+                )
+            ),
             'dta_power_cameos_complete': (
                 {spec['id'].upper() for spec in POWER_SPECS}
                 == set(power_cameo_paths)
@@ -1489,13 +1666,12 @@ def run_self_check():
             'global_buffs_use_player_clones_only': (
                 global_clone_report.get('global_buffs') == {
                     'damage': 1,
-                    'sight': 1,
                 }
                 and global_e1.get('RequiredHouses') == 'GDI'
                 and int(global_e1.get('Strength', 0))
                 == int(installed_e1.get('Strength', 0))
                 and int(global_e1.get('Sight', 0))
-                == int(installed_e1.get('Sight', 0)) + 1
+                == int(installed_e1.get('Sight', 0))
                 and int(global_e1_weapon.get('Damage', 0))
                 > int(installed_e1_weapon.get('Damage', 0))
                 and set(global_clone_rules.get('E1', {}))
@@ -1504,6 +1680,14 @@ def run_self_check():
                     global_clone_rules
                 )
                 and global_clone_report['map_objects_rewritten'] == 0
+            ),
+            'global_vision_removed': (
+                not any(
+                    reward.get('global_buff')
+                    and reward.get('buff_type') == 'sight'
+                    for reward in REWARD_POOL
+                )
+                and retired_global_vision.get('retired_reward') is True
             ),
             'global_armor_removed': not any(
                 reward.get('global_buff')
@@ -1954,6 +2138,59 @@ def run_self_check():
                 and float(generated_apc_weapon.get('Range', 0))
                 > float(installed_apc_weapon.get('Range', 0))
             ),
+            'unit_vision_and_speed_caps_are_exact': (
+                sight_range_ceiling() == 10
+                and all(
+                    buff_stack_limit(reward) > 0
+                    and capped_sight_range(
+                        BUFF_TARGETS[reward['unit']],
+                        buff_stack_limit(reward),
+                    ) <= sight_range_ceiling()
+                    and capped_sight_range(
+                        BUFF_TARGETS[reward['unit']],
+                        buff_stack_limit(reward) + 1,
+                    ) == capped_sight_range(
+                        BUFF_TARGETS[reward['unit']],
+                        buff_stack_limit(reward),
+                    )
+                    for reward in REWARD_POOL
+                    if reward.get('kind') == 'buff'
+                    and not reward.get('global_buff')
+                    and reward.get('buff_type') == 'sight'
+                )
+                and all(
+                    buff_stack_limit(reward) > 0
+                    and capped_movement_speed(
+                        BUFF_TARGETS[reward['unit']],
+                        buff_stack_limit(reward) + 1,
+                    ) == capped_movement_speed(
+                        BUFF_TARGETS[reward['unit']],
+                        buff_stack_limit(reward),
+                    )
+                    for reward in REWARD_POOL
+                    if reward.get('kind') == 'buff'
+                    and not reward.get('global_buff')
+                    and reward.get('buff_type') == 'speed'
+                )
+                and all(
+                    e1_cap_counts[reward['buff_type']]
+                    == buff_stack_limit(reward)
+                    for reward in e1_cap_rewards
+                )
+                and any(
+                    reward.get('max_rewards_achieved')
+                    for reward in e1_cap_plan
+                )
+                and sum(
+                    1 for reward in combined_speed_plan
+                    if reward.get('kind') == 'buff'
+                    and reward.get('buff_type') == 'speed'
+                ) == buff_stack_limit(e1_speed_reward)
+                and any(
+                    reward.get('max_rewards_achieved')
+                    for reward in combined_speed_plan
+                )
+            ),
             'orphan_unit_buffs_do_not_grant_access': (
                 not _orphan_rules
                 and any(
@@ -1982,6 +2219,12 @@ def run_self_check():
                 ).get('Damage', 0)) > int(
                     installed_e2_weapon.get('Damage', 0)
                 )
+            ),
+            'dta_medic_clone_keeps_healing': (
+                medic_clone_entry.get('route') == 'production_access_clone'
+                and medic_clone.get('OmniHealer') == 'yes'
+                and int(medic_weapon.get('Damage', 0)) < 0
+                and medic_weapon.get('Warhead') == 'Organic'
             ),
             'vinifera_clone_written_to_generated_map': all(
                 value in clone_generated_text
@@ -2118,6 +2361,7 @@ def run_self_check():
             'legacy_map_rules_isolated',
             'safe_reward_pool_only',
             'global_buffs_use_player_clones_only',
+            'global_vision_removed',
             'retry_assistance_uses_player_clones',
             'global_armor_removed',
             'spawner_control_weapons_are_not_cloned',
@@ -2148,6 +2392,8 @@ def run_self_check():
             'dta_power_buff_matrix_valid',
             'dta_power_stack_limits_valid',
             'unlock_dashboard_tooltips_render',
+            'unlock_dashboard_global_buffs_visible',
+            'unlock_dashboard_chaos_equivalents_collapsed',
             'dta_power_cameos_complete',
             'dta_defense_rewards_complete',
             'dta_firestorm_removed',
@@ -2170,8 +2416,10 @@ def run_self_check():
             'vinifera_production_clone_generated',
             'all_unit_specific_buffs_use_production_clones',
             'dta_extended_unit_buffs_work',
+            'unit_vision_and_speed_caps_are_exact',
             'orphan_unit_buffs_do_not_grant_access',
             'access_clone_receives_unit_specific_buffs',
+            'dta_medic_clone_keeps_healing',
             'vinifera_clone_written_to_generated_map',
             'clone_source_map_unchanged',
             'difficulty_fallback_valid',

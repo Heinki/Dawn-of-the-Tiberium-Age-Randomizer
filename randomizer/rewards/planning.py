@@ -87,6 +87,8 @@ def plan_seed_rewards(
     }
     buff_counts = {}
     unit_buff_counts = {}
+    unit_buff_type_counts = {}
+    global_buff_counts = {}
     power_buff_counts = {}
     reward_weights = normalize_reward_weights(reward_weights)
     use_weighted_draws = not reward_weights_are_default(reward_weights)
@@ -168,11 +170,15 @@ def plan_seed_rewards(
             )
         return reward.get('name')
 
-    def record_unit_buff(unit):
+    def record_unit_buff(unit, buff_type):
         units = unit_role_equivalents(unit) if share_role_buffs else {unit}
         for affected_unit in units:
             unit_buff_counts[affected_unit] = (
                 unit_buff_counts.get(affected_unit, 0) + 1
+            )
+            count_key = (affected_unit, buff_type)
+            unit_buff_type_counts[count_key] = (
+                unit_buff_type_counts.get(count_key, 0) + 1
             )
 
     def buff_target_count(reward):
@@ -186,9 +192,18 @@ def plan_seed_rewards(
         if reward.get('power_buff_type') and power_id:
             power_buff_counts[power_id] = power_buff_counts.get(power_id, 0) + 1
             return
+        buff_type = reward.get('buff_type')
+        if reward.get('global_buff'):
+            global_buff_counts[buff_type] = (
+                global_buff_counts.get(buff_type, 0) + 1
+            )
+            unit = reward.get('unit')
+            if unit:
+                unit_buff_counts[unit] = unit_buff_counts.get(unit, 0) + 1
+            return
         unit = reward.get('unit')
         if unit:
-            record_unit_buff(unit)
+            record_unit_buff(unit, buff_type)
 
     # Regeneration can preserve already released checks. Seed planner state from
     # those rewards so future slots cannot repeat access or exceed buff caps.
@@ -261,6 +276,7 @@ def plan_seed_rewards(
     buff_pool_ids_by_count_key = {}
     buff_pool_id_by_code = {}
     global_buff_entries_by_pool_id = {}
+    speed_unit_limits_by_pool_id = {}
     balanced_target_groups_by_pool_id = {}
     weighted_remaining_targets = {}
     last_buff_target_keys = set()
@@ -384,8 +400,45 @@ def plan_seed_rewards(
             global_buff_entries_by_pool_id[pool_id] = [
                 entry for entry in active_buffs if entry[5]
             ]
+            speed_unit_limits_by_pool_id[pool_id] = {
+                entry[3]: entry[1]
+                for entry in buff_metadata
+                if (
+                    entry[0].get('buff_type') == 'speed'
+                    and not entry[5]
+                    and entry[3]
+                    and entry[1] is not None
+                )
+            }
         buffs_by_code[code] = active_buffs
         buff_pool_id_by_code[code] = id(active_buffs)
+
+    def reward_has_capacity(reward, limit, count_key, pool_id=None):
+        if limit is None:
+            return True
+        if reward.get('buff_type') != 'speed':
+            return buff_counts.get(count_key, 0) < limit
+
+        global_count = global_buff_counts.get('speed', 0)
+        if not reward.get('global_buff'):
+            unit = reward.get('unit')
+            return (
+                global_count
+                + unit_buff_type_counts.get((unit, 'speed'), 0)
+                < limit
+            )
+
+        if buff_counts.get(count_key, 0) >= limit:
+            return False
+        target_limits = speed_unit_limits_by_pool_id.get(pool_id, {})
+        if not target_limits:
+            return True
+        return any(
+            global_count
+            + unit_buff_type_counts.get((unit, 'speed'), 0)
+            < target_limit
+            for unit, target_limit in target_limits.items()
+        )
 
     def retire_capped_buff(count_key, limit):
         if limit is None or buff_counts.get(count_key, 0) < limit:
@@ -438,7 +491,9 @@ def plan_seed_rewards(
         ) in buffs_by_code.get(code, ()):
             if is_global:
                 continue
-            if limit is not None and buff_counts.get(count_key, 0) >= limit:
+            if not reward_has_capacity(
+                reward, limit, count_key, pool_id
+            ):
                 continue
             if is_power_buff:
                 if power_id not in seed_unlocked_power_ids:
@@ -517,6 +572,8 @@ def plan_seed_rewards(
             count_key = buff_count_key(reward)
         buff_counts[count_key] = buff_counts.get(count_key, 0) + 1
         record_buff_target(reward)
+        if reward.get('buff_type') == 'speed':
+            balanced_target_groups_by_pool_id.clear()
         limit = metadata.get('limit')
         if 'limit' not in metadata:
             limit = buff_stack_limit(reward)
@@ -574,7 +631,7 @@ def plan_seed_rewards(
             reward
             for reward, limit, count_key, *_rest
             in global_buff_entries_by_pool_id.get(pool_id, ())
-            if limit is None or buff_counts.get(count_key, 0) < limit
+            if reward_has_capacity(reward, limit, count_key, pool_id)
         ]
         target_groups = balanced_target_groups(code)
 
@@ -676,7 +733,9 @@ def plan_seed_rewards(
             if access_already_unlocked(reward):
                 continue
             count_key = metadata.get('count_key', name)
-            if limit is not None and buff_counts.get(count_key, 0) >= limit:
+            if not reward_has_capacity(
+                reward, limit, count_key, buff_pool_id_by_code.get(code)
+            ):
                 continue
             if reward.get('kind') == 'buff':
                 unit = metadata.get('unit')
@@ -698,9 +757,11 @@ def plan_seed_rewards(
             for reward, limit, count_key, unit, power_id in configured_buffs():
                 if not reward_prerequisites_met(reward):
                     continue
-                if (
-                    limit is not None
-                    and buff_counts.get(count_key, 0) >= limit
+                if not reward_has_capacity(
+                    reward,
+                    limit,
+                    count_key,
+                    buff_pool_id_by_code.get(code),
                 ):
                     continue
                 if (
@@ -810,7 +871,12 @@ def plan_seed_rewards(
                 continue
             limit = metadata['limit']
             count_key = metadata['count_key']
-            if limit is not None and buff_counts.get(count_key, 0) >= limit:
+            if not reward_has_capacity(
+                reward,
+                limit,
+                count_key,
+                buff_pool_id_by_code.get(code),
+            ):
                 continue
             power_id = metadata['power_id']
             if (

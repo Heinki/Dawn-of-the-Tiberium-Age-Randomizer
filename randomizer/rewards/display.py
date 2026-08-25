@@ -12,7 +12,11 @@ from .dta_definitions import (
     REWARD_BY_NAME,
     _UNIT_POLICY_CONFIG,
     capped_movement_speed,
+    capped_sight_range,
     movement_speed_ceiling,
+    movement_speed_stack_limit,
+    sight_range_ceiling,
+    sight_stack_limit,
     unit_display_label,
 )
 from randomizer.config.tuning import (
@@ -300,9 +304,11 @@ def _uncached_buff_stack_limit(reward):
         return power_buff_stack_limit(reward)
     buff_type = reward.get('buff_type')
     if buff_type in {
-        'production', 'armor', 'health', 'range', 'sight', 'ammo',
+        'production', 'armor', 'health', 'range', 'ammo',
     }:
         return stacking_stack_limit(buff_type)
+    if buff_type == 'sight':
+        return sight_stack_limit(BUFF_TARGETS.get(reward.get('unit'), {}))
     if buff_type == 'cost':
         target = BUFF_TARGETS.get(reward.get('unit'), {})
         configured = stacking_stack_limit('cost')
@@ -369,15 +375,7 @@ def _uncached_buff_stack_limit(reward):
         configured = stacking_stack_limit('speed')
         if target.get('global_buff'):
             return configured
-        safe_ceiling = movement_speed_ceiling(target)
-        if safe_ceiling is not None:
-            base_speed = max(1, int(round(float(target.get('speed', 1)))))
-            if base_speed >= safe_ceiling:
-                return 1
-            for stacks in range(1, 257):
-                if capped_movement_speed(target, stacks) >= safe_ceiling:
-                    return min(stacks, configured) if configured else stacks
-        return configured
+        return movement_speed_stack_limit(target) or configured
     if buff_type in {'open_topped', 'cloak', 'sensors', 'veteran'}:
         return 1
     return None
@@ -496,8 +494,12 @@ def buff_effect_lines(reward, count=1, include_label=True, include_stack=True):
         stronger = int(round((multiplier - 1.0) * 100))
         return [stacked(f'{prefix}Health {stronger}% higher')]
     if buff_type == 'sight':
-        increase = int(stacking_amount('sight', count))
-        return [stacked(f'{prefix}Vision +{increase}')]
+        base_sight = int(round(float(target.get('sight', 0))))
+        sight = capped_sight_range(target, count)
+        return [stacked(
+            f'{prefix}Vision {base_sight} -> {sight} '
+            f'(engine ceiling {sight_range_ceiling()})'
+        )]
     if buff_type == 'veteran':
         return [stacked(f'{prefix}Veteran start')]
     if buff_type in {'build_limit', 'building_limit'}:

@@ -6,6 +6,10 @@ from randomizer.config.tuning import (
     BUFF_EFFECTS,
     REWARD_PLANNING,
     capped_movement_speed,
+    capped_sight_range,
+    movement_speed_stack_limit,
+    sight_range_ceiling,
+    sight_stack_limit,
     stacked_cost,
     stacked_weapon_damage,
     stacked_weapon_rof,
@@ -119,7 +123,7 @@ BUFF_TYPES = [
 ]
 
 _GLOBAL_BUFF_TYPE_IDS = {
-    'production', 'cost', 'speed', 'damage', 'reload', 'sight',
+    'production', 'cost', 'speed', 'damage', 'reload',
 }
 
 _GLOBAL_BUFF_TARGET = {
@@ -228,7 +232,10 @@ def _allowed_buff_types(record):
         allowed.append('reload')
     if any(weapon.get('range', 0) > 0 for weapon in weapons):
         allowed.append('range')
-    if record.get('sight', 0) > 0:
+    if (
+        capped_sight_range(record, 1)
+        > int(round(float(record.get('sight', 0))))
+    ):
         allowed.append('sight')
     if record.get('ammo', 0) > 0:
         allowed.append('ammo')
@@ -417,7 +424,19 @@ REWARD_BY_BUFF_KEY = {
     for reward in UNIT_BUFF_REWARDS
 }
 
-RETIRED_REWARD_BY_NAME = {}
+RETIRED_REWARD_BY_NAME = {
+    'Player Army Optics I': {
+        'name': 'Player Army Optics I (retired: ineffective)',
+        'description': (
+            'Disabled because global Sight values do not produce the promised '
+            'vision radius in DTA. Existing saved rewards grant no effect.'
+        ),
+        'rules': {},
+        'factions': [],
+        'kind': 'retired',
+        'retired_reward': True,
+    },
+}
 ACCESS_REWARD_ALIASES = {
     reward['name'].replace('TTNKMSL', '2TNKMSL'): reward['name']
     for reward in REWARD_POOL

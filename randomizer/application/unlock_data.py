@@ -572,12 +572,17 @@ class UnlockDataController:
         if share_foehn_roles is None:
             share_foehn_roles = self.foehn_standard_bundles_enabled()
         keys = set()
+        unit_id = str(reward.get('unit') or '').upper()
         house_scope = self.reward_house_wide_buff_scope(reward)
         if house_scope:
             suffix, buff_type = house_scope
             keys.add(f'house:{suffix.lower()}:{buff_type}')
+            # Global production uses house-wide application rules, but its
+            # dashboard source also belongs on the Player Army global-buff
+            # card with every other global effect.
+            if reward.get('global_buff') and unit_id:
+                keys.add(f'unit:{unit_id}')
             return keys
-        unit_id = str(reward.get('unit') or '').upper()
         if reward.get('kind') == 'buff' and unit_id:
             keys.add(f'unit:{unit_id}')
             if (
@@ -815,9 +820,38 @@ class UnlockDataController:
         earned_access = unlocked_reward_tech_ids(earned_rewards)
         starting_access = self.active_starting_tier_one_access_ids()
         randomize_access = self.randomize_unit_access_enabled()
+        chaos_mode = self.active_reward_mode() == 'Chaos'
         foehn_units_available = self.active_reward_mode() in {
             'Chaos', ARSENAL_MODE,
         }
+
+        chaos_representatives = {}
+        if chaos_mode:
+            equivalent_groups = {
+                tuple(sorted(unit_role_equivalents(unit_id)))
+                for unit_id in BUFF_TARGETS
+                if len(unit_role_equivalents(unit_id)) > 1
+            }
+
+            def chaos_display_priority(unit_id):
+                source_data = sources.get(f'unit:{unit_id}', {})
+                assigned_access = any(
+                    reward.get('kind') != 'buff'
+                    for _source, reward in source_data.get('assigned', ())
+                )
+                return (
+                    0 if unit_id in earned_access else
+                    1 if unit_id in starting_access else
+                    2 if assigned_access else
+                    3 if unit_id in ALWAYS_AVAILABLE_TECH_IDS else
+                    4,
+                    self.unit_faction_sort_key(unit_id),
+                )
+
+            for group in equivalent_groups:
+                representative = min(group, key=chaos_display_priority)
+                for unit_id in group:
+                    chaos_representatives[unit_id] = representative
 
         entries = []
         category_labels = {
@@ -826,6 +860,7 @@ class UnlockDataController:
             'vehicles': 'Vehicles',
             'aircraft': 'Aircraft',
             'defenses': 'Defenses',
+            'global': 'Global Buffs',
         }
         house_scopes = {}
         for reward in REWARD_POOL:
@@ -842,6 +877,10 @@ class UnlockDataController:
             house_scopes.items(),
             key=lambda item: house_wide_buff_label(item[0]).casefold(),
         ):
+            if reward.get('global_buff'):
+                # All global effects share one Player Army card below. Avoid
+                # splitting global production into a second dashboard card.
+                continue
             suffix, buff_type = scope
             key = f'house:{suffix.lower()}:{buff_type}'
             source_data = sources.get(
@@ -886,14 +925,27 @@ class UnlockDataController:
         for unit_id, target in BUFF_TARGETS.items():
             if target.get('linked_buff_source'):
                 continue
+            if (
+                chaos_mode
+                and chaos_representatives.get(unit_id, unit_id) != unit_id
+            ):
+                # Chaos assigns one exact access identity per equivalent role.
+                # Hide omitted peers instead of presenting them as unavailable
+                # units even though they were deliberately collapsed.
+                continue
             category = target.get('category')
             if category not in category_labels:
                 continue
+            global_target = bool(target.get('global_buff'))
             factions = list(target.get('factions') or [])
-            eligible_factions = [
-                faction for faction in factions
-                if faction in (*FACTION_ORDER, 'Neutral')
-            ]
+            eligible_factions = (
+                ['Neutral']
+                if global_target
+                else [
+                    faction for faction in factions
+                    if faction in (*FACTION_ORDER, 'Neutral')
+                ]
+            )
             display_factions = eligible_factions
             if not display_factions:
                 continue
@@ -915,7 +967,7 @@ class UnlockDataController:
                     'available_unlocks': [], 'available_codes': [],
                 }
             arsenal_selected = arsenal_mode and unit_id in selected_arsenal_units
-            unlocked = (
+            unlocked = bool(source_data['earned']) if global_target else (
                 arsenal_selected
                 if arsenal_mode
                 else bool(
@@ -932,10 +984,20 @@ class UnlockDataController:
                     )
                 )
             )
-            status = (
-                ('unlocked' if arsenal_selected else 'unavailable')
-                if arsenal_mode
-                else (
+            if global_target:
+                status = (
+                    'unlocked'
+                    if source_data['earned']
+                    else 'available'
+                    if source_data['available'] and not privacy
+                    else 'locked'
+                    if source_data['assigned']
+                    else 'unavailable'
+                )
+            elif arsenal_mode:
+                status = 'unlocked' if arsenal_selected else 'unavailable'
+            else:
+                status = (
                     'unlocked'
                     if unlocked
                     else 'available'
@@ -944,7 +1006,6 @@ class UnlockDataController:
                     if source_data['assigned']
                     else 'unavailable'
                 )
-            )
             if arsenal_selected:
                 condition = 'Seed-fixed temporary mission arsenal'
             elif key in starting_unlock_source_by_key:
@@ -956,7 +1017,9 @@ class UnlockDataController:
             else:
                 condition = ''
             display_category = (
-                'Naval'
+                'Global Buffs'
+                if global_target
+                else 'Naval'
                 if target.get('naval')
                 else 'Special'
                 if special_reward
@@ -971,7 +1034,7 @@ class UnlockDataController:
                 entries.append({
                     'key': entry_key,
                     'source_key': key,
-                    'kind': 'unit',
+                    'kind': 'global' if global_target else 'unit',
                     'id': unit_id,
                     'label': target.get('label', unit_id),
                     'faction': display_faction,
@@ -1126,7 +1189,7 @@ class UnlockDataController:
         earned_source_names = list(dict.fromkeys(source for source, _ in sources['earned']))
         available_source_items = (
             sources['available']
-            if entry.get('kind') == 'house'
+            if entry.get('kind') in {'house', 'global'}
             else sources['available_unlocks']
         )
         available_source_names = list(dict.fromkeys(
