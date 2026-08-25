@@ -12384,13 +12384,13 @@
       "code": "M_CREXT",
       "title": "CR Bonus Mission: The Pink Menace",
       "side": "2",
-      "reward_multiplier": 1,
+      "reward_multiplier": 3,
       "checks": [
         {
           "id": "victory",
           "name": "Mission Complete",
           "hint": "Win the mission.",
-          "maximum_slots": 30
+          "maximum_slots": 90
         }
       ]
     },
@@ -12927,7 +12927,7 @@
       ]
     }
   ],
-  "catalogue_checksum": "7c63349459729ee6140ad09427eb76adf3ccbadeb1547810a042c41aad63d7a5",
+  "catalogue_checksum": "9d1fc4c998f8578e93cdf465c7b0674b862859a0bcd5f4235c637faf35ae617b",
   "locations": [
     {
       "name": "Tutorial Mission 1 - Mission Complete - Reward 1",
@@ -29308,6 +29308,426 @@
       "mission": "M_CREXT",
       "check": "victory",
       "slot": 30
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 31",
+      "id": 81133972,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 31
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 32",
+      "id": 81133973,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 32
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 33",
+      "id": 81133974,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 33
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 34",
+      "id": 81133975,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 34
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 35",
+      "id": 81133976,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 35
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 36",
+      "id": 81133977,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 36
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 37",
+      "id": 81133978,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 37
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 38",
+      "id": 81133979,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 38
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 39",
+      "id": 81133980,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 39
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 40",
+      "id": 81133981,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 40
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 41",
+      "id": 81133982,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 41
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 42",
+      "id": 81133983,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 42
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 43",
+      "id": 81133984,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 43
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 44",
+      "id": 81133985,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 44
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 45",
+      "id": 81133986,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 45
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 46",
+      "id": 81133987,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 46
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 47",
+      "id": 81133988,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 47
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 48",
+      "id": 81133989,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 48
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 49",
+      "id": 81133990,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 49
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 50",
+      "id": 81133991,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 50
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 51",
+      "id": 81133992,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 51
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 52",
+      "id": 81133993,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 52
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 53",
+      "id": 81133994,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 53
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 54",
+      "id": 81133995,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 54
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 55",
+      "id": 81133996,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 55
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 56",
+      "id": 81133997,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 56
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 57",
+      "id": 81133998,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 57
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 58",
+      "id": 81133999,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 58
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 59",
+      "id": 81134000,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 59
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 60",
+      "id": 81134001,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 60
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 61",
+      "id": 81134002,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 61
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 62",
+      "id": 81134003,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 62
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 63",
+      "id": 81134004,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 63
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 64",
+      "id": 81134005,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 64
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 65",
+      "id": 81134006,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 65
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 66",
+      "id": 81134007,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 66
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 67",
+      "id": 81134008,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 67
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 68",
+      "id": 81134009,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 68
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 69",
+      "id": 81134010,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 69
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 70",
+      "id": 81134011,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 70
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 71",
+      "id": 81134012,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 71
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 72",
+      "id": 81134013,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 72
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 73",
+      "id": 81134014,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 73
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 74",
+      "id": 81134015,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 74
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 75",
+      "id": 81134016,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 75
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 76",
+      "id": 81134017,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 76
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 77",
+      "id": 81134018,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 77
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 78",
+      "id": 81134019,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 78
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 79",
+      "id": 81134020,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 79
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 80",
+      "id": 81134021,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 80
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 81",
+      "id": 81134022,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 81
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 82",
+      "id": 81134023,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 82
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 83",
+      "id": 81134024,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 83
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 84",
+      "id": 81134025,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 84
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 85",
+      "id": 81134026,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 85
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 86",
+      "id": 81134027,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 86
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 87",
+      "id": 81134028,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 87
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 88",
+      "id": 81134029,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 88
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 89",
+      "id": 81134030,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 89
+    },
+    {
+      "name": "CR Bonus Mission: The Pink Menace - Mission Complete - Reward 90",
+      "id": 81134031,
+      "mission": "M_CREXT",
+      "check": "victory",
+      "slot": 90
     },
     {
       "name": "TTD #1: Lost Position - Mission Complete - Reward 1",

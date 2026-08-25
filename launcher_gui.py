@@ -184,6 +184,7 @@ def run_self_check():
             'M_PTTP9',
             'M_CRA14',
             'M_CRB17',
+            'M_CREXT',
             'M_TTD_THE_TOXIC_TIME_TRIAL',
             'M_TTD_THE_RECTIFICATION',
             'M_TTD_THE_RAIN_OF_DEATH',
