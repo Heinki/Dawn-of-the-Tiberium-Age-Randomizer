@@ -14,7 +14,7 @@ DTA unit and defense catalogues are derived from installed game data at runtime.
 
 Generated unit and building clones receive fixed `CameoPriority` bands in GDI, Nod, Allies, Soviet order. Defensive buildings use a separate lower set of faction bands, keeping every defense below normal buildings on the construction sidebar.
 
-The Ion Cannon uses an exclusive player-granted clone of its native `IonCannon` engine type and supports recharge, damage, and blast-radius buffs. Native building providers and trigger grants are suppressed while that clone is active, so AI houses cannot receive its globally configured native effect. Paratroopers support recharge and payload-size buffs.
+The Ion Cannon clone starts from the native `IonCannonSpecial` definition, then applies player-only identity and buff adjustments. Because Ion damage and radius are engine-global, native providers and scripted grants are removed and the native power is recharge-locked while the reward clone is active. Only the player-granted clone can fire the buffed effect. Paratroopers support recharge and payload-size buffs.
 
 DTA's paradrop hook first searches for a team named `PARADROPINF_<player house heap ID>`. The generated map supplies that player-only team with a cloned `BADGER` and the player's buffed Soviet rifle-infantry clone. This bypasses the hook's global hardcoded `E1` and native `BADGER` fallback without changing enemy paradrops.
 

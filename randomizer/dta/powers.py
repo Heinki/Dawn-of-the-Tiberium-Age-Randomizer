@@ -551,7 +551,11 @@ def _exclusive_native_power_rules(
     }
     for section, values in authored.items():
         mission_rules.setdefault(section, {}).update(values)
-    output = {}
+    # Native Type=IonCannon must remain installed because player clone uses
+    # same engine implementation. Make native entry practically unavailable,
+    # then remove every known provider and scripted grant. Player clone keeps
+    # configured recharge and receives its own action-34 grant.
+    output = {source_id: {'RechargeTime': '9999'}}
     provider_fields_cleared = []
     source_key = source_id.casefold()
     for section, values in mission_rules.items():
@@ -688,6 +692,11 @@ def player_power_rules(
         mission_rules.setdefault(section, {}).update(values)
     for section, values in (rule_overlays or {}).items():
         mission_rules.setdefault(section, {}).update(values)
+    exclusive_context = {
+        section: dict(values) for section, values in mission_rules.items()
+    }
+    for section, values in reserved_rules.items():
+        exclusive_context.setdefault(section, {}).update(values)
     context = (
         dict(production_context)
         if production_context is not None
@@ -777,7 +786,11 @@ def player_power_rules(
             report['skipped'].append({'power': source_id, 'reason': 'missing_power_rules'})
             continue
         clone_id = _clone_type_id(source_id, occupied)
-        clone_values = dict(configured_values)
+        # Start from exact installed/map-local power definition. Config values
+        # then apply player identity, recharge, voices, and sidebar adjustments.
+        clone_values = dict(effective_section(mission_rules, source_id))
+        clone_values.pop('BaseSection', None)
+        clone_values.update(configured_values)
         clone_action, _cursor_pair = POWER_CLONE_ACTION_TYPES.get(
             source_id.upper(), ('', '')
         )
@@ -825,7 +838,7 @@ def player_power_rules(
                     source_id,
                     native_index,
                     installed,
-                    allocation_authored,
+                    exclusive_context,
                 )
             )
             for section, values in exclusive_rules.items():

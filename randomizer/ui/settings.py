@@ -869,7 +869,7 @@ def _build_gameplay_settings(self, settings_frame):
     self.include_superweapon_rewards_check.grid(row=9, column=0, sticky='w', pady=(4, 0))
     WidgetTooltip(
         self.include_superweapon_rewards_check,
-        'Adds DTA Ion Cannon, Airstrike, faction Nuclear Strike, and Chrono Vortex unlocks. Each reward grants a map-local copy only to the scenario player house.',
+        'Adds DTA Ion Cannon and Paratroopers unlocks. Each reward grants a map-local copy only to the scenario player house.',
     )
     self.include_aid_power_rewards_check = ttk.Checkbutton(
         reward_frame,

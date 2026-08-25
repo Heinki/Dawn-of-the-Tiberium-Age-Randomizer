@@ -86,6 +86,7 @@ def run_self_check():
     from randomizer.launch.options import spawn_ini_text
     from randomizer.maps.settings import mission_house_color_rules
     from randomizer.application.unlock_data import UnlockDataController
+    from randomizer.application.reward_controller import RewardController
     from randomizer.ui.config import (
         CAMPAIGN_TILE_COLORS,
         GAME_SPEEDS,
@@ -630,14 +631,37 @@ def run_self_check():
         allied_power_mission = next(
             mission for mission in missions if mission['code'] == 'M_CRC14'
         )
-        enemy_ion_mission = next(
-            mission for mission in missions if mission['code'] == 'M_CRC15'
-        )
+        collateral_generated = APP_DIR / '.self_check_collateral_spawnmap.ini'
+        try:
+            collateral_hook = prepare_spawn_map(
+                allied_power_mission,
+                resolve_mission_difficulty(allied_power_mission, 'Normal'),
+                extra_rules={
+                    'E2': {'ForbiddenHouses': 'Allies'},
+                    'E4': {'ForbiddenHouses': 'Allies'},
+                },
+                output_path=collateral_generated,
+            )
+            collateral_generated_sections = ini_sections(
+                collateral_generated
+            )
+        finally:
+            collateral_generated.unlink(missing_ok=True)
+        enemy_ion_mission = allied_power_mission
         enemy_ion_rules, _enemy_ion_actions, enemy_ion_report = (
             player_power_rules(
                 enemy_ion_mission,
                 [ion_reward, ion_damage_buff, ion_area_buff],
             )
+        )
+        duplicate_sam_rewards = [
+            reward for reward in REWARD_POOL
+            if reward.get('dta_production_access')
+            and reward.get('unit') in {'SAM', 'RASAM'}
+        ]
+        collapsed_sam_rewards = RewardController.chaos_equivalent_access_pool(
+            duplicate_sam_rewards,
+            {'Allies'},
         )
         allied_factory_rules, _allied_factory_report = (
             unit_specific_buff_rules(
@@ -1315,9 +1339,25 @@ def run_self_check():
                 ))
                 and enemy_ion_report['exclusive_native_grants_removed'] >= 1
                 and any(
-                    value.startswith('1,0,0,0,0,0,0,0,A')
+                    ',0,0,0,0,0,0,0,A' in value
                     for value in enemy_ion_rules.get('Actions', {}).values()
                 )
+            ),
+            'dta_map_local_exploders_keep_death_damage_scale': (
+                collateral_generated_sections.get('E2', {}).get(
+                    'CollateralDamageCoefficient'
+                ) == '0.0165'
+                and collateral_generated_sections.get('E4', {}).get(
+                    'CollateralDamageCoefficient'
+                ) == '0.007'
+                and set(collateral_hook['collateral_damage_safeguards'])
+                >= {'E2', 'E4'}
+            ),
+            'dta_legacy_equivalent_sam_access_collapses': (
+                len(duplicate_sam_rewards) == 2
+                and len(collapsed_sam_rewards) == 1
+                and tech_ids_for_rewards(collapsed_sam_rewards)
+                <= {'SAM', 'RASAM'}
             ),
             'dta_paradrop_payload_uses_badger_capacity': (
                 len(paradrop_actions) == 1

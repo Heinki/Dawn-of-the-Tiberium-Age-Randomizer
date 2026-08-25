@@ -154,6 +154,14 @@ class RewardController:
 
     def launch_rewards_for_mission(self, code):
         rewards = self.active_launch_rewards()
+        if self.active_reward_mode() == 'Chaos':
+            # Older saved seeds may contain both exact members of a curated
+            # equivalent group. Collapse them at launch too, so legacy states
+            # cannot show duplicate sidebar entries such as SAM and RASAM.
+            rewards = self.chaos_equivalent_access_pool(
+                rewards,
+                self.reward_factions_for_code(code),
+            )
         rewards = expand_equivalent_role_buffs(
             rewards,
             enabled=self.share_chaos_role_buffs_enabled(),

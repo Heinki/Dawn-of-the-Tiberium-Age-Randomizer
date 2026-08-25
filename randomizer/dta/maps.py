@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from randomizer.core.paths import GAME_ROOT, SPAWN_MAP_INI
+from randomizer.dta.rules import effective_section, ini_sections
 from randomizer.maps.hooks import unique_section_key
 from randomizer.maps.ini import (
     IniLines,
@@ -81,6 +82,40 @@ def mission_normal_modifiers(mission):
     return mission_difficulty_modifiers(mission, 'Normal')
 
 
+def preserve_collateral_damage_coefficients(lines):
+    """Repeat installed death-damage scaling in map-local Techno sections.
+
+    The engine resets CollateralDamageCoefficient to 1.0 whenever a TechnoType
+    is mentioned by a map, even if the map only overrides an unrelated field.
+    """
+    map_sections = _ini_sections('\n'.join(lines))
+    installed = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
+    safeguards = {}
+    for section, local_values in map_sections.items():
+        installed_values = effective_section(installed, section)
+        if not installed_values:
+            continue
+        effective_values = dict(installed_values)
+        effective_values.update(local_values)
+        folded = {
+            str(key).casefold(): value
+            for key, value in effective_values.items()
+        }
+        local_keys = {str(key).casefold() for key in local_values}
+        coefficient = folded.get('collateraldamagecoefficient')
+        if (
+            str(folded.get('explodes', '')).casefold() in {'yes', 'true', '1'}
+            and coefficient not in (None, '')
+            and 'collateraldamagecoefficient' not in local_keys
+        ):
+            safeguards.setdefault(section, {})[
+                'CollateralDamageCoefficient'
+            ] = coefficient
+    if safeguards:
+        merge_ini_section_values(lines, safeguards)
+    return safeguards
+
+
 def prepare_spawn_map(
     mission,
     difficulty,
@@ -119,6 +154,7 @@ def prepare_spawn_map(
 
     if extra_rules:
         merge_ini_section_values(lines, extra_rules)
+    collateral_safeguards = preserve_collateral_damage_coefficients(lines)
     power_actions = [list(action) for action in power_actions or ()]
     power_grant_triggers = []
     if power_actions and power_house:
@@ -174,6 +210,7 @@ def prepare_spawn_map(
             getattr(difficulty, 'apply_normal_modifiers', False)
         ),
         'power_grant_triggers': power_grant_triggers,
+        'collateral_damage_safeguards': collateral_safeguards,
     }
 
 
