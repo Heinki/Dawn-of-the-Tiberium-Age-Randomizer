@@ -312,6 +312,22 @@ _GLOBAL_BUFF_REWARDS = [
     if buff_type['id'] in _GLOBAL_BUFF_TYPE_IDS
 ]
 
+STARTING_CREDIT_REWARDS = [{
+    'name': 'Starting Credits +1,000',
+    'description': (
+        'Adds 1,000 credits to the player at the start of every future '
+        'launched mission, up to a 20,000-credit bonus.'
+    ),
+    'rules': {},
+    'factions': [],
+    'kind': 'buff',
+    'buff_type': 'starting_credits',
+    'global_buff': True,
+    'dta_starting_credits': True,
+    'credits_per_stack': 1000,
+    'maximum_credits': 20000,
+}]
+
 _BUFF_TYPE_BY_ID = {item['id']: item for item in BUFF_TYPES}
 _UNIT_SPECIFIC_BUFF_REWARDS = [
     {
@@ -415,6 +431,7 @@ REWARD_POOL = list(
     + SECONDARY_SUPERWEAPON_UNLOCK_REWARDS
     + AID_POWER_UNLOCK_REWARDS
     + UNIT_BUFF_REWARDS
+    + STARTING_CREDIT_REWARDS
     + POWER_BUFF_REWARDS
     + ENEMY_REWARD_POOL
 )

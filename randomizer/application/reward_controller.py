@@ -634,7 +634,10 @@ class RewardController:
                         and (include_special_rewards or not self.reward_is_special_reward(reward))
                         and (include_defensive_buildings or not self.reward_is_defensive_building(reward))
                         and (include_special_buildings or not self.reward_is_special_building(reward))
-                        and reward.get('buff_type') in enabled_buff_types
+                        and (
+                            reward.get('buff_type') == 'starting_credits'
+                            or reward.get('buff_type') in enabled_buff_types
+                        )
                         and reward.get('buff_type') not in excluded_unit_buff_types.get(
                             str(reward.get('unit') or '').upper(), set()
                         )

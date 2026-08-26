@@ -3,6 +3,7 @@
 from collections import Counter
 from hashlib import sha1
 
+from randomizer.config.static import static_config_section
 from randomizer.config.tuning import (
     capped_movement_speed,
     capped_sight_range,
@@ -57,6 +58,13 @@ MISSION_ASSISTANCE_BUFF_TYPES = (
     'production', 'cost', 'speed', 'armor', 'health', 'damage', 'reload',
     'range',
 )
+PRODUCTION_BUILDINGS = static_config_section(
+    'factions.json', 'production_buildings', dict
+)
+PRIMARY_PRODUCTION_BUILDINGS = static_config_section(
+    'factions.json', 'chaos_primary_production', dict
+)
+PRODUCTION_TYPE_ORDER = ('infantry', 'vehicles', 'air', 'naval')
 
 
 def _faction_cameo_priority(target):
@@ -218,6 +226,78 @@ def _player_production_context(authored):
         if not friendly:
             context['shared_hostile_houses'].append(house_name)
     return context
+
+
+def production_infrastructure_rewards(
+    rewards,
+    *,
+    enabled,
+    production_context,
+):
+    """Create runtime access items for factories needed by earned unit access.
+
+    Building clones stay absent without an earned access item. When present,
+    their normal construction-yard production contract remains the physical
+    gate; only authored tech prerequisites are removed by the clone builder.
+    """
+    if not enabled:
+        return []
+    catalogue = catalogue_by_id()
+    production_types = set()
+    for reward in rewards or ():
+        if not reward.get('dta_production_access'):
+            continue
+        target = catalogue.get(str(reward.get('unit') or '').upper(), {})
+        category = target.get('category')
+        if category == 'infantry':
+            production_types.add('infantry')
+        elif category == 'aircraft':
+            production_types.add('air')
+        elif category == 'vehicles':
+            production_types.add(
+                'naval' if target.get('naval') else 'vehicles'
+            )
+
+    source_family = str(
+        production_context.get('original_production_house')
+        or production_context.get('production_house')
+        or ''
+    ).casefold()
+    family_buildings = PRODUCTION_BUILDINGS.get(source_family, {})
+    primary_buildings = PRIMARY_PRODUCTION_BUILDINGS.get(source_family, {})
+    selected_buildings = []
+    for production_type in PRODUCTION_TYPE_ORDER:
+        if production_type not in production_types:
+            continue
+        configured_ids = {
+            str(building_id).upper()
+            for building_id in family_buildings.get(production_type, ())
+            if str(building_id).strip()
+        }
+        building_id = str(primary_buildings.get(production_type) or '').upper()
+        if building_id not in configured_ids:
+            building_id = min(configured_ids, default='')
+        if building_id:
+            selected_buildings.append((production_type, building_id))
+    return [
+        {
+            'name': f'Runtime access to {building_id}',
+            'description': (
+                'Makes exactly one matching current-faction production '
+                'building available without authored technology prerequisites.'
+            ),
+            'rules': {building_id: {'TechLevel': '1'}},
+            'factions': [],
+            'kind': 'unit_access',
+            'unit': building_id,
+            'dta_production_access': True,
+            'access_category': 'infrastructure',
+            'production_family': source_family,
+            'production_type': production_type,
+            '_runtime_canonical': True,
+        }
+        for production_type, building_id in selected_buildings
+    ]
 
 
 def _active_house_names(authored):

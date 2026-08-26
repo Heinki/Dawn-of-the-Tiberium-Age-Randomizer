@@ -58,6 +58,7 @@ from ._dependencies import (
     shutil,
     single_engineer_rules,
     spawn_ini_text,
+    starting_credit_bonus,
     starting_tier_one_defense_rules,
     starting_tier_one_rules,
     subprocess,
@@ -68,6 +69,7 @@ from ._dependencies import (
 from randomizer.dta.maps import (
     mission_source_lines,
     newest_debug_log,
+    player_starting_credit_rules,
     prepare_spawn_map,
     score_screen_loaded,
 )
@@ -76,6 +78,7 @@ from randomizer.dta.access import player_infantry_access_rules
 from randomizer.dta.clones import (
     mission_assistance_rewards,
     player_production_isolation_rules,
+    production_infrastructure_rewards,
     unit_specific_buff_rules,
 )
 from randomizer.dta.enemies import enemy_buff_rules
@@ -1080,6 +1083,11 @@ throw "Map $name was not found in expandmo*.mix"
                 section: dict(values)
                 for section, values in isolation_rules.items()
             }
+            infrastructure_rewards = production_infrastructure_rewards(
+                active_rewards,
+                enabled=self.randomize_unit_access_enabled(),
+                production_context=isolation_report,
+            )
             assistance_stacks = (
                 self.mission_failure_stack(mission_code)
                 if self.failure_assistance_enabled()
@@ -1097,7 +1105,11 @@ throw "Map $name was not found in expandmo*.mix"
             )
             clone_rules, clone_report = unit_specific_buff_rules(
                 mission,
-                [*active_rewards, *assistance_rewards],
+                [
+                    *active_rewards,
+                    *infrastructure_rewards,
+                    *assistance_rewards,
+                ],
                 access_randomized=self.randomize_unit_access_enabled(),
                 buff_allied_helpers=self.active_reward_settings().get(
                     'buff_allied_helpers', False
@@ -1163,6 +1175,28 @@ throw "Map $name was not found in expandmo*.mix"
                 dta_rules.setdefault(section, {}).update(values)
 
             source_lines = mission_source_lines(scenario)
+            credit_rules, credit_report = player_starting_credit_rules(
+                source_lines,
+                power_report['player_house'],
+                starting_credit_bonus(active_rewards),
+            )
+            for section, values in credit_rules.items():
+                dta_rules.setdefault(section, {}).update(values)
+            if credit_report['applied']:
+                self.append_log(
+                    f'Applied +{credit_report["credit_bonus"]:,} starting '
+                    f'credits to {credit_report["player_house"]} for '
+                    f'{mission_code} (authored '
+                    f'{credit_report["authored_credits"]:,}; launch total '
+                    f'{credit_report["launch_credits"]:,}).'
+                )
+            elif credit_report['credit_bonus']:
+                self.append_log(
+                    f'Could not apply +{credit_report["credit_bonus"]:,} '
+                    f'starting credits for {mission_code}: '
+                    f'{credit_report["error"]}.',
+                    error=True,
+                )
             selected_color = str(self.player_color_var.get() or 'Default')
             engine_color = PLAYER_COLOR_ENGINE_VALUES.get(
                 selected_color, selected_color

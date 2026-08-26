@@ -10,7 +10,7 @@ Start with [README.md](README.md) for current scope and runtime behavior. This g
 - `randomizer/dta/maps.py`: source-map resolution, difficulty overlay, and `spawnmap.ini` preparation.
 - `randomizer/dta/difficulty.py`: DTA label, client-rank, and engine-value translation.
 - `randomizer/dta/clones.py`: Vinifera player-production access, Player Army buffs, and unit-specific clone rules.
-- `randomizer/dta/powers.py`: DTA power catalogue, map-local player-only grants, exclusive native Ion effects, and cloned auxiliary effect chains.
+- `randomizer/dta/powers.py`: DTA power catalogue, direct player grants, buildable player-only power-provider clones, exclusive native Ion effects, and cloned auxiliary effect chains.
 - `randomizer/dta/enemies.py`: hostile-family detection and enemy-only country bonuses.
 - `randomizer/dta/cameos.py`: DTA MIX and TS SHP cameo extraction.
 
@@ -51,7 +51,7 @@ Read [configs/README.md](configs/README.md) before changing static data.
 2. `randomizer/missions/catalogue.py` reads the installed DTA mission catalogue.
 3. Seed creation freezes mission order, settings, checks, and reward assignments.
 4. A mission launch reads a fresh source map and resolves its DTA difficulty.
-5. The map pipeline applies access, guarded player-production clones, unit and army buffs, exact-player power grants, enemy-only bonuses, and DTA colors.
+5. The map pipeline applies access, prerequisite-free player production infrastructure, guarded player-production clones, unit and army buffs, exact-player power grants or provider buildings, starting credits, enemy-only bonuses, and DTA colors.
 6. The launcher writes `spawnmap.ini` and `spawn.ini`.
 7. `LaunchVinifera.dat -SPAWN -CD.` starts the mission.
 8. The debug-log watcher records the score-screen Victory check exactly once. DTA has no uniform runtime event for map sub-objectives, so only mission victory awards progression rewards.

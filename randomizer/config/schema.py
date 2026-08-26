@@ -1112,8 +1112,12 @@ def _validate_dta_powers(sections, path):
         if provider is not None and (
             not isinstance(provider, dict)
             or not _is_nonempty_string(provider.get('source'))
-            or not isinstance(provider.get('values'), dict)
-            or provider['values'].get('NukeSilo') != 'yes'
+            or not isinstance(provider.get('values', {}), dict)
+            or not isinstance(provider.get('buildable', False), bool)
+            or (
+                not provider.get('buildable', False)
+                and provider.get('values', {}).get('NukeSilo') != 'yes'
+            )
         ):
             _invalid(f'Invalid DTA power provider {power_id!r}', path)
         effect = power.get('effect')

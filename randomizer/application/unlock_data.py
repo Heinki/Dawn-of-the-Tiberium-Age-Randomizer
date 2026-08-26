@@ -572,6 +572,9 @@ class UnlockDataController:
         if share_foehn_roles is None:
             share_foehn_roles = self.foehn_standard_bundles_enabled()
         keys = set()
+        if reward.get('buff_type') == 'starting_credits':
+            keys.add('global:starting_credits')
+            return keys
         unit_id = str(reward.get('unit') or '').upper()
         house_scope = self.reward_house_wide_buff_scope(reward)
         if house_scope:
@@ -922,6 +925,45 @@ class UnlockDataController:
                 ),
             })
 
+        starting_credit_reward = next(
+            (
+                reward for reward in REWARD_POOL
+                if reward.get('buff_type') == 'starting_credits'
+            ),
+            None,
+        )
+        if starting_credit_reward:
+            key = 'global:starting_credits'
+            source_data = sources.get(
+                key, {
+                    'assigned': [], 'earned': [], 'earned_unlocks': [],
+                    'available': [], 'available_unlocks': [],
+                    'available_codes': [],
+                }
+            )
+            status = (
+                'unlocked'
+                if source_data['earned']
+                else 'available'
+                if source_data['available'] and not privacy
+                else 'locked'
+                if source_data['assigned']
+                else 'unavailable'
+            )
+            entries.append({
+                'key': key,
+                'kind': 'global',
+                'id': 'starting_credits',
+                'label': 'Starting Credits',
+                'faction': 'Neutral',
+                'category': 'Global Buffs',
+                'status': status,
+                'condition': '',
+                'sources': source_data,
+                'privacy': privacy,
+                'reward': starting_credit_reward,
+            })
+
         for unit_id, target in BUFF_TARGETS.items():
             if target.get('linked_buff_source'):
                 continue
@@ -1025,6 +1067,17 @@ class UnlockDataController:
                 if special_reward
                 else category_labels[category]
             )
+            production_building_role = (
+                'Naval Yard'
+                if target.get('naval')
+                else 'Barracks'
+                if category == 'infantry'
+                else 'War Factory'
+                if category == 'vehicles'
+                else 'Air production building'
+                if category == 'aircraft'
+                else ''
+            )
             for display_faction in display_factions:
                 entry_key = (
                     key
@@ -1046,6 +1099,7 @@ class UnlockDataController:
                     'arsenal_mode': arsenal_mode,
                     'arsenal_selected': arsenal_selected,
                     'arsenal_mission_label': arsenal_mission_label,
+                    'production_building_role': production_building_role,
                 })
 
         special_rewards = {
@@ -1211,6 +1265,13 @@ class UnlockDataController:
             lines.append(f'Condition: {entry["condition"]}')
         if arsenal_entry and entry.get('arsenal_mission_label'):
             lines.append(f'Mission: {entry["arsenal_mission_label"]}')
+        if entry.get('production_building_role'):
+            lines.append(
+                'Factory support: active unit access makes only the current '
+                f'mission faction\'s {entry["production_building_role"]} '
+                'prerequisite-free once you have an MCV/Construction Yard. '
+                'Other factions\' factories stay unavailable.'
+            )
         starting_source_names = [
             source for source in earned_source_names
             if source in starting_source_labels

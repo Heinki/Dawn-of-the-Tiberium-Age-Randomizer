@@ -54,6 +54,7 @@ def run_self_check():
     from randomizer.dta.maps import (
         mission_source_lines,
         mission_source_path,
+        player_starting_credit_rules,
         prepare_spawn_map,
     )
     from randomizer.dta.access import player_infantry_access_rules
@@ -63,6 +64,7 @@ def run_self_check():
         _player_production_context,
         mission_assistance_rewards,
         player_production_isolation_rules,
+        production_infrastructure_rewards,
         unit_specific_buff_rules,
     )
     from randomizer.dta.cameos import TEXT_ONLY_CAMEO_IDS
@@ -100,6 +102,7 @@ def run_self_check():
         buff_stack_limit,
         buff_group_key,
         canonical_reward,
+        starting_credit_bonus,
     )
     from randomizer.config.tuning import (
         capped_movement_speed,
@@ -426,6 +429,60 @@ def run_self_check():
                 tutorial_two,
                 [e2_access_reward, e2_damage_reward, e2_production_reward],
                 access_randomized=True,
+            )
+        )
+        mtnk_access_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('unit') == 'MTNK'
+            and reward.get('dta_production_access')
+        )
+        infrastructure_rewards = production_infrastructure_rewards(
+            [e2_access_reward, mtnk_access_reward],
+            enabled=True,
+            production_context=tutorial_two_context,
+        )
+        infrastructure_rules, infrastructure_report = (
+            unit_specific_buff_rules(
+                tutorial_two,
+                [
+                    e2_access_reward,
+                    mtnk_access_reward,
+                    *infrastructure_rewards,
+                ],
+                access_randomized=True,
+                production_context=tutorial_two_context,
+            )
+        )
+        infrastructure_outputs = {
+            item['unit']: item['output_type']
+            for item in infrastructure_report['applied']
+            if item['unit'] in {
+                reward['unit'] for reward in infrastructure_rewards
+            }
+        }
+        faction_infrastructure_ids = {
+            family: {
+                reward['unit']
+                for reward in production_infrastructure_rewards(
+                    [e2_access_reward, mtnk_access_reward],
+                    enabled=True,
+                    production_context={
+                        'original_production_house': family,
+                        'production_house': family,
+                    },
+                )
+            }
+            for family in ('GDI', 'Nod', 'Allies', 'Soviet')
+        }
+        starting_credit_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('buff_type') == 'starting_credits'
+        )
+        starting_credit_rules, starting_credit_report = (
+            player_starting_credit_rules(
+                mission_source_lines(tutorial_two['scenario']),
+                tutorial_two_context['player_house'],
+                starting_credit_bonus([starting_credit_reward] * 25),
             )
         )
         faction_priority_sources = {
@@ -1027,6 +1084,12 @@ def run_self_check():
             entry for entry in dashboard_entries
             if entry.get('id') in {'E1', 'E1A'}
         ]
+        rifle_factory_tooltip = dashboard_controller.unlock_dashboard_tooltip(
+            next(
+                entry for entry in dashboard_entries
+                if entry.get('id') == 'E1'
+            )
+        )
 
         def power_tooltip_smoke(power_id):
             unlock = next(
@@ -1062,13 +1125,25 @@ def run_self_check():
             if reward.get('kind') == 'superweapon'
             and reward.get('dta_player_power')
         ]
+        building_power_ids = {
+            spec['id'] for spec in POWER_SPECS
+            if (spec.get('provider') or {}).get('buildable')
+        }
+        building_power_buffs = [
+            reward for reward in REWARD_POOL
+            if reward.get('dta_player_power_buff')
+            and reward.get('superweapon') in building_power_ids
+            and reward.get('power_buff_type') in {'damage', 'area'}
+        ]
         all_power_rules, all_power_actions, all_power_report = (
             player_power_rules(
                 tutorial_two,
-                all_power_rewards,
+                [*all_power_rewards, *building_power_buffs],
                 reserved_rules=allied_factory_rules,
             )
         )
+        all_power_runtime_rules = all_power_report.get('_runtime_rules', {})
+        all_power_runtime_art = all_power_report.get('_runtime_art', {})
         retired_power_rules, retired_power_actions, retired_power_report = (
             player_power_rules(tutorial_two, [{
                 'kind': 'superweapon',
@@ -1367,6 +1442,13 @@ def run_self_check():
                 and 'Recharge time 10.0% faster.' in paradrop_tooltip
                 and 'Delivered infantry +1.' in paradrop_tooltip
             ),
+            'unlock_dashboard_factory_support_visible': (
+                'only the current mission faction\'s Barracks' in
+                rifle_factory_tooltip
+                and 'MCV/Construction Yard' in rifle_factory_tooltip
+                and 'Other factions\' factories stay unavailable.' in
+                rifle_factory_tooltip
+            ),
             'unlock_dashboard_global_buffs_visible': (
                 len(global_dashboard_entries) == 1
                 and global_dashboard_entries[0].get('faction') == 'Neutral'
@@ -1486,12 +1568,53 @@ def run_self_check():
                     for item in all_power_report['applied']
                     if item.get('action')
                 }
-                and not all_power_report['provider_buildings']
+                and {
+                    item['power']
+                    for item in all_power_report['provider_buildings']
+                    if item.get('buildable')
+                } == building_power_ids
                 and all(action[0] == '34' for action in all_power_actions)
                 and all(
-                    item['grant_mode'] == 'trigger'
+                    item['grant_mode'] == (
+                        'building'
+                        if item['power'] in building_power_ids
+                        else 'trigger'
+                    )
                     for item in all_power_report['applied']
                 )
+            ),
+            'dta_power_buildings_are_immediately_available': all(
+                provider.get('buildable')
+                and (
+                    values := all_power_rules.get(provider['provider'], {})
+                ).get('TechLevel') == '1'
+                and values.get('Buildability') == 'HumanOnly'
+                and values.get('AIBuildThis') == 'no'
+                and values.get('Owner') == 'GDI'
+                and values.get('RequiredHouses') == 'GDI'
+                and values.get('SuperWeapon')
+                and not any(
+                    str(key).casefold().startswith('prerequisite')
+                    for key in values
+                )
+                and all_power_rules.get(provider['source'], {}).get(
+                    'Buildability'
+                ) == 'AIOnly'
+                for provider in all_power_report['provider_buildings']
+            ),
+            'dta_building_power_buffs_are_player_only': (
+                bool(all_power_runtime_rules)
+                and bool(all_power_runtime_art)
+                and all(
+                    item['damage_buffs'] == 1
+                    and item['area_buffs'] == 1
+                    and item['grant_mode'] == 'building'
+                    for item in all_power_report['applied']
+                    if item['power'] in building_power_ids
+                )
+                and not {
+                    'AIRSINIT', 'NUKEINIT', 'REVERSED_CHRONOSHIFT'
+                }.intersection(all_power_runtime_art)
             ),
             'dta_power_lists_preserve_war_factory_clones': (
                 'AWEAP_PLAYER' in allied_factory_rules.get(
@@ -1661,6 +1784,7 @@ def run_self_check():
                 or reward.get('dta_production_access')
                 or reward.get('dta_player_power')
                 or reward.get('dta_player_power_buff')
+                or reward.get('dta_starting_credits')
                 or reward.get('enemy_reward')
                 for reward in REWARD_POOL
             ),
@@ -1841,27 +1965,22 @@ def run_self_check():
                 and 'IonCannonDamage=690' in power_generated_text
                 and 'SuperWeapon=' in power_generated_text
             ),
-            'dta_only_stable_powers_enabled': (
+            'dta_building_gated_powers_enabled': (
                 {spec['id'] for spec in POWER_SPECS}
-                == {'IonCannonSpecial', 'DropPodSpecial'}
-                and not {
+                == {
+                    'IonCannonSpecial', 'DropPodSpecial',
                     'AirstrikeSpecial', 'ChemicalSpecial',
                     'MultiSpecial', 'VortexSpecial',
-                }.intersection({
-                    str(reward.get('superweapon') or '')
-                    for reward in REWARD_POOL
-                })
-                and not {
+                }
+                and {
                     'DTAAIRSTRIKESPECIALACT',
                     'DTACHEMICALSPECIALACT',
                     'DTAMULTISPECIALACT',
                     'DTAVORTEXSPECIALACT',
-                }.intersection(
-                    ini_sections(
-                        GAME_ROOT / 'INI' / 'Action.ini'
-                    ).get('ActionTypes', {})
-                )
-                and not all_power_report['provider_buildings']
+                }.issubset(ini_sections(
+                    GAME_ROOT / 'INI' / 'Action.ini'
+                ).get('ActionTypes', {}))
+                and len(all_power_report['provider_buildings']) == 4
             ),
             'dta_sidebar_factions_and_defenses_sorted': (
                 set(faction_priority_outputs) == set(faction_priority_sources)
@@ -2221,6 +2340,42 @@ def run_self_check():
                     installed_e2_weapon.get('Damage', 0)
                 )
             ),
+            'dta_access_unlocks_required_player_factories': (
+                {reward['unit'] for reward in infrastructure_rewards}
+                == {'PYLE', 'WEAP'}
+                and faction_infrastructure_ids == {
+                    'GDI': {'PYLE', 'WEAP'},
+                    'Nod': {'HAND', 'AFLD'},
+                    'Allies': {'RATENT', 'AWEAP'},
+                    'Soviet': {'RABARR', 'SWEAP'},
+                }
+                and set(infrastructure_outputs) == {'PYLE', 'WEAP'}
+                and all(
+                    (
+                        values := infrastructure_rules.get(
+                            infrastructure_outputs[source_id], {}
+                        )
+                    ).get('TechLevel') == '1'
+                    and values.get('Owner') == 'GDI'
+                    and values.get('RequiredHouses') == 'GDI'
+                    and not any(
+                        str(key).casefold().startswith('prerequisite')
+                        for key in values
+                    )
+                    for source_id in ('PYLE', 'WEAP')
+                )
+            ),
+            'dta_starting_credit_reward_is_capped_and_applied': (
+                buff_stack_limit(starting_credit_reward) == 20
+                and starting_credit_bonus([starting_credit_reward] * 25)
+                == 20000
+                and starting_credit_report['applied']
+                and starting_credit_report['authored_credits'] == 10000
+                and starting_credit_report['launch_credits'] == 30000
+                and starting_credit_rules.get('TutorialGDI', {}).get(
+                    'Credits'
+                ) == '300'
+            ),
             'dta_medic_clone_keeps_healing': (
                 medic_clone_entry.get('route') == 'production_access_clone'
                 and medic_clone.get('OmniHealer') == 'yes'
@@ -2388,11 +2543,12 @@ def run_self_check():
             'dta_all_mobile_buff_targets_present',
             'dta_arsenal_all_mobile_access_present',
             'dta_power_rewards_present',
-            'dta_only_stable_powers_enabled',
+            'dta_building_gated_powers_enabled',
             'dta_sidebar_factions_and_defenses_sorted',
             'dta_power_buff_matrix_valid',
             'dta_power_stack_limits_valid',
             'unlock_dashboard_tooltips_render',
+            'unlock_dashboard_factory_support_visible',
             'unlock_dashboard_global_buffs_visible',
             'unlock_dashboard_chaos_equivalents_collapsed',
             'dta_power_cameos_complete',
@@ -2400,6 +2556,8 @@ def run_self_check():
             'dta_firestorm_removed',
             'dta_retired_chrono_tank_power_ignored',
             'dta_power_actions_are_unique_and_callable',
+            'dta_power_buildings_are_immediately_available',
+            'dta_building_power_buffs_are_player_only',
             'dta_power_lists_preserve_war_factory_clones',
             'dta_exclusive_buffed_ion_cannon_works',
             'dta_paradrop_payload_uses_badger_capacity',
@@ -2420,6 +2578,8 @@ def run_self_check():
             'unit_vision_and_speed_caps_are_exact',
             'orphan_unit_buffs_do_not_grant_access',
             'access_clone_receives_unit_specific_buffs',
+            'dta_access_unlocks_required_player_factories',
+            'dta_starting_credit_reward_is_capped_and_applied',
             'dta_medic_clone_keeps_healing',
             'vinifera_clone_written_to_generated_map',
             'clone_source_map_unchanged',

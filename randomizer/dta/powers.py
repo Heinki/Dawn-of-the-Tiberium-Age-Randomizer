@@ -42,7 +42,10 @@ RETIRED_POWER_ACTION_TYPES = frozenset({
     'DTACHEMICALSPECIALACT',
     'DTAMULTISPECIALACT',
     'DTAVORTEXSPECIALACT',
-})
+}) - {
+    action_name
+    for action_name, _cursor_pair in POWER_CLONE_ACTION_TYPES.values()
+}
 MAX_TYPE_ID_LENGTH = 23
 POWER_AREA_CELLS_PER_STACK = float(
     POWER_SETTINGS['area_cells_per_stack']
@@ -990,62 +993,105 @@ def player_power_rules(
             source_provider_values = effective_section(
                 mission_rules, provider_source
             )
-            provider_values = {
-                'BaseSection': provider_source,
-                'Image': str(
-                    source_provider_values.get('Image') or provider_source
-                ),
-            }
-            provider_values.update(provider.get('values') or {})
-            provider_values.update({
-                'Name': f'{clone_values["Name"]} Provider',
-                'Strength': '60000',
-                'Owner': context['production_house'],
-                'RequiredHouses': context['production_house'],
-                'TechLevel': '-1',
-                'Power': '0',
-                'Powered': 'no',
-                'Selectable': 'no',
-                'Immune': 'yes',
-                'LegalTarget': 'no',
-                'Insignificant': 'yes',
-                'InvisibleInGame': 'no',
-                'RadarInvisible': 'yes',
-                'BaseNormal': 'no',
-                'WallOwner': 'no',
-                'PlaceAnywhere': 'yes',
-                'NukeSilo': 'yes',
-                'SuperWeapon': clone_id,
-                'HasStupidGuardMode': 'false',
-            })
+            buildable_provider = bool(provider.get('buildable'))
+            if buildable_provider:
+                provider_values = dict(source_provider_values)
+                provider_values.pop('BaseSection', None)
+                for key in list(provider_values):
+                    folded = str(key).casefold()
+                    if (
+                        folded in {
+                            'owner', 'requiredhouses', 'forbiddenhouses',
+                            'builtat', 'factoryowners',
+                            'factoryowners.forbidden', 'buildability',
+                            'superweapon', 'superweapon2', 'superweapons',
+                        }
+                        or folded.startswith('prerequisite')
+                    ):
+                        provider_values.pop(key, None)
+                provider_values.update(provider.get('values') or {})
+                provider_values.update({
+                    'Image': str(
+                        source_provider_values.get('Image') or provider_source
+                    ),
+                    'Owner': context['production_house'],
+                    'RequiredHouses': context['production_house'],
+                    'TechLevel': '1',
+                    'Buildability': 'HumanOnly',
+                    'AIBuildThis': 'no',
+                    'SuperWeapon': clone_id,
+                })
+                # Keep the native provider available to campaign AI while the
+                # human sees only the prerequisite-free isolated clone.
+                rules.setdefault(provider_source, {})[
+                    'Buildability'
+                ] = 'AIOnly'
+                grant_mode = 'building'
+            else:
+                provider_values = {
+                    'BaseSection': provider_source,
+                    'Image': str(
+                        source_provider_values.get('Image') or provider_source
+                    ),
+                }
+                provider_values.update(provider.get('values') or {})
+                provider_values.update({
+                    'Name': f'{clone_values["Name"]} Provider',
+                    'Strength': '60000',
+                    'Owner': context['production_house'],
+                    'RequiredHouses': context['production_house'],
+                    'TechLevel': '-1',
+                    'Power': '0',
+                    'Powered': 'no',
+                    'Selectable': 'no',
+                    'Immune': 'yes',
+                    'LegalTarget': 'no',
+                    'Insignificant': 'yes',
+                    'InvisibleInGame': 'no',
+                    'RadarInvisible': 'yes',
+                    'BaseNormal': 'no',
+                    'WallOwner': 'no',
+                    'PlaceAnywhere': 'yes',
+                    'NukeSilo': 'yes',
+                    'SuperWeapon': clone_id,
+                    'HasStupidGuardMode': 'false',
+                })
             rules[provider_id] = provider_values
             building_key = _next_list_key(
                 installed, allocation_authored, 'BuildingTypes', list_offsets
             )
             rules.setdefault('BuildingTypes', {})[building_key] = provider_id
-            structure_key = _next_list_key(
-                installed, allocation_authored, 'Structures', list_offsets
-            )
-            provider_x, provider_y = _provider_coordinates(
-                authored, provider_cells
-            )
-            rules.setdefault('Structures', {})[structure_key] = ','.join((
-                player_house,
-                provider_id,
-                '256',
-                str(provider_x),
-                str(provider_y),
-                '0', 'None', '0', '0', '1', '0', '0',
-                'None', 'None', 'None', '1', '0',
-            ))
+            provider_x = provider_y = None
+            if not buildable_provider:
+                structure_key = _next_list_key(
+                    installed, allocation_authored, 'Structures', list_offsets
+                )
+                provider_x, provider_y = _provider_coordinates(
+                    authored, provider_cells
+                )
+                rules.setdefault('Structures', {})[structure_key] = ','.join((
+                    player_house,
+                    provider_id,
+                    '256',
+                    str(provider_x),
+                    str(provider_y),
+                    '0', 'None', '0', '0', '1', '0', '0',
+                    'None', 'None', 'None', '1', '0',
+                ))
             report['provider_buildings'].append({
                 'power': source_id,
                 'provider': provider_id,
                 'source': provider_source,
                 'house': player_house,
-                'coordinates': [provider_x, provider_y],
+                'buildable': buildable_provider,
+                'coordinates': (
+                    [provider_x, provider_y]
+                    if provider_x is not None and provider_y is not None
+                    else []
+                ),
             })
-            grant_mode = 'provider'
+            if not buildable_provider:
+                grant_mode = 'provider'
         else:
             actions.append([
                 '34', '0', str(runtime_index), '0', '0', '0', '0', 'A'

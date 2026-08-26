@@ -761,8 +761,9 @@ def _build_gameplay_settings(self, settings_frame):
     WidgetTooltip(
         self.randomize_unit_access_check,
         'Turns verified DTA infantry, vehicles, aircraft, naval, and special units into access rewards. Unearned units are blocked only for '
-        'the human house; authored map units and enemy access remain unchanged. Chaos always '
-        'requires this option.',
+        'the human house; authored map units and enemy access remain unchanged. With an MCV/Construction Yard, earned unit access enables '
+        'exactly one matching production building from the current mission faction; foreign Barracks and War Factories remain unavailable. '
+        'Chaos always requires this option.',
     )
     self.start_with_tier_one_units_check = ttk.Checkbutton(
         reward_frame,

@@ -153,6 +153,7 @@ from randomizer.rewards.catalogue import (
     reward_display_name,
     reward_names,
     reward_rule_summary,
+    starting_credit_bonus,
     unit_display_label,
     linked_buff_variant_ids,
     unit_role_equivalents,

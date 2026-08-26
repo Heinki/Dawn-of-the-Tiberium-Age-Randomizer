@@ -116,6 +116,61 @@ def preserve_collateral_damage_coefficients(lines):
     return safeguards
 
 
+def player_starting_credit_rules(lines, player_house, credit_bonus):
+    """Add a real-credit bonus to the authored player House balance."""
+    try:
+        credit_bonus = max(0, int(credit_bonus))
+    except (TypeError, ValueError):
+        credit_bonus = 0
+    report = {
+        'player_house': str(player_house or ''),
+        'credit_bonus': credit_bonus,
+        'authored_credits': 0,
+        'launch_credits': 0,
+        'applied': False,
+        'error': '',
+    }
+    if not credit_bonus:
+        return {}, report
+    if not player_house:
+        report['error'] = 'missing_player_house'
+        return {}, report
+
+    sections = _ini_sections('\n'.join(lines))
+    house_name = next(
+        (
+            section for section in sections
+            if section.casefold() == str(player_house).casefold()
+        ),
+        '',
+    )
+    if not house_name:
+        report['error'] = 'missing_player_house_section'
+        return {}, report
+    authored_value = next(
+        (
+            value for key, value in sections[house_name].items()
+            if str(key).casefold() == 'credits'
+        ),
+        '0',
+    )
+    try:
+        authored_units = int(str(authored_value or '0').strip())
+    except (TypeError, ValueError):
+        report['error'] = f'invalid_authored_credits:{authored_value!r}'
+        return {}, report
+
+    # DTA House Credits are stored in hundreds by the map format.
+    authored_credits = authored_units * 100
+    launch_credits = authored_credits + credit_bonus
+    report.update({
+        'authored_credits': authored_credits,
+        'launch_credits': launch_credits,
+        'applied': True,
+    })
+    return {house_name: {'Credits': str(launch_credits // 100)}}, report
+
+
 def prepare_spawn_map(
     mission,
     difficulty,
