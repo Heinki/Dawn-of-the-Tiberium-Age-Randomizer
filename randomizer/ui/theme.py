@@ -23,6 +23,21 @@ def apply_color_mode(self):
     style.configure('TFrame', background=background)
     style.configure('TLabel', background=background, foreground=foreground)
     style.configure('Muted.TLabel', background=background, foreground=palette['muted'])
+    shop_colors = {
+        'Stage': '#79c0ff' if self.dark_mode_var.get() else '#0969da',
+        'Status': '#7ee787' if self.dark_mode_var.get() else '#1a7f37',
+        'Ore': '#f2cc60' if self.dark_mode_var.get() else '#9a6700',
+        'Gem': '#d2a8ff' if self.dark_mode_var.get() else '#8250df',
+        'Reroll': '#ffa657' if self.dark_mode_var.get() else '#bc4c00',
+        'Reward': '#7ee787' if self.dark_mode_var.get() else '#1a7f37',
+        'Help': '#79c0ff' if self.dark_mode_var.get() else '#0550ae',
+        'PlayerBuff': '#7ee787' if self.dark_mode_var.get() else '#1a7f37',
+        'EnemyBuff': '#ff7b72' if self.dark_mode_var.get() else '#cf222e',
+    }
+    for name, color in shop_colors.items():
+        style.configure(
+            f'Shop.{name}.TLabel', background=background, foreground=color
+        )
     style.configure(
         'Archipelago.Disconnected.TLabel',
         background=background,
@@ -168,6 +183,7 @@ def apply_color_mode(self):
         bordercolor=border,
     )
     style.configure('StartingUnlocks.Treeview', rowheight=52)
+    style.configure('ShopCameo.Treeview', rowheight=72)
     style.map(
         'Treeview',
         background=[('selected', selected)],
@@ -175,6 +191,8 @@ def apply_color_mode(self):
     )
     style.configure('Treeview.Heading', background=panel, foreground=foreground, bordercolor=border)
     style.map('Treeview.Heading', background=[('active', palette['canvas'])])
+    if hasattr(self, 'configure_shop_tree_tags'):
+        self.configure_shop_tree_tags()
     style.configure(
         'TScrollbar',
         background=panel,

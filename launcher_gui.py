@@ -124,6 +124,7 @@ def run_self_check():
         campaign_mission_counts,
         parse_missions,
     )
+    from randomizer.shop.self_check import validate_shop_domain
 
     report_path = APP_DIR / 'self_check.json'
     try:
@@ -1264,6 +1265,7 @@ def run_self_check():
         extended_fallback = resolve_mission_difficulty(
             extended_mission, 'Ultimate'
         )
+        shop_domain = validate_shop_domain()
         checks = {
             'app_version': APP_VERSION,
             'game': 'Dawn of the Tiberium Age',
@@ -1276,6 +1278,8 @@ def run_self_check():
             'rules_ini_exists': (GAME_ROOT / 'INI' / 'Rules.ini').is_file(),
             'window_icon_exists': WINDOW_ICON_PATH.is_file(),
             'static_configs_valid': len(static_paths) == len(REQUIRED_STATIC_CONFIGS),
+            'shop_domain_valid': shop_domain['valid'],
+            'shop_domain': shop_domain,
             'mission_count': len(missions),
             'mission_counts_by_campaign': counts,
             'campaign_grouping_valid': counts == {
@@ -2506,6 +2510,7 @@ def run_self_check():
             'launchvinifera_exists', 'game_exe_exists', 'vinifera_exists',
             'battle_ini_exists', 'rules_ini_exists', 'window_icon_exists',
             'static_configs_valid', 'all_mission_maps_exist',
+            'shop_domain_valid',
             'campaign_grouping_valid', 'dta_puzzle_exists',
             'dta_mission_reward_multipliers_valid',
             'cr_grid_uses_campaign_green',

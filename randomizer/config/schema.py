@@ -7,6 +7,7 @@ config family can now find its contract without reading packaging behavior.
 from pathlib import Path
 
 from randomizer.config.mission_rewards import validate_mission_reward_config
+from randomizer.config.shop_mode import validate_shop_mode_config
 
 
 class StaticConfigError(RuntimeError):
@@ -108,6 +109,16 @@ REQUIRED_SECTIONS = {
     'rewards/powers.json': {
         'settings': dict,
         'powers': list,
+    },
+    'shop_mode.json': {
+        'settings': dict,
+        'mission_rewards': dict,
+        'stage_class_weights': list,
+        'power_target_prices': dict,
+        'unit_target_prices': dict,
+        'permanent_upgrades': dict,
+        'mission_effects': dict,
+        'modifiers': dict,
     },
 }
 
@@ -1196,6 +1207,9 @@ CONFIG_VALIDATORS = {
     'rewards/power_buffs.json': _validate_power_buffs,
     'rewards/enemy_scaling.json': _validate_enemy_scaling,
     'rewards/powers.json': _validate_dta_powers,
+    'shop_mode.json': lambda sections, path: validate_shop_mode_config(
+        sections, path, _invalid
+    ),
 }
 
 

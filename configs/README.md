@@ -7,10 +7,31 @@ The active static configuration targets Dawn of the Tiberium Age.
 - `factions.json` also defines curated equivalent-unit groups. Chaos keeps one access reward per group, preferring the current mission faction, while the shared-buff option applies one earned buff stack to every unlocked equivalent.
 - `ui.json` defines DTA campaign filters, colors, difficulty choices, and preserved UI modes.
 - `default_player_config.json` keeps the existing settings structure with conservative DTA defaults.
+- `shop_mode.json` defines the ten-stage Shop economy, offer weights,
+  target-specific unit/power prices, permanent upgrades, run modifiers,
+  player boons, and hostile-house challenges.
 - `rewards/tuning.json` and `rewards/enemy_scaling.json` contain active DTA reward tuning.
 - `rewards/powers.json` defines six supported player powers. Ion Cannon and Paratroopers use mission-local startup grants. Airstrike, both Nuclear Strikes, and Chrono Vortex use buildable provider clones whose inherited prerequisites are removed; the physical Construction Yard remains required.
 
 DTA unit and defense catalogues are derived from installed game data at runtime. Firestorm and obsolete power aliases remain disabled.
+
+Shop target-price tables must exactly cover the runtime DTA Shop catalogue.
+`null` means a target has no access or buff offer. Enemy challenge entries may
+reference only canonical hostile-house rewards; arbitrary enemy unit buffs are
+not supported.
+
+Unit access pricing uses the Mental Omega fine-grained curve. Native DTA cost
+caps of 150, 350, 500, 750, 1,000, 1,300, 1,600, 2,000, 2,400, and 2,800 map to
+run prices 2 through 11 Ore; higher-cost targets use 12 Ore. Corresponding
+permanent access prices are 8, 10, 14, 18, 22, 27, 32, 38, 44, 50, and 60
+Gems. Run buffs cost at least 2 Ore and otherwise half the access band rounded
+up. Permanent buffs use the 5, 6, 8, 10, and 12 Gem curve. Explicit target
+entries retain utility discounts and high-impact premiums. TechLevel controls
+displayed tier only and never determines Shop price.
+
+Power prices are also target-specific: Paratroopers are cheapest, Airstrike is
+mid-range, Ion Cannon and Chrono Vortex are high-range, and both Nuclear
+Strikes use the maximum power price.
 
 Generated unit and building clones receive fixed `CameoPriority` bands in GDI, Nod, Allies, Soviet order. Defensive buildings use a separate lower set of faction bands, keeping every defense below normal buildings on the construction sidebar.
 

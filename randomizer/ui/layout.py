@@ -15,6 +15,7 @@ from ._builder_dependencies import (
     tk,
     ttk,
 )
+from .shop import _tree
 
 def _build_window_shell(self):
     main_frame = ttk.Frame(self, padding=(12, 12, 12, 12))
@@ -479,6 +480,205 @@ def _build_right_panel(self, main_frame):
         'optional Grid missions. When disabled, ordinary neighbor progression '
         'and hidden locked missions remain active.',
     )
+
+    shop_settings_frame = ttk.LabelFrame(
+        settings_frame,
+        text='Shop Mode Setup',
+        padding=(12, 12, 12, 12),
+    )
+    self.shop_settings_frame = shop_settings_frame
+    shop_settings_frame.columnconfigure(1, weight=1)
+    ttk.Label(
+        shop_settings_frame,
+        text=(
+            'Shop Mode manages its own ten-mission run, economy, starter '
+            'access, mission offers, rewards, and failure rules.'
+        ),
+        style='Muted.TLabel',
+        justify='left',
+        wraplength=720,
+    ).grid(row=0, column=0, columnspan=2, sticky='ew', pady=(0, 12))
+
+    ttk.Label(shop_settings_frame, text='Progression').grid(
+        row=1, column=0, sticky='w', padx=(0, 12)
+    )
+    self.shop_progression_mode_combo = ttk.Combobox(
+        shop_settings_frame,
+        state='readonly',
+        textvariable=self.progression_mode_var,
+        values=PROGRESSION_MODES,
+        width=18,
+    )
+    self.shop_progression_mode_combo.grid(row=1, column=1, sticky='ew')
+    self.shop_progression_mode_combo.bind(
+        '<<ComboboxSelected>>', self.on_progression_mode_changed, add='+'
+    )
+    self.shop_progression_mode_combo.bind(
+        '<MouseWheel>', self.on_settings_control_mousewheel, add='+'
+    )
+
+    ttk.Separator(shop_settings_frame, orient='horizontal').grid(
+        row=2, column=0, columnspan=2, sticky='ew', pady=12
+    )
+    ttk.Label(
+        shop_settings_frame,
+        text='Seed (leave blank for a random seed)',
+        font=('Segoe UI', 10, 'bold'),
+    ).grid(row=3, column=0, columnspan=2, sticky='w')
+    shop_seed_row = ttk.Frame(shop_settings_frame)
+    shop_seed_row.grid(row=4, column=0, columnspan=2, sticky='ew', pady=(2, 10))
+    shop_seed_row.columnconfigure(0, weight=1)
+    self.shop_seed_entry = ttk.Entry(
+        shop_seed_row, textvariable=self.seed_var, width=24
+    )
+    self.shop_seed_entry.grid(row=0, column=0, sticky='ew')
+
+    shop_run_options = (
+        (
+            'Next run faction pool', 'shop_faction_pool_combo',
+            self.shop_faction_pool_var, self.shop_faction_pool_options,
+        ),
+        (
+            'Game speed', 'shop_game_speed_combo', self.game_speed_var,
+            [name for name, _ in GAME_SPEEDS],
+        ),
+    )
+    for row, (label, attribute, variable, values) in enumerate(
+        shop_run_options, start=5
+    ):
+        ttk.Label(shop_settings_frame, text=label).grid(
+            row=row, column=0, sticky='w', padx=(0, 12), pady=(4, 0)
+        )
+        combo = ttk.Combobox(
+            shop_settings_frame,
+            state='readonly',
+            textvariable=variable,
+            values=values,
+            width=22,
+        )
+        setattr(self, attribute, combo)
+        combo.grid(row=row, column=1, sticky='ew', pady=(4, 0))
+        combo.bind('<MouseWheel>', self.on_settings_control_mousewheel, add='+')
+    self.shop_faction_pool_combo.bind(
+        '<<ComboboxSelected>>', self.on_shop_faction_pool_changed, add='+'
+    )
+    ttk.Label(
+        shop_settings_frame,
+        text=(
+            'Faction Pool limits Shop stock and starting units to GDI, Nod, '
+            'Allies, Soviet, or all four factions. Missions remain mixed. '
+            'Mission difficulty is chosen from each mission card.'
+        ),
+        style='Muted.TLabel',
+        justify='left',
+        wraplength=720,
+    ).grid(row=8, column=0, columnspan=2, sticky='ew', pady=(12, 0))
+
+    ttk.Separator(shop_settings_frame, orient='horizontal').grid(
+        row=9, column=0, columnspan=2, sticky='ew', pady=12
+    )
+    ttk.Label(
+        shop_settings_frame,
+        text='Starting Loadout',
+        font=('Segoe UI', 10, 'bold'),
+    ).grid(row=10, column=0, columnspan=2, sticky='w')
+    ttk.Label(
+        shop_settings_frame,
+        textvariable=self.shop_loadout_help_var,
+        style='Muted.TLabel',
+        wraplength=720,
+    ).grid(row=11, column=0, columnspan=2, sticky='ew', pady=(2, 6))
+    shop_loadout_search = ttk.Frame(shop_settings_frame)
+    shop_loadout_search.grid(
+        row=12, column=0, columnspan=2, sticky='ew', pady=(0, 6)
+    )
+    ttk.Label(shop_loadout_search, text='Search permanent units:').pack(
+        side='left'
+    )
+    ttk.Entry(
+        shop_loadout_search, textvariable=self.shop_setup_search_var
+    ).pack(side='left', fill='x', expand=True, padx=(6, 0))
+    shop_loadout_frame = ttk.Frame(shop_settings_frame)
+    shop_loadout_frame.grid(
+        row=13, column=0, columnspan=2, sticky='nsew'
+    )
+    self.shop_loadout_select_tree = _tree(
+        shop_loadout_frame,
+        ('selected', 'name', 'tier', 'source'),
+        (
+            ('selected', 'Next Run', 90),
+            ('name', 'Starting Extra Unit', 330),
+            ('tier', 'Tier', 80),
+            ('source', 'Source', 130),
+        ),
+        selectmode='none',
+        height=5,
+        cameos=True,
+    )
+    self.shop_loadout_select_tree.bind(
+        '<ButtonRelease-1>', self.toggle_shop_setup_unit
+    )
+
+    modifier_frame = ttk.LabelFrame(
+        shop_settings_frame, text='Optional Run Modifiers', padding=8
+    )
+    modifier_frame.grid(
+        row=14, column=0, columnspan=2, sticky='ew', pady=(10, 0)
+    )
+    self.shop_modifier_status_var = tk.StringVar(value='')
+    self.shop_modifier_difficulty_var = tk.StringVar(value='Difficulty +0')
+    ttk.Label(
+        modifier_frame,
+        textvariable=self.shop_modifier_status_var,
+        style='Shop.Help.TLabel',
+        wraplength=720,
+    ).grid(row=0, column=0, columnspan=2, sticky='w', pady=(0, 6))
+    ttk.Label(
+        modifier_frame,
+        textvariable=self.shop_modifier_difficulty_var,
+        font=('Segoe UI', 10, 'bold'),
+        style='Shop.Reward.TLabel',
+    ).grid(row=0, column=1, sticky='e', pady=(0, 6))
+    self.shop_modifier_buttons = []
+    for column in range(2):
+        modifier_frame.columnconfigure(column, weight=1)
+    for index, (modifier_id, variable) in enumerate(
+        self.shop_modifier_vars.items()
+    ):
+        definition = self.shop_config.modifiers[modifier_id]
+        modifier_card = ttk.Frame(modifier_frame, padding=(0, 2))
+        modifier_card.grid(
+            row=1 + index // 2,
+            column=index % 2,
+            sticky='ew',
+            padx=(0, 12),
+        )
+        checkbutton = ttk.Checkbutton(
+            modifier_card,
+            text=f'Enable {definition.display_name}',
+            variable=variable,
+        )
+        checkbutton.grid(row=0, column=0, sticky='w')
+        ttk.Label(
+            modifier_card,
+            text=f'Tradeoff: {definition.description}',
+            style='Muted.TLabel',
+            wraplength=330,
+        ).grid(row=1, column=0, sticky='w', padx=(24, 0))
+        WidgetTooltip(checkbutton, definition.description)
+        self.shop_modifier_buttons.append(checkbutton)
+
+    self.shop_setup_start_button = ttk.Button(
+        shop_settings_frame,
+        text='Start Shop Mode',
+        command=self.on_new_seed,
+        style='Launch.TButton',
+    )
+    self.shop_setup_start_button.grid(
+        row=16, column=0, columnspan=2, sticky='ew', pady=(12, 0)
+    )
+    shop_settings_frame.grid_remove()
+
     button_row = ttk.Frame(right_frame)
     button_row.grid(row=0, column=0, sticky='ew', pady=(0, 6))
     button_row.columnconfigure(0, weight=1)

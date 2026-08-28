@@ -38,6 +38,33 @@ see the [Archipelago player guide](Archipelago/README.md).
 - Uses the 12 colors exposed by DTA's multiplayer options. The Pink UI choice writes DTA's `DarkMagenta` engine color.
 - Awards mission rewards at the observable score-screen victory event. DTA maps do not expose one uniform runtime signal for their varied sub-objectives, so the launcher does not create or display objective-reward checks.
 
+## Shop Mode
+
+Shop Mode is a deterministic ten-mission roguelite run with three mission
+offers per stage. Victories award temporary Ore and permanent Gems. Ore buys
+units, defenses, powers, and buffs for the current run; Gems buy permanent
+unit access, permanent buffs, and account upgrades. A detected defeat ends the
+run, while permanent progression survives restarts and failed runs.
+
+The next run can use GDI, Nod, Allied, Soviet, or mixed stock. Every installed
+DTA rewardable unit and defense has a target-specific price based primarily on
+its native build cost, with utility and high-impact units adjusted separately.
+Permanent access and buff prices follow the same fine-grained value curve used
+by Mental Omega instead of broad TechLevel bands. All six supported powers and
+their valid buffs also have strength-specific prices. Buff purchases still
+require unit or power access and use the same player-only clone pipeline as
+normal randomizer rewards.
+
+DTA cannot safely apply arbitrary per-unit stat buffs to campaign enemies.
+Shop challenge cards therefore use DTA's isolated hostile-house Armor and
+Production modifiers. Player boon cards use Player Army clone buffs or
+starting credits. Native enemy/script identities remain unchanged.
+
+Shop Gems and permanent unlocks live in `shop_profile.json`; current-run Ore,
+purchases, mission offers, commitments, and victory receipts live in
+`shop_run.json`. Two-file transitions use `shop_transaction.json` for crash
+recovery. Packaged builds store these files under `RandomizerLauncherData`.
+
 ## Unit safety rule
 
 Direct mobile-unit placements owned by the exact player house use a non-buildable player clone when that unit has an active buff. Enemy placements, structures, TaskForce entries, trigger references, script references, and reinforcements retain their original type.

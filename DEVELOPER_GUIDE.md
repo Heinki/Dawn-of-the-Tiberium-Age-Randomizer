@@ -22,6 +22,11 @@ Start with [README.md](README.md) for current scope and runtime behavior. This g
 - `randomizer/rewards/planning.py`: deterministic reward-slot planning.
 - `randomizer/rewards/dta_definitions.py`: active DTA access and buff catalogue.
 - `randomizer/rewards/display.py`: reward canonicalization, stacking, and display.
+- `randomizer/shop/`: pure Shop economy, mission offers, catalogue, purchases,
+  modifiers, lifecycle transitions, normalization, and persistence.
+- `randomizer/shop/catalogue.py`: DTA runtime-catalogue and target-price adapter.
+- `randomizer/shop/mission_modifiers.py`: deterministic player boons and
+  hostile-house challenges.
 
 ### Configuration
 
@@ -41,6 +46,12 @@ Read [configs/README.md](configs/README.md) before changing static data.
 - `randomizer/application/app.py`: Tk composition and initialization.
 - `randomizer/application/*_controller.py`: seed, state, launch, reward, progression, and Archipelago orchestration.
 - `randomizer/ui/`: widget construction, layouts, themes, grids, cameos, and tooltips.
+- `randomizer/application/shop_controller.py`: Shop workspace, launch context,
+  victory/failure transitions, and DTA reward integration.
+- `randomizer/ui/shop.py`: mission cards, run stock, loadout, permanent
+  progression, and summaries.
+- `randomizer/maps/shop_modifiers.py`: Shop run modifiers over isolated DTA
+  player clones.
 - `randomizer/launch/options.py`: DTA `spawn.ini` serialization.
 - `randomizer/core/paths.py`: source and packaged paths.
 - `randomizer/core/storage.py`: atomic persistence.
@@ -55,6 +66,17 @@ Read [configs/README.md](configs/README.md) before changing static data.
 6. The launcher writes `spawnmap.ini` and `spawn.ini`.
 7. `LaunchVinifera.dat -SPAWN -CD.` starts the mission.
 8. The debug-log watcher records the score-screen Victory check exactly once. DTA has no uniform runtime event for map sub-objectives, so only mission victory awards progression rewards.
+
+Shop Mode persists its selected offer before launch. Victory atomically awards
+Ore/Gems and creates the next offer; mission process exit without victory ends
+the run. Shop loadouts feed the same access, clone, power, starting-credit, and
+hostile-house scaling stages as normal progression.
+
+Shop unit prices are explicit per target in `configs/shop_mode.json`. Native
+DTA build cost supplies the baseline Mental Omega price band; reviewed utility
+and high-impact targets may override it. TechLevel remains catalogue metadata,
+not an economy input. Keep run access, run buff, permanent access, and
+permanent buff prices aligned when adding a rewardable DTA target.
 
 Pure modules must not import `randomizer/application`. Tk variables stay on the UI thread; workers receive plain Python data.
 
@@ -72,6 +94,8 @@ Pure modules must not import `randomizer/application`. Tk variables stay on the 
 - Put data-driven mission exceptions in `configs/missions.json` when possible.
 - Keep filesystem and Tk wrappers thin; keep deterministic behavior in pure functions.
 - Preserve public facade imports when splitting modules.
+- Preserve Shop profile/run transaction recovery. Purchases, rerolls, mission
+  commitments, and victory receipts must remain idempotent.
 
 ## Validation
 

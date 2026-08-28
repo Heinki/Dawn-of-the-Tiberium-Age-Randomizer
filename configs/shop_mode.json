@@ -1,0 +1,1470 @@
+{
+  "schema_version": 1,
+  "description": "Dawn of the Tiberium Age Shop Mode economy, missions, stock, meta progression, run modifiers, player boons, and enemy-house challenges.",
+  "sections": {
+    "settings": {
+      "run_length": 10,
+      "mission_offer_count": 3,
+      "unit_inventory_size": 8,
+      "power_inventory_size": 6,
+      "max_selected_permanent_units": 5,
+      "starting_run_coins": 5,
+      "maximum_starting_ore": 50,
+      "minimum_shop_price": 1,
+      "reroll_policy": "per_run",
+      "archipelago_purchase_locations": 5,
+      "archipelago_purchase_meta_coin_cost": 5,
+      "archipelago_mission_victories_are_locations": true,
+      "excluded_reward_ids": []
+    },
+    "mission_rewards": {
+      "act_1": {
+        "display_name": "Act 1",
+        "difficulty": 1,
+        "run_coins": 3,
+        "meta_coins": 1
+      },
+      "act_2": {
+        "display_name": "Act 2",
+        "difficulty": 2,
+        "run_coins": 5,
+        "meta_coins": 2
+      },
+      "operation": {
+        "display_name": "Operation",
+        "difficulty": 3,
+        "run_coins": 7,
+        "meta_coins": 3
+      },
+      "finale": {
+        "display_name": "Finale",
+        "difficulty": 4,
+        "run_coins": 10,
+        "meta_coins": 4
+      }
+    },
+    "stage_class_weights": [
+      {
+        "through_percent": 20,
+        "weights": {
+          "act_1": 100,
+          "act_2": 0,
+          "operation": 0,
+          "finale": 0
+        }
+      },
+      {
+        "through_percent": 40,
+        "weights": {
+          "act_1": 70,
+          "act_2": 30,
+          "operation": 0,
+          "finale": 0
+        }
+      },
+      {
+        "through_percent": 60,
+        "weights": {
+          "act_1": 30,
+          "act_2": 55,
+          "operation": 15,
+          "finale": 0
+        }
+      },
+      {
+        "through_percent": 80,
+        "weights": {
+          "act_1": 10,
+          "act_2": 50,
+          "operation": 40,
+          "finale": 0
+        }
+      },
+      {
+        "through_percent": 90,
+        "weights": {
+          "act_1": 0,
+          "act_2": 30,
+          "operation": 50,
+          "finale": 20
+        }
+      },
+      {
+        "through_percent": 100,
+        "weights": {
+          "act_1": 0,
+          "act_2": 10,
+          "operation": 35,
+          "finale": 55
+        }
+      }
+    ],
+    "power_target_prices": {
+      "AIRSTRIKESPECIAL": {
+        "run_access": 8,
+        "run_buff": 4
+      },
+      "CHEMICALSPECIAL": {
+        "run_access": 12,
+        "run_buff": 6
+      },
+      "DROPPODSPECIAL": {
+        "run_access": 5,
+        "run_buff": 3
+      },
+      "IONCANNONSPECIAL": {
+        "run_access": 10,
+        "run_buff": 5
+      },
+      "MULTISPECIAL": {
+        "run_access": 12,
+        "run_buff": 6
+      },
+      "VORTEXSPECIAL": {
+        "run_access": 10,
+        "run_buff": 5
+      }
+    },
+    "unit_target_prices": {
+      "1TNK": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "2TNK": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "3TNK": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "4TNK": {
+        "run_access": 9,
+        "run_buff": 5,
+        "permanent_access": 38,
+        "permanent_buff": 10
+      },
+      "A10": {
+        "run_access": 9,
+        "run_buff": 5,
+        "permanent_access": 38,
+        "permanent_buff": 10
+      },
+      "ALST": {
+        "run_access": null,
+        "run_buff": 3,
+        "permanent_access": null,
+        "permanent_buff": 6
+      },
+      "AMCV": {
+        "run_access": null,
+        "run_buff": 6,
+        "permanent_access": null,
+        "permanent_buff": 12
+      },
+      "APACHE": {
+        "run_access": 7,
+        "run_buff": 4,
+        "permanent_access": 27,
+        "permanent_buff": 8
+      },
+      "APC": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "ART": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "ARTY": {
+        "run_access": 4,
+        "run_buff": 2,
+        "permanent_access": 14,
+        "permanent_buff": 5
+      },
+      "ATWR": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "BEHEMOTH": {
+        "run_access": 10,
+        "run_buff": 5,
+        "permanent_access": 44,
+        "permanent_buff": 10
+      },
+      "BEHEPLSM": {
+        "run_access": 10,
+        "run_buff": 5,
+        "permanent_access": 44,
+        "permanent_buff": 10
+      },
+      "BFRT": {
+        "run_access": 11,
+        "run_buff": 6,
+        "permanent_access": 50,
+        "permanent_buff": 12
+      },
+      "BGGY": {
+        "run_access": 3,
+        "run_buff": 2,
+        "permanent_access": 10,
+        "permanent_buff": 5
+      },
+      "BIKE": {
+        "run_access": 4,
+        "run_buff": 2,
+        "permanent_access": 14,
+        "permanent_buff": 5
+      },
+      "BOAT": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "BRIG": {
+        "run_access": 12,
+        "run_buff": 6,
+        "permanent_access": 60,
+        "permanent_buff": 12
+      },
+      "CARRIER": {
+        "run_access": 11,
+        "run_buff": 6,
+        "permanent_access": 50,
+        "permanent_buff": 12
+      },
+      "CARRTRUK": {
+        "run_access": 7,
+        "run_buff": 4,
+        "permanent_access": 27,
+        "permanent_buff": 8
+      },
+      "COASTARTY": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "CRUISER": {
+        "run_access": 11,
+        "run_buff": 6,
+        "permanent_access": 50,
+        "permanent_buff": 12
+      },
+      "CTNK": {
+        "run_access": 10,
+        "run_buff": 5,
+        "permanent_access": 44,
+        "permanent_buff": 10
+      },
+      "CYBORG": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "CYP": {
+        "run_access": 9,
+        "run_buff": 5,
+        "permanent_access": 38,
+        "permanent_buff": 10
+      },
+      "DESTROYER": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "DISCARTY": {
+        "run_access": 7,
+        "run_buff": 4,
+        "permanent_access": 27,
+        "permanent_buff": 8
+      },
+      "DOG": {
+        "run_access": 3,
+        "run_buff": 2,
+        "permanent_access": 10,
+        "permanent_buff": 5
+      },
+      "DTRK": {
+        "run_access": 10,
+        "run_buff": 5,
+        "permanent_access": 44,
+        "permanent_buff": 10
+      },
+      "E1": {
+        "run_access": 2,
+        "run_buff": 2,
+        "permanent_access": 8,
+        "permanent_buff": 5
+      },
+      "E1A": {
+        "run_access": 2,
+        "run_buff": 2,
+        "permanent_access": 8,
+        "permanent_buff": 5
+      },
+      "E2": {
+        "run_access": 3,
+        "run_buff": 2,
+        "permanent_access": 10,
+        "permanent_buff": 5
+      },
+      "E2S": {
+        "run_access": 3,
+        "run_buff": 2,
+        "permanent_access": 10,
+        "permanent_buff": 5
+      },
+      "E3": {
+        "run_access": 3,
+        "run_buff": 2,
+        "permanent_access": 10,
+        "permanent_buff": 5
+      },
+      "E3A": {
+        "run_access": 3,
+        "run_buff": 2,
+        "permanent_access": 10,
+        "permanent_buff": 5
+      },
+      "E4": {
+        "run_access": 3,
+        "run_buff": 2,
+        "permanent_access": 10,
+        "permanent_buff": 5
+      },
+      "E4S": {
+        "run_access": 3,
+        "run_buff": 2,
+        "permanent_access": 10,
+        "permanent_buff": 5
+      },
+      "E5": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "EKRACARR": {
+        "run_access": 8,
+        "run_buff": 4,
+        "permanent_access": 32,
+        "permanent_buff": 8
+      },
+      "ENGINEER": {
+        "run_access": null,
+        "run_buff": 2,
+        "permanent_access": null,
+        "permanent_buff": 5
+      },
+      "ESCORTA": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "ESCORTG": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "ESCORTN": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "ESCORTS": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "FLAKCORV": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "FRIGATE": {
+        "run_access": 7,
+        "run_buff": 4,
+        "permanent_access": 27,
+        "permanent_buff": 8
+      },
+      "FTNK": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "GLST": {
+        "run_access": null,
+        "run_buff": 3,
+        "permanent_access": null,
+        "permanent_buff": 6
+      },
+      "GMCV": {
+        "run_access": null,
+        "run_buff": 6,
+        "permanent_access": null,
+        "permanent_buff": 12
+      },
+      "GRENL": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "GTNK": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "GUN": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "HELI": {
+        "run_access": 7,
+        "run_buff": 4,
+        "permanent_access": 27,
+        "permanent_buff": 8
+      },
+      "HIJACK": {
+        "run_access": 4,
+        "run_buff": 2,
+        "permanent_access": 14,
+        "permanent_buff": 5
+      },
+      "HIND": {
+        "run_access": 7,
+        "run_buff": 4,
+        "permanent_access": 27,
+        "permanent_buff": 8
+      },
+      "HTNK": {
+        "run_access": 8,
+        "run_buff": 4,
+        "permanent_access": 32,
+        "permanent_buff": 8
+      },
+      "HTNKARTY": {
+        "run_access": 9,
+        "run_buff": 5,
+        "permanent_access": 38,
+        "permanent_buff": 10
+      },
+      "HVC": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "HVCSAM": {
+        "run_access": 7,
+        "run_buff": 4,
+        "permanent_access": 27,
+        "permanent_buff": 8
+      },
+      "HVCT": {
+        "run_access": 3,
+        "run_buff": 2,
+        "permanent_access": 10,
+        "permanent_buff": 5
+      },
+      "HVR": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "ILHEMOTH": {
+        "run_access": 11,
+        "run_buff": 6,
+        "permanent_access": 50,
+        "permanent_buff": 12
+      },
+      "JEEP": {
+        "run_access": 4,
+        "run_buff": 2,
+        "permanent_access": 14,
+        "permanent_buff": 5
+      },
+      "JEEPPTNK": {
+        "run_access": 4,
+        "run_buff": 2,
+        "permanent_access": 14,
+        "permanent_buff": 5
+      },
+      "LASCOR": {
+        "run_access": 7,
+        "run_buff": 4,
+        "permanent_access": 27,
+        "permanent_buff": 8
+      },
+      "LTNK": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "LTNKCRUS": {
+        "run_access": 8,
+        "run_buff": 4,
+        "permanent_access": 32,
+        "permanent_buff": 8
+      },
+      "LUN": {
+        "run_access": 8,
+        "run_buff": 4,
+        "permanent_access": 32,
+        "permanent_buff": 8
+      },
+      "MCRUISE": {
+        "run_access": 8,
+        "run_buff": 4,
+        "permanent_access": 32,
+        "permanent_buff": 8
+      },
+      "MECH": {
+        "run_access": 8,
+        "run_buff": 4,
+        "permanent_access": 32,
+        "permanent_buff": 8
+      },
+      "MEDIC": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "MFLAK": {
+        "run_access": 4,
+        "run_buff": 2,
+        "permanent_access": 14,
+        "permanent_buff": 5
+      },
+      "MGI": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "MIG": {
+        "run_access": 8,
+        "run_buff": 4,
+        "permanent_access": 32,
+        "permanent_buff": 8
+      },
+      "MLRS": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "MRV": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "MSA": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "MSAM": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "MSUB": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "MTNK": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "MWAVE": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "MWAVEMSAM": {
+        "run_access": 7,
+        "run_buff": 4,
+        "permanent_access": 27,
+        "permanent_buff": 8
+      },
+      "NLST": {
+        "run_access": null,
+        "run_buff": 3,
+        "permanent_access": null,
+        "permanent_buff": 6
+      },
+      "NMCV": {
+        "run_access": null,
+        "run_buff": 6,
+        "permanent_access": null,
+        "permanent_buff": 12
+      },
+      "O279": {
+        "run_access": 7,
+        "run_buff": 4,
+        "permanent_access": 27,
+        "permanent_buff": 8
+      },
+      "OBLI": {
+        "run_access": 8,
+        "run_buff": 4,
+        "permanent_access": 32,
+        "permanent_buff": 8
+      },
+      "ORCA": {
+        "run_access": 7,
+        "run_buff": 4,
+        "permanent_access": 27,
+        "permanent_buff": 8
+      },
+      "P941": {
+        "run_access": 12,
+        "run_buff": 6,
+        "permanent_access": 60,
+        "permanent_buff": 12
+      },
+      "PLSM": {
+        "run_access": 11,
+        "run_buff": 6,
+        "permanent_access": 50,
+        "permanent_buff": 12
+      },
+      "PTNK": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "QTNK": {
+        "run_access": 10,
+        "run_buff": 5,
+        "permanent_access": 44,
+        "permanent_buff": 10
+      },
+      "RAAGUN": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "RAAPC": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "RAARTY": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "RAFTUR": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "RAGAP": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "RAGUN": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "RAHARV": {
+        "run_access": null,
+        "run_buff": 4,
+        "permanent_access": null,
+        "permanent_buff": 8
+      },
+      "RAHBOX": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "RAIDER": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "RANG": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "RAPARTY": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "RAPBOX": {
+        "run_access": 4,
+        "run_buff": 2,
+        "permanent_access": 14,
+        "permanent_buff": 5
+      },
+      "RASAM": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "RATSLA": {
+        "run_access": 8,
+        "run_buff": 4,
+        "permanent_access": 32,
+        "permanent_buff": 8
+      },
+      "RMBO": {
+        "run_access": 10,
+        "run_buff": 5,
+        "permanent_access": 44,
+        "permanent_buff": 10
+      },
+      "SAM": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "SAPC": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "SBOAT": {
+        "run_access": 9,
+        "run_buff": 5,
+        "permanent_access": 38,
+        "permanent_buff": 10
+      },
+      "SCARAB": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "SCRINTNK": {
+        "run_access": 10,
+        "run_buff": 5,
+        "permanent_access": 44,
+        "permanent_buff": 10
+      },
+      "SEAMINE": {
+        "run_access": 2,
+        "run_buff": 2,
+        "permanent_access": 8,
+        "permanent_buff": 5
+      },
+      "SHILKA": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "SHOK": {
+        "run_access": 8,
+        "run_buff": 4,
+        "permanent_access": 32,
+        "permanent_buff": 8
+      },
+      "SLST": {
+        "run_access": null,
+        "run_buff": 3,
+        "permanent_access": null,
+        "permanent_buff": 6
+      },
+      "SMCV": {
+        "run_access": null,
+        "run_buff": 6,
+        "permanent_access": null,
+        "permanent_buff": 12
+      },
+      "SPEEDBOAT": {
+        "run_access": 4,
+        "run_buff": 2,
+        "permanent_access": 14,
+        "permanent_buff": 5
+      },
+      "SPY": {
+        "run_access": 3,
+        "run_buff": 2,
+        "permanent_access": 10,
+        "permanent_buff": 5
+      },
+      "SS": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "STAPC": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "STNK": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "TANYA": {
+        "run_access": 10,
+        "run_buff": 5,
+        "permanent_access": 44,
+        "permanent_buff": 10
+      },
+      "TDHARV": {
+        "run_access": null,
+        "run_buff": 4,
+        "permanent_access": null,
+        "permanent_buff": 8
+      },
+      "TERMITE": {
+        "run_access": 7,
+        "run_buff": 4,
+        "permanent_access": 27,
+        "permanent_buff": 8
+      },
+      "THIEF": {
+        "run_access": 3,
+        "run_buff": 2,
+        "permanent_access": 10,
+        "permanent_buff": 5
+      },
+      "TNKD": {
+        "run_access": 7,
+        "run_buff": 4,
+        "permanent_access": 27,
+        "permanent_buff": 8
+      },
+      "TNKN": {
+        "run_access": 9,
+        "run_buff": 5,
+        "permanent_access": 38,
+        "permanent_buff": 10
+      },
+      "TORPBOAT": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "TORPCAT": {
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
+      },
+      "TRAN": {
+        "run_access": 8,
+        "run_buff": 4,
+        "permanent_access": 32,
+        "permanent_buff": 8
+      },
+      "TTNK": {
+        "run_access": 8,
+        "run_buff": 4,
+        "permanent_access": 32,
+        "permanent_buff": 8
+      },
+      "TTNKMSL": {
+        "run_access": 9,
+        "run_buff": 5,
+        "permanent_access": 38,
+        "permanent_buff": 10
+      },
+      "TWR": {
+        "run_access": 4,
+        "run_buff": 2,
+        "permanent_access": 14,
+        "permanent_buff": 5
+      },
+      "V2RL": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      },
+      "VMINE": {
+        "run_access": 4,
+        "run_buff": 2,
+        "permanent_access": 14,
+        "permanent_buff": 5
+      },
+      "VOLKOV": {
+        "run_access": 10,
+        "run_buff": 5,
+        "permanent_access": 44,
+        "permanent_buff": 10
+      },
+      "XO": {
+        "run_access": 9,
+        "run_buff": 5,
+        "permanent_access": 38,
+        "permanent_buff": 10
+      },
+      "YAK": {
+        "run_access": 6,
+        "run_buff": 3,
+        "permanent_access": 22,
+        "permanent_buff": 6
+      }
+    },
+    "permanent_upgrades": {
+      "mission_reroll": {
+        "display_name": "Mission Reroll",
+        "max_level": 3,
+        "prices": [
+          15,
+          30,
+          60
+        ],
+        "effects": {
+          "rerolls_per_level": 1
+        }
+      },
+      "mission_difficulty_assist": {
+        "display_name": "Mission Difficulty Assist",
+        "max_level": 3,
+        "prices": [
+          20,
+          40,
+          80
+        ],
+        "effects": {
+          "assists_per_level": 1
+        }
+      },
+      "victory_run_coin_bonus": {
+        "display_name": "Victory Ore Bonus",
+        "max_level": 5,
+        "prices": [
+          10,
+          20,
+          35,
+          55,
+          80
+        ],
+        "effects": {
+          "run_coins_per_level": 1
+        }
+      },
+      "starting_capital": {
+        "display_name": "Starting Ore",
+        "max_level": 45,
+        "prices": [
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5
+        ],
+        "effects": {
+          "run_coins_per_level": 1
+        }
+      },
+      "mission_starting_credits": {
+        "display_name": "Mission Starting Credits",
+        "max_level": 20,
+        "prices": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10
+        ],
+        "effects": {
+          "credits_per_level": 1000
+        }
+      },
+      "shop_discount": {
+        "display_name": "Shop Discount",
+        "max_level": 5,
+        "prices": [
+          15,
+          30,
+          50,
+          75,
+          110
+        ],
+        "effects": {
+          "ore_per_level": 1
+        }
+      },
+      "extra_shop_stock": {
+        "display_name": "Extra Shop Stock",
+        "max_level": 5,
+        "prices": [
+          15,
+          30,
+          50,
+          75,
+          110
+        ],
+        "effects": {
+          "units_per_level": 1,
+          "powers_per_level": 1
+        }
+      },
+      "expanded_loadout": {
+        "display_name": "Expanded Loadout",
+        "max_level": 3,
+        "prices": [
+          25,
+          50,
+          90
+        ],
+        "effects": {
+          "slots_per_level": 1
+        }
+      },
+      "emergency_revival": {
+        "display_name": "Emergency Revival",
+        "max_level": 1,
+        "prices": [
+          100
+        ],
+        "effects": {
+          "revivals_per_run": 1
+        }
+      },
+      "free_buff_token": {
+        "display_name": "Free Buff Token",
+        "max_level": 3,
+        "prices": [
+          30,
+          60,
+          100
+        ],
+        "effects": {
+          "tokens_per_level": 1
+        }
+      },
+      "challenge_hunter": {
+        "display_name": "Challenge Hunter",
+        "max_level": 5,
+        "prices": [
+          20,
+          35,
+          55,
+          80,
+          110
+        ],
+        "effects": {
+          "run_coins_per_level": 1,
+          "meta_coins_every_levels": 2
+        }
+      },
+      "recovery_salvage": {
+        "display_name": "Recovery Salvage",
+        "max_level": 5,
+        "prices": [
+          20,
+          35,
+          55,
+          80,
+          110
+        ],
+        "effects": {
+          "ore_per_level": 5,
+          "maximum_saved_ore": 25
+        }
+      },
+      "starting_buff_draft": {
+        "display_name": "Starting Buff Draft",
+        "purchasable": false,
+        "max_level": 3,
+        "prices": [
+          25,
+          50,
+          90
+        ],
+        "effects": {
+          "buffs_per_level": 1
+        }
+      },
+      "discount_specialization": {
+        "display_name": "Global Shop Discount",
+        "max_level": 5,
+        "prices": [
+          20,
+          35,
+          55,
+          80,
+          110
+        ],
+        "effects": {
+          "ore_per_level": 1
+        }
+      },
+      "permanent_challenge_slots": {
+        "display_name": "Permanent Challenge Slots",
+        "max_level": 2,
+        "prices": [
+          50,
+          100
+        ],
+        "effects": {
+          "slots_per_level": 1
+        }
+      },
+      "coupon_book": {
+        "display_name": "Coupon Book",
+        "max_level": 3,
+        "prices": [
+          25,
+          50,
+          90
+        ],
+        "effects": {
+          "ore_per_level": 1
+        }
+      },
+      "stock_lock": {
+        "display_name": "Stock Lock",
+        "max_level": 1,
+        "prices": [
+          60
+        ],
+        "effects": {
+          "locks_per_stage": 1
+        }
+      },
+      "veteran_academy": {
+        "display_name": "Veteran Academy",
+        "max_level": 1,
+        "prices": [
+          80
+        ],
+        "effects": {
+          "veteran_loadout": 1
+        }
+      },
+      "gem_dividend": {
+        "display_name": "Gem Dividend",
+        "max_level": 3,
+        "prices": [
+          35,
+          70,
+          120
+        ],
+        "effects": {
+          "ore_per_gem": 5,
+          "maximum_gems_per_level": 1
+        }
+      },
+      "premium_supplier": {
+        "display_name": "Premium Supplier",
+        "max_level": 1,
+        "prices": [
+          75
+        ],
+        "effects": {
+          "minimum_stage": 3,
+          "guaranteed_offers": 1
+        }
+      }
+    },
+    "mission_effects": {
+      "player_drill": {
+        "title": "Rapid Mobilization",
+        "description": "Player production is faster for this mission.",
+        "bonus_run_coins": 0,
+        "bonus_meta_coins": 0,
+        "player_reward_ids": [
+          "Player Army Drill I"
+        ]
+      },
+      "player_logistics": {
+        "title": "Efficient Logistics",
+        "description": "Player units cost less for this mission.",
+        "bonus_run_coins": 0,
+        "bonus_meta_coins": 0,
+        "player_reward_ids": [
+          "Player Army Logistics I"
+        ]
+      },
+      "player_mobility": {
+        "title": "Forced March",
+        "description": "Player units move faster for this mission.",
+        "bonus_run_coins": 0,
+        "bonus_meta_coins": 0,
+        "player_reward_ids": [
+          "Player Army Mobility I"
+        ]
+      },
+      "player_firepower": {
+        "title": "High-Explosive Ammunition",
+        "description": "Player weapon damage is increased for this mission.",
+        "bonus_run_coins": 0,
+        "bonus_meta_coins": 0,
+        "player_reward_ids": [
+          "Player Army Firepower I"
+        ]
+      },
+      "player_reload": {
+        "title": "Weapons Tuning",
+        "description": "Player weapons reload faster for this mission.",
+        "bonus_run_coins": 0,
+        "bonus_meta_coins": 0,
+        "player_reward_ids": [
+          "Player Army Weapon Tuning I"
+        ]
+      },
+      "player_credits": {
+        "title": "Emergency Funding",
+        "description": "Start this mission with 1,000 additional credits.",
+        "bonus_run_coins": 0,
+        "bonus_meta_coins": 0,
+        "player_reward_ids": [
+          "Starting Credits +1,000"
+        ]
+      },
+      "enemy_armor": {
+        "title": "Hardened Enemy Forces",
+        "description": "Active hostile houses gain stronger armor for this mission.",
+        "bonus_run_coins": 2,
+        "bonus_meta_coins": 1,
+        "enemy_reward_id": "Enemy Armor I"
+      },
+      "enemy_production": {
+        "title": "Enemy War Economy",
+        "description": "Active hostile houses produce units faster for this mission.",
+        "bonus_run_coins": 2,
+        "bonus_meta_coins": 1,
+        "enemy_reward_id": "Enemy Production I"
+      }
+    },
+    "modifiers": {
+      "greedy": {
+        "display_name": "Greedy",
+        "description": "Each victory gives 25% more Gems than normal. You start with 2 less Ore.",
+        "effects": {
+          "meta_reward_percent": 125,
+          "starting_run_coins_flat": -2
+        }
+      },
+      "veteran_economy": {
+        "display_name": "Veteran Economy",
+        "description": "Each victory gives 30% more Ore than normal. Each run-shop price costs 20% more.",
+        "effects": {
+          "shop_price_percent": 120,
+          "run_reward_percent": 130
+        }
+      },
+      "poor_logistics": {
+        "display_name": "Poor Logistics",
+        "description": "Each victory gives 4 extra Ore, but each run-shop price costs 2 extra Ore.",
+        "effects": {
+          "run_reward_flat": 4,
+          "shop_price_flat": 2
+        }
+      },
+      "generous_command": {
+        "display_name": "Generous Command",
+        "description": "You start with 5 extra Ore, but each victory gives 20% fewer Gems than normal. Saved Gems are never removed.",
+        "effects": {
+          "starting_run_coins_flat": 5,
+          "meta_reward_percent": 80
+        }
+      },
+      "blind_choice": {
+        "display_name": "Blind Choice",
+        "description": "+1 Ore per victory, but one mission offer hides its exact reward until launched.",
+        "effects": {
+          "run_reward_flat": 1,
+          "hidden_offer_count": 1
+        }
+      },
+      "glass_cannon": {
+        "display_name": "Glass Cannon",
+        "description": "Player units deal 25% more damage but have 20% less durability.",
+        "effects": {
+          "player_damage_percent": 125,
+          "player_armor_percent": 80
+        }
+      },
+      "overclocked_factories": {
+        "display_name": "Overclocked Factories",
+        "description": "Production time is 25% shorter, but player unit and structure costs are 20% higher.",
+        "effects": {
+          "production_time_percent": 75,
+          "player_cost_percent": 120
+        }
+      },
+      "black_market": {
+        "display_name": "Black Market",
+        "description": "Each stage has 4 extra Shop offers, but run-shop prices are 25% higher.",
+        "effects": {
+          "unit_inventory_flat": 2,
+          "power_inventory_flat": 2,
+          "shop_price_percent": 125
+        }
+      },
+      "elite_force": {
+        "display_name": "Elite Force",
+        "description": "Three guaranteed starters begin Veteran, but the other two guaranteed starter slots are removed.",
+        "effects": {
+          "starter_veteran": 1,
+          "starter_unit_count_flat": -2
+        }
+      },
+      "no_safety_net": {
+        "display_name": "No Safety Net",
+        "description": "Each victory gives 1 extra Gem, but rerolls, difficulty assists, and Emergency Revival are disabled.",
+        "effects": {
+          "meta_reward_flat": 1,
+          "disable_rerolls": 1,
+          "disable_assists": 1,
+          "disable_revivals": 1
+        }
+      },
+      "support_doctrine": {
+        "display_name": "Support Doctrine",
+        "description": "Aid powers recharge 30% faster, but combat units build 20% slower.",
+        "effects": {
+          "support_recharge_percent": 70,
+          "combat_production_time_percent": 120
+        }
+      },
+      "war_economy": {
+        "display_name": "War Economy",
+        "description": "Start with 5 extra Ore, but every mission starts with 3,000 fewer in-game Credits.",
+        "effects": {
+          "starting_run_coins_flat": 5,
+          "mission_starting_credits_flat": -3000
+        }
+      },
+      "narrow_intelligence": {
+        "display_name": "Narrow Intelligence",
+        "description": "Mission victories give 30% more Ore, but each stage offers only 2 missions.",
+        "effects": {
+          "run_reward_percent": 130,
+          "mission_offer_count_flat": -1
+        }
+      },
+      "liquid_assets": {
+        "display_name": "Liquid Assets",
+        "description": "Run-shop prices are 20% lower, but unused Ore disappears after each stage.",
+        "effects": {
+          "shop_price_percent": 80,
+          "liquidate_ore_after_victory": 1
+        }
+      },
+      "treasure_hunter": {
+        "display_name": "Treasure Hunter",
+        "description": "Challenge missions give double base Gems, but normal missions give 25% less Ore.",
+        "effects": {
+          "challenge_meta_reward_percent": 200,
+          "normal_run_reward_percent": 75
+        }
+      }
+    }
+  }
+}

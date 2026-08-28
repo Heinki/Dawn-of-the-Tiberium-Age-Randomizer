@@ -757,10 +757,19 @@ def player_power_rules(
     provider_cells = set()
     seen = set()
     power_buff_counts = {}
+    recharge_multipliers = {}
     # Local import avoids the definition module's catalogue-time import of
     # POWER_SPECS while still enforcing saved-state stack caps at launch.
     from randomizer.rewards.dta_power_buffs import power_buff_stack_limit
     for reward in rewards or ():
+        if (
+            reward.get('kind') == 'superweapon'
+            and reward.get('superweapon_recharge_multiplier') is not None
+        ):
+            power_id = str(reward.get('superweapon') or '').upper()
+            recharge_multipliers[power_id] = float(
+                reward['superweapon_recharge_multiplier']
+            )
         if reward.get('dta_player_power_buff'):
             power_id = str(reward.get('superweapon') or '').upper()
             buff_type = str(reward.get('power_buff_type') or '')
@@ -806,6 +815,15 @@ def player_power_rules(
                 recharge = float(clone_values.get('RechargeTime', 0))
                 clone_values['RechargeTime'] = str(
                     max(0.01, round(recharge * (0.9 ** buff_count), 3))
+                )
+            except (TypeError, ValueError):
+                pass
+        recharge_multiplier = recharge_multipliers.get(source_id.upper(), 1.0)
+        if recharge_multiplier != 1.0:
+            try:
+                recharge = float(clone_values.get('RechargeTime', 0))
+                clone_values['RechargeTime'] = str(
+                    max(0.01, round(recharge * recharge_multiplier, 3))
                 )
             except (TypeError, ValueError):
                 pass

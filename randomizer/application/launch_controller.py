@@ -88,6 +88,7 @@ from randomizer.dta.powers import (
     player_power_rules,
 )
 from randomizer.maps.settings import mission_house_color_rules
+from randomizer.maps.shop_modifiers import apply_shop_clone_modifiers
 from randomizer.ui.config import (
     PLAYER_COLOR_ENGINE_VALUES,
     RAINBOWIZER_COLORS,
@@ -115,6 +116,9 @@ class LaunchController:
 
     def resolve_selected_mission_difficulty(self, mission):
         return resolve_mission_difficulty(mission, self.difficulty_var.get())
+
+    def get_selected_difficulty_value(self):
+        return dict(DIFFICULTIES).get(self.difficulty_var.get(), 1)
 
     def get_selected_game_speed_value(self):
         return dict(GAME_SPEEDS).get(self.game_speed_var.get(), 3)
@@ -594,9 +598,12 @@ throw "Map $name was not found in expandmo*.mix"
                     }
                     rule_sections.setdefault(section, {}).update(prepared_values)
 
-        if self.state:
-            earned_rewards = self.earned_rewards_from_checks()
-            self.state['earned_rewards'] = earned_rewards
+        if self.randomizer_launch_active():
+            if self.state and not getattr(
+                self, 'shop_launch_active', lambda: False
+            )():
+                earned_rewards = self.earned_rewards_from_checks()
+                self.state['earned_rewards'] = earned_rewards
             for reward in self.active_launch_rewards():
                 if reward.get('kind') == 'buff' and reward.get('buff_type'):
                     continue
@@ -929,6 +936,11 @@ throw "Map $name was not found in expandmo*.mix"
         self.cleanup_generated_root_maps()
         self.disable_generated_rules_for_client()
         self.clear_power_runtime_types()
+        finish_context = getattr(
+            self, 'finish_progression_launch_context', None
+        )
+        if callable(finish_context):
+            finish_context()
         if getattr(self, '_close_after_game', False):
             self.destroy()
 
@@ -993,6 +1005,11 @@ throw "Map $name was not found in expandmo*.mix"
         self.disable_generated_rules_for_client()
         self.append_log(detail, error=True)
         messagebox.showerror('Launch Failed', 'Failed to write launch files. See log for details.')
+        finish_context = getattr(
+            self, 'finish_progression_launch_context', None
+        )
+        if callable(finish_context):
+            finish_context()
 
     def prepare_mission_launch_files(
         self,
@@ -1012,9 +1029,9 @@ throw "Map $name was not found in expandmo*.mix"
             # enter the disposable generated map.
             active_rewards = (
                 list(self.launch_rewards_for_mission(mission_code))
-                if self.state else ()
+                if self.randomizer_launch_active() else ()
             )
-            if self.state:
+            if self.randomizer_launch_active():
                 starter_ids = set(self.active_starting_tier_one_expanded_ids())
                 starter_ids.update(
                     self.active_starting_tier_one_defense_expanded_ids()
@@ -1120,6 +1137,12 @@ throw "Map $name was not found in expandmo*.mix"
                 production_context=isolation_report,
                 rule_overlays=isolation_rules,
             )
+            if self.shop_launch_active():
+                apply_shop_clone_modifiers(
+                    clone_rules,
+                    clone_report,
+                    self.active_reward_settings(),
+                )
             access_rules, access_report = player_infantry_access_rules(
                 mission,
                 active_rewards,
@@ -1170,7 +1193,10 @@ throw "Map $name was not found in expandmo*.mix"
                 )
             for section, values in power_rules.items():
                 dta_rules.setdefault(section, {}).update(values)
-            enemy_rules, enemy_report = enemy_buff_rules(mission, active_rewards)
+            enemy_rewards = self.active_enemy_scaling_rewards()
+            enemy_rules, enemy_report = enemy_buff_rules(
+                mission, [*active_rewards, *enemy_rewards]
+            )
             for section, values in enemy_rules.items():
                 dta_rules.setdefault(section, {}).update(values)
 
@@ -1178,7 +1204,13 @@ throw "Map $name was not found in expandmo*.mix"
             credit_rules, credit_report = player_starting_credit_rules(
                 source_lines,
                 power_report['player_house'],
-                starting_credit_bonus(active_rewards),
+                max(
+                    0,
+                    starting_credit_bonus(active_rewards)
+                    + int(self.active_reward_settings().get(
+                        'shop_mission_starting_credits_flat', 0
+                    )),
+                ),
             )
             for section, values in credit_rules.items():
                 dta_rules.setdefault(section, {}).update(values)
@@ -1338,7 +1370,11 @@ throw "Map $name was not found in expandmo*.mix"
         try:
             process = subprocess.Popen(cmd, cwd=GAME_ROOT)
             self.append_log(f'Launched game process PID={process.pid}.')
-            if self.state and mission.get('code') in self.state.get('mission_order', []):
+            if (
+                self.state
+                and not getattr(self, 'shop_launch_active', lambda: False)()
+                and mission.get('code') in self.state.get('mission_order', [])
+            ):
                 try:
                     started_missions = self.state.setdefault('started_missions', [])
                     if mission['code'] not in started_missions:
@@ -1385,6 +1421,11 @@ throw "Map $name was not found in expandmo*.mix"
             self.append_log('Failed to launch game process:', error=True)
             self.append_log(traceback.format_exc(), error=True)
             messagebox.showerror('Launch Failed', 'Failed to launch the game. See log for details.')
+            finish_context = getattr(
+                self, 'finish_progression_launch_context', None
+            )
+            if callable(finish_context):
+                finish_context()
         else:
             self.append_log(
                 'DTA victory watcher is monitoring the Vinifera score-screen log signal.'
