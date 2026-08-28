@@ -132,7 +132,7 @@ def decimal_value(values, key, default=0.0):
 
 
 def effective_section(sections, section_id, _seen=None):
-    """Resolve Vinifera ``BaseSection`` inheritance for one INI section."""
+    """Resolve DTA ``BaseSection`` or ``$Inherits`` INI inheritance."""
     lookup = {str(name).casefold(): (name, values) for name, values in sections.items()}
     item = lookup.get(str(section_id or '').casefold())
     if item is None:
@@ -143,7 +143,10 @@ def effective_section(sections, section_id, _seen=None):
     if marker in seen:
         return dict(values)
     seen.add(marker)
-    base_name = values.get('BaseSection', '')
+    # DTA 16.0 moved many TechnoTypes from Vinifera's ``BaseSection`` key to
+    # the newer ``$Inherits`` syntax.  Both express the same single-parent
+    # inheritance contract for catalogue and clone generation purposes.
+    base_name = values.get('BaseSection') or values.get('$Inherits', '')
     merged = effective_section(sections, base_name, seen) if base_name else {}
     merged.update(values)
     return merged

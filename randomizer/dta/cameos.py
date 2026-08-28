@@ -215,7 +215,7 @@ def _effective_art_value(sections, section_id, key, seen=None):
         return values[key]
     return _effective_art_value(
         sections,
-        values.get('basesection'),
+        values.get('basesection') or values.get('$inherits'),
         key,
         seen,
     )
@@ -239,7 +239,9 @@ def ensure_unit_cameos(unit_ids):
             except OSError:
                 pass
             continue
-        art_id = rules.get(unit_id, {}).get('image', unit_id).upper()
+        art_id = (
+            _effective_art_value(rules, unit_id, 'image') or unit_id
+        ).upper()
         cameo = _effective_art_value(art, art_id, 'cameo')
         filenames = []
         if cameo:
@@ -274,7 +276,7 @@ def ensure_superweapon_cameos(superweapon_ids, sidebar_overrides=None):
         power_id = str(raw_power_id or '').upper()
         cameo = overrides.get(
             power_id,
-            rules.get(power_id, {}).get('sidebarimage', ''),
+            _effective_art_value(rules, power_id, 'sidebarimage'),
         )
         if not cameo:
             continue

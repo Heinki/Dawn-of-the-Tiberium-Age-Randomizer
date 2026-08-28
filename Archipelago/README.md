@@ -5,7 +5,7 @@ YAML, connect to a room, and continue an existing multiworld game.
 
 ## What you need
 
-- Dawn of the Tiberium Age 15.1.0 with Vinifera in a separate, unmodified game
+- Dawn of the Tiberium Age 16.0.0 with Vinifera in a separate, unmodified game
   installation
 - DTA Randomizer Launcher 1.0
 - Archipelago 0.6.7

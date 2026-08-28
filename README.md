@@ -2,14 +2,14 @@
 
 # Dawn of the Tiberium Age Randomizer Launcher
 
-This project is the randomizer launcher for DTA 15.1.0 and Vinifera. It reuses the proven progression, reward-planning, launcher UI, save/load, and Archipelago structure from the Mental Omega Randomizer, while using DTA missions, factions, units, powers, rules, maps, cameos, difficulty handling, and launch behavior.
+This project is the randomizer launcher for DTA 16.0.0 and Vinifera. It reuses the proven progression, reward-planning, launcher UI, save/load, and Archipelago structure from the Mental Omega Randomizer, while using DTA missions, factions, units, powers, rules, maps, cameos, difficulty handling, and launch behavior.
 
 For APWorld installation, room generation, connection, and troubleshooting,
 see the [Archipelago player guide](Archipelago/README.md).
 
 ## Current DTA integration
 
-- Reads all 81 installed campaign entries from `INI/Battle.ini`.
+- Reads all 92 installed campaign entries from `INI/Battle.ini`, including the 11-mission Shadow Exodus campaign.
 - Groups missions by the installed DTA campaigns and its STAND-ALONE MISSIONS category.
 - Uses DTA-specific mission reward multipliers: stand-alone and non-finale CR Route A/B missions grant x2 rewards; finales, the CR bonus mission, and every CR Route C mission grant x3; all other missions grant x1.
 - Reads each mission's DTA difficulty labels from `INI/Battle.ini`, including Brutal, Extreme, Ultimate, and Impossible. An unavailable selection falls back to the closest lower label supported by that mission.
@@ -110,7 +110,7 @@ maintainer.
 
 The mission catalogue, cameos, map generation, launch contract, broad buffs, unit and defense buffs, production access, automatic production infrastructure, six power unlocks, supported power buffs, starting-credit rewards, optional enemy buffs, Randomizer Arsenal, and Archipelago catalogue are implemented and covered by the non-invasive self-check. Access clones use `TechLevel=1`, remove inherited prerequisites, `BuiltAt`, and nonpositive build locks, and retain positive simultaneous-unit caps. Standard mode activates only rewards matching the selected mission's faction; Chaos retains cross-faction access. Old buffs for still-locked units are ignored at launch instead of granting access.
 
-All 81 active mission maps were checked for map-local power types. The obsolete duplicate `EMPulseSpecial` alias is not a reward.
+All 92 active mission maps were checked for map-local power types. The obsolete duplicate `EMPulseSpecial` alias is not a reward.
 
 Live verification is still required for sidebar production, buff effects, unlocks, clone save/load, score-screen completion, and Archipelago item receipt.
 

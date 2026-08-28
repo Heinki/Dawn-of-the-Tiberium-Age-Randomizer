@@ -578,7 +578,9 @@ def _derived_techno_ids(sections, unit_id):
             item = lookup.get(current.casefold())
             if item is None:
                 break
-            base = str(item[1].get('BaseSection') or '').strip()
+            base = str(
+                item[1].get('BaseSection') or item[1].get('$Inherits') or ''
+            ).strip()
             if not base:
                 break
             if base.casefold() == unit_id.casefold():
@@ -1281,6 +1283,7 @@ def unit_specific_buff_rules(
             output_id = _clone_id(unit_id, 'PLAYER', occupied)
             clone_values = dict(values)
             clone_values.pop('BaseSection', None)
+            clone_values.pop('$Inherits', None)
             clone_values.pop('ForbiddenHouses', None)
             try:
                 clone_build_limit = int(float(
@@ -1372,6 +1375,7 @@ def unit_specific_buff_rules(
                     )
                     cloned_weapon_values = dict(weapon_values)
                     cloned_weapon_values.pop('BaseSection', None)
+                    cloned_weapon_values.pop('$Inherits', None)
                     cloned_weapon_values.update(overrides)
                     rules[clone_id] = cloned_weapon_values
                     weapon_list_key = _next_list_key(
@@ -1399,6 +1403,7 @@ def unit_specific_buff_rules(
                 linked_output = _clone_id(linked_source, 'PLAYER', occupied)
                 linked_rules = dict(linked_values)
                 linked_rules.pop('BaseSection', None)
+                linked_rules.pop('$Inherits', None)
                 linked_rules.pop('ForbiddenHouses', None)
                 linked_rules['Image'] = linked_values.get('Image', linked_source)
                 linked_rules['Owner'] = production_house
@@ -1435,6 +1440,7 @@ def unit_specific_buff_rules(
                         effective_section(combined, weapon_id)
                     )
                     linked_weapon_values.pop('BaseSection', None)
+                    linked_weapon_values.pop('$Inherits', None)
                     linked_weapon_values.update(overrides)
                     rules[linked_weapon] = linked_weapon_values
                     weapon_list_key = _next_list_key(
@@ -1497,6 +1503,7 @@ def unit_specific_buff_rules(
                     )
                     helper_values = dict(values)
                     helper_values.pop('BaseSection', None)
+                    helper_values.pop('$Inherits', None)
                     helper_values.pop('ForbiddenHouses', None)
                     helper_values.update(_unit_overrides(values, counts, target))
                     for weapon_key in WEAPON_KEYS:

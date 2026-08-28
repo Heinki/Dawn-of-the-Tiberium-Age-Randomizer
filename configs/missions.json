@@ -11,6 +11,7 @@
       ],
       "campaign_order": [
         "Tutorial",
+        "Shadow Exodus",
         "PTTP",
         "CR",
         "Toxic Diversion",
@@ -20,6 +21,7 @@
       ],
       "campaign_by_header": {
         "HEADER_TUTORIAL": "Tutorial",
+        "HEADER_SE": "Shadow Exodus",
         "HEADER_PTTP": "PTTP",
         "HEADER_CR": "CR",
         "HEADER_CR_ROUTE_A": "CR",
@@ -39,6 +41,7 @@
       "fallback_stage_score": 12,
       "finale_stage_score": 24,
       "finale_mission_codes": [
+        "M_SE11",
         "M_CRA14",
         "M_CRB17",
         "M_CRC15",
@@ -85,6 +88,16 @@
         "standard": [
           "M_TUTORIAL1",
           "M_TUTORIAL2",
+          "M_SE1",
+          "M_SE2",
+          "M_SE3",
+          "M_SE4",
+          "M_SE5",
+          "M_SE6",
+          "M_SE7",
+          "M_SE8",
+          "M_SE9",
+          "M_SE10",
           "M_PTTP1",
           "M_PTTP2",
           "M_PTTP3",
@@ -152,6 +165,7 @@
           "M_CRB16"
         ],
         "finale": [
+          "M_SE11",
           "M_PTTP9",
           "M_CRA14",
           "M_CRB17",
@@ -179,6 +193,17 @@
     "build_classifications": {
       "M_TUTORIAL1": "true_no_build",
       "M_TUTORIAL2": "true_no_build",
+      "M_SE1": "base_build",
+      "M_SE2": "true_no_build",
+      "M_SE3": "base_build",
+      "M_SE4": "no_build_production",
+      "M_SE5": "no_build_production",
+      "M_SE6": "no_build_production",
+      "M_SE7": "true_no_build",
+      "M_SE8": "true_no_build",
+      "M_SE9": "base_build",
+      "M_SE10": "no_build_production",
+      "M_SE11": "base_build",
       "M_PTTP1": "true_no_build",
       "M_PTTP2": "true_no_build",
       "M_PTTP3": "base_build",
@@ -294,6 +319,9 @@
       ],
       "Tutorial": [
         "gdi"
+      ],
+      "Shadow Exodus": [
+        "nod"
       ],
       "PTTP": [
         "soviet"

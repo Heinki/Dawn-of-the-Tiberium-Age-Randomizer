@@ -33,7 +33,7 @@ Start with [README.md](README.md) for current scope and runtime behavior. This g
 - `randomizer/config/static.py`: packaged/source paths, JSON loading, and caching.
 - `randomizer/config/schema.py`: static configuration validation.
 - `randomizer/config/player.py`: `dta_randomizer.yaml` loading, saving, and migration.
-- `configs/missions.json`: 81 mission classifications and campaign policy.
+- `configs/missions.json`: 92 mission classifications and campaign policy.
 - `configs/factions.json`: DTA production families and permanent essentials.
 - `configs/ui.json`: DTA campaigns, difficulties, speeds, colors, and preserved progression modes.
 - `configs/rewards/`: active DTA reward tuning and policy.
@@ -89,7 +89,7 @@ Pure modules must not import `randomizer/application`. Tk variables stay on the 
 - Never replace authored placed-unit, TaskForce, TeamType, trigger, script, or reinforcement identities.
 - Resolve scenario houses through Vinifera `ActsLike` before writing production masks.
 - Resolve shared `ActsLike` collisions through map-local HouseType-bit isolation before access or clone routing. Fail launch visibly if exact player-only isolation cannot be established; never silently discard earned access.
-- Keep all 81 installed mission codes explicitly classified.
+- Keep all 92 installed mission codes explicitly classified.
 - Keep mission INI order, repeated entries, comments, and line-ending behavior intact.
 - Put data-driven mission exceptions in `configs/missions.json` when possible.
 - Keep filesystem and Tk wrappers thin; keep deterministic behavior in pure functions.

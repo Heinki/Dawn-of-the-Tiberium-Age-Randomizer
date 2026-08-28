@@ -393,6 +393,7 @@ def _clone_power_effect_chain(
         values = effective_section(mission_rules, warhead_id)
         clone_values = dict(values)
         clone_values.pop('BaseSection', None)
+        clone_values.pop('$Inherits', None)
         if expand_area and area_count:
             try:
                 if 'CellSpread' in clone_values:
@@ -420,6 +421,7 @@ def _clone_power_effect_chain(
         source_values = effective_section(art, animation_id)
         clone_values = dict(source_values)
         clone_values.pop('BaseSection', None)
+        clone_values.pop('$Inherits', None)
         clone_values.setdefault('Image', source_values.get('Image', animation_id))
         clone_values.update(
             chain.get('animation_overrides', {}).get(animation_id, {})
@@ -473,6 +475,7 @@ def _clone_power_effect_chain(
     weapon_clone = _clone_auxiliary_id(weapon_id, 'WP', occupied)
     weapon_clone_values = dict(weapon_values)
     weapon_clone_values.pop('BaseSection', None)
+    weapon_clone_values.pop('$Inherits', None)
     weapon_clone_values['Warhead'] = impact_clone
     damage_source = chain.get('damage_source') or {}
     if damage_source:
@@ -526,6 +529,7 @@ def _clone_ion_cannon_effect(
         clone_id = _clone_auxiliary_id(warhead_id, 'ION', occupied)
         clone_values = dict(effective_section(mission_rules, warhead_id))
         clone_values.pop('BaseSection', None)
+        clone_values.pop('$Inherits', None)
         try:
             if 'CellSpread' in clone_values:
                 base_spread = float(clone_values['CellSpread'])
@@ -802,6 +806,7 @@ def player_power_rules(
         # then apply player identity, recharge, voices, and sidebar adjustments.
         clone_values = dict(effective_section(mission_rules, source_id))
         clone_values.pop('BaseSection', None)
+        clone_values.pop('$Inherits', None)
         clone_values.update(configured_values)
         clone_action, _cursor_pair = POWER_CLONE_ACTION_TYPES.get(
             source_id.upper(), ('', '')
@@ -929,6 +934,7 @@ def player_power_rules(
                     effective_section(mission_rules, aircraft_id)
                 )
                 aircraft_values.pop('BaseSection', None)
+                aircraft_values.pop('$Inherits', None)
                 aircraft_values['Image'] = aircraft_values.get(
                     'Image', aircraft_id
                 )
@@ -1015,6 +1021,7 @@ def player_power_rules(
             if buildable_provider:
                 provider_values = dict(source_provider_values)
                 provider_values.pop('BaseSection', None)
+                provider_values.pop('$Inherits', None)
                 for key in list(provider_values):
                     folded = str(key).casefold()
                     if (

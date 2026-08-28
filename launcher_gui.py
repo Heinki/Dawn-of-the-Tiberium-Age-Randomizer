@@ -185,6 +185,7 @@ def run_self_check():
             *(f'M_CRB{number}' for number in range(9, 17)),
         }
         finale_reward_codes = {
+            'M_SE11',
             'M_PTTP9',
             'M_CRA14',
             'M_CRB17',
@@ -1284,6 +1285,7 @@ def run_self_check():
             'mission_counts_by_campaign': counts,
             'campaign_grouping_valid': counts == {
                 'Tutorial': 2,
+                'Shadow Exodus': 11,
                 'PTTP': 9,
                 'CR': 32,
                 'Toxic Diversion': 7,
