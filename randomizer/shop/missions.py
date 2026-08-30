@@ -16,6 +16,15 @@ from .model import MissionEconomyClass, MissionOffer, ShopModeConfig
 
 
 _CLASS_ORDER = tuple(MissionEconomyClass)
+SHOP_DIFFICULTIES = (
+    'Easy',
+    'Normal',
+    'Hard',
+    'Brutal',
+    'Extreme',
+    'Ultimate',
+    'Impossible',
+)
 
 
 def classify_mission(mission):
@@ -67,6 +76,39 @@ def mission_classes_for_stage(
         class_id for class_id in _CLASS_ORDER
         if int(weights.get(class_id, 0)) > 0
     )
+
+
+def mission_difficulty_weights_for_stage(
+    stage, run_length=None, config: ShopModeConfig = SHOP_CONFIG
+):
+    """Return configured DTA game-difficulty weights for one Shop stage."""
+    run_length = config.run_length if run_length is None else int(run_length)
+    progress_percent = (
+        min(100, max(1, int(stage)) * 100 // max(1, run_length))
+    )
+    for profile in config.stage_difficulty_weights:
+        if progress_percent <= profile.through_percent:
+            return dict(profile.weights)
+    return dict(config.stage_difficulty_weights[-1].weights)
+
+
+def mission_difficulty(
+    run_seed,
+    stage,
+    mission_code,
+    *,
+    run_length=None,
+    config: ShopModeConfig = SHOP_CONFIG,
+):
+    """Choose one deterministic per-offer DTA difficulty for a Shop stage."""
+    weights = mission_difficulty_weights_for_stage(
+        stage, run_length, config
+    )
+    rng = random.Random(
+        f'{run_seed}:shop_mission_difficulty:{int(stage)}:'
+        f'{str(mission_code or "").upper()}'
+    )
+    return _weighted_class_choice(rng, SHOP_DIFFICULTIES, weights)
 
 
 def _weighted_class_choice(rng, classes, weights):
@@ -199,4 +241,3 @@ def generate_mission_offers(
     }
     selected.sort(key=lambda offer: (difficulty[offer.economy_class], offer.mission_code))
     return tuple(selected)
-

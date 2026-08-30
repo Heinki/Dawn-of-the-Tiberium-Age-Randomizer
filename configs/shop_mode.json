@@ -99,6 +99,32 @@
         }
       }
     ],
+    "stage_difficulty_weights": [
+      {
+        "through_percent": 20,
+        "weights": {"Easy": 80, "Normal": 20, "Hard": 0, "Brutal": 0, "Extreme": 0, "Ultimate": 0, "Impossible": 0}
+      },
+      {
+        "through_percent": 40,
+        "weights": {"Easy": 20, "Normal": 60, "Hard": 20, "Brutal": 0, "Extreme": 0, "Ultimate": 0, "Impossible": 0}
+      },
+      {
+        "through_percent": 60,
+        "weights": {"Easy": 0, "Normal": 20, "Hard": 60, "Brutal": 20, "Extreme": 0, "Ultimate": 0, "Impossible": 0}
+      },
+      {
+        "through_percent": 80,
+        "weights": {"Easy": 0, "Normal": 0, "Hard": 20, "Brutal": 60, "Extreme": 20, "Ultimate": 0, "Impossible": 0}
+      },
+      {
+        "through_percent": 90,
+        "weights": {"Easy": 0, "Normal": 0, "Hard": 0, "Brutal": 20, "Extreme": 60, "Ultimate": 20, "Impossible": 0}
+      },
+      {
+        "through_percent": 100,
+        "weights": {"Easy": 0, "Normal": 0, "Hard": 0, "Brutal": 0, "Extreme": 20, "Ultimate": 60, "Impossible": 20}
+      }
+    ],
     "power_target_prices": {
       "AIRSTRIKESPECIAL": {
         "run_access": 8,

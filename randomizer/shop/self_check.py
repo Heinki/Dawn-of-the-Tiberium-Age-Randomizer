@@ -18,7 +18,12 @@ from .economy import (
     run_unit_price,
 )
 from .mission_modifiers import CHALLENGE_MODIFIERS, PLAYER_BOON_MODIFIERS
-from .missions import classify_mission, generate_mission_offers
+from .missions import (
+    classify_mission,
+    generate_mission_offers,
+    mission_difficulty,
+    mission_difficulty_weights_for_stage,
+)
 from .model import (
     MissionEconomyClass,
     RunStatus,
@@ -61,6 +66,39 @@ def validate_shop_domain():
     _require(
         len({offer.mission_code for offer in first_offers}) == len(first_offers),
         'Shop opening contains duplicate missions',
+    )
+    first_difficulties = tuple(
+        mission_difficulty(
+            'DTA-SHOP-SELF-CHECK', 1, offer.mission_code
+        )
+        for offer in first_offers
+    )
+    _require(
+        first_difficulties == tuple(
+            mission_difficulty(
+                'DTA-SHOP-SELF-CHECK', 1, offer.mission_code
+            )
+            for offer in first_offers
+        ),
+        'Shop mission difficulties are not deterministic',
+    )
+    early_difficulties = {
+        name for name, weight in mission_difficulty_weights_for_stage(1).items()
+        if weight
+    }
+    final_difficulties = {
+        name for name, weight in mission_difficulty_weights_for_stage(
+            SHOP_CONFIG.run_length
+        ).items()
+        if weight
+    }
+    _require(
+        early_difficulties == {'Easy', 'Normal'},
+        'DTA Shop opening difficulties are incorrect',
+    )
+    _require(
+        final_difficulties == {'Extreme', 'Ultimate', 'Impossible'},
+        'DTA Shop finale difficulties are incorrect',
     )
 
     catalogue = shop_catalogue()

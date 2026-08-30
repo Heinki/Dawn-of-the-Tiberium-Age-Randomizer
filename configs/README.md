@@ -7,9 +7,10 @@ The active static configuration targets Dawn of the Tiberium Age.
 - `factions.json` also defines curated equivalent-unit groups. Chaos keeps one access reward per group, preferring the current mission faction, while the shared-buff option applies one earned buff stack to every unlocked equivalent.
 - `ui.json` defines DTA campaign filters, colors, difficulty choices, and preserved UI modes.
 - `default_player_config.json` keeps the existing settings structure with conservative DTA defaults.
-- `shop_mode.json` defines the ten-stage Shop economy, offer weights,
-  target-specific unit/power prices, permanent upgrades, run modifiers,
-  player boons, and hostile-house challenges.
+- `shop_mode.json` defines the ten-stage Shop economy, mission-class and
+  per-offer DTA difficulty weights, target-specific unit/power prices,
+  permanent upgrades, run modifiers, player boons, and hostile-house
+  challenges.
 - `rewards/tuning.json` and `rewards/enemy_scaling.json` contain active DTA reward tuning.
 - `rewards/powers.json` defines six supported player powers. Ion Cannon and Paratroopers use mission-local startup grants. Airstrike, both Nuclear Strikes, and Chrono Vortex use buildable provider clones whose inherited prerequisites are removed; the physical Construction Yard remains required.
 

@@ -113,6 +113,49 @@ def validate_shop_mode_config(sections, path, invalid):
     if previous_percent != 100:
         invalid('Shop Mode stage weights must cover 100 percent', path)
 
+    difficulty_names = {
+        'Easy',
+        'Normal',
+        'Hard',
+        'Brutal',
+        'Extreme',
+        'Ultimate',
+        'Impossible',
+    }
+    difficulty_profiles = sections['stage_difficulty_weights']
+    if not difficulty_profiles:
+        invalid('Shop Mode stage difficulty weights cannot be empty', path)
+    previous_percent = 0
+    hardest_available = False
+    for profile in difficulty_profiles:
+        if not isinstance(profile, dict):
+            invalid('Invalid Shop Mode stage difficulty profile', path)
+        through_percent = profile.get('through_percent')
+        weights = profile.get('weights')
+        if (
+            not isinstance(through_percent, int)
+            or isinstance(through_percent, bool)
+            or not previous_percent < through_percent <= 100
+            or not isinstance(weights, dict)
+            or set(weights) != difficulty_names
+            or any(
+                not isinstance(value, int)
+                or isinstance(value, bool)
+                or value < 0
+                for value in weights.values()
+            )
+            or not any(weights.values())
+        ):
+            invalid('Invalid Shop Mode stage difficulty profile', path)
+        hardest_available |= bool(weights['Impossible'])
+        previous_percent = through_percent
+    if previous_percent != 100 or not hardest_available:
+        invalid(
+            'Shop Mode stage difficulty weights must cover 100 percent and '
+            'enable Impossible difficulty',
+            path,
+        )
+
     power_prices = sections['power_target_prices']
     if not power_prices:
         invalid('Shop Mode power_target_prices cannot be empty', path)
@@ -374,5 +417,4 @@ def validate_shop_mode_config(sections, path, invalid):
             or mixes_percent_and_flat
         ):
             invalid(f'Invalid Shop Mode modifier {modifier_id!r}', path)
-
 

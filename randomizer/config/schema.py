@@ -114,6 +114,7 @@ REQUIRED_SECTIONS = {
         'settings': dict,
         'mission_rewards': dict,
         'stage_class_weights': list,
+        'stage_difficulty_weights': list,
         'power_target_prices': dict,
         'unit_target_prices': dict,
         'permanent_upgrades': dict,
