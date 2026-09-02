@@ -140,11 +140,16 @@ def run_self_check():
         APP_DIR.mkdir(parents=True, exist_ok=True)
         static_paths = validate_static_configs(REQUIRED_STATIC_CONFIGS)
         missions = parse_missions(BATTLE_CLIENT_INI)
-        missing_maps = [
-            mission['scenario'] for mission in missions
-            if not (GAME_ROOT / mission['scenario']).is_file()
-        ]
-        source = GAME_ROOT / missions[0]['scenario'] if missions else None
+        mission_paths = {}
+        missing_maps = []
+        for mission in missions:
+            try:
+                mission_paths[mission['code']] = mission_source_path(
+                    mission['scenario']
+                )
+            except FileNotFoundError:
+                missing_maps.append(mission['scenario'])
+        source = mission_paths.get(missions[0]['code']) if missions else None
         before_hash = sha256(source.read_bytes()).hexdigest() if source else ''
         generated = APP_DIR / '.self_check_spawnmap.ini'
         try:
@@ -318,7 +323,7 @@ def run_self_check():
             ),
             {},
         )
-        clone_source = GAME_ROOT / clone_mission['scenario']
+        clone_source = mission_source_path(clone_mission['scenario'])
         clone_before_hash = sha256(clone_source.read_bytes()).hexdigest()
         clone_generated = APP_DIR / '.self_check_clone_spawnmap.ini'
         try:
@@ -406,7 +411,7 @@ def run_self_check():
             mission for mission in missions if mission['code'] == 'M_TUTORIAL2'
         )
         tutorial_two_context = _player_production_context(
-            ini_sections(GAME_ROOT / tutorial_two['scenario'])
+            ini_sections(mission_source_path(tutorial_two['scenario']))
         )
         dog_access_reward = next(
             reward for reward in REWARD_POOL
@@ -760,7 +765,7 @@ def run_self_check():
             player_production_isolation_rules(mission)[1]
             for mission in missions
             if _player_production_context(
-                ini_sections(GAME_ROOT / mission['scenario'])
+                ini_sections(mission_source_path(mission['scenario']))
             )['shared_hostile_houses']
         ]
         installed_e1 = effective_section(installed_sections, 'E1')
@@ -1729,8 +1734,9 @@ def run_self_check():
                 }
             ),
             'dta_loose_mission_launch_source_valid': (
-                mission_source_path(tutorial_two['scenario']).resolve()
-                == (GAME_ROOT / tutorial_two['scenario']).resolve()
+                mission_source_path(tutorial_two['scenario'])
+                .relative_to(GAME_ROOT).as_posix().casefold()
+                == tutorial_two['scenario'].replace('\\', '/').casefold()
                 and color_rules.get('TutorialGDI', {}).get('Color')
                 == 'DarkMagenta'
             ),
@@ -2508,11 +2514,22 @@ def run_self_check():
                 )
             ),
             'dta_syringe_launch_contract_valid': (
-                launcher_command == [
-                    str(GAME_LAUNCHER_EXE),
-                    GAME_EXE.name,
-                    '--args=-SPAWN -CD.',
-                ]
+                (
+                    len(launcher_command) == 4
+                    and launcher_command[0].rsplit('/', 1)[-1] == 'wine'
+                    and launcher_command[-3] == str(GAME_LAUNCHER_EXE)
+                    and launcher_command[-2].replace(
+                        '\\', '/'
+                    ).casefold().endswith('/game.exe')
+                )
+                if sys.platform != 'win32'
+                else launcher_command == [
+                        str(GAME_LAUNCHER_EXE),
+                        GAME_EXE.name,
+                        '--args=-SPAWN -CD.',
+                    ]
+            ) and (
+                launcher_command[-1] == '--args=-SPAWN -CD.'
                 and client_launch_settings.get('GameExecutableNames')
                 == GAME_LAUNCHER_EXE.name
                 and client_launch_settings.get('ExtraCommandLineParams')

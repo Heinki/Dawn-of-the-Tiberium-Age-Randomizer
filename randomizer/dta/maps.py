@@ -39,7 +39,28 @@ def _ini_sections(text):
 
 def mission_source_path(scenario):
     normalized = str(scenario or '').replace('\\', '/').lstrip('/')
-    source = GAME_ROOT.joinpath(*normalized.split('/'))
+    components = [part for part in normalized.split('/') if part not in {'', '.'}]
+    if not components or '..' in components:
+        raise FileNotFoundError(f'Invalid DTA mission map path: {scenario}')
+
+    source = GAME_ROOT.joinpath(*components)
+    if not source.is_file():
+        # Battle.ini uses Windows-style case-insensitive paths, while DTA's
+        # installed loose maps are commonly all lowercase on Linux.
+        source = GAME_ROOT
+        try:
+            for component in components:
+                exact = source / component
+                if exact.exists():
+                    source = exact
+                    continue
+                folded = component.casefold()
+                source = next(
+                    child for child in source.iterdir()
+                    if child.name.casefold() == folded
+                )
+        except (OSError, StopIteration):
+            source = GAME_ROOT.joinpath(*components)
     if not source.is_file():
         raise FileNotFoundError(f'DTA mission map is missing: {source}')
     return source

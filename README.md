@@ -95,6 +95,42 @@ python RandomizerLauncher\launcher_gui.py --self-check
 
 The self-check does not launch DTA and writes its report to `RandomizerLauncher/self_check.json`.
 
+On Linux, create a virtual environment in `RandomizerLauncher`, install the
+runtime dependency, and launch the same entry point. DTA itself is started
+through Wine; `wine` and `winepath` must be available on `PATH`.
+
+```bash
+cd RandomizerLauncher
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-runtime.txt
+python launcher_gui.py
+```
+
+## Build release artifacts
+
+Windows maintainers can keep using the existing PowerShell workflows:
+
+```powershell
+.\build_all.ps1
+.\build_exe.ps1
+.\Archipelago\build_apworld.ps1
+```
+
+Linux maintainers with Wine and the pinned Windows Python 3.14.6 runtime at
+`C:\Python3146` can build the Windows launcher and platform-neutral APWorld in
+one command:
+
+```bash
+./build_all_linux.sh
+```
+
+The individual Linux-side commands are `./build_exe_wine.sh` and
+`python3 Archipelago/build_apworld.py`. Set `WINE_PYTHON` when the Windows
+Python executable is installed elsewhere. These workflows still produce
+`DTARandomizer.exe` and `Archipelago/dta.apworld`; there is no separate
+Linux-only release format.
+
 ## AI-assisted development
 
 This project was developed with assistance from OpenAI's ChatGPT, including

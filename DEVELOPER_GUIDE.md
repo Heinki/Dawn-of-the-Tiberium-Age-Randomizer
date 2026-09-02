@@ -116,4 +116,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\Archipelago\build_apworld.
 powershell -NoProfile -ExecutionPolicy Bypass -File .\build_archipelago_release.ps1
 ```
 
+Equivalent Linux maintainer commands (the EXE remains a Windows executable):
+
+```bash
+./build_all_linux.sh
+./build_exe_wine.sh
+python3 Archipelago/build_apworld.py
+```
+
 Changes affecting mission parsing, map generation, difficulty, access, clones, buffs, launch, or completion require focused generated-map checks and relevant live DTA mission tests. Changes affecting the catalogue or APWorld require matching launcher and APWorld builds.

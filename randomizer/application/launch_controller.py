@@ -49,12 +49,14 @@ from ._dependencies import (
     mission_basic_unit_rules,
     original_mcv_access_rules,
     mission_player_production_houses,
+    os,
     mix_reader_assembly_paths,
     patch_large_ini_key,
     powershell_mix_reader_load_script,
     read_text,
     remove_generated_unit_art,
     set_ini_value_lines,
+    signal,
     shutil,
     single_engineer_rules,
     spawn_ini_text,
@@ -63,11 +65,13 @@ from ._dependencies import (
     starting_tier_one_rules,
     subprocess,
     summarize_basic_unit_rules,
+    sys,
     tech_ids_for_rewards,
     traceback,
 )
 from randomizer.dta.maps import (
     mission_source_lines,
+    mission_source_path,
     newest_debug_log,
     player_starting_credit_rules,
     prepare_spawn_map,
@@ -421,20 +425,18 @@ class LaunchController:
     def cleanup_generated_root_maps(self):
         for path in list(GAME_ROOT.glob('*.MAP')) + list(GAME_ROOT.glob('*.map')):
             if is_generated_hooked_map(path):
-                result = subprocess.run(
-                    [
-                        'powershell',
-                        '-NoProfile',
-                        '-Command',
-                        f"Remove-Item -LiteralPath '{str(path).replace(chr(39), chr(39) + chr(39))}' -Force",
-                    ],
-                    cwd=GAME_ROOT,
-                    capture_output=True,
-                    text=True,
-                )
-                if result.returncode != 0 and callable(self.__dict__.get('append_log')) and 'log_text' in self.__dict__:
-                    detail = (result.stderr or 'Remove-Item failed.').strip()
-                    self.append_log(f'Could not remove generated hooked map {path.name}: {detail}', error=True)
+                try:
+                    path.unlink()
+                except OSError as exc:
+                    if (
+                        callable(self.__dict__.get('append_log'))
+                        and 'log_text' in self.__dict__
+                    ):
+                        self.append_log(
+                            f'Could not remove generated hooked map '
+                            f'{path.name}: {exc}',
+                            error=True,
+                        )
 
     def clear_power_runtime_types(self):
         """Remove isolated dynamic power helpers after DTA stops using them."""
@@ -458,8 +460,12 @@ class LaunchController:
         if output_path.exists():
             return output_path
 
-        loose_root_map = GAME_ROOT / scenario
-        if loose_root_map.exists():
+        try:
+            loose_root_map = mission_source_path(scenario)
+        except FileNotFoundError:
+            loose_root_map = None
+        if loose_root_map is not None:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(loose_root_map, output_path)
             return output_path
 
@@ -749,11 +755,38 @@ throw "Map $name was not found in expandmo*.mix"
     def build_command(self):
         # DTA 16.0.2 replaced the old pass-through launcher with SyringeEx.
         # It now requires the target executable followed by one --args value.
-        return [
+        command = [
             str(GAME_LAUNCHER_EXE),
             GAME_EXE.name,
             '--args=-SPAWN -CD.',
         ]
+        if sys.platform == 'win32':
+            return command
+
+        wine = shutil.which('wine')
+        if not wine:
+            raise FileNotFoundError(
+                'Wine is required to launch DTA on this platform.'
+            )
+        winepath = shutil.which('winepath')
+        if not winepath:
+            raise FileNotFoundError(
+                'winepath is required to resolve the DTA executable.'
+            )
+        environment = os.environ.copy()
+        environment['WINEDEBUG'] = '-all'
+        resolved_path = subprocess.run(
+            [winepath, '-w', str(GAME_EXE)],
+            cwd=GAME_ROOT,
+            env=environment,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+        if not resolved_path:
+            raise RuntimeError('Wine could not resolve the DTA executable.')
+        command[1] = resolved_path
+        return [wine, *command]
 
     def process_hook_log_text(self, text):
         if not self.active_hook or not text:
@@ -853,6 +886,17 @@ throw "Map $name was not found in expandmo*.mix"
         if self.active_game_process is not process or self.active_hook is not hook:
             return
         if process.poll() is not None:
+            return
+
+        if sys.platform != 'win32':
+            try:
+                os.killpg(process.pid, signal.SIGTERM)
+                self.append_log('Closed the spawned Wine process group after victory.')
+            except OSError as exc:
+                self.append_log(
+                    f'Could not close the game after victory: {exc}',
+                    error=True,
+                )
             return
 
         creation_flags = getattr(subprocess, 'CREATE_NO_WINDOW', 0)
@@ -1371,10 +1415,26 @@ throw "Map $name was not found in expandmo*.mix"
     ):
         scenario = mission['scenario']
         cmd = self.build_command()
-        self.append_log('Attempting game launch via: ' + subprocess.list2cmdline(cmd))
+        command_text = subprocess.list2cmdline(cmd)
+        self.append_log('Attempting game launch via: ' + command_text)
 
         try:
-            process = subprocess.Popen(cmd, cwd=GAME_ROOT)
+            popen_options = {}
+            if sys.platform != 'win32':
+                environment = os.environ.copy()
+                overrides = environment.get('WINEDLLOVERRIDES', '')
+                if not any(
+                    entry.strip().lower().startswith('ddraw=')
+                    for entry in overrides.split(';')
+                ):
+                    environment['WINEDLLOVERRIDES'] = ';'.join(
+                        value for value in (overrides, 'ddraw=n,b') if value
+                    )
+                popen_options.update(
+                    env=environment,
+                    start_new_session=True,
+                )
+            process = subprocess.Popen(cmd, cwd=GAME_ROOT, **popen_options)
             self.append_log(f'Launched game process PID={process.pid}.')
             if (
                 self.state
@@ -1402,7 +1462,7 @@ throw "Map $name was not found in expandmo*.mix"
                 code=mission.get('code'),
                 title=mission.get('title'),
                 scenario=scenario,
-                command=subprocess.list2cmdline(cmd),
+                command=command_text,
                 difficulty=difficulty.label,
                 difficulty_engine_value=difficulty.engine_value,
                 game_speed=game_speed_value,
