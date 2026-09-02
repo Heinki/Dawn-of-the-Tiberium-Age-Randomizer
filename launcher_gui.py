@@ -24,7 +24,15 @@ from randomizer.config.static import REQUIRED_STATIC_CONFIGS, validate_static_co
 def run_launcher():
     """Load config-dependent application modules with visible startup errors."""
     try:
+        # DTA updates replace Action.ini. Restore the player-only power cursor
+        # entries before the UI opens so every later launch has valid actions.
+        from randomizer.dta.powers import ensure_power_action_types
         from randomizer.application.app import main
+        restored_actions = ensure_power_action_types()
+        if restored_actions:
+            log_event(
+                'power_action_types_restored', actions=restored_actions
+            )
         main()
         return 0
     except Exception:
@@ -89,6 +97,7 @@ def run_self_check():
     from randomizer.maps.settings import mission_house_color_rules
     from randomizer.application.unlock_data import UnlockDataController
     from randomizer.application.reward_controller import RewardController
+    from randomizer.application.launch_controller import LaunchController
     from randomizer.ui.config import (
         CAMPAIGN_TILE_COLORS,
         GAME_SPEEDS,
@@ -179,6 +188,10 @@ def run_self_check():
                 ),
             },
         ) if player_normal_difficulty else ''
+        launcher_command = LaunchController.build_command(None)
+        client_launch_settings = ini_sections(
+            GAME_ROOT / 'Resources' / 'ClientDefinitions.ini'
+        ).get('Settings', {})
         counts = campaign_mission_counts(missions)
         late_route_codes = {
             *(f'M_CRA{number}' for number in range(9, 14)),
@@ -2494,6 +2507,17 @@ def run_self_check():
                     'ClientDifficulty=30',
                 )
             ),
+            'dta_syringe_launch_contract_valid': (
+                launcher_command == [
+                    str(GAME_LAUNCHER_EXE),
+                    GAME_EXE.name,
+                    '--args=-SPAWN -CD.',
+                ]
+                and client_launch_settings.get('GameExecutableNames')
+                == GAME_LAUNCHER_EXE.name
+                and client_launch_settings.get('ExtraCommandLineParams')
+                == 'game.exe --args="-SPAWN -CD."'
+            ),
             'player_normal_keeps_selected_ai_difficulty': (
                 'DifficultyModeHuman=1' in player_normal_spawn_text
                 and 'DifficultyModeComputer=2' in player_normal_spawn_text
@@ -2520,6 +2544,7 @@ def run_self_check():
             'generated_map_has_difficulty_overlay',
             'generated_map_enables_score_screen', 'original_map_unchanged',
             'spawn_contract_valid',
+            'dta_syringe_launch_contract_valid',
             'player_normal_keeps_selected_ai_difficulty',
             'legacy_map_rules_isolated',
             'safe_reward_pool_only',

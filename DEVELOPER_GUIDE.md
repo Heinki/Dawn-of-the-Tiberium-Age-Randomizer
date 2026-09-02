@@ -64,7 +64,7 @@ Read [configs/README.md](configs/README.md) before changing static data.
 4. A mission launch reads a fresh source map and resolves its DTA difficulty.
 5. The map pipeline applies access, prerequisite-free player production infrastructure, guarded player-production clones, unit and army buffs, exact-player power grants or provider buildings, starting credits, enemy-only bonuses, and DTA colors.
 6. The launcher writes `spawnmap.ini` and `spawn.ini`.
-7. `LaunchVinifera.dat -SPAWN -CD.` starts the mission.
+7. `LaunchVinifera.dat game.exe --args="-SPAWN -CD."` starts the mission through DTA 16.0.2's SyringeEx launcher.
 8. The debug-log watcher records the score-screen Victory check exactly once. DTA has no uniform runtime event for map sub-objectives, so only mission victory awards progression rewards.
 
 Shop Mode persists its selected offer before launch. Victory atomically awards

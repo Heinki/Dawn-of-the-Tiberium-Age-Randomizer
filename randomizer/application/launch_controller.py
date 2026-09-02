@@ -747,7 +747,13 @@ throw "Map $name was not found in expandmo*.mix"
         return
 
     def build_command(self):
-        return [str(GAME_LAUNCHER_EXE), '-SPAWN', '-CD.']
+        # DTA 16.0.2 replaced the old pass-through launcher with SyringeEx.
+        # It now requires the target executable followed by one --args value.
+        return [
+            str(GAME_LAUNCHER_EXE),
+            GAME_EXE.name,
+            '--args=-SPAWN -CD.',
+        ]
 
     def process_hook_log_text(self, text):
         if not self.active_hook or not text:

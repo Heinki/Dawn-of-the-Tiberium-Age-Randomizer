@@ -2,7 +2,7 @@
 
 # Dawn of the Tiberium Age Randomizer Launcher
 
-This project is the randomizer launcher for DTA 16.0.0 and Vinifera. It reuses the proven progression, reward-planning, launcher UI, save/load, and Archipelago structure from the Mental Omega Randomizer, while using DTA missions, factions, units, powers, rules, maps, cameos, difficulty handling, and launch behavior.
+This project is the randomizer launcher for DTA 16.0.2 and Vinifera. It reuses the proven progression, reward-planning, launcher UI, save/load, and Archipelago structure from the Mental Omega Randomizer, while using DTA missions, factions, units, powers, rules, maps, cameos, difficulty handling, and launch behavior.
 
 For APWorld installation, room generation, connection, and troubleshooting,
 see the [Archipelago player guide](Archipelago/README.md).
@@ -15,7 +15,7 @@ see the [Archipelago player guide](Archipelago/README.md).
 - Reads each mission's DTA difficulty labels from `INI/Battle.ini`, including Brutal, Extreme, Ultimate, and Impossible. An unavailable selection falls back to the closest lower label supported by that mission.
 - Generates `spawnmap.ini` from the selected loose DTA mission map without changing the source map.
 - Applies DTA's Easy, Medium, or Hard map-code overlay.
-- Writes DTA-compatible `spawn.ini` and launches `LaunchVinifera.dat -SPAWN -CD.`.
+- Writes DTA-compatible `spawn.ini` and launches DTA 16.0.2 through SyringeEx using `LaunchVinifera.dat game.exe --args="-SPAWN -CD."`.
 - Translates displayed game speeds to Tiberian Sun's reversed engine scale: `0 - Slowest` writes `6`, while `6 - Fastest` writes `0`.
 - Detects the Vinifera score screen through the newest `Debug/*.LOG` file.
 - Reads the installed `INI/Rules.ini` catalogue at runtime.

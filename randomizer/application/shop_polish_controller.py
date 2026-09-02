@@ -676,7 +676,7 @@ class ShopPolishController(ShopArchipelagoController):
                 (label for label, value in mapping.items() if value == requested),
                 '',
             )
-        if current not in mapping:
+        if not requested and current not in mapping:
             current = labels[0] if labels else ''
         self.shop_buff_target_var.set(current)
         return mapping.get(current, '')
@@ -1191,9 +1191,12 @@ class ShopPolishController(ShopArchipelagoController):
     def _show_shop_buffs_for_target(self, target_id, *, power=False):
         if not target_id:
             return
-        self._shop_requested_buff_target_id = target_id
         self.shop_category_var.set('Power Buffs' if power else 'Unit Buffs')
-        self.shop_search_var.set('')
+        if self.shop_search_var.get():
+            self.shop_search_var.set('')
+        # The search write trace refreshes the catalogue. Set this only after
+        # clearing search so that refresh cannot consume the target early.
+        self._shop_requested_buff_target_id = target_id
         self.refresh_shop_catalogue()
         self.shop_panels.select(0)
 
