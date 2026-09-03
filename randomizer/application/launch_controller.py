@@ -1420,7 +1420,15 @@ throw "Map $name was not found in expandmo*.mix"
 
         try:
             popen_options = {}
-            if sys.platform != 'win32':
+            launch_target = cmd
+            if sys.platform == 'win32':
+                # Pass both the executable and its complete command line.
+                # This avoids a packaged/windowed Python edge case where
+                # SyringeEx can otherwise receive an empty lpCommandLine and
+                # display its usage dialog instead of launching the game.
+                launch_target = command_text
+                popen_options['executable'] = str(GAME_LAUNCHER_EXE)
+            else:
                 environment = os.environ.copy()
                 overrides = environment.get('WINEDLLOVERRIDES', '')
                 if not any(
@@ -1434,7 +1442,11 @@ throw "Map $name was not found in expandmo*.mix"
                     env=environment,
                     start_new_session=True,
                 )
-            process = subprocess.Popen(cmd, cwd=GAME_ROOT, **popen_options)
+            process = subprocess.Popen(
+                launch_target,
+                cwd=GAME_ROOT,
+                **popen_options,
+            )
             self.append_log(f'Launched game process PID={process.pid}.')
             if (
                 self.state
