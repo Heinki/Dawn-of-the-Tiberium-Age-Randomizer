@@ -11,6 +11,7 @@ from .access import (
     TIER_ONE_DEFENSE_ROLE_UNITS,
     TIER_ONE_DEFENSE_UNITS,
     TIER_ONE_GROUND_ROLES,
+    TIER_ONE_NAVAL_ROLES,
     TIER_ONE_ROLE_BY_MARKER,
     TIER_ONE_ROLE_MARKERS,
     TIER_ONE_ROLE_UNITS,
@@ -118,7 +119,7 @@ def _random_tier_one_variant(rng, role, family):
     return rng.choice(variants)[0]
 
 def random_chaos_tier_one_unit_ids(rng):
-    """Assign every faction once on ground, plus one seeded basic aircraft."""
+    """Assign every faction once across ground, air, and naval roles."""
     families = list(STANDARD_TIER_ONE_FAMILIES)
     rng.shuffle(families)
     units = [
@@ -127,7 +128,13 @@ def random_chaos_tier_one_unit_ids(rng):
     ]
     aircraft_family = rng.choice(STANDARD_TIER_ONE_FAMILIES)
     units.append(_random_tier_one_variant(rng, 'basic_aircraft', aircraft_family))
-    return tuple(units)
+    naval_families = list(STANDARD_TIER_ONE_FAMILIES)
+    rng.shuffle(naval_families)
+    units.extend(
+        _random_tier_one_variant(rng, role, family)
+        for role, family in zip(TIER_ONE_NAVAL_ROLES, naval_families)
+    )
+    return tuple(dict.fromkeys(units))
 
 def random_chaos_tier_one_defense_ids(rng):
     """Select one ground and one anti-air defense from distinct factions."""
@@ -452,6 +459,7 @@ def starting_tier_one_rules(
                 (family, 'infantry'),
                 (family, 'vehicles'),
                 (family, 'air'),
+                (family, 'naval'),
             })
     available_categories = set()
     for family, category in production_categories:
@@ -462,6 +470,7 @@ def starting_tier_one_rules(
             available_categories.add((family, 'infantry'))
             available_categories.add((family, 'vehicles'))
             available_categories.add((family, 'air'))
+            available_categories.add((family, 'naval'))
 
     for role in TIER_ONE_ROLE_UNITS:
         if role not in selected_roles:

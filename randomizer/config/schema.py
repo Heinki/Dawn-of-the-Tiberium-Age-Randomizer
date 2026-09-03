@@ -77,6 +77,7 @@ REQUIRED_SECTIONS = {
         'defense_units': dict,
         'subfaction_units': dict,
         'ground_roles': list,
+        'naval_roles': list,
         'standard_families': list,
         'airfields': dict,
         'production_aliases': dict,
@@ -721,6 +722,23 @@ def _validate_tier_one(sections, path):
         _invalid('Invalid Tier 1 unit mapping', path)
     if not set(sections['ground_roles']).issubset(roles):
         _invalid('Invalid Tier 1 ground roles', path)
+    naval_roles = set(sections.get('naval_roles', ()))
+    if (
+        not naval_roles
+        or len(naval_roles) != len(sections.get('naval_roles', ()))
+        or not naval_roles.issubset(roles)
+        or set(sections['ground_roles']).intersection(naval_roles)
+        or any(
+            set(roles[role]) != set(sections['standard_families'])
+            for role in naval_roles
+        )
+        or any(
+            entry[1].lower() != 'vehicles'
+            for role in naval_roles
+            for entry in roles[role].values()
+        )
+    ):
+        _invalid('Invalid Tier 1 naval roles', path)
 
     expected_families = set(sections['standard_families'])
     invalid_defenses = (

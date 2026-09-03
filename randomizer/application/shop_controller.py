@@ -330,6 +330,13 @@ class ShopController(ShopPolishController):
         self.shop_game_speed_combo.configure(
             state='disabled' if locked else 'readonly'
         )
+        for name in (
+            'shop_include_no_build_missions_check',
+            'shop_include_no_build_production_missions_check',
+        ):
+            check = getattr(self, name, None)
+            if check is not None:
+                check.configure(state='disabled' if locked or active else 'normal')
 
     def on_progression_mode_changed(self, event=None):
         self.sync_shop_workspace()
@@ -808,6 +815,8 @@ class ShopController(ShopPolishController):
         self._refresh_shop_loadout()
         self._refresh_shop_setup()
         self._refresh_permanent_shop()
+        if hasattr(self, 'header_summary_var'):
+            self.update_header_summary()
         self._refresh_shop_history()
         self._refresh_archipelago_shop_purchases()
         self.refresh_shop_settings_controls()
@@ -1565,9 +1574,11 @@ class ShopController(ShopPolishController):
                 parent=self,
             )
             return
-        seed = self.seed_var.get().strip() or uuid.uuid4().hex[:16].upper()
+        requested_seed = self.seed_var.get().strip()
+        seed = requested_seed or uuid.uuid4().hex[:16].upper()
         salvaged_ore = self.shop_profile.salvaged_run_coins
-        self.seed_var.set(seed)
+        if not requested_seed:
+            self.seed_var.set('')
         settings = self.shop_reward_settings_for_new_run()
         modifiers = tuple(
             modifier_id for modifier_id, variable in self.shop_modifier_vars.items()

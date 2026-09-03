@@ -54,7 +54,6 @@ class SeedController:
             if not confirmed:
                 return
 
-        self.seed_var.set(f'DTA-{random.randrange(0x10000000):08X}')
         self.generate_seed_from_settings()
 
     def generate_seed_from_settings(self):
@@ -85,8 +84,8 @@ class SeedController:
             return
 
         self.clear_log()
-        seed = self.seed_var.get().strip() or f'DTA-{random.randrange(0x10000000):08X}'
-        self.seed_var.set(seed)
+        requested_seed = self.seed_var.get().strip()
+        seed = requested_seed or f'DTA-{random.randrange(0x10000000):08X}'
         mission_goal = self.selected_mission_goal()
         rewards_per_check = self.selected_rewards_per_check()
         rewards_on_victory_only = True
@@ -200,6 +199,7 @@ class SeedController:
         return {
             **generation_context,
             'seed': seed,
+            'seed_was_explicit': bool(requested_seed),
             'seed_missions': list(seed_missions),
             'mission_goal': mission_goal,
             'rewards_per_check': rewards_per_check,
@@ -433,6 +433,7 @@ class SeedController:
         state = {
             'version': 1,
             'seed': seed,
+            'seed_was_explicit': options.get('seed_was_explicit', False),
             'created_at': now_stamp(),
             'campaign_filter': options['campaign_filter'],
             'reward_mode': options['reward_mode'],
@@ -531,7 +532,8 @@ class SeedController:
         campaign_limits = result['campaign_limits']
         progression_mode = result['progression_mode']
         grid = result['grid']
-        self.seed_var.set(seed)
+        if not result.get('seed_was_explicit', False):
+            self.seed_var.set('')
         self.reset_archipelago_after_new_seed()
         self.save_state()
         self.save_launcher_config(seed, mission_goal, rewards_per_check)

@@ -17,7 +17,7 @@
           "infantry"
         ],
         "soviet": [
-          "E1S",
+          "E1A",
           "infantry"
         ]
       },
@@ -35,7 +35,7 @@
           "infantry"
         ],
         "soviet": [
-          "E3S",
+          "E3A",
           "infantry"
         ]
       },
@@ -92,6 +92,18 @@
           "HIND",
           "air"
         ]
+      },
+      "naval_attack": {
+        "gdi": ["BOAT", "vehicles"],
+        "nod": ["TORPBOAT", "vehicles"],
+        "allies": ["DESTROYER", "vehicles"],
+        "soviet": ["SS", "vehicles"]
+      },
+      "anti_air_ship": {
+        "gdi": ["BOAT", "vehicles"],
+        "nod": ["SPEEDBOAT", "vehicles"],
+        "allies": ["FLAKCORV", "vehicles"],
+        "soviet": ["MSUB", "vehicles"]
       }
     },
     "role_markers": {
@@ -99,7 +111,9 @@
       "anti_air_infantry": "T1_ANTI_AIR_INFANTRY",
       "ground_vehicle": "T1_GROUND_VEHICLE",
       "anti_air_vehicle": "T1_ANTI_AIR_VEHICLE",
-      "basic_aircraft": "T1_BASIC_AIRCRAFT"
+      "basic_aircraft": "T1_BASIC_AIRCRAFT",
+      "naval_attack": "T1_NAVAL_ATTACK",
+      "anti_air_ship": "T1_ANTI_AIR_SHIP"
     },
     "defense_marker": "T1_BASIC_DEFENSES",
     "defense_role_units": {
@@ -144,6 +158,7 @@
       "ground_vehicle",
       "anti_air_vehicle"
     ],
+    "naval_roles": ["naval_attack", "anti_air_ship"],
     "standard_families": [
       "gdi",
       "nod",

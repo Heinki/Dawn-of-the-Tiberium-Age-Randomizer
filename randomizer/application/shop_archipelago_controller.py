@@ -1,6 +1,10 @@
 """Shop Mode bridge for Archipelago stage and purchase locations."""
 
-from ._dependencies import CAMPAIGN_FILTERS, normalize_faction
+from ._dependencies import (
+    CAMPAIGN_FILTERS,
+    filter_missions_by_build_settings,
+    normalize_faction,
+)
 
 from randomizer.shop.archipelago import (
     ARCHIPELAGO_RECEIVED_UNIT_LOADOUT_MANUAL,
@@ -52,7 +56,13 @@ class ShopArchipelagoController:
         variable = self.__dict__.get('progression_mode_var')
         if variable is None or variable.get() != 'Shop Mode':
             return super().filtered_missions_for_seed()
-        return self._shop_campaign_missions(CAMPAIGN_FILTERS[0])
+        return filter_missions_by_build_settings(
+            self._shop_campaign_missions(CAMPAIGN_FILTERS[0]),
+            include_true_no_build=self.include_no_build_missions_var.get(),
+            include_no_build_production=(
+                self.include_no_build_production_missions_var.get()
+            ),
+        )
 
     def archipelago_shop_context(self):
         """Return last validated AP identity and Shop-compatible rewards."""
@@ -165,7 +175,13 @@ class ShopArchipelagoController:
 
     def _shop_run_mission_pool(self, run=None):
         run = self.shop_run if run is None else run
-        if run is not None and run.eligible_mission_codes:
+        # Completed/failed runs must not constrain next run's opening pool.
+        # Their saved codes belong only to that historical run.
+        if (
+            run is not None
+            and run.status is RunStatus.ACTIVE
+            and run.eligible_mission_codes
+        ):
             codes = run.eligible_mission_codes
         else:
             shop = self.archipelago_shop_slot_settings()
@@ -181,7 +197,13 @@ class ShopArchipelagoController:
             if run is not None
             else CAMPAIGN_FILTERS[0]
         )
-        return self._shop_campaign_missions(campaign)
+        return filter_missions_by_build_settings(
+            self._shop_campaign_missions(campaign),
+            include_true_no_build=self.include_no_build_missions_var.get(),
+            include_no_build_production=(
+                self.include_no_build_production_missions_var.get()
+            ),
+        )
 
     @staticmethod
     def _shop_location_group(check_id, locations, event_stem):
@@ -353,5 +375,3 @@ class ShopArchipelagoController:
         if self.shop_mode_selected():
             self.refresh_shop_mode()
         return result
-
-

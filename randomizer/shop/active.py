@@ -26,6 +26,19 @@ _SHOP_STARTER_FAMILIES = {
     'Soviet': ('soviet',),
 }
 
+# Older DTA Shop runs saved Soviet-only infantry IDs that do not exist in the
+# reward catalogue. Resolve them to shared Allied/Soviet identities so buffs
+# and launch access remain available for those runs.
+_LEGACY_TIER_ONE_ALIASES = {
+    'E1S': 'E1A',
+    'E3S': 'E3A',
+}
+
+
+def _canonical_starter_id(unit_id):
+    unit_id = str(unit_id or '').upper()
+    return _LEGACY_TIER_ONE_ALIASES.get(unit_id, unit_id)
+
 
 def _starter_families(campaign):
     campaign = str(campaign or 'All Campaigns')
@@ -42,7 +55,8 @@ def shop_starter_unit_ids(
         return ()
     families = _starter_families(faction_filter)
     requested_ids = tuple(dict.fromkeys(
-        str(item).upper() for item in starting_unit_ids if str(item)
+        _canonical_starter_id(item)
+        for item in starting_unit_ids if str(item)
     ))
     if not set(requested_ids).intersection(TIER_ONE_ROLE_MARKERS.values()):
         return requested_ids
