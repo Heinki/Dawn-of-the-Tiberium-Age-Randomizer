@@ -7,7 +7,7 @@ YAML, connect to a room, and continue an existing multiworld game.
 
 - Dawn of the Tiberium Age 16.0.0 with Vinifera in a separate, unmodified game
   installation
-- DTA Randomizer Launcher 1.0
+- DTA Randomizer Launcher 1.1
 - Archipelago 0.6.7
 - `dta.apworld` from the same Randomizer release as the launcher
 
