@@ -13198,9 +13198,23 @@
           "maximum_slots": 60
         }
       ]
+    },
+    {
+      "code": "M_SEEXT",
+      "title": "SE Bonus Mission: Full Frontal Attack",
+      "side": "1",
+      "reward_multiplier": 2,
+      "checks": [
+        {
+          "id": "victory",
+          "name": "Mission Complete",
+          "hint": "Win the mission.",
+          "maximum_slots": 60
+        }
+      ]
     }
   ],
-  "catalogue_checksum": "c4c60fff222fe5229b02de853ad1024584ef64c7be0fbebb208d345c1ad45999",
+  "catalogue_checksum": "bd8364a152ced16e1f3a186ed79c75a3ee242a72a7d34f917fb84b35065c5aee",
   "locations": [
     {
       "name": "Tutorial Mission 1 - Mission Complete - Reward 1",
@@ -47429,6 +47443,426 @@
       "name": "Chainbreaker - Mission Complete - Reward 60",
       "id": 81133041,
       "mission": "M_CHAINBREAKER",
+      "check": "victory",
+      "slot": 60
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 1",
+      "id": 81134422,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 1
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 2",
+      "id": 81134423,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 2
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 3",
+      "id": 81134424,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 3
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 4",
+      "id": 81134425,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 4
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 5",
+      "id": 81134426,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 5
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 6",
+      "id": 81134427,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 6
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 7",
+      "id": 81134428,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 7
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 8",
+      "id": 81134429,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 8
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 9",
+      "id": 81134430,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 9
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 10",
+      "id": 81134431,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 10
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 11",
+      "id": 81134432,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 11
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 12",
+      "id": 81134433,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 12
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 13",
+      "id": 81134434,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 13
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 14",
+      "id": 81134435,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 14
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 15",
+      "id": 81134436,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 15
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 16",
+      "id": 81134437,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 16
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 17",
+      "id": 81134438,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 17
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 18",
+      "id": 81134439,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 18
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 19",
+      "id": 81134440,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 19
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 20",
+      "id": 81134441,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 20
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 21",
+      "id": 81134442,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 21
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 22",
+      "id": 81134443,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 22
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 23",
+      "id": 81134444,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 23
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 24",
+      "id": 81134445,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 24
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 25",
+      "id": 81134446,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 25
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 26",
+      "id": 81134447,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 26
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 27",
+      "id": 81134448,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 27
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 28",
+      "id": 81134449,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 28
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 29",
+      "id": 81134450,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 29
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 30",
+      "id": 81134451,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 30
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 31",
+      "id": 81134452,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 31
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 32",
+      "id": 81134453,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 32
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 33",
+      "id": 81134454,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 33
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 34",
+      "id": 81134455,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 34
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 35",
+      "id": 81134456,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 35
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 36",
+      "id": 81134457,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 36
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 37",
+      "id": 81134458,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 37
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 38",
+      "id": 81134459,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 38
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 39",
+      "id": 81134460,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 39
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 40",
+      "id": 81134461,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 40
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 41",
+      "id": 81134462,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 41
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 42",
+      "id": 81134463,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 42
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 43",
+      "id": 81134464,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 43
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 44",
+      "id": 81134465,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 44
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 45",
+      "id": 81134466,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 45
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 46",
+      "id": 81134467,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 46
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 47",
+      "id": 81134468,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 47
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 48",
+      "id": 81134469,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 48
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 49",
+      "id": 81134470,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 49
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 50",
+      "id": 81134471,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 50
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 51",
+      "id": 81134472,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 51
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 52",
+      "id": 81134473,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 52
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 53",
+      "id": 81134474,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 53
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 54",
+      "id": 81134475,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 54
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 55",
+      "id": 81134476,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 55
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 56",
+      "id": 81134477,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 56
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 57",
+      "id": 81134478,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 57
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 58",
+      "id": 81134479,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 58
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 59",
+      "id": 81134480,
+      "mission": "M_SEEXT",
+      "check": "victory",
+      "slot": 59
+    },
+    {
+      "name": "SE Bonus Mission: Full Frontal Attack - Mission Complete - Reward 60",
+      "id": 81134481,
+      "mission": "M_SEEXT",
       "check": "victory",
       "slot": 60
     }

@@ -33,6 +33,19 @@
         "HEADER_CD": "Creeping Destruction",
         "HEADER_STAND_ALONE_MISSIONS": "Stand-Alone Missions"
       },
+      "extra_missions": [
+        {
+          "code": "M_SEEXT",
+          "scenario": "Maps/Missions/seext.map",
+          "title": "SE Bonus Mission: Full Frontal Attack",
+          "side": "1",
+          "campaign": "Shadow Exodus",
+          "reward_class": "standalone",
+          "build_classification": "base_build",
+          "required_addon": true,
+          "player_always_normal": true
+        }
+      ],
       "fallback_objective_count": 0,
       "starting_unlocked_missions": 3,
       "low_level_mission_count": 5,
@@ -147,7 +160,8 @@
           "M_RED_PARADISE",
           "M_STOMP",
           "M_A_BRIDGE_TOO_FEW",
-          "M_CHAINBREAKER"
+          "M_CHAINBREAKER",
+          "M_SEEXT"
         ],
         "late_route": [
           "M_CRA9",
@@ -204,6 +218,7 @@
       "M_SE9": "base_build",
       "M_SE10": "no_build_production",
       "M_SE11": "base_build",
+      "M_SEEXT": "base_build",
       "M_PTTP1": "true_no_build",
       "M_PTTP2": "true_no_build",
       "M_PTTP3": "base_build",

@@ -26,6 +26,7 @@ FALLBACK_STAGE_SCORE = int(_MISSION_CATALOGUE['fallback_stage_score'])
 FINALE_STAGE_SCORE = int(_MISSION_CATALOGUE['finale_stage_score'])
 FINALE_MISSION_CODES = frozenset(_MISSION_CATALOGUE['finale_mission_codes'])
 OPERATION_MISSION_CODES = frozenset(_MISSION_CATALOGUE['operation_mission_codes'])
+EXTRA_MISSIONS = tuple(_MISSION_CATALOGUE.get('extra_missions', ()))
 
 MISSION_REWARD_CLASS_MULTIPLIERS = {
     str(class_name): int(multiplier)
@@ -218,6 +219,44 @@ def parse_missions(path, fallback_objective_count=FALLBACK_OBJECTIVE_COUNT):
                 if label.strip()
             ],
         })
+    existing_codes = {mission['code'] for mission in missions}
+    for extra in EXTRA_MISSIONS:
+        code = str(extra.get('code', '')).strip()
+        scenario = str(extra.get('scenario', '')).strip()
+        if not code or not scenario or code in existing_codes:
+            continue
+        # Bonus maps may be absent on older DTA installs.
+        try:
+            from randomizer.dta.maps import mission_source_path
+            mission_source_path(scenario)
+        except (FileNotFoundError, ImportError):
+            continue
+        classification = str(extra.get('build_classification') or BASE_BUILD)
+        reward_class = str(extra.get('reward_class') or '')
+        missions.append({
+            'index': len(missions) + 1,
+            'code': code,
+            'scenario': scenario,
+            'title': str(extra.get('title') or code),
+            'side': str(extra.get('side') or ''),
+            'campaign': str(extra.get('campaign') or 'Stand-Alone Missions'),
+            'objectives': [],
+            'objective_count': fallback_objective_count,
+            'build_classification': classification,
+            'no_build': classification != BASE_BUILD,
+            'true_no_build': classification == TRUE_NO_BUILD,
+            'no_build_production': classification == NO_BUILD_PRODUCTION,
+            'operation': bool(extra.get('operation', False)),
+            'reward_class': reward_class,
+            'reward_multiplier': MISSION_REWARD_CLASS_MULTIPLIERS.get(
+                reward_class, DEFAULT_MISSION_REWARD_MULTIPLIER
+            ),
+            'required_addon': bool(extra.get('required_addon', False)),
+            'player_always_normal': bool(extra.get('player_always_normal', False)),
+            'has_extended_difficulty': False,
+            'difficulty_labels': [],
+        })
+        existing_codes.add(code)
     return missions
 
 

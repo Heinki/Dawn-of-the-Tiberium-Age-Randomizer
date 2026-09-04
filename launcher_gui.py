@@ -1330,7 +1330,7 @@ def run_self_check():
             'mission_counts_by_campaign': counts,
             'campaign_grouping_valid': counts == {
                 'Tutorial': 2,
-                'Shadow Exodus': 11,
+                'Shadow Exodus': 12,
                 'PTTP': 9,
                 'CR': 32,
                 'Toxic Diversion': 7,
