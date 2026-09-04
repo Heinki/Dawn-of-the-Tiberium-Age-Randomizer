@@ -285,7 +285,11 @@
       "M_CHAINBREAKER": "true_no_build"
     },
     "house_config": {},
-    "player_production_houses": {},
+    "player_production_houses": {
+      "M_SE3": [
+        "GDI"
+      ]
+    },
     "player_power_houses": {},
     "native_trigger_reference_ids": {},
     "disabled_triggers": {},

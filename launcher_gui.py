@@ -133,6 +133,7 @@ def run_self_check():
         campaign_mission_counts,
         parse_missions,
     )
+    from randomizer.missions.houses import mission_player_production_houses
     from randomizer.shop.self_check import validate_shop_domain
 
     report_path = APP_DIR / 'self_check.json'
@@ -494,6 +495,32 @@ def run_self_check():
             }
             for family in ('GDI', 'Nod', 'Allies', 'Soviet')
         }
+        false_eagle = next(
+            mission for mission in missions if mission['code'] == 'M_SE3'
+        )
+        false_eagle_access_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('unit') == 'ARTY'
+            and reward.get('dta_production_access')
+        )
+        false_eagle_isolation, false_eagle_context = (
+            player_production_isolation_rules(false_eagle)
+        )
+        false_eagle_infrastructure = production_infrastructure_rewards(
+            [false_eagle_access_reward],
+            enabled=True,
+            production_context=false_eagle_context,
+        )
+        false_eagle_rules, false_eagle_report = unit_specific_buff_rules(
+            false_eagle,
+            [false_eagle_access_reward, *false_eagle_infrastructure],
+            access_randomized=True,
+            production_context=false_eagle_context,
+            rule_overlays=false_eagle_isolation,
+            production_owner_houses=mission_player_production_houses(
+                false_eagle['code']
+            ),
+        )
         starting_credit_reward = next(
             reward for reward in REWARD_POOL
             if reward.get('buff_type') == 'starting_credits'
@@ -2390,6 +2417,19 @@ def run_self_check():
                     for source_id in ('PYLE', 'WEAP')
                 )
             ),
+            'false_eagle_captured_gdi_base_exposes_unlocks': (
+                false_eagle_report.get('captured_production_houses') == ['GDI']
+                and false_eagle_rules.get('ARTY_PLAYER', {}).get('Owner')
+                == 'Nod,GDI'
+                and false_eagle_rules.get('ARTY_PLAYER', {}).get(
+                    'RequiredHouses'
+                ) == 'Nod'
+                and false_eagle_rules.get('AFLD_PLAYER', {}).get('Owner')
+                == 'Nod,GDI'
+                and false_eagle_rules.get('AFLD_PLAYER', {}).get(
+                    'RequiredHouses'
+                ) == 'Nod'
+            ),
             'dta_starting_credit_reward_is_capped_and_applied': (
                 buff_stack_limit(starting_credit_reward) == 20
                 and starting_credit_bonus([starting_credit_reward] * 25)
@@ -2628,6 +2668,7 @@ def run_self_check():
             'orphan_unit_buffs_do_not_grant_access',
             'access_clone_receives_unit_specific_buffs',
             'dta_access_unlocks_required_player_factories',
+            'false_eagle_captured_gdi_base_exposes_unlocks',
             'dta_starting_credit_reward_is_capped_and_applied',
             'dta_medic_clone_keeps_healing',
             'vinifera_clone_written_to_generated_map',

@@ -1186,6 +1186,9 @@ throw "Map $name was not found in expandmo*.mix"
                 ),
                 production_context=isolation_report,
                 rule_overlays=isolation_rules,
+                production_owner_houses=mission_player_production_houses(
+                    mission_code
+                ),
             )
             if self.shop_launch_active():
                 apply_shop_clone_modifiers(

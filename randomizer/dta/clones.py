@@ -228,6 +228,36 @@ def _player_production_context(authored):
     return context
 
 
+def _production_house_types(authored, configured_houses):
+    """Resolve scenario Houses to the HouseType masks used by factories."""
+    houses = authored.get('Houses', {})
+    house_names = {
+        str(name).strip().casefold(): str(name).strip()
+        for name in houses.values()
+        if str(name).strip()
+    }
+    resolved = []
+    for configured in configured_houses or ():
+        configured = str(configured or '').strip()
+        if not configured:
+            continue
+        scenario_house = house_names.get(configured.casefold(), configured)
+        try:
+            acts_like = int(authored.get(scenario_house, {}).get('ActsLike', -1))
+        except (TypeError, ValueError):
+            acts_like = -1
+        production_house = str(houses.get(str(acts_like), '')).strip()
+        if not production_house:
+            production_house = house_names.get(configured.casefold(), '')
+        if (
+            production_house
+            and production_house.casefold()
+            not in {house.casefold() for house in resolved}
+        ):
+            resolved.append(production_house)
+    return tuple(resolved)
+
+
 def production_infrastructure_rewards(
     rewards,
     *,
@@ -1013,6 +1043,7 @@ def unit_specific_buff_rules(
     unlimited_hero_units=False,
     production_context=None,
     rule_overlays=None,
+    production_owner_houses=(),
 ):
     """Build map-local original buffs or player production clones.
 
@@ -1038,6 +1069,13 @@ def unit_specific_buff_rules(
     )
     player_house = production_context['player_house']
     production_house = production_context['production_house']
+    captured_production_houses = _production_house_types(
+        combined, production_owner_houses
+    )
+    access_owner_houses = tuple(dict.fromkeys((
+        production_house,
+        *captured_production_houses,
+    )))
     registered_houses = {
         value.casefold()
         for list_name in ('HouseTypes', 'Houses')
@@ -1053,6 +1091,7 @@ def unit_specific_buff_rules(
         'shared_hostile_houses': production_context['shared_hostile_houses'],
         'allied_helper_houses': sorted(helper_context['houses']),
         'allied_helper_families': sorted(helper_context['families']),
+        'captured_production_houses': list(captured_production_houses),
         'applied': [],
         'skipped': [],
         'map_objects_rewritten': 0,
@@ -1315,7 +1354,10 @@ def unit_specific_buff_rules(
             unit_rules = {
                 **clone_values,
                 'Image': values.get('Image', unit_id),
-                'Owner': production_house,
+                'Owner': ','.join(
+                    access_owner_houses
+                    if production_access else (production_house,)
+                ),
                 'RequiredHouses': production_house,
                 'CameoPriority': str(_faction_cameo_priority(target)),
                 **unit_rules,
@@ -1406,7 +1448,10 @@ def unit_specific_buff_rules(
                 linked_rules.pop('$Inherits', None)
                 linked_rules.pop('ForbiddenHouses', None)
                 linked_rules['Image'] = linked_values.get('Image', linked_source)
-                linked_rules['Owner'] = production_house
+                linked_rules['Owner'] = ','.join(
+                    access_owner_houses
+                    if production_access else (production_house,)
+                )
                 linked_rules['RequiredHouses'] = production_house
                 linked_rules['TechLevel'] = '-1'
                 linked_counts = Counter({
