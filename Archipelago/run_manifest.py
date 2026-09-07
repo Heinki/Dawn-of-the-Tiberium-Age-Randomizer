@@ -15,6 +15,10 @@ from randomizer.rewards.display import canonical_reward
 from randomizer.rewards.planning import is_max_rewards_achieved_reward
 
 
+from randomizer.shop.config import SHOP_CONFIG
+from randomizer.shop.archipelago import ARCHIPELAGO_RECEIVED_UNIT_LOADOUT_ALL
+
+
 MANIFEST_SCHEMA_VERSION = 1
 
 GAMEPLAY_CONFIG_KEYS = (
@@ -98,6 +102,8 @@ def _active_reward_dicts(values):
 
 def _goal_for_state(state, mission_order):
     mode = state.get("progression_mode")
+    if mode == "Shop Mode":
+        return {"type": "shop_run", "run_length": SHOP_CONFIG.run_length}
     if mode == "Mission List":
         return {"type": "all_missions"}
     if mode == "Grid Mode":
@@ -275,6 +281,40 @@ def _local_opening_placements(state, mission_order, locations, rewards_by_code):
     return placements
 
 
+def _shop_manifest_settings():
+    return {
+        "run_length": SHOP_CONFIG.run_length,
+        "mission_pool": None,
+        "mission_victories_are_locations": (
+            SHOP_CONFIG.archipelago_mission_victories_are_locations
+        ),
+        "purchase_location_count": (
+            SHOP_CONFIG.archipelago_purchase_locations
+        ),
+        "purchase_meta_coin_cost": (
+            SHOP_CONFIG.archipelago_purchase_meta_coin_cost
+        ),
+        "starting_extra_unit_limit": (
+            SHOP_CONFIG.max_selected_permanent_units
+        ),
+        "received_unit_loadout": (
+            ARCHIPELAGO_RECEIVED_UNIT_LOADOUT_ALL
+        ),
+    }
+
+
+def _shop_item_pool(rewards_by_code, mission_order, count):
+    names = [
+        name
+        for code in mission_order
+        for rewards in rewards_by_code.get(code, {}).values()
+        for name in rewards
+    ]
+    if count and not names:
+        raise ValueError("Shop Mode AP run has no reward items.")
+    return Counter(names[index % len(names)] for index in range(count))
+
+
 def build_run_manifest(state, launcher_config=None):
     """Freeze one generated run without reimplementing its generation logic."""
     if not isinstance(state, dict):
@@ -286,6 +326,8 @@ def build_run_manifest(state, launcher_config=None):
     if not isinstance(raw_checks, dict):
         raise ValueError("Randomizer state has no mission checks.")
 
+    progression_mode = str(state.get("progression_mode") or "Classic")
+    shop_mode = progression_mode == "Shop Mode"
     rewards_by_code = {}
     locations = {}
     item_pool = Counter()
@@ -302,14 +344,31 @@ def build_run_manifest(state, launcher_config=None):
                 continue
             check_id = str(check["id"])
             rewards_by_check[check_id] = names
-            location_counts[check_id] = len(names)
-            item_pool.update(names)
+            if not shop_mode:
+                location_counts[check_id] = len(names)
+                item_pool.update(names)
         rewards_by_code[code] = rewards_by_check
         locations[code] = location_counts
-    if not item_pool:
+    if not shop_mode and not item_pool:
         raise ValueError("Randomizer run has no real mission rewards.")
 
-    progression_mode = str(state.get("progression_mode") or "Classic")
+    shop = None
+    if shop_mode:
+        shop = _shop_manifest_settings()
+        shop["mission_pool"] = list(mission_order)
+        if len(mission_order) < shop["run_length"]:
+            raise ValueError(
+                "Shop Mode AP mission pool is smaller than its run length."
+            )
+        random_location_count = shop["purchase_location_count"] + (
+            shop["run_length"]
+            if shop["mission_victories_are_locations"]
+            else 0
+        )
+        item_pool = _shop_item_pool(
+            rewards_by_code, mission_order, random_location_count
+        )
+
     manifest = {
         "schema_version": MANIFEST_SCHEMA_VERSION,
         "randomizer_version": APP_VERSION,
@@ -317,16 +376,19 @@ def build_run_manifest(state, launcher_config=None):
         "catalogue_checksum": runtime_catalogue_checksum(),
         "campaign_filter": str(state.get("campaign_filter") or ""),
         "progression_mode": progression_mode,
-        "mission_goal": int(state.get("mission_goal") or len(mission_order)),
+        "mission_goal": shop["run_length"] if shop_mode else int(
+            state.get("mission_goal") or len(mission_order)
+        ),
         "mission_order": mission_order,
         "grid": _stable_grid(state.get("grid")),
         "goal": _goal_for_state(state, mission_order),
+        "shop": shop,
         "locations": locations,
         "item_pool": dict(sorted(item_pool.items())),
         "starting_items": dict(sorted(Counter(
             _reward_names(state.get("starting_rewards"))
         ).items())),
-        "local_placements": _local_opening_placements(
+        "local_placements": [] if shop_mode else _local_opening_placements(
             state,
             mission_order,
             locations,

@@ -11,9 +11,8 @@ YAML, connect to a room, and continue an existing multiworld game.
 - Archipelago 0.6.7
 - `dta.apworld` from the same Randomizer release as the launcher
 
-Use matching launcher and APWorld releases. A YAML created by another
-Randomizer version or catalogue may be rejected during generation or
-connection.
+Use the current launcher and APWorld. Compatible release labels are accepted;
+incompatible schemas, catalogues, or damaged manifests are rejected.
 
 ## Install the Randomizer
 
@@ -54,7 +53,7 @@ there is no YAML import step in the launcher. To change the run, change the
 visible launcher settings and save a new YAML before generating a new room.
 
 The YAML contains readable `launcher_settings` plus a checksum-protected
-`run_manifest` holding the mission order, Grid, reward locations, placements,
+`generated_world` mapping holding the mission order, Grid, reward locations, placements,
 and compatibility data for that exact run. Do not edit the generated manifest
 by hand. Archipelago rejects readable settings that no longer match it.
 
@@ -144,3 +143,30 @@ without granting their rewards twice.
 Live multiworld connection and end-to-end item receipt still require broader
 verification. Report reproducible failures with the launcher log, mission
 code, room setup, and connection status.
+
+## Shop Mode and YAML compatibility fixes
+
+Replace the installed APWorld in Archipelago's `custom_worlds` folder with the
+APWorld from this checkout, then restart Archipelago before generating. An
+older installed APWorld keeps its old version checks even after the launcher
+is updated.
+
+Launcher release labels no longer reject an otherwise compatible run. Schema,
+mission/reward catalogue, and manifest integrity checks still reject incompatible
+or damaged input. The APWorld preserves the exported manifest unchanged,
+including legacy optional fields. Player YAML uses JSON-compatible YAML mappings
+to preserve setting types exactly. Re-export through **Save Player YAML** when
+changing settings or replacing an incompatible catalogue.
+
+For an AP Shop run, select **Shop Mode**, save the Player YAML, generate and host
+the room, then connect the launcher. **Start Shop Mode** remains available after
+connection validation and after a failed or completed run. Generation settings
+remain locked while connected. AP purchases are scouted; stage victories are
+sent as checks, and stage-marker receipts are acknowledged without becoming
+ordinary Shop rewards. Only a completed run belonging to the current AP slot
+can report its goal.
+
+Run `tools/check_archipelago_integration.py --archipelago-root /path/to/Archipelago`
+with Archipelago 0.6.7's Python environment to verify YAML, generation, item fill,
+beatability, handshake, and Shop controls. Add `--apworld /path/to/game.apworld`
+to test the packaged world.

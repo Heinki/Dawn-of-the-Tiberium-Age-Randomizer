@@ -86,7 +86,11 @@ class SeedController:
         self.clear_log()
         requested_seed = self.seed_var.get().strip()
         seed = requested_seed or f'DTA-{random.randrange(0x10000000):08X}'
-        mission_goal = self.selected_mission_goal()
+        mission_goal = (
+            len(seed_missions)
+            if self.progression_mode_var.get() == 'Shop Mode'
+            else self.selected_mission_goal()
+        )
         rewards_per_check = self.selected_rewards_per_check()
         rewards_on_victory_only = True
         use_act_based_reward_multipliers = bool(

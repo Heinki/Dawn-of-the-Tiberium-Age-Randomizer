@@ -53,7 +53,7 @@ class ArchipelagoController(ArchipelagoYamlController):
         keys = (
             'slot_data_version', 'randomizer_version', 'randomizer_seed',
             'catalogue_checksum', 'manifest_checksum', 'campaign_filter',
-            'progression_mode', 'mission_goal', 'mission_order', 'goal',
+            'progression_mode', 'mission_goal', 'mission_order', 'goal', 'shop',
         )
         return {
             key: deepcopy(slot_data[key])
@@ -104,6 +104,8 @@ class ArchipelagoController(ArchipelagoYamlController):
         """Maintain the complete set of gameplay-affecting UI controls."""
         excluded = set(self._widget_descendants(self.appearance_frame))
         excluded.add(self.appearance_frame)
+        # Starting a Shop run is gameplay, not a mutable generation setting.
+        excluded.add(getattr(self, 'shop_setup_start_button', None))
         candidates = [
             *self._widget_descendants(self.settings_frame),
             *self._widget_descendants(self.advanced_tab),
@@ -140,6 +142,8 @@ class ArchipelagoController(ArchipelagoYamlController):
                 widget.configure(state='disabled')
             except Exception:
                 pass
+        if hasattr(self, 'refresh_shop_settings_controls'):
+            self.refresh_shop_settings_controls()
 
     def set_archipelago_controls_locked(self, locked):
         locked = bool(locked)
@@ -161,6 +165,8 @@ class ArchipelagoController(ArchipelagoYamlController):
                     continue
             self._archipelago_locked_widget_states = saved
             self._archipelago_gameplay_locked = True
+            if hasattr(self, 'refresh_shop_settings_controls'):
+                self.refresh_shop_settings_controls()
             return
         self._archipelago_gameplay_locked = False
         saved = self._archipelago_locked_widget_states
@@ -1341,6 +1347,42 @@ class ArchipelagoController(ArchipelagoYamlController):
             or not getattr(self, '_archipelago_session_validated', False)
         ):
             return ()
+        slot_data = getattr(self, '_archipelago_slot_data', {})
+        logic_item_ids = {
+            int(entry.get('item', 0))
+            for entry in (slot_data.get('local_victories') or {}).values()
+            if isinstance(entry, dict) and int(entry.get('item', 0)) > 0
+        }
+        shop = slot_data.get('shop')
+        if isinstance(shop, dict):
+            logic_item_ids.update(
+                int(entry.get('logic_item', 0))
+                for entry in shop.get('stage_victories', ())
+                if isinstance(entry, dict)
+                and int(entry.get('logic_item', 0)) > 0
+            )
+        logic_indexes = {
+            int(self._archipelago_receipt_value(receipt, 'index', -1))
+            for receipt in receipts
+            if int(self._archipelago_receipt_value(receipt, 'item', 0))
+            in logic_item_ids
+        }
+        receipts = tuple(
+            receipt for receipt in receipts
+            if int(self._archipelago_receipt_value(receipt, 'item', 0))
+            not in logic_item_ids
+        )
+        if not receipts:
+            try:
+                changed = session.acknowledge_received(sorted(logic_indexes))
+                if changed:
+                    ap_state['checkpoint'] = session.checkpoint()
+                    self.save_state()
+            except Exception as exc:
+                self.append_archipelago_history(
+                    f'Local victory acknowledgment failed: {exc}'
+                )
+            return ()
         raw_history = ap_state.get('received_rewards', [])
         existing_records = list(self._archipelago_reward_records() or ())
         if not isinstance(raw_history, list) or len(existing_records) != len(
@@ -1437,7 +1479,7 @@ class ArchipelagoController(ArchipelagoYamlController):
                         existing[key] = value
                         metadata_updated = True
 
-        acknowledge_indexes = sorted(incoming_by_index)
+        acknowledge_indexes = sorted(set(incoming_by_index) | logic_indexes)
         if not new_records:
             try:
                 changed = session.acknowledge_received(acknowledge_indexes)

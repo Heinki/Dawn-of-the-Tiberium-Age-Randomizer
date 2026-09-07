@@ -1,6 +1,8 @@
 {
   "game": "Dawn of the Tiberium Age",
   "minimum_ap_version": "0.6.7",
-  "world_version": "1.1",
-  "authors": ["Dawn of the Tiberium Age Randomizer contributors"]
+  "world_version": "1.1.1",
+  "authors": [
+    "Dawn of the Tiberium Age Randomizer contributors"
+  ]
 }

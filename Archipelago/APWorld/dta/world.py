@@ -14,6 +14,10 @@ from .data import (
     LOCATION_TABLE,
     MISSION_DATA,
     VICTORY_EVENT,
+    SHOP_PURCHASE_LOCATION_TABLE,
+    SHOP_STAGE_LOCATION_TABLE,
+    SHOP_STAGE_LOGIC_DATA,
+    SHOP_STAGE_LOGIC_ITEM_TABLE,
     location_entries,
 )
 from .manifest import parse_manifest, validate_launcher_settings
@@ -51,7 +55,8 @@ class DTAWorld(World):
     options: DTAOptions
 
     item_name_to_id = {
-        name: data["id"] for name, data in ITEM_DATA.items()
+        **{name: data["id"] for name, data in ITEM_DATA.items()},
+        **SHOP_STAGE_LOGIC_ITEM_TABLE,
     }
     location_name_to_id = dict(LOCATION_TABLE)
     item_name_groups = ITEM_NAME_GROUPS
@@ -65,13 +70,18 @@ class DTAWorld(World):
     }
 
     def generate_early(self) -> None:
-        self.run_manifest = parse_manifest(self.options.run_manifest.value)
+        self.run_manifest = parse_manifest(
+            self.options.generated_world.value or self.options.run_manifest.value
+        )
         validate_launcher_settings(
             self.options.launcher_settings.value,
             self.run_manifest,
         )
 
     def create_item(self, name: str) -> DTAItem:
+        if name in SHOP_STAGE_LOGIC_ITEM_TABLE:
+            return DTAItem(name, ItemClassification.progression,
+                           SHOP_STAGE_LOGIC_ITEM_TABLE[name], self.player)
         item_id, classification = ITEM_TABLE[name]
         return DTAItem(name, classification, item_id, self.player)
 
@@ -88,6 +98,11 @@ class DTAWorld(World):
             None,
             menu,
         )
+        if self.run_manifest.get("shop") is not None:
+            regions = [menu]
+            self._create_shop_regions(menu, victory, regions)
+            self.multiworld.regions += regions
+            return
         victory.place_locked_item(
             DTAItem(
                 VICTORY_EVENT,
@@ -110,7 +125,7 @@ class DTAWorld(World):
             menu.connect(region)
             regions.append(region)
 
-        for placement in self.run_manifest["local_placements"]:
+        for placement in self.run_manifest.get("local_placements", []):
             name, _location_id = location_entries(
                 placement["mission"],
                 placement["check"],
@@ -121,16 +136,72 @@ class DTAWorld(World):
             )
         self.multiworld.regions += regions
 
+    def _create_shop_regions(self, menu, victory, regions):
+        shop = self.run_manifest["shop"]
+        purchase_names = list(SHOP_PURCHASE_LOCATION_TABLE)[
+            :shop["purchase_location_count"]
+        ]
+        menu.add_locations(
+            {
+                name: SHOP_PURCHASE_LOCATION_TABLE[name]
+                for name in purchase_names
+            },
+            DTALocation,
+        )
+        previous_marker = None
+        for stage in range(1, shop["run_length"] + 1):
+            region = Region(
+                f"Shop Run Stage {stage}", self.player, self.multiworld
+            )
+            if previous_marker is None:
+                menu.connect(region)
+            else:
+                menu.connect(
+                    region,
+                    rule=lambda state, name=previous_marker: state.has(
+                        name, self.player
+                    ),
+                )
+            if shop["mission_victories_are_locations"]:
+                name = f"Shop Run Mission {stage} Victory"
+                region.add_locations(
+                    {name: SHOP_STAGE_LOCATION_TABLE[name]},
+                    DTALocation,
+                )
+            logic = SHOP_STAGE_LOGIC_DATA[stage]
+            logic_location = DTALocation(
+                self.player,
+                logic["location_name"],
+                logic["location_id"],
+                region,
+            )
+            logic_location.place_locked_item(
+                self.create_item(logic["item_name"])
+            )
+            region.locations.append(logic_location)
+            previous_marker = logic["item_name"]
+            regions.append(region)
+        victory.access_rule = (
+            lambda state, name=previous_marker: state.has(name, self.player)
+        )
+        victory.place_locked_item(DTAItem(
+            VICTORY_EVENT,
+            ItemClassification.progression,
+            None,
+            self.player,
+        ))
+        menu.locations.append(victory)
+
     def create_items(self) -> None:
         remaining = Counter(self.run_manifest["item_pool"])
-        for placement in self.run_manifest["local_placements"]:
+        for placement in self.run_manifest.get("local_placements", []):
             remaining[placement["item"]] -= 1
         self.multiworld.itempool += [
             self.create_item(name)
             for name, count in remaining.items()
             for _ in range(count)
         ]
-        for name, count in self.run_manifest["starting_items"].items():
+        for name, count in self.run_manifest.get("starting_items", {}).items():
             for _ in range(count):
                 self.multiworld.push_precollected(self.create_item(name))
 
@@ -158,10 +229,36 @@ class DTAWorld(World):
                 for check_id, count in self.run_manifest["locations"][code].items()
             }
         used_items = set(self.run_manifest["item_pool"]) | set(
-            self.run_manifest["starting_items"]
+            self.run_manifest.get("starting_items", {})
         )
+        shop = self.run_manifest.get("shop")
+        shop_slot_data = None
+        if shop is not None:
+            shop_slot_data = {
+                **shop,
+                "purchase_locations": list(
+                    SHOP_PURCHASE_LOCATION_TABLE.values()
+                )[:shop["purchase_location_count"]],
+                "stage_victories": [
+                    {
+                        "stage": stage,
+                        "location": (
+                            SHOP_STAGE_LOCATION_TABLE[
+                                f"Shop Run Mission {stage} Victory"
+                            ]
+                            if shop["mission_victories_are_locations"]
+                            else None
+                        ),
+                        "logic_item": SHOP_STAGE_LOGIC_DATA[stage]["item_id"],
+                        "logic_location": SHOP_STAGE_LOGIC_DATA[stage][
+                            "location_id"
+                        ],
+                    }
+                    for stage in range(1, shop["run_length"] + 1)
+                ],
+            }
         return {
-            "slot_data_version": 4,
+            "slot_data_version": 6 if shop is not None else 4,
             "randomizer_version": self.run_manifest["randomizer_version"],
             "randomizer_seed": self.run_manifest["randomizer_seed"],
             "catalogue_checksum": CATALOGUE_CHECKSUM,
@@ -171,6 +268,7 @@ class DTAWorld(World):
             "mission_goal": self.run_manifest["mission_goal"],
             "mission_order": self.run_manifest["mission_order"],
             "goal": self.run_manifest["goal"],
+            "shop": shop_slot_data,
             "run_manifest": self.run_manifest,
             "items": {
                 str(ITEM_DATA[name]["id"]): name
