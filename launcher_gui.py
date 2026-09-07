@@ -520,6 +520,18 @@ def run_self_check():
             production_owner_houses=mission_player_production_houses(
                 false_eagle['code']
             ),
+            allow_foreign_factory_access=True,
+        )
+        false_eagle_enemy_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('enemy_effect_id') == 'enemy_production'
+        )
+        false_eagle_enemy_rules, false_eagle_enemy_report = enemy_buff_rules(
+            false_eagle,
+            [false_eagle_enemy_reward],
+            player_production_houses=mission_player_production_houses(
+                false_eagle['code']
+            ),
         )
         starting_credit_reward = next(
             reward for reward in REWARD_POOL
@@ -1370,7 +1382,7 @@ def run_self_check():
                         mission['reward_class'] == 'standalone'
                         and mission['reward_multiplier'] == 2
                     )
-                    if mission['campaign'] == 'Stand-Alone Missions'
+                    if mission['reward_class'] == 'standalone'
                     else (
                         mission['reward_class'] == 'standard'
                         and mission['reward_multiplier'] == 1
@@ -2418,17 +2430,33 @@ def run_self_check():
                 )
             ),
             'false_eagle_captured_gdi_base_exposes_unlocks': (
-                false_eagle_report.get('captured_production_houses') == ['GDI']
+                set(false_eagle_report.get('captured_production_houses', ()))
+                == {'GDI', 'Nod', 'Allies', 'Soviet'}
                 and false_eagle_rules.get('ARTY_PLAYER', {}).get('Owner')
-                == 'Nod,GDI'
+                == 'Nod,GDI,Allies,Soviet'
                 and false_eagle_rules.get('ARTY_PLAYER', {}).get(
                     'RequiredHouses'
                 ) == 'Nod'
+                and {'AFLD', 'WEAP', 'AWEAP', 'SWEAP'}.issubset(
+                    comma_items(false_eagle_rules.get(
+                        'ARTY_PLAYER', {}
+                    ).get('BuiltAt'))
+                )
                 and false_eagle_rules.get('AFLD_PLAYER', {}).get('Owner')
-                == 'Nod,GDI'
+                == 'Nod,GDI,Allies,Soviet'
                 and false_eagle_rules.get('AFLD_PLAYER', {}).get(
                     'RequiredHouses'
                 ) == 'Nod'
+                and 'GDI' in false_eagle_enemy_report.get(
+                    'friendly_families', ()
+                )
+                and 'GDI' not in false_eagle_enemy_rules
+                and not production_infrastructure_rewards(
+                    [false_eagle_access_reward],
+                    enabled=True,
+                    production_context=false_eagle_context,
+                    existing_production_buildings=('AFLD',),
+                )
             ),
             'dta_starting_credit_reward_is_capped_and_applied': (
                 buff_stack_limit(starting_credit_reward) == 20

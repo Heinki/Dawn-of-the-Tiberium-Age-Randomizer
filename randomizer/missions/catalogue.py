@@ -263,7 +263,30 @@ def parse_missions(path, fallback_objective_count=FALLBACK_OBJECTIVE_COUNT):
 def mission_stage_score(mission):
     title = mission.get('title', '') or ''
     code = mission.get('code', '') or ''
-    match = re.search(r'\b(?:GDI|Nod|Allied|Soviet)\s+(\d{1,2})\b', title, flags=re.IGNORECASE)
+    match = re.search(
+        r'\b(?:GDI|Nod|Allied|Soviet)\s+(\d{1,2})\b',
+        title,
+        flags=re.IGNORECASE,
+    )
+    if not match:
+        # DTA campaign titles use several numbering styles (``SE #3``,
+        # ``CR#01``, ``PTTP #1``, and ``TTD #1``).  Falling back to the
+        # catalogue-wide index made every campaign after CR look like a
+        # finale, which effectively removed those campaigns from early Shop
+        # stages.
+        match = re.search(r'#\s*0*(\d{1,2})\b', title)
+    if not match:
+        match = re.search(
+            r'\bIt Came From RA!\s*0*(\d{1,2})\b',
+            title,
+            flags=re.IGNORECASE,
+        )
+    if not match:
+        match = re.search(
+            r'\bTutorial Mission\s+0*(\d{1,2})\b',
+            title,
+            flags=re.IGNORECASE,
+        )
     if match:
         score = int(match.group(1))
     elif re.search(r'\bOp\b', title, flags=re.IGNORECASE):

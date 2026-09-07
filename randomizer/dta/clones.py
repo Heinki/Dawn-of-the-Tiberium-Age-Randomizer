@@ -263,6 +263,7 @@ def production_infrastructure_rewards(
     *,
     enabled,
     production_context,
+    existing_production_buildings=(),
 ):
     """Create runtime access items for factories needed by earned unit access.
 
@@ -295,6 +296,10 @@ def production_infrastructure_rewards(
     ).casefold()
     family_buildings = PRODUCTION_BUILDINGS.get(source_family, {})
     primary_buildings = PRIMARY_PRODUCTION_BUILDINGS.get(source_family, {})
+    existing = {
+        str(building_id).upper()
+        for building_id in existing_production_buildings or ()
+    }
     selected_buildings = []
     for production_type in PRODUCTION_TYPE_ORDER:
         if production_type not in production_types:
@@ -307,7 +312,10 @@ def production_infrastructure_rewards(
         building_id = str(primary_buildings.get(production_type) or '').upper()
         if building_id not in configured_ids:
             building_id = min(configured_ids, default='')
-        if building_id:
+        # A player-owned or scripted-to-player factory already supplies this
+        # queue.  Cloning it creates two visually identical facilities which
+        # Tiberian Sun's exact-type T hotkey cannot select together.
+        if building_id and building_id not in existing:
             selected_buildings.append((production_type, building_id))
     return [
         {
@@ -1044,6 +1052,7 @@ def unit_specific_buff_rules(
     production_context=None,
     rule_overlays=None,
     production_owner_houses=(),
+    allow_foreign_factory_access=False,
 ):
     """Build map-local original buffs or player production clones.
 
@@ -1072,10 +1081,6 @@ def unit_specific_buff_rules(
     captured_production_houses = _production_house_types(
         combined, production_owner_houses
     )
-    access_owner_houses = tuple(dict.fromkeys((
-        production_house,
-        *captured_production_houses,
-    )))
     registered_houses = {
         value.casefold()
         for list_name in ('HouseTypes', 'Houses')
@@ -1084,6 +1089,19 @@ def unit_specific_buff_rules(
             + list(authored.get(list_name, {}).values())
         )
     }
+    if allow_foreign_factory_access:
+        captured_production_houses = tuple(dict.fromkeys((
+            *captured_production_houses,
+            *(
+                house
+                for house in ('GDI', 'Nod', 'Allies', 'Soviet')
+                if house.casefold() in registered_houses
+            ),
+        )))
+    access_owner_houses = tuple(dict.fromkeys((
+        production_house,
+        *captured_production_houses,
+    )))
     report = {
         'player_house': player_house,
         'production_house': production_house,
@@ -1362,6 +1380,26 @@ def unit_specific_buff_rules(
                 'CameoPriority': str(_faction_cameo_priority(target)),
                 **unit_rules,
             }
+            if production_access and allow_foreign_factory_access:
+                if target.get('category') == 'infantry':
+                    production_type = 'infantry'
+                elif target.get('category') == 'aircraft':
+                    production_type = 'air'
+                elif target.get('category') == 'vehicles':
+                    production_type = (
+                        'naval' if target.get('naval') else 'vehicles'
+                    )
+                else:
+                    production_type = ''
+                built_at = [
+                    str(factory_id).upper()
+                    for house in access_owner_houses
+                    for factory_id in PRODUCTION_BUILDINGS.get(
+                        house.casefold(), {}
+                    ).get(production_type, ())
+                ]
+                if built_at:
+                    unit_rules['BuiltAt'] = ','.join(dict.fromkeys(built_at))
             if unit_id == 'MEDIC':
                 # Vanilla recognizes only its fixed Medic type. Vinifera's
                 # generic healer flag preserves infantry healing when the

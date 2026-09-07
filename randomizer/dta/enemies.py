@@ -17,7 +17,7 @@ def _integer(value, default=-1):
         return default
 
 
-def enemy_buff_rules(mission, rewards):
+def enemy_buff_rules(mission, rewards, player_production_houses=()):
     """Apply bonuses only where no player/allied house uses that family."""
     sections = ini_sections(mission_source_path(mission.get('scenario')))
     houses = {
@@ -67,6 +67,14 @@ def enemy_buff_rules(mission, rewards):
         for name in houses
     }
     friendly_families = {family[name] for name in friendly if family.get(name)}
+    configured_lookup = {name.casefold(): name for name in houses}
+    for configured in player_production_houses or ():
+        configured = str(configured or '').strip()
+        house = configured_lookup.get(configured.casefold())
+        if house and family.get(house):
+            friendly_families.add(family[house])
+        elif configured in FAMILY_BY_ACTS_LIKE.values():
+            friendly_families.add(configured)
     hostile_houses = {
         name for name in active
         if name not in friendly

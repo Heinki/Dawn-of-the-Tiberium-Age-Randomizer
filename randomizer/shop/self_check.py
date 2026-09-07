@@ -52,6 +52,19 @@ def validate_shop_domain():
         classes == set(MissionEconomyClass),
         f'Shop mission classes incomplete: {sorted(item.value for item in classes)}',
     )
+    early_campaigns = {
+        mission['campaign']
+        for mission in missions
+        if classify_mission(mission) is MissionEconomyClass.ACT_1
+    }
+    _require(
+        {
+            'Tutorial', 'Shadow Exodus', 'PTTP', 'CR',
+            'Toxic Diversion', 'It Came From Red Alert!',
+            'Creeping Destruction',
+        }.issubset(early_campaigns),
+        'Shop opening classes do not cover every numbered campaign',
+    )
     first_offers = generate_mission_offers(
         missions, run_seed='DTA-SHOP-SELF-CHECK', stage=1
     )

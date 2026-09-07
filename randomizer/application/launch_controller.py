@@ -47,6 +47,7 @@ from ._dependencies import (
     logging,
     messagebox,
     mission_basic_unit_rules,
+    mission_production_buildings,
     original_mcv_access_rules,
     mission_player_production_houses,
     os,
@@ -1150,10 +1151,20 @@ throw "Map $name was not found in expandmo*.mix"
                 section: dict(values)
                 for section, values in isolation_rules.items()
             }
+            source_lines = mission_source_lines(scenario)
+            configured_production_houses = (
+                mission_player_production_houses(mission_code)
+            )
+            existing_production_buildings = mission_production_buildings(
+                source_lines,
+                additional_production_houses=configured_production_houses,
+                include_capturable=False,
+            )
             infrastructure_rewards = production_infrastructure_rewards(
                 active_rewards,
                 enabled=self.randomize_unit_access_enabled(),
                 production_context=isolation_report,
+                existing_production_buildings=existing_production_buildings,
             )
             assistance_stacks = (
                 self.mission_failure_stack(mission_code)
@@ -1189,6 +1200,7 @@ throw "Map $name was not found in expandmo*.mix"
                 production_owner_houses=mission_player_production_houses(
                     mission_code
                 ),
+                allow_foreign_factory_access=self.shop_launch_active(),
             )
             if self.shop_launch_active():
                 apply_shop_clone_modifiers(
@@ -1248,12 +1260,13 @@ throw "Map $name was not found in expandmo*.mix"
                 dta_rules.setdefault(section, {}).update(values)
             enemy_rewards = self.active_enemy_scaling_rewards()
             enemy_rules, enemy_report = enemy_buff_rules(
-                mission, [*active_rewards, *enemy_rewards]
+                mission,
+                [*active_rewards, *enemy_rewards],
+                player_production_houses=configured_production_houses,
             )
             for section, values in enemy_rules.items():
                 dta_rules.setdefault(section, {}).update(values)
 
-            source_lines = mission_source_lines(scenario)
             credit_rules, credit_report = player_starting_credit_rules(
                 source_lines,
                 power_report['player_house'],
