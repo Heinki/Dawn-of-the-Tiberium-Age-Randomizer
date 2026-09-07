@@ -1079,7 +1079,7 @@ throw "Map $name was not found in expandmo*.mix"
             # enter the disposable generated map.
             active_rewards = (
                 list(self.launch_rewards_for_mission(mission_code))
-                if self.randomizer_launch_active() else ()
+                if self.randomizer_launch_active() else []
             )
             if self.randomizer_launch_active():
                 starter_ids = set(self.active_starting_tier_one_expanded_ids())
