@@ -10,6 +10,7 @@ from randomizer.rewards.catalogue import canonical_reward
 from .active import active_shop_tech_ids, shop_starter_defense_ids, shop_starter_unit_ids
 from .catalogue import canonical_reward_for_id, shop_catalogue
 from .config import SHOP_CONFIG
+from .missions_self_check import validate_shop_mission_selection
 from .economy import (
     mission_reward,
     permanent_buff_price,
@@ -46,6 +47,9 @@ def _require(condition, message):
 
 def validate_shop_domain():
     """Validate DTA catalogue, missions, economy, state, and persistence."""
+    selection_checks = validate_shop_mission_selection()
+    for check, valid in selection_checks.items():
+        _require(valid, f'Shop mission selection failed: {check}')
     missions = parse_missions(BATTLE_CLIENT_INI)
     classes = {classify_mission(mission) for mission in missions}
     _require(
@@ -277,6 +281,7 @@ def validate_shop_domain():
 
     return {
         'valid': True,
+        **selection_checks,
         'missions': len(missions),
         'catalogue_entries': len(catalogue),
         'unit_access_entries': len(unit_access),

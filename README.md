@@ -46,6 +46,12 @@ units, defenses, powers, and buffs for the current run; Gems buy permanent
 unit access, permanent buffs, and account upgrades. A detected defeat ends the
 run, while permanent progression survives restarts and failed runs.
 
+The first two Shop missions offer Act 1 choices, including a fixed-unit or
+hero mission when available. From mission 3 onward, every remaining eligible
+mission has equal selection probability, regardless of class or run length.
+All three choices can be finales. Completed missions cannot repeat, and the
+configured mission pool still applies.
+
 The next run can use GDI, Nod, Allied, Soviet, or mixed stock. Every installed
 DTA rewardable unit and defense has a target-specific price based primarily on
 its native build cost, with utility and high-impact units adjusted separately.
