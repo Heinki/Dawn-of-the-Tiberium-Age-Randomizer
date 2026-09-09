@@ -47,15 +47,16 @@ visible in the Randomizer.
 6. Give the YAML to the room host, or place it in Archipelago's `Players`
    folder if you are generating the room yourself.
 
-**Save Player YAML** generates the deterministic AP run and exports a fresh
-player file in one operation. A separate standalone seed is not required, and
-there is no YAML import step in the launcher. To change the run, change the
-visible launcher settings and save a new YAML before generating a new room.
+**Save Player YAML** exports a reusable player file. A separate standalone seed
+is not required, and there is no YAML import step in the launcher. Reuse that
+file for additional rooms with the same settings; every Archipelago generation
+assigns a fresh Randomizer seed. Re-export only after changing launcher settings.
 
-The YAML contains readable `launcher_settings` plus a checksum-protected
-`generated_world` mapping holding the mission order, Grid, reward locations, placements,
-and compatibility data for that exact run. Do not edit the generated manifest
-by hand. Archipelago rejects readable settings that no longer match it.
+The YAML contains readable `launcher_settings` plus a checksum-protected,
+seed-independent `generated_world` template holding mission order, Grid, reward
+locations, placements, and compatibility data. Archipelago restores settings,
+assigns the room-specific seed, then signs data sent to the launcher. Do not
+edit generated template data by hand.
 
 ## Generate and host the room
 
@@ -64,8 +65,8 @@ by hand. Archipelago rejects readable settings that no longer match it.
 3. Generate the multiworld normally with Archipelago 0.6.7.
 4. Host or upload the generated output using the normal Archipelago workflow.
 
-Do not replace the DTA YAML after the room has been generated. A newly exported
-YAML describes a different run and will not match the existing room.
+Do not replace the DTA YAML after the room has been generated. Reusing it for a
+new room is safe; replacing it cannot alter an existing room.
 
 ## Connect the launcher
 
@@ -153,18 +154,21 @@ is updated.
 
 Launcher release labels no longer reject an otherwise compatible run. Schema,
 mission/reward catalogue, and manifest integrity checks still reject incompatible
-or damaged input. The APWorld preserves the exported manifest unchanged,
-including legacy optional fields. Player YAML uses JSON-compatible YAML mappings
-to preserve setting types exactly. Re-export through **Save Player YAML** when
-changing settings or replacing an incompatible catalogue.
+or damaged input. The APWorld validates exported template data, derives a fresh
+deterministic Randomizer seed from each Archipelago generation, then signs
+room-specific data sent to the launcher. Legacy fixed-manifest YAMLs are
+reseeded too. Player YAML uses JSON-compatible YAML mappings to preserve setting
+types exactly. Re-export through **Save Player YAML** when changing settings or
+replacing an incompatible catalogue.
 
 For an AP Shop run, select **Shop Mode**, save the Player YAML, generate and host
 the room, then connect the launcher. **Start Shop Mode** remains available after
 connection validation and after a failed or completed run. Generation settings
-remain locked while connected. AP purchases are scouted; stage victories are
-sent as checks, and stage-marker receipts are acknowledged without becoming
-ordinary Shop rewards. Only a completed run belonging to the current AP slot
-can report its goal.
+remain locked while connected. Shop seeds contain 120 shuffled item locations.
+Each mission victory releases up to 12 previously unchecked locations across
+failed and restarted runs. Completing mission 10 releases every location still
+unchecked before reporting the goal. AP purchases remain available as early
+extra checks; stage-marker receipts never become ordinary Shop rewards.
 
 For release validation, generate a room with the packaged APWorld, inspect the
 generated YAML and item fill, then connect the launcher and verify the handshake

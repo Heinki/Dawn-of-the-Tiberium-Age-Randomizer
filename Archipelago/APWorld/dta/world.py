@@ -19,8 +19,13 @@ from .data import (
     SHOP_STAGE_LOGIC_DATA,
     SHOP_STAGE_LOGIC_ITEM_TABLE,
     location_entries,
+    shop_item_location_entries,
 )
-from .manifest import parse_manifest, validate_launcher_settings
+from .manifest import (
+    instantiate_manifest,
+    parse_manifest,
+    validate_launcher_settings,
+)
 from .options import DTAOptions
 
 
@@ -70,12 +75,17 @@ class DTAWorld(World):
     }
 
     def generate_early(self) -> None:
-        self.run_manifest = parse_manifest(
+        template = parse_manifest(
             self.options.generated_world.value or self.options.run_manifest.value
         )
-        validate_launcher_settings(
+        launcher_settings = validate_launcher_settings(
             self.options.launcher_settings.value,
-            self.run_manifest,
+            template,
+        )
+        self.run_manifest = instantiate_manifest(
+            template,
+            launcher_settings,
+            f"DTA-{self.random.randrange(0x10000000):08X}",
         )
 
     def create_item(self, name: str) -> DTAItem:
@@ -138,16 +148,13 @@ class DTAWorld(World):
 
     def _create_shop_regions(self, menu, victory, regions):
         shop = self.run_manifest["shop"]
-        purchase_names = list(SHOP_PURCHASE_LOCATION_TABLE)[
-            :shop["purchase_location_count"]
-        ]
-        menu.add_locations(
-            {
-                name: SHOP_PURCHASE_LOCATION_TABLE[name]
-                for name in purchase_names
-            },
-            DTALocation,
+        item_entries = shop_item_location_entries(
+            shop["purchase_location_count"],
+            shop["run_length"],
+            shop["mission_victories_are_locations"],
+            shop["item_location_count"],
         )
+        menu.add_locations(dict(item_entries), DTALocation)
         previous_marker = None
         for stage in range(1, shop["run_length"] + 1):
             region = Region(
@@ -161,12 +168,6 @@ class DTAWorld(World):
                     rule=lambda state, name=previous_marker: state.has(
                         name, self.player
                     ),
-                )
-            if shop["mission_victories_are_locations"]:
-                name = f"Shop Run Mission {stage} Victory"
-                region.add_locations(
-                    {name: SHOP_STAGE_LOCATION_TABLE[name]},
-                    DTALocation,
                 )
             logic = SHOP_STAGE_LOGIC_DATA[stage]
             logic_location = DTALocation(
@@ -234,8 +235,17 @@ class DTAWorld(World):
         shop = self.run_manifest.get("shop")
         shop_slot_data = None
         if shop is not None:
+            item_entries = shop_item_location_entries(
+                shop["purchase_location_count"],
+                shop["run_length"],
+                shop["mission_victories_are_locations"],
+                shop["item_location_count"],
+            )
             shop_slot_data = {
                 **shop,
+                "item_locations": [
+                    location_id for _name, location_id in item_entries
+                ],
                 "purchase_locations": list(
                     SHOP_PURCHASE_LOCATION_TABLE.values()
                 )[:shop["purchase_location_count"]],
@@ -258,7 +268,7 @@ class DTAWorld(World):
                 ],
             }
         return {
-            "slot_data_version": 6 if shop is not None else 4,
+            "slot_data_version": 7 if shop is not None else 4,
             "randomizer_version": self.run_manifest["randomizer_version"],
             "randomizer_seed": self.run_manifest["randomizer_seed"],
             "catalogue_checksum": CATALOGUE_CHECKSUM,

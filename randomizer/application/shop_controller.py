@@ -326,6 +326,15 @@ class ShopController(ShopPolishController):
             ) else 'normal',
             text='Run Active' if active else 'Start Shop Mode',
         )
+        launch_text = (
+            'Launch Selected Mission'
+            if active or not self.shop_mode_selected()
+            else 'Start Shop Mode'
+        )
+        for name in ('primary_launch_button', 'compact_launch_button'):
+            button = getattr(self, name, None)
+            if button is not None:
+                button.configure(text=launch_text)
         self.shop_faction_pool_combo.configure(
             state='disabled' if locked else 'readonly'
         )
@@ -1223,6 +1232,13 @@ class ShopController(ShopPolishController):
 
     def on_launch_selected(self):
         if self.shop_mode_selected():
+            self.shop_profile, self.shop_run = self.shop_repository.load()
+            if (
+                self.shop_run is None
+                or self.shop_run.status is not RunStatus.ACTIVE
+            ):
+                self.start_shop_run()
+                return
             self.launch_selected_shop_mission()
             return
         return super().on_launch_selected()

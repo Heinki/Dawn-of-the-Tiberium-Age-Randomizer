@@ -1223,6 +1223,22 @@ def run_self_check():
         )
         all_power_runtime_rules = all_power_report.get('_runtime_rules', {})
         all_power_runtime_art = all_power_report.get('_runtime_art', {})
+        airstrike_napalm_id, airstrike_napalm = next(
+            (
+                (section, values)
+                for section, values in all_power_runtime_art.items()
+                if values.get('Image') == 'NAPALM2'
+                and values.get('ExplosionDamage')
+            ),
+            ('', {}),
+        )
+        airstrike_napalm_warhead = all_power_runtime_rules.get(
+            airstrike_napalm.get('Warhead', ''), {}
+        )
+        airstrike_bomb_animations = [
+            values for values in all_power_runtime_art.values()
+            if values.get('ExpireAnim') == airstrike_napalm_id
+        ]
         soviet_nuke_reward = next(
             reward for reward in all_power_rewards
             if reward.get('superweapon') == 'MultiSpecial'
@@ -1818,6 +1834,13 @@ def run_self_check():
                 }.intersection(all_power_runtime_art)
                 and 'Weapons' in all_power_runtime_rules
                 and 'WeaponTypes' not in all_power_runtime_rules
+                and int(airstrike_napalm.get('ExplosionDamage', 0)) == 57
+                and float(airstrike_napalm_warhead.get('CellSpread', 0)) == 5
+                and len(airstrike_bomb_animations) == 2
+                and all(
+                    animation.get('Damage') == '0'
+                    for animation in airstrike_bomb_animations
+                )
                 and all(
                     int(all_power_rules[provider['provider']]['Cost'])
                     < int(effective_section(

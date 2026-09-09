@@ -69,9 +69,14 @@
         },
         "effect": {
           "root": "AIRSINIT",
-          "animations": ["AIRSINIT", "AIRSTIMR", "AIRSBOMB", "AIRSEXPL", "AIRSSPRD", "AIRSSTRT", "AIRSAPPR", "AIRSSHOT", "AIRSMISS", "AIRSATTK", "AIRSEXIT"],
-          "damage_fields": {"AIRSEXPL": "Damage", "AIRSSPRD": "Damage"},
-          "radius_fields": {"AIRSEXPL": "DamageRadius", "AIRSSPRD": "DamageRadius"}
+          "animations": ["AIRSINIT", "AIRSTIMR", "AIRSBOMB", "AIRSEXPL", "AIRSSPRD", "AIRSSTRT", "AIRSAPPR", "AIRSSHOT", "AIRSMISS", "AIRSATTK", "AIRSEXIT", "NAPALM2"],
+          "animation_overrides": {
+            "AIRSEXPL": {"Damage": "0"},
+            "AIRSSPRD": {"Damage": "0"},
+            "NAPALM2": {"ExplosionDamage": "50", "Warhead": "NapalmHE"}
+          },
+          "damage_fields": {"NAPALM2": "ExplosionDamage"},
+          "area_warheads": {"NAPALM2": "NapalmHE"}
         },
         "buffs": ["recharge", "damage", "area", "cost", "production", "capacity"]
       },

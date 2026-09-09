@@ -1361,9 +1361,12 @@ class ShopPolishController(ShopArchipelagoController):
                 f'+{gem_text(1)}.'
             ),
             'recovery_salvage': (
-                f'Each level saves up to {effects.get("ore_per_level", 0)} '
-                'unused Ore after a mission failure for the next run, capped '
-                f'at {effects.get("maximum_saved_ore", 0)} Ore.'
+                'When an unrescued mission defeat ends the run, each level '
+                f'banks up to {effects.get("ore_per_level", 0)} Ore from '
+                'that run\'s unspent balance. Banked Ore is added once to the next '
+                'run\'s starting Ore, then consumed. Total bank is capped at '
+                f'{effects.get("maximum_saved_ore", 0)} Ore. Giving up or '
+                'winning a run does not bank Ore.'
             ),
             'discount_specialization': (
                 f'Each level reduces all run-shop unit, buff, and power prices '
@@ -1507,11 +1510,12 @@ class ShopPolishController(ShopArchipelagoController):
         definition = self.shop_config.permanent_upgrades.get(upgrade_id)
         if definition is None:
             return ''
-        effects = ', '.join(
-            f'{key.replace("_", " ")}: {value}'
-            for key, value in definition.effects.items()
+        level = self.shop_profile.upgrade_level(upgrade_id)
+        return (
+            f'{definition.display_name}\n'
+            f'Current level: {level} / {definition.max_level}\n'
+            f'{self._shop_upgrade_effect_text(upgrade_id, definition)}'
         )
-        return f'{definition.display_name}\n{effects}'
 
     def _refresh_shop_history(self):
         tree = self.shop_history_tree
