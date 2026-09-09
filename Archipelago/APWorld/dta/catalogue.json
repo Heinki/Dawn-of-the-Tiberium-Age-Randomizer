@@ -458,11 +458,25 @@
       "id": 81065947
     },
     {
+      "name": "Allied Chrono Vortex Additional Launch Site I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066035
+    },
+    {
       "name": "Allied Chrono Vortex Amplified Payload I",
       "classification": "useful",
       "category": "power_buffs",
       "repeatable": true,
       "id": 81066006
+    },
+    {
+      "name": "Allied Chrono Vortex Efficient Construction I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066023
     },
     {
       "name": "Allied Chrono Vortex Expanded Blast I",
@@ -477,6 +491,13 @@
       "category": "power_buffs",
       "repeatable": true,
       "id": 81066008
+    },
+    {
+      "name": "Allied Chrono Vortex Rapid Construction I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066024
     },
     {
       "name": "Allied Gun Turret (RAGUN) Armor Plating I",
@@ -3230,11 +3251,25 @@
       "id": 81064087
     },
     {
+      "name": "GDI Airstrike Additional Launch Site I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066036
+    },
+    {
       "name": "GDI Airstrike Amplified Payload I",
       "classification": "useful",
       "category": "power_buffs",
       "repeatable": true,
       "id": 81066009
+    },
+    {
+      "name": "GDI Airstrike Efficient Construction I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066025
     },
     {
       "name": "GDI Airstrike Expanded Blast I",
@@ -3249,6 +3284,13 @@
       "category": "power_buffs",
       "repeatable": true,
       "id": 81066011
+    },
+    {
+      "name": "GDI Airstrike Rapid Construction I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066026
     },
     {
       "name": "GDI Grenadier (E2) Armor Plating I",
@@ -7059,11 +7101,25 @@
       "id": 81065030
     },
     {
+      "name": "Nod Nuclear Strike Additional Launch Site I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066037
+    },
+    {
       "name": "Nod Nuclear Strike Amplified Payload I",
       "classification": "useful",
       "category": "power_buffs",
       "repeatable": true,
       "id": 81066012
+    },
+    {
+      "name": "Nod Nuclear Strike Efficient Construction I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066027
     },
     {
       "name": "Nod Nuclear Strike Expanded Blast I",
@@ -7078,6 +7134,13 @@
       "category": "power_buffs",
       "repeatable": true,
       "id": 81066014
+    },
+    {
+      "name": "Nod Nuclear Strike Rapid Construction I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066028
     },
     {
       "name": "Nod Repair Ship (ESCORTN) Armor Plating I",
@@ -9376,11 +9439,25 @@
       "id": 81065197
     },
     {
+      "name": "Soviet Nuclear Strike Additional Launch Site I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066038
+    },
+    {
       "name": "Soviet Nuclear Strike Amplified Payload I",
       "classification": "useful",
       "category": "power_buffs",
       "repeatable": true,
       "id": 81066015
+    },
+    {
+      "name": "Soviet Nuclear Strike Efficient Construction I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066029
     },
     {
       "name": "Soviet Nuclear Strike Expanded Blast I",
@@ -9397,6 +9474,20 @@
       "id": 81066017
     },
     {
+      "name": "Soviet Nuclear Strike Rapid Construction I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066030
+    },
+    {
+      "name": "Soviet Paratroopers Chem Warrior Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066031
+    },
+    {
       "name": "Soviet Paratroopers Expanded Deployment I",
       "classification": "useful",
       "category": "power_buffs",
@@ -9409,6 +9500,27 @@
       "category": "power_buffs",
       "repeatable": true,
       "id": 81065549
+    },
+    {
+      "name": "Soviet Paratroopers Shock Trooper Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066032
+    },
+    {
+      "name": "Soviet Paratroopers Soviet Flamethrower Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066033
+    },
+    {
+      "name": "Soviet Paratroopers Soviet Rocket Soldier Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066034
     },
     {
       "name": "Soviet Shore Artillery (RAPARTY) Armor Plating I",
@@ -13214,7 +13326,7 @@
       ]
     }
   ],
-  "catalogue_checksum": "bd8364a152ced16e1f3a186ed79c75a3ee242a72a7d34f917fb84b35065c5aee",
+  "catalogue_checksum": "d0e5628daca7e1929d668828f346572f2b2bd28e2298ccabf398c10100dd294b",
   "locations": [
     {
       "name": "Tutorial Mission 1 - Mission Complete - Reward 1",

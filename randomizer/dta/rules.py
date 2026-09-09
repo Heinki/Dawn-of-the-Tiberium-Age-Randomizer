@@ -333,14 +333,14 @@ def catalogue_by_id():
 
 
 def _player_houses(sections):
-    houses = set()
+    """Return the exact player, not scripted human-controllable staging houses."""
     player = sections.get('Basic', {}).get('Player')
     if player:
-        houses.add(player.casefold())
+        return {player.strip().casefold()}
     for section, values in sections.items():
         if values.get('PlayerControl', '').casefold() in {'yes', 'true', '1'}:
-            houses.add(section.casefold())
-    return houses
+            return {section.casefold()}
+    return set()
 
 
 def _token_occurs(value, wanted):

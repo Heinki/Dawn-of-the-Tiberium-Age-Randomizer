@@ -16,6 +16,7 @@ from ._builder_dependencies import (
     ttk,
 )
 from .shop import _tree
+from .preconditions import PreconditionPicker
 
 def _build_window_shell(self):
     main_frame = ttk.Frame(self, padding=(12, 12, 12, 12))
@@ -751,6 +752,9 @@ def _build_info_tabs(self, info_tabs):
         font=('Segoe UI', 9),
     )
     self.rewards_text.grid(row=1, column=0, sticky='nsew')
+    self.precondition_picker = PreconditionPicker(progress_frame, self)
+    self.precondition_picker.grid(row=2, column=0, sticky='ew', pady=(6, 0))
+    self.precondition_picker.set_mission(self.selected_mission())
 
     unlocks_frame = ttk.Frame(info_tabs, padding=(8, 8, 8, 8))
     self.unlocks_tab = unlocks_frame

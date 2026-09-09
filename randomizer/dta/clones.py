@@ -65,6 +65,12 @@ PRIMARY_PRODUCTION_BUILDINGS = static_config_section(
     'factions.json', 'chaos_primary_production', dict
 )
 PRODUCTION_TYPE_ORDER = ('infantry', 'vehicles', 'air', 'naval')
+BASE_INFRASTRUCTURE = {
+    'gdi': ('NUKE', 'TDPROC'),
+    'nod': ('NUKE', 'TDPROC'),
+    'allies': ('RAPOWR', 'RAPROC'),
+    'soviet': ('RAPOWR', 'RAPROC'),
+}
 
 
 def _faction_cameo_priority(target):
@@ -263,13 +269,12 @@ def production_infrastructure_rewards(
     *,
     enabled,
     production_context,
-    existing_production_buildings=(),
 ):
-    """Create runtime access items for factories needed by earned unit access.
+    """Provide base essentials and factories needed by earned unit access.
 
-    Building clones stay absent without an earned access item. When present,
-    their normal construction-yard production contract remains the physical
-    gate; only authored tech prerequisites are removed by the clone builder.
+    Power and refining never require rewards. Factories become buildable when
+    their unit category is earned, including replacements for starting factories.
+    A construction yard remains the physical gate for building production.
     """
     if not enabled:
         return []
@@ -296,11 +301,9 @@ def production_infrastructure_rewards(
     ).casefold()
     family_buildings = PRODUCTION_BUILDINGS.get(source_family, {})
     primary_buildings = PRIMARY_PRODUCTION_BUILDINGS.get(source_family, {})
-    existing = {
-        str(building_id).upper()
-        for building_id in existing_production_buildings or ()
-    }
-    selected_buildings = []
+    selected_buildings = list(zip(
+        ('power', 'refinery'), BASE_INFRASTRUCTURE.get(source_family, ())
+    ))
     for production_type in PRODUCTION_TYPE_ORDER:
         if production_type not in production_types:
             continue
@@ -312,10 +315,7 @@ def production_infrastructure_rewards(
         building_id = str(primary_buildings.get(production_type) or '').upper()
         if building_id not in configured_ids:
             building_id = min(configured_ids, default='')
-        # A player-owned or scripted-to-player factory already supplies this
-        # queue.  Cloning it creates two visually identical facilities which
-        # Tiberian Sun's exact-type T hotkey cannot select together.
-        if building_id and building_id not in existing:
+        if building_id:
             selected_buildings.append((production_type, building_id))
     return [
         {
@@ -926,9 +926,18 @@ def _weapon_overrides(values, counts):
         except (TypeError, ValueError):
             base_range = 0
         if base_range > 0:
+            extra_range = stacking_amount('range', counts['range'])
             overrides['Range'] = _number(
-                base_range + stacking_amount('range', counts['range'])
+                base_range + extra_range
             )
+            # Cannon projectiles (including Mammoth shells) expire at their
+            # separate travel limit. Preserve its margin over weapon range.
+            try:
+                projectile_range = float(values.get('ProjectileRange', 0))
+            except (TypeError, ValueError):
+                projectile_range = 0
+            if projectile_range > 0:
+                overrides['ProjectileRange'] = _number(projectile_range + extra_range)
     return overrides
 
 
@@ -956,14 +965,39 @@ def _effective_buff_counts(values, target, counts, combined):
 
 def _rewrite_building_references(rules, report, catalogue, combined):
     """Make original and cloned structures equivalent for player tech checks."""
+    outputs_by_source = {}
+    for item in report['applied']:
+        routes = [(item['unit'], item['output_type'])]
+        linked = item.get('linked_deploy_route')
+        if linked:
+            routes.append((linked['source_type'], linked['output_type']))
+        for source, output in routes:
+            if source.upper() != output.upper():
+                outputs_by_source.setdefault(source.upper(), []).append(output)
+
+    # These lists also drive human production checks despite living in [AI].
+    # In particular, an MCV's deployed clone must be in BuildConst or the
+    # engine rejects every building even while the player owns that yard.
+    for section, keys in (
+        ('AI', ('BuildConst', 'BuildPower', 'BuildRefinery', 'BuildBarracks',
+                'BuildWeapons', 'BuildHelipad', 'BuildNavalYard', 'BuildRadar',
+                'BuildTech')),
+        ('General', ('BaseUnit',)),
+    ):
+        for key in keys:
+            items = comma_items(combined.get(section, {}).get(key))
+            additions = [
+                output for source in items
+                for output in outputs_by_source.get(source.upper(), ())
+            ]
+            if additions:
+                rules.setdefault(section, {})[key] = ','.join(
+                    dict.fromkeys([*items, *additions])
+                )
+
     clone_by_source = {
-        item['unit'].upper(): item['output_type']
-        for item in report['applied']
-        if (
-            item['output_type'] != item['unit']
-            and catalogue.get(item['unit'], {}).get('category')
-            in {'buildings', 'defenses'}
-        )
+        source: outputs for source, outputs in outputs_by_source.items()
+        if catalogue.get(source, {}).get('category') in {'buildings', 'defenses'}
     }
     if not clone_by_source:
         return
@@ -972,8 +1006,8 @@ def _rewrite_building_references(rules, report, catalogue, combined):
         for source in clone_by_source
     }
     group_rules = rules.setdefault('PrerequisiteGroups', {})
-    for source, clone_id in clone_by_source.items():
-        group_rules[group_by_source[source]] = f'{source},{clone_id}'
+    for source, outputs in clone_by_source.items():
+        group_rules[group_by_source[source]] = ','.join([source, *outputs])
 
     # DTA's built-in POWER/BARRACKS/FACTORY/etc. groups live in [General].
     # Add cloned buildings without removing map-authored originals.
@@ -983,9 +1017,9 @@ def _rewrite_building_references(rules, report, catalogue, combined):
             continue
         items = comma_items(value)
         additions = [
-            clone_by_source[item.upper()]
+            output
             for item in items
-            if item.upper() in clone_by_source
+            for output in clone_by_source.get(item.upper(), ())
         ]
         if additions:
             rules.setdefault('General', {})[key] = ','.join(
@@ -993,9 +1027,7 @@ def _rewrite_building_references(rules, report, catalogue, combined):
             )
 
     cloned_outputs = {
-        item['output_type']
-        for item in report['applied']
-        if item['output_type'] != item['unit']
+        output for outputs in outputs_by_source.values() for output in outputs
     }
     list_reference_keys = {
         'poweredby', 'powersupbuilding', 'clonedat', 'builtat', 'dock',
@@ -1016,17 +1048,17 @@ def _rewrite_building_references(rules, report, catalogue, combined):
             if folded not in list_reference_keys:
                 continue
             additions = [
-                clone_by_source[item.upper()]
+                output
                 for item in items
-                if item.upper() in clone_by_source
+                for output in clone_by_source.get(item.upper(), ())
             ]
             if additions:
                 values[key] = ','.join([*items, *additions])
 
-    # Always-available mobile types remain original identities. Rewrite their
-    # map-local prerequisites to accept either the original or player clone,
-    # otherwise a cloned refinery can make the original harvester disappear.
-    for unit_id in ALWAYS_AVAILABLE_MOBILE_IDS:
+    # Native units and buildings must also recognize cloned infrastructure.
+    # For example, a buffed MCV must still satisfy an unbuffed barracks' GFACT
+    # prerequisite. Originals remain valid, preserving authored AI tech trees.
+    for unit_id in catalogue:
         values = effective_section(combined, unit_id)
         for key, value in values.items():
             folded = key.casefold()
@@ -1205,8 +1237,26 @@ def unit_specific_buff_rules(
     occupied = {name.casefold() for name in combined}
     list_offsets = {}
     rules = {}
+    # FreeUnit bypasses production routing, so its player-buildable provider
+    # must also be isolated. Enemy providers keep their original free unit.
+    free_unit_providers = set()
+    mobile_candidates = set(counts_by_unit) | access_units
+    if access_randomized:
+        mobile_candidates &= access_units | ALWAYS_AVAILABLE_MOBILE_IDS
+    for building_id in combined.get('BuildingTypes', {}).values():
+        building_values = effective_section(combined, building_id)
+        if (
+            building_values.get('FreeUnit', '').upper() in mobile_candidates
+            and _can_player_produce(building_values, production_house)
+            and building_id in catalogue
+            and not catalogue[building_id].get('duplicate_of')
+            and not building_id.upper().startswith('AI')
+            and '_AI' not in building_id.upper()
+            and building_values.get('Buildability', '').casefold() != 'aionly'
+        ):
+            free_unit_providers.add(building_id)
     for unit_id in sorted(
-        set(counts_by_unit) | access_units | unlimited_units
+        set(counts_by_unit) | access_units | unlimited_units | free_unit_providers
     ):
         target = catalogue.get(unit_id)
         if (
@@ -1220,6 +1270,19 @@ def unit_specific_buff_rules(
         if not values:
             report['skipped'].append({'unit': unit_id, 'reason': 'missing_rules'})
             continue
+
+        # SE5 disarms native Flame Towers used as props. Restore weapons only
+        # for earned production, leaving the mission's placed props untouched.
+        restored_weapons = False
+        if unit_id in access_units:
+            native = effective_section(installed, unit_id)
+            for key in WEAPON_KEYS:
+                if (
+                    str(values.get(key, '')).casefold() in {'', 'none'}
+                    and str(native.get(key, '')).casefold() not in {'', 'none'}
+                ):
+                    values[key] = native[key]
+                    restored_weapons = True
 
         collision = unit_collision_report(source, unit_id)
         counts = _effective_buff_counts(
@@ -1280,6 +1343,7 @@ def unit_specific_buff_rules(
         # player-only behavior, even when a static collision scan is empty.
         use_clone = (
             bool(counts)
+            or unit_id in free_unit_providers
             or production_access
             or unlimited_build_limit
             or identity_collision
@@ -1359,7 +1423,7 @@ def unit_specific_buff_rules(
                 for key in list(clone_values):
                     if (
                         key.casefold() in {
-                            'owner', 'requiredhouses', 'builtat',
+                            'owner', 'requiredhouses', 'builtat', 'buildability',
                         }
                         or key.casefold().startswith('prerequisite')
                     ):
@@ -1380,7 +1444,10 @@ def unit_specific_buff_rules(
                 'CameoPriority': str(_faction_cameo_priority(target)),
                 **unit_rules,
             }
-            if production_access and allow_foreign_factory_access:
+            if production_access and (
+                allow_foreign_factory_access
+                or target.get('category') == 'aircraft'
+            ):
                 if target.get('category') == 'infantry':
                     production_type = 'infantry'
                 elif target.get('category') == 'aircraft':
@@ -1391,13 +1458,37 @@ def unit_specific_buff_rules(
                     )
                 else:
                     production_type = ''
+                # Aircraft access must include a physical production route in
+                # every mode. All DTA faction air pads use AircraftType, so a
+                # Soviet runway can produce an unlocked Orca and a GDI helipad
+                # can produce an unlocked Yak. Include the original family
+                # when isolation moved the player to a different HouseType bit.
+                factory_houses = tuple(dict.fromkeys((
+                    *access_owner_houses,
+                    production_context.get('original_production_house')
+                    or production_house,
+                )))
                 built_at = [
                     str(factory_id).upper()
-                    for house in access_owner_houses
+                    for house in factory_houses
                     for factory_id in PRODUCTION_BUILDINGS.get(
                         house.casefold(), {}
                     ).get(production_type, ())
                 ]
+                if target.get('category') == 'aircraft':
+                    # Keep native runways/carrier pads usable as well as the
+                    # current faction factory. Existing mission airfields can
+                    # differ from the faction's default buildable air pad.
+                    built_at.extend(
+                        building_id
+                        for building_id in (
+                            *comma_items(values.get('BuiltAt')),
+                            *comma_items(values.get('Dock')),
+                        )
+                        if effective_section(combined, building_id).get(
+                            'Factory', ''
+                        ).casefold() == 'aircrafttype'
+                    )
                 if built_at:
                     unit_rules['BuiltAt'] = ','.join(dict.fromkeys(built_at))
             if unit_id == 'MEDIC':
@@ -1414,7 +1505,7 @@ def unit_specific_buff_rules(
             if (
                 helper_family_fallback_needed
                 and producible
-                and (counts or production_access)
+                and (counts or production_access or unit_id in free_unit_providers)
                 and not placement_only
             ):
                 # The player and allied helpers share one ActsLike production
@@ -1424,7 +1515,7 @@ def unit_specific_buff_rules(
                 rules.setdefault(unit_id, {})['Buildability'] = 'AIOnly'
             if (
                 producible
-                and (counts or production_access)
+                and (counts or production_access or unit_id in free_unit_providers)
                 and not placement_only
                 and not helper_family_fallback_needed
             ):
@@ -1459,9 +1550,9 @@ def unit_specific_buff_rules(
                     cloned_weapon_values.update(overrides)
                     rules[clone_id] = cloned_weapon_values
                     weapon_list_key = _next_list_key(
-                        installed, authored, 'WeaponTypes', list_offsets
+                        installed, authored, 'Weapons', list_offsets
                     )
-                    rules.setdefault('WeaponTypes', {})[
+                    rules.setdefault('Weapons', {})[
                         weapon_list_key
                     ] = clone_id
                     weapon_clones[marker] = clone_id
@@ -1527,9 +1618,9 @@ def unit_specific_buff_rules(
                     linked_weapon_values.update(overrides)
                     rules[linked_weapon] = linked_weapon_values
                     weapon_list_key = _next_list_key(
-                        installed, authored, 'WeaponTypes', list_offsets
+                        installed, authored, 'Weapons', list_offsets
                     )
-                    rules.setdefault('WeaponTypes', {})[
+                    rules.setdefault('Weapons', {})[
                         weapon_list_key
                     ] = linked_weapon
                     linked_rules[weapon_key] = linked_weapon
@@ -1642,7 +1733,7 @@ def unit_specific_buff_rules(
             continue
         rules.setdefault(output_id, {}).update(unit_rules)
         rewritten_placements = []
-        if counts and use_clone:
+        if counts and use_clone and not restored_weapons:
             for placement in player_mobile_placements:
                 source_value = authored.get(
                     placement['section'], {}
@@ -1681,21 +1772,16 @@ def unit_specific_buff_rules(
         item['unit'].upper(): item['output_type']
         for item in report['applied']
     }
-    for refinery_id, refinery_values in combined.items():
-        if (
-            refinery_values.get('Refinery', '').casefold()
-            not in {'yes', 'true', '1'}
-            or '_AI' in refinery_id.upper()
-        ):
-            continue
-        free_unit = str(refinery_values.get('FreeUnit') or '').upper()
-        harvester_output = output_by_source.get(free_unit)
-        if not harvester_output:
-            continue
-        refinery_output = output_by_source.get(
-            refinery_id.upper(), refinery_id
-        )
-        rules.setdefault(refinery_output, {})['FreeUnit'] = harvester_output
+    for source_id, output_id in output_by_source.items():
+        values = effective_section(combined, source_id)
+        free_output = output_by_source.get(values.get('FreeUnit', '').upper())
+        if free_output and source_id != output_id:
+            rules.setdefault(output_id, {})['FreeUnit'] = free_output
+    from randomizer.dta.compatibility import docking_rules, building_event_rules
+    for section, values in docking_rules(combined, rules, report).items():
+        rules.setdefault(section, {}).update(values)
+    for section, values in building_event_rules(installed, authored, rules, report).items():
+        rules.setdefault(section, {}).update(values)
     harvester_sources = {
         item.upper()
         for item in comma_items(

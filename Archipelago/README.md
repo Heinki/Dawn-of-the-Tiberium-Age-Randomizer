@@ -166,7 +166,6 @@ sent as checks, and stage-marker receipts are acknowledged without becoming
 ordinary Shop rewards. Only a completed run belonging to the current AP slot
 can report its goal.
 
-Run `tools/check_archipelago_integration.py --archipelago-root /path/to/Archipelago`
-with Archipelago 0.6.7's Python environment to verify YAML, generation, item fill,
-beatability, handshake, and Shop controls. Add `--apworld /path/to/game.apworld`
-to test the packaged world.
+For release validation, generate a room with the packaged APWorld, inspect the
+generated YAML and item fill, then connect the launcher and verify the handshake
+and Shop controls. This project does not maintain unit-test suites.

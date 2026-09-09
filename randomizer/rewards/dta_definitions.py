@@ -406,23 +406,62 @@ AID_POWER_UNLOCK_REWARDS = [
     if reward.get('power_category') == 'aid'
 ]
 _POWER_BUFF_TYPE_BY_ID = {item['id']: item for item in POWER_BUFF_TYPES}
-POWER_BUFF_REWARDS = [
-    {
-        'name': f'{spec["label"]} {_POWER_BUFF_TYPE_BY_ID[buff_id]["name"]} I',
-        'description': _POWER_BUFF_TYPE_BY_ID[buff_id]['description'],
+
+
+def _power_buff_reward(spec, buff_id, payload_option=None):
+    definition = _POWER_BUFF_TYPE_BY_ID[buff_id]
+    reward = {
+        'name': f'{spec["label"]} {definition["name"]} I',
+        'description': definition['description'],
         'rules': {},
         'factions': list(spec['factions']),
         'kind': 'buff',
         'buff_type': 'power',
         'power_buff_type': buff_id,
+        'power_name': spec['label'],
         'superweapon': spec['id'],
         'power_category': spec['category'],
         'dta_player_power_buff': True,
         'special_reward': False,
     }
-    for spec in POWER_SPECS
-    for buff_id in power_buff_type_ids(spec['id'])
-]
+    if payload_option:
+        label = payload_option['label']
+        plural = payload_option.get('plural') or f'{label}s'
+        reward.update({
+            'name': f'{spec["label"]} {label} Reinforcements I',
+            'description': (
+                f'Adds one {label} to each Paratroopers deployment per stack.'
+            ),
+            'payload_unit_id': payload_option['id'],
+            'payload_unit_label': label,
+            'payload_unit_plural': plural,
+            'maximum_stacks': int(payload_option.get('maximum_stacks', 5)),
+        })
+    elif buff_id == 'payload':
+        reward.update({
+            'description': (
+                'Adds one standard infantry unit to each Paratroopers '
+                'deployment per stack.'
+            ),
+            'payload_unit_label': 'standard infantry unit',
+            'payload_unit_plural': 'standard infantry units',
+        })
+    return reward
+
+
+POWER_BUFF_REWARDS = []
+for _power_spec in POWER_SPECS:
+    for _power_buff_id in power_buff_type_ids(_power_spec['id']):
+        POWER_BUFF_REWARDS.append(
+            _power_buff_reward(_power_spec, _power_buff_id)
+        )
+        if _power_buff_id == 'payload':
+            POWER_BUFF_REWARDS.extend(
+                _power_buff_reward(_power_spec, _power_buff_id, option)
+                for option in (_power_spec.get('payload') or {}).get(
+                    'unit_options', ()
+                )
+            )
 ENEMY_REWARD_POOL = build_enemy_reward_pool(_POWER_UNLOCK_REWARDS)
 REWARD_POOL = list(
     UNIT_UNLOCK_REWARDS

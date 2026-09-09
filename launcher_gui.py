@@ -80,6 +80,7 @@ def run_self_check():
     from randomizer.dta.enemies import enemy_buff_rules
     from randomizer.dta.powers import (
         POWER_CLONE_ACTION_TYPES,
+        POWER_PROVIDER_SLOT_ACTION_TYPES,
         POWER_SPECS,
         player_power_rules,
     )
@@ -111,6 +112,7 @@ def run_self_check():
         buff_stack_limit,
         buff_group_key,
         canonical_reward,
+        reward_display_name,
         starting_credit_bonus,
     )
     from randomizer.config.tuning import (
@@ -278,6 +280,10 @@ def run_self_check():
         cameo_paths = ensure_unit_cameos(mobile_ids)
         power_cameo_paths = ensure_superweapon_cameos(
             spec['id'] for spec in POWER_SPECS
+        )
+        provider_cameo_paths = ensure_unit_cameos(
+            spec['provider']['source'] for spec in POWER_SPECS
+            if (spec.get('provider') or {}).get('buildable')
         )
         expected_access_ids = mobile_ids - set(ALWAYS_AVAILABLE_MOBILE_IDS)
         arsenal_candidates = arsenal_unit_candidates(
@@ -879,10 +885,21 @@ def run_self_check():
             reward for reward in REWARD_POOL
             if reward.get('superweapon') == 'DropPodSpecial'
             and reward.get('power_buff_type') == 'payload'
+            and not reward.get('payload_unit_id')
         )
+        paradrop_special_payload_buffs = [
+            reward for reward in REWARD_POOL
+            if reward.get('superweapon') == 'DropPodSpecial'
+            and reward.get('power_buff_type') == 'payload'
+            and reward.get('payload_unit_id')
+        ]
         paradrop_rules, paradrop_actions, paradrop_report = player_power_rules(
             allied_power_mission,
-            [paradrop_reward, paradrop_payload_buff],
+            [
+                paradrop_reward,
+                paradrop_payload_buff,
+                *paradrop_special_payload_buffs,
+            ],
             paratrooper_unit_id='E1S_PLAYER',
             reserved_rules={
                 'E1S_PLAYER': {
@@ -1179,6 +1196,7 @@ def run_self_check():
 
         ion_tooltip = power_tooltip_smoke('IonCannonSpecial')
         paradrop_tooltip = power_tooltip_smoke('DropPodSpecial')
+        nuke_tooltip = power_tooltip_smoke('MultiSpecial')
         all_power_rewards = [
             reward for reward in REWARD_POOL
             if reward.get('kind') == 'superweapon'
@@ -1192,7 +1210,9 @@ def run_self_check():
             reward for reward in REWARD_POOL
             if reward.get('dta_player_power_buff')
             and reward.get('superweapon') in building_power_ids
-            and reward.get('power_buff_type') in {'damage', 'area'}
+            and reward.get('power_buff_type') in {
+                'damage', 'area', 'cost', 'production', 'capacity'
+            }
         ]
         all_power_rules, all_power_actions, all_power_report = (
             player_power_rules(
@@ -1203,6 +1223,26 @@ def run_self_check():
         )
         all_power_runtime_rules = all_power_report.get('_runtime_rules', {})
         all_power_runtime_art = all_power_report.get('_runtime_art', {})
+        soviet_nuke_reward = next(
+            reward for reward in all_power_rewards
+            if reward.get('superweapon') == 'MultiSpecial'
+        )
+        soviet_nuke_capacity_buff = next(
+            reward for reward in building_power_buffs
+            if reward.get('superweapon') == 'MultiSpecial'
+            and reward.get('power_buff_type') == 'capacity'
+        )
+        triple_nuke_rules, triple_nuke_actions, triple_nuke_report = (
+            player_power_rules(
+                tutorial_two,
+                [
+                    soviet_nuke_reward,
+                    soviet_nuke_capacity_buff,
+                    soviet_nuke_capacity_buff,
+                ],
+            )
+        )
+        triple_nuke_entry = triple_nuke_report['applied'][0]
         retired_power_rules, retired_power_actions, retired_power_report = (
             player_power_rules(tutorial_two, [{
                 'kind': 'superweapon',
@@ -1309,6 +1349,23 @@ def run_self_check():
             'standard', standard_access_pool
         )
         chaos_access_plan = access_plan_smoke('chaos', REWARD_POOL)
+        paradrop_payload_pool = [
+            reward for reward in REWARD_POOL
+            if reward.get('superweapon') == 'DropPodSpecial'
+            and reward.get('power_buff_type') == 'payload'
+        ]
+        grid_payload_plan = plan_seed_rewards(
+            ['M_PTTP6'],
+            'dta-grid-paradrop-payload-smoke',
+            {'M_PTTP6': 40},
+            progression_mode='Grid Mode',
+            grid={},
+            reward_factions_for_code=lambda _code: {'Soviet'},
+            reward_pool_for_code=lambda _code: paradrop_payload_pool,
+            configured_reward_pool=lambda: paradrop_payload_pool,
+            starting_unlocked_power_ids={'DROPPODSPECIAL'},
+            require_access_for_unit_buffs=True,
+        )['M_PTTP6']
         legacy_access_config = {
             'eva_voice': 'GDI',
             'generation': {
@@ -1470,6 +1527,11 @@ def run_self_check():
                     {'recharge', 'payload'}
                     if spec['id'] == 'DropPodSpecial'
                     else {'recharge', 'damage', 'area'}
+                    if spec['id'] == 'IonCannonSpecial'
+                    else {
+                        'recharge', 'damage', 'area', 'cost', 'production',
+                        'capacity',
+                    }
                 )
                 for spec in POWER_SPECS
             ),
@@ -1482,11 +1544,19 @@ def run_self_check():
                     'damage': 10,
                     'area': 40,
                     'payload': 20,
+                    'cost': 10,
+                    'production': 10,
+                    'capacity': 4,
                 }
                 and all(
                     power_buff_stack_limit(reward) == (
                         10 if reward.get('power_buff_type') == 'damage'
+                        else 5 if reward.get('payload_unit_id')
                         else 20 if reward.get('power_buff_type') == 'payload'
+                        else 10 if reward.get('power_buff_type') in {
+                            'cost', 'production'
+                        }
+                        else 4 if reward.get('power_buff_type') == 'capacity'
                         else 40
                     )
                     for reward in REWARD_POOL
@@ -1496,14 +1566,30 @@ def run_self_check():
                     buff_group_key(reward)
                     for reward in REWARD_POOL
                     if reward.get('dta_player_power_buff')
-                } == {'recharge', 'damage', 'area', 'payload'}
+                } == {
+                    'recharge', 'damage', 'area', 'payload',
+                    'cost', 'production', 'capacity',
+                    'payload:E4S', 'payload:E5',
+                    'payload:E3S', 'payload:SHOK',
+                }
             ),
             'unlock_dashboard_tooltips_render': (
                 'Recharge time 10.0% faster.' in ion_tooltip
                 and 'Damage 15.0% higher.' in ion_tooltip
                 and 'Effect radius +1 cells.' in ion_tooltip
                 and 'Recharge time 10.0% faster.' in paradrop_tooltip
-                and 'Delivered infantry +1.' in paradrop_tooltip
+                and 'Each deployment adds 1 standard infantry unit.'
+                in paradrop_tooltip
+                and 'Each deployment adds 1 Soviet Flamethrower.'
+                in paradrop_tooltip
+                and 'Each deployment adds 1 Chem Warrior.'
+                in paradrop_tooltip
+                and 'Each deployment adds 1 Soviet Rocket Soldier.'
+                in paradrop_tooltip
+                and 'Each deployment adds 1 Shock Trooper.'
+                in paradrop_tooltip
+                and 'Provider limit 2 buildings; up to 2 independently '
+                'charging uses.' in nuke_tooltip
             ),
             'unlock_dashboard_factory_support_visible': (
                 'only the current mission faction\'s Barracks' in
@@ -1538,6 +1624,51 @@ def run_self_check():
             'dta_power_cameos_complete': (
                 {spec['id'].upper() for spec in POWER_SPECS}
                 == set(power_cameo_paths)
+            ),
+            'dta_power_provider_cameos_used': (
+                all(
+                    spec['id'].upper() in power_cameo_paths
+                    and spec['provider']['source'].upper()
+                    in provider_cameo_paths
+                    and power_cameo_paths[
+                        spec['id'].upper()
+                    ].read_bytes() == provider_cameo_paths[
+                        spec['provider']['source'].upper()
+                    ].read_bytes()
+                    for spec in POWER_SPECS
+                    if (spec.get('provider') or {}).get('buildable')
+                )
+                and {'CHEMICALSPECIAL', 'MULTISPECIAL'}.issubset(
+                    power_cameo_paths
+                )
+                and power_cameo_paths['CHEMICALSPECIAL'].read_bytes()
+                != power_cameo_paths['MULTISPECIAL'].read_bytes()
+            ),
+            'dta_grid_paradrop_payload_variants_visible': (
+                {
+                    str(reward.get('payload_unit_id') or '')
+                    for reward in grid_payload_plan
+                } == {'', 'E4S', 'E5', 'E3S', 'SHOK'}
+                and {
+                    reward_display_name(reward)
+                    for reward in paradrop_payload_pool
+                } == {
+                    'Soviet Paratroopers: Each deployment adds 1 standard '
+                    'infantry unit.',
+                    'Soviet Paratroopers: Each deployment adds 1 Soviet '
+                    'Flamethrower.',
+                    'Soviet Paratroopers: Each deployment adds 1 Chem Warrior.',
+                    'Soviet Paratroopers: Each deployment adds 1 Soviet Rocket '
+                    'Soldier.',
+                    'Soviet Paratroopers: Each deployment adds 1 Shock Trooper.',
+                }
+                and all(
+                    str(reward.get('payload_unit_label') or '')
+                    in reward_display_name(reward)
+                    and str(reward.get('payload_unit_label') or '')
+                    in reward.get('description', '')
+                    for reward in paradrop_payload_pool
+                )
             ),
             'dta_defense_rewards_complete': (
                 {
@@ -1653,6 +1784,7 @@ def run_self_check():
                 ).get('TechLevel') == '1'
                 and values.get('Buildability') == 'HumanOnly'
                 and values.get('AIBuildThis') == 'no'
+                and values.get('BuildLimit') == '1'
                 and values.get('Owner') == 'GDI'
                 and values.get('RequiredHouses') == 'GDI'
                 and values.get('SuperWeapon')
@@ -1671,6 +1803,12 @@ def run_self_check():
                 and all(
                     item['damage_buffs'] == 1
                     and item['area_buffs'] == 1
+                    and item['provider_cost_buffs'] == 1
+                    and item['provider_production_buffs'] == 1
+                    and item['provider_capacity_buffs'] == 1
+                    and item['provider_capacity'] == 2
+                    and len(item['providers']) == 2
+                    and len(item['power_clones']) == 2
                     and item['grant_mode'] == 'building'
                     for item in all_power_report['applied']
                     if item['power'] in building_power_ids
@@ -1678,6 +1816,60 @@ def run_self_check():
                 and not {
                     'AIRSINIT', 'NUKEINIT', 'REVERSED_CHRONOSHIFT'
                 }.intersection(all_power_runtime_art)
+                and 'Weapons' in all_power_runtime_rules
+                and 'WeaponTypes' not in all_power_runtime_rules
+                and all(
+                    int(all_power_rules[provider['provider']]['Cost'])
+                    < int(effective_section(
+                        installed_sections, provider['source']
+                    )['Cost'])
+                    and float(all_power_rules[
+                        provider['provider']
+                    ]['BuildTimeMultiplier']) == 0.85
+                    for provider in all_power_report['provider_buildings']
+                )
+                and all(
+                    all_power_rules[item['power_clones'][1]]['Action']
+                    == POWER_PROVIDER_SLOT_ACTION_TYPES[
+                        item['power'].upper()
+                    ][0][0]
+                    and ini_sections(
+                        GAME_ROOT / 'INI' / 'Action.ini'
+                    ).get('ActionTypes', {}).get(
+                        POWER_PROVIDER_SLOT_ACTION_TYPES[
+                            item['power'].upper()
+                        ][0][0]
+                    ) == POWER_PROVIDER_SLOT_ACTION_TYPES[
+                        item['power'].upper()
+                    ][0][1]
+                    for item in all_power_report['applied']
+                    if item['power'] in building_power_ids
+                )
+            ),
+            'dta_provider_capacity_tracks_independent_buildings': (
+                not triple_nuke_actions
+                and triple_nuke_entry['provider_capacity_buffs'] == 2
+                and triple_nuke_entry['provider_capacity'] == 3
+                and len(triple_nuke_entry['providers']) == 3
+                and len(triple_nuke_entry['power_clones']) == 3
+                and len(set(triple_nuke_entry['power_clones'])) == 3
+                and {
+                    item['slot']
+                    for item in triple_nuke_report['provider_buildings']
+                } == {1, 2, 3}
+                and all(
+                    triple_nuke_rules[provider_id].get('BuildLimit') == '1'
+                    and triple_nuke_rules[provider_id].get('SuperWeapon')
+                    == power_id
+                    for provider_id, power_id in zip(
+                        triple_nuke_entry['providers'],
+                        triple_nuke_entry['power_clones'],
+                    )
+                )
+                and len({
+                    triple_nuke_rules[power_id].get('Action')
+                    for power_id in triple_nuke_entry['power_clones']
+                }) == 3
             ),
             'dta_power_lists_preserve_war_factory_clones': (
                 'AWEAP_PLAYER' in allied_factory_rules.get(
@@ -1750,11 +1942,18 @@ def run_self_check():
                 == paradrop_report['player_house']
                 and paradrop_team.get('Waypoint') == '100'
                 and paradrop_taskforce.get('0') == '6,E1S_PLAYER'
-                and paradrop_taskforce.get('1')
+                and paradrop_taskforce.get('1') == '1,E4S'
+                and paradrop_taskforce.get('2') == '1,E5'
+                and paradrop_taskforce.get('3') == '1,E3S'
+                and paradrop_taskforce.get('4') == '1,SHOK'
+                and paradrop_taskforce.get('5')
                 == f'1,{paradrop_report["paradrop_aircraft"]}'
-                and paradrop_aircraft.get('Passengers') == '6'
-                and paradrop_report['applied'][0]['payload_buffs'] == 1
-                and paradrop_report['applied'][0]['payload_units'] == '6'
+                and paradrop_aircraft.get('Passengers') == '10'
+                and paradrop_report['applied'][0]['payload_buffs'] == 5
+                and paradrop_report['applied'][0]['payload_units'] == '10'
+                and paradrop_report['applied'][0]['payload_unit_counts'] == {
+                    '': 1, 'E4S': 1, 'E5': 1, 'E3S': 1, 'SHOK': 1,
+                }
                 and paradrop_report['applied'][0]['payload_aircraft']
                 == 'BADGER'
             ),
@@ -2044,7 +2243,7 @@ def run_self_check():
                 }.issubset(ini_sections(
                     GAME_ROOT / 'INI' / 'Action.ini'
                 ).get('ActionTypes', {}))
-                and len(all_power_report['provider_buildings']) == 4
+                and len(all_power_report['provider_buildings']) == 8
             ),
             'dta_sidebar_factions_and_defenses_sorted': (
                 set(faction_priority_outputs) == set(faction_priority_sources)
@@ -2084,7 +2283,7 @@ def run_self_check():
                         if unit_rules.get(key)
                     }.issubset(set(
                         crash_clone_rules[unit_id].get(
-                            'WeaponTypes', {}
+                            'Weapons', {}
                         ).values()
                     ))
                 )
@@ -2093,7 +2292,7 @@ def run_self_check():
                     for section in crash_clone_rules[unit_id]
                     if section not in {
                         'PrerequisiteGroups', 'InfantryTypes', 'VehicleTypes',
-                        'AircraftTypes', 'BuildingTypes', 'WeaponTypes',
+                        'AircraftTypes', 'BuildingTypes', 'Weapons',
                         'General',
                     }
                 )
@@ -2376,7 +2575,7 @@ def run_self_check():
                 )
             ),
             'orphan_unit_buffs_do_not_grant_access': (
-                not _orphan_rules
+                not orphan_buff_report['applied']
                 and any(
                     item.get('unit') == 'E2'
                     and item.get('reason') == 'buff_without_access'
@@ -2406,14 +2605,14 @@ def run_self_check():
             ),
             'dta_access_unlocks_required_player_factories': (
                 {reward['unit'] for reward in infrastructure_rewards}
-                == {'PYLE', 'WEAP'}
+                == {'NUKE', 'TDPROC', 'PYLE', 'WEAP'}
                 and faction_infrastructure_ids == {
-                    'GDI': {'PYLE', 'WEAP'},
-                    'Nod': {'HAND', 'AFLD'},
-                    'Allies': {'RATENT', 'AWEAP'},
-                    'Soviet': {'RABARR', 'SWEAP'},
+                    'GDI': {'NUKE', 'TDPROC', 'PYLE', 'WEAP'},
+                    'Nod': {'NUKE', 'TDPROC', 'HAND', 'AFLD'},
+                    'Allies': {'RAPOWR', 'RAPROC', 'RATENT', 'AWEAP'},
+                    'Soviet': {'RAPOWR', 'RAPROC', 'RABARR', 'SWEAP'},
                 }
-                and set(infrastructure_outputs) == {'PYLE', 'WEAP'}
+                and set(infrastructure_outputs) == {'NUKE', 'TDPROC', 'PYLE', 'WEAP'}
                 and all(
                     (
                         values := infrastructure_rules.get(
@@ -2451,12 +2650,6 @@ def run_self_check():
                     'friendly_families', ()
                 )
                 and 'GDI' not in false_eagle_enemy_rules
-                and not production_infrastructure_rewards(
-                    [false_eagle_access_reward],
-                    enabled=True,
-                    production_context=false_eagle_context,
-                    existing_production_buildings=('AFLD',),
-                )
             ),
             'dta_starting_credit_reward_is_capped_and_applied': (
                 buff_stack_limit(starting_credit_reward) == 20
@@ -2669,12 +2862,15 @@ def run_self_check():
             'unlock_dashboard_global_buffs_visible',
             'unlock_dashboard_chaos_equivalents_collapsed',
             'dta_power_cameos_complete',
+            'dta_power_provider_cameos_used',
+            'dta_grid_paradrop_payload_variants_visible',
             'dta_defense_rewards_complete',
             'dta_firestorm_removed',
             'dta_retired_chrono_tank_power_ignored',
             'dta_power_actions_are_unique_and_callable',
             'dta_power_buildings_are_immediately_available',
             'dta_building_power_buffs_are_player_only',
+            'dta_provider_capacity_tracks_independent_buildings',
             'dta_power_lists_preserve_war_factory_clones',
             'dta_exclusive_buffed_ion_cannon_works',
             'dta_paradrop_payload_uses_badger_capacity',

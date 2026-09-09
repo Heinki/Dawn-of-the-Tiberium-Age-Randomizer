@@ -1080,13 +1080,19 @@ def _validate_catalogue(sections, path):
 def _validate_dta_powers(sections, path):
     settings = sections['settings']
     if (
-        set(settings) != {'area_cells_per_stack', 'payload_maximum_stacks'}
+        set(settings) != {
+            'area_cells_per_stack', 'payload_maximum_stacks',
+            'provider_capacity_maximum_stacks',
+        }
         or not isinstance(settings['area_cells_per_stack'], (int, float))
         or isinstance(settings['area_cells_per_stack'], bool)
         or settings['area_cells_per_stack'] <= 0
         or not isinstance(settings['payload_maximum_stacks'], int)
         or isinstance(settings['payload_maximum_stacks'], bool)
         or settings['payload_maximum_stacks'] < 1
+        or not isinstance(settings['provider_capacity_maximum_stacks'], int)
+        or isinstance(settings['provider_capacity_maximum_stacks'], bool)
+        or settings['provider_capacity_maximum_stacks'] < 1
     ):
         _invalid('Invalid DTA power settings', path)
     powers = sections['powers']
@@ -1094,7 +1100,10 @@ def _validate_dta_powers(sections, path):
         _invalid('DTA power list cannot be empty', path)
     seen_ids = set()
     seen_actions = set()
-    allowed_buffs = {'recharge', 'damage', 'area', 'payload'}
+    allowed_buffs = {
+        'recharge', 'damage', 'area', 'payload', 'cost', 'production',
+        'capacity',
+    }
     for power in powers:
         if not isinstance(power, dict):
             _invalid('Invalid DTA power entry', path)
@@ -1202,8 +1211,36 @@ def _validate_dta_powers(sections, path):
             or payload['units_per_buff'] < 1
         ):
             _invalid(f'Invalid DTA power payload {power_id!r}', path)
+        payload_options = (
+            payload.get('unit_options', ()) if isinstance(payload, dict) else ()
+        )
+        if payload is not None and (
+            not isinstance(payload_options, list)
+            or any(
+                not isinstance(option, dict)
+                or not _is_nonempty_string(option.get('id'))
+                or not _is_nonempty_string(option.get('label'))
+                or not _is_nonempty_string(option.get('plural'))
+                or not isinstance(option.get('maximum_stacks'), int)
+                or isinstance(option.get('maximum_stacks'), bool)
+                or option['maximum_stacks'] < 1
+                for option in payload_options
+            )
+            or len({
+                option['id'].casefold() for option in payload_options
+            }) != len(payload_options)
+        ):
+            _invalid(f'Invalid DTA power payload options {power_id!r}', path)
         if ('payload' in buffs) != (payload is not None):
             _invalid(f'DTA payload contract mismatch {power_id!r}', path)
+        if (
+            {'cost', 'production', 'capacity'} & set(buffs)
+            and not (
+                isinstance(provider, dict)
+                and provider.get('buildable') is True
+            )
+        ):
+            _invalid(f'DTA provider buff contract mismatch {power_id!r}', path)
         native_ion_effect = (
             power.get('exclusive_player') is True
             and str(values.get('Type')).casefold() == 'ioncannon'

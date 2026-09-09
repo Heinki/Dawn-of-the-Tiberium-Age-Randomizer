@@ -18,12 +18,14 @@ UNIT_BUFF_TYPES_INTRODUCED = {
     3: ('self_healing',),
     4: ('build_limit',),
 }
-POWER_BUFF_CATALOGUE_VERSION = 4
+POWER_BUFF_CATALOGUE_VERSION = 6
 POWER_BUFF_TYPES_INTRODUCED = {
     1: ('vision',),
     2: ('recharge',),
     3: ('damage', 'area'),
     4: ('payload',),
+    5: ('cost', 'production'),
+    6: ('capacity',),
 }
 ENEMY_STACK_MODEL_VERSION = 2
 INFANTRY_ACCESS_CATALOGUE_VERSION = 1

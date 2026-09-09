@@ -261,8 +261,9 @@ def ensure_unit_cameos(unit_ids):
 
 
 def ensure_superweapon_cameos(superweapon_ids, sidebar_overrides=None):
-    """Extract DTA SuperWeaponType SidebarImage SHPs."""
+    """Extract distinct DTA power cameos, using buildable provider artwork."""
     rules = _ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
+    art = _ini_sections(GAME_ROOT / 'INI' / 'Art.ini')
     palette = mix_asset('CAMEO.PAL')
     if palette is None:
         return {}
@@ -271,13 +272,25 @@ def ensure_superweapon_cameos(superweapon_ids, sidebar_overrides=None):
         for power_id, image in (sidebar_overrides or {}).items()
         if image
     }
+    # Import locally: powers loads static reward configuration and should not
+    # need the image decoder during catalogue construction.
+    from randomizer.dta.powers import POWER_SPEC_BY_ID
+
     result = {}
     for raw_power_id in superweapon_ids:
         power_id = str(raw_power_id or '').upper()
-        cameo = overrides.get(
-            power_id,
-            _effective_art_value(rules, power_id, 'sidebarimage'),
-        )
+        cameo = overrides.get(power_id, '')
+        if not cameo:
+            provider = POWER_SPEC_BY_ID.get(power_id, {}).get('provider') or {}
+            provider_id = str(provider.get('source') or '').upper()
+            if provider.get('buildable') and provider_id:
+                provider_art_id = (
+                    _effective_art_value(rules, provider_id, 'image')
+                    or provider_id
+                ).upper()
+                cameo = _effective_art_value(art, provider_art_id, 'cameo')
+        if not cameo:
+            cameo = _effective_art_value(rules, power_id, 'sidebarimage')
         if not cameo:
             continue
         filename = cameo if Path(cameo).suffix else cameo + '.SHP'

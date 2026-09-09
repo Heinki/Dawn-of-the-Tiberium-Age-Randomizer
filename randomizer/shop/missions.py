@@ -16,7 +16,7 @@ from .model import MissionEconomyClass, MissionOffer, ShopModeConfig
 
 
 _CLASS_ORDER = tuple(MissionEconomyClass)
-SHOP_OPENING_STAGES = 2
+SHOP_OPENING_STAGES = 1
 SHOP_DIFFICULTIES = (
     'Easy',
     'Normal',
@@ -62,7 +62,7 @@ def classify_mission(mission):
 def mission_classes_for_stage(
     stage, run_length=None, config: ShopModeConfig = SHOP_CONFIG
 ):
-    """Protect the first two missions, regardless of the configured run length."""
+    """Protect only the first mission, regardless of configured run length."""
     if int(stage) <= SHOP_OPENING_STAGES:
         return frozenset((MissionEconomyClass.ACT_1,))
     return frozenset(_CLASS_ORDER)

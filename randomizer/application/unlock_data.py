@@ -1272,6 +1272,12 @@ class UnlockDataController:
                 'prerequisite-free once you have an MCV/Construction Yard. '
                 'Other factions\' factories stay unavailable.'
             )
+            if entry['production_building_role'] == 'Air production building':
+                lines.append(
+                    'Unlocked aircraft use your mission faction\'s air production '
+                    'building, including cross-faction Chaos unlocks: Orcas can '
+                    'be built at Soviet runways and Yaks at GDI helipads.'
+                )
         starting_source_names = [
             source for source in earned_source_names
             if source in starting_source_labels
@@ -1389,7 +1395,7 @@ class UnlockDataController:
         if deferred_power_buffs:
             deferred = {}
             for reward in deferred_power_buffs:
-                key = reward.get('power_buff_type')
+                key = buff_group_key(reward)
                 deferred.setdefault(
                     key, {'reward': reward, 'count': 0}
                 )['count'] += 1

@@ -204,6 +204,11 @@ CLONE_REQUIRED_BUFF_TYPES = (
 
 def buff_group_key(reward):
     """Keep each power-buff effect separate despite buff_type='power'."""
+    if (
+        reward.get('power_buff_type') == 'payload'
+        and reward.get('payload_unit_id')
+    ):
+        return f'payload:{str(reward["payload_unit_id"]).upper()}'
     return reward.get('power_buff_type') or reward.get('buff_type')
 
 

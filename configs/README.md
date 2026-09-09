@@ -16,8 +16,8 @@ The active static configuration targets Dawn of the Tiberium Age.
 
 DTA unit and defense catalogues are derived from installed game data at runtime. Firestorm and obsolete power aliases remain disabled.
 
-The first two Shop missions offer Act 1 choices, including a fixed-unit or
-hero mission when available. From mission 3 onward, every remaining eligible
+The first Shop mission offers Act 1 choices, including a fixed-unit or hero
+mission when available. From mission 2 onward, every remaining eligible
 mission has equal selection probability, regardless of class or run length.
 All three choices can be finales. Completed missions cannot repeat, and the
 configured mission pool still applies.
@@ -46,7 +46,7 @@ Strikes use the maximum power price.
 
 Generated unit and building clones receive fixed `CameoPriority` bands in GDI, Nod, Allies, Soviet order. Defensive buildings use a separate lower set of faction bands, keeping every defense below normal buildings on the construction sidebar.
 
-The Ion Cannon clone starts from the native `IonCannonSpecial` definition, then applies player-only identity and buff adjustments. Because Ion damage and radius are engine-global, native providers and scripted grants are removed and the native power is recharge-locked while the reward clone is active. Only the player-granted clone can fire the buffed effect. Paratroopers support recharge and payload-size buffs.
+The Ion Cannon clone starts from the native `IonCannonSpecial` definition, then applies player-only identity and buff adjustments. Because Ion damage and radius are engine-global, native providers and scripted grants are removed and the native power is recharge-locked while the reward clone is active. Only the player-granted clone can fire the buffed effect. Buildable Airstrike, Nuclear Strike, and Chrono Vortex providers support cost, construction-speed, and Additional Launch Site buffs. Their base limit is one building; every Additional Launch Site stack enables another one-use provider/power pair, up to five, so destroying a building removes its corresponding shot. Paratroopers support recharge, standard payload-size, and named special-infantry payload buffs; each named payload is a separate Shop choice.
 
 Airstrike, Nuclear Strike, and Chrono Vortex damage/radius upgrades use unique player-only SuperWeaponType, weapon, warhead, and animation clones. Their provider buildings use `Buildability=HumanOnly`; native buildings stay `AIOnly` for production and native AI effect chains remain unchanged.
 

@@ -47,7 +47,6 @@ from ._dependencies import (
     logging,
     messagebox,
     mission_basic_unit_rules,
-    mission_production_buildings,
     original_mcv_access_rules,
     mission_player_production_houses,
     os,
@@ -660,6 +659,7 @@ throw "Map $name was not found in expandmo*.mix"
                     human_difficulty,
                     game_speed_value,
                     options,
+                    global_flags=mission.get('_precondition_flags', {}),
                 ),
                 encoding='utf-8',
                 newline='',
@@ -996,6 +996,12 @@ throw "Map $name was not found in expandmo*.mix"
             self.destroy()
 
     def launch_mission_async(self, mission, extra_rules=None, launch_note=''):
+        from randomizer.dta.preconditions import selected_precondition_flags
+        # Snapshot UI/config choices before the preparation worker starts.
+        mission = dict(mission)
+        mission['_precondition_flags'] = selected_precondition_flags(
+            mission, self.config.get('mission_preconditions', {})
+        )
         missing = [path for path in (GAME_LAUNCHER_EXE, GAME_EXE) if not path.exists()]
         if missing:
             self.append_log('Missing launch executable(s): ' + ', '.join(str(path) for path in missing), error=True)
@@ -1155,16 +1161,10 @@ throw "Map $name was not found in expandmo*.mix"
             configured_production_houses = (
                 mission_player_production_houses(mission_code)
             )
-            existing_production_buildings = mission_production_buildings(
-                source_lines,
-                additional_production_houses=configured_production_houses,
-                include_capturable=False,
-            )
             infrastructure_rewards = production_infrastructure_rewards(
                 active_rewards,
                 enabled=self.randomize_unit_access_enabled(),
                 production_context=isolation_report,
-                existing_production_buildings=existing_production_buildings,
             )
             assistance_stacks = (
                 self.mission_failure_stack(mission_code)
@@ -1197,10 +1197,11 @@ throw "Map $name was not found in expandmo*.mix"
                 ),
                 production_context=isolation_report,
                 rule_overlays=isolation_rules,
-                production_owner_houses=mission_player_production_houses(
-                    mission_code
+                production_owner_houses=configured_production_houses,
+                allow_foreign_factory_access=(
+                    self.shop_launch_active()
+                    or self.active_reward_mode() in {'Chaos', ARSENAL_MODE}
                 ),
-                allow_foreign_factory_access=self.shop_launch_active(),
             )
             if self.shop_launch_active():
                 apply_shop_clone_modifiers(

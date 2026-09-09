@@ -99,7 +99,7 @@
         "include_power_buff_rewards": true,
         "unit_buff_catalogue_version": 3,
         "infantry_access_catalogue_version": 1,
-        "power_buff_catalogue_version": 4,
+        "power_buff_catalogue_version": 6,
         "dta_power_catalogue_version": 4,
         "enabled_buff_types": [
           "production",
@@ -118,7 +118,7 @@
           "sensors",
           "self_healing"
         ],
-        "enabled_power_buff_types": ["recharge", "damage", "area", "payload"],
+        "enabled_power_buff_types": ["recharge", "damage", "area", "payload", "cost", "production", "capacity"],
         "reward_weights": {
           "main": {
             "unit_unlocks": 100,
@@ -153,6 +153,8 @@
           "power_buffs": {
             "recharge": 100,
             "cost": 100,
+            "production": 100,
+            "capacity": 100,
             "area": 100,
             "damage": 100,
             "duration": 100,

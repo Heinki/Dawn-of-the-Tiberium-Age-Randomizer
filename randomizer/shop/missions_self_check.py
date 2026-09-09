@@ -22,7 +22,7 @@ def validate_shop_mission_selection():
         and all(offer.economy_class is MissionEconomyClass.ACT_1 for offer in offers)
         and missions[0]['code'].upper() in {offer.mission_code for offer in offers}
         for length in (3, 10, 20)
-        for stage in (1, 2)
+        for stage in (1,)
     )
     unrestricted_valid = all(
         mission_classes_for_stage(stage, length) == set(MissionEconomyClass)
@@ -31,12 +31,12 @@ def validate_shop_mission_selection():
             run_length=length, offer_count=len(missions),
         )} == all_codes
         for length in (3, 10, 20)
-        for stage in range(3, length + 1)
+        for stage in range(2, length + 1)
     )
     counts = Counter()
     for seed in range(2048):
         counts.update(offer.mission_code for offer in generate_mission_offers(
-            missions, run_seed=f'SHOP-UNIFORM-{seed}', stage=3
+            missions, run_seed=f'SHOP-UNIFORM-{seed}', stage=2
         ))
     expected = 2048 * 3 / len(missions)
     uniform_valid = set(counts) == all_codes and all(
@@ -46,17 +46,17 @@ def validate_shop_mission_selection():
     mixed_pool = missions[20:]
     all_finale_valid = any(
         all(offer.economy_class is MissionEconomyClass.FINALE for offer in
-            generate_mission_offers(mixed_pool, run_seed=seed, stage=3))
+            generate_mission_offers(mixed_pool, run_seed=seed, stage=2))
         for seed in range(2048)
     )
-    offers = generate_mission_offers(missions, run_seed='SHOP-REPEATABLE', stage=3)
+    offers = generate_mission_offers(missions, run_seed='SHOP-REPEATABLE', stage=2)
     repeatable_valid = offers == generate_mission_offers(
         list(reversed(missions)) + missions,
-        run_seed='SHOP-REPEATABLE', stage=3,
+        run_seed='SHOP-REPEATABLE', stage=2,
     )
     kept_codes = tuple(offer.mission_code for offer in offers[1:])
     rerolled = generate_mission_offers(
-        missions, run_seed='SHOP-REPEATABLE', stage=3, reroll_count=1,
+        missions, run_seed='SHOP-REPEATABLE', stage=2, reroll_count=1,
         completed_codes=kept_codes, previous_offer_codes=(offers[0].mission_code,),
         offer_count=1,
     )
@@ -64,10 +64,10 @@ def validate_shop_mission_selection():
         offer.mission_code for offer in offers
     }
     exhausted_valid = generate_mission_offers(
-        missions, run_seed='SHOP-EXHAUSTED', stage=3, completed_codes=all_codes,
+        missions, run_seed='SHOP-EXHAUSTED', stage=2, completed_codes=all_codes,
     ) == ()
     return {
-        'mission_two_stage_opening_valid': opening_valid,
+        'mission_first_stage_opening_valid': opening_valid,
         'mission_unrestricted_pool_valid': unrestricted_valid,
         'mission_uniform_selection_valid': uniform_valid,
         'mission_all_finale_offers_valid': all_finale_valid,

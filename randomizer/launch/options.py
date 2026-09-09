@@ -31,6 +31,7 @@ def spawn_ini_text(
     difficulty_value,
     game_speed_value,
     extra_options=None,
+    global_flags=None,
 ):
     """Serialize DTA's direct single-player ``spawn.ini`` contract."""
     options = dict(extra_options or {})
@@ -64,6 +65,10 @@ def spawn_ini_text(
         content.append(f'ClientDifficulty={client_difficulty}')
     for key, value in sorted(options.items()):
         content.append(f'{key}={value}')
+    if global_flags:
+        content.extend(['', '[GlobalFlags]'])
+        for index, value in sorted(global_flags.items()):
+            content.append(f'GlobalFlag{int(index)}={int(value)}')
     return '\r\n'.join(content) + '\r\n'
 
 

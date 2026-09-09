@@ -139,6 +139,30 @@ def validate_shop_domain():
     _require(len(unit_buffs) >= 500, 'DTA Shop unit buff catalogue is incomplete')
     _require(len(power_access) == 6, 'DTA Shop power access catalogue is incomplete')
     _require(len(power_buffs) >= 10, 'DTA Shop power buff catalogue is incomplete')
+    paradrop_payload_choices = {
+        str(canonical_reward_for_id(entry.reward_id).get('payload_unit_id') or '')
+        for entry in power_buffs
+        if entry.target_id == 'DROPPODSPECIAL'
+        and canonical_reward_for_id(entry.reward_id).get('power_buff_type')
+        == 'payload'
+    }
+    _require(
+        paradrop_payload_choices == {'', 'E4S', 'E5', 'E3S', 'SHOK'},
+        'DTA Shop selectable Paratroopers payload catalogue is incomplete',
+    )
+    provider_capacity_targets = {
+        entry.target_id
+        for entry in power_buffs
+        if canonical_reward_for_id(entry.reward_id).get('power_buff_type')
+        == 'capacity'
+    }
+    _require(
+        provider_capacity_targets == {
+            'AIRSTRIKESPECIAL', 'CHEMICALSPECIAL', 'VORTEXSPECIAL',
+            'MULTISPECIAL',
+        },
+        'DTA Shop provider-capacity buffs are incomplete',
+    )
     _require(
         any(entry.target_id == 'E1' for entry in unit_access),
         'Minigunner access missing from DTA Shop',

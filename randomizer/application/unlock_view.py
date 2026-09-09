@@ -361,6 +361,7 @@ class UnlockViewController:
             self.cameo_retry_count = 0
 
     def refresh_progress_view(self):
+        self.precondition_picker.set_mission(self.selected_mission())
         if not self.state:
             self.progress_label.config(text='No randomizer seed generated. Vanilla mission launching is still available.')
             self.set_rewards_text('')

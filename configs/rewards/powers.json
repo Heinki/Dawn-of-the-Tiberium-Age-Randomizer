@@ -4,7 +4,8 @@
   "sections": {
     "settings": {
       "area_cells_per_stack": 1.0,
-      "payload_maximum_stacks": 20
+      "payload_maximum_stacks": 20,
+      "provider_capacity_maximum_stacks": 4
     },
     "powers": [
       {
@@ -72,7 +73,7 @@
           "damage_fields": {"AIRSEXPL": "Damage", "AIRSSPRD": "Damage"},
           "radius_fields": {"AIRSEXPL": "DamageRadius", "AIRSSPRD": "DamageRadius"}
         },
-        "buffs": ["recharge", "damage", "area"]
+        "buffs": ["recharge", "damage", "area", "cost", "production", "capacity"]
       },
       {
         "id": "ChemicalSpecial",
@@ -108,7 +109,7 @@
           "damage_fields": {"ATOMEXPL": "ExplosionDamage"},
           "area_warheads": {"ATOMEXPL": "AtomicWH"}
         },
-        "buffs": ["recharge", "damage", "area"]
+        "buffs": ["recharge", "damage", "area", "cost", "production", "capacity"]
       },
       {
         "id": "VortexSpecial",
@@ -144,7 +145,7 @@
           "damage_fields": {"CHRONO_VORTEX": "Damage", "CHRONO_VORTEX_LIGHTNING": "Damage"},
           "area_warheads": {"CHRONO_VORTEX": "VortexWH"}
         },
-        "buffs": ["recharge", "damage", "area"]
+        "buffs": ["recharge", "damage", "area", "cost", "production", "capacity"]
       },
       {
         "id": "MultiSpecial",
@@ -180,7 +181,7 @@
           "damage_fields": {"ATOMEXPL": "ExplosionDamage"},
           "area_warheads": {"ATOMEXPL": "AtomicWH"}
         },
-        "buffs": ["recharge", "damage", "area"]
+        "buffs": ["recharge", "damage", "area", "cost", "production", "capacity"]
       },
       {
         "id": "DropPodSpecial",
@@ -208,7 +209,33 @@
           "aircraft_id": "BADGER",
           "capacity_field": "Passengers",
           "baseline_capacity": 5,
-          "units_per_buff": 1
+          "units_per_buff": 1,
+          "unit_options": [
+            {
+              "id": "E4S",
+              "label": "Soviet Flamethrower",
+              "plural": "Soviet Flamethrowers",
+              "maximum_stacks": 5
+            },
+            {
+              "id": "E5",
+              "label": "Chem Warrior",
+              "plural": "Chem Warriors",
+              "maximum_stacks": 5
+            },
+            {
+              "id": "E3S",
+              "label": "Soviet Rocket Soldier",
+              "plural": "Soviet Rocket Soldiers",
+              "maximum_stacks": 5
+            },
+            {
+              "id": "SHOK",
+              "label": "Shock Trooper",
+              "plural": "Shock Troopers",
+              "maximum_stacks": 5
+            }
+          ]
         },
         "buffs": ["recharge", "payload"]
       }

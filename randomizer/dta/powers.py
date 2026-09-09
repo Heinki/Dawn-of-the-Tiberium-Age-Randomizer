@@ -3,6 +3,7 @@
 from hashlib import sha1
 
 from randomizer.config.static import static_config_section
+from randomizer.config.tuning import stacked_cost, stacking_multiplier
 from randomizer.core.paths import GAME_ROOT
 from randomizer.dta.clones import _player_production_context
 from randomizer.dta.maps import mission_source_path
@@ -37,6 +38,25 @@ POWER_CLONE_ACTION_TYPES = {
     )
     for spec in POWER_SPECS
 }
+POWER_PROVIDER_SLOT_ACTION_TYPES = {
+    spec['id'].upper(): tuple(
+        (
+            f'{spec["action"]["id"][:-3]}{slot}ACT',
+            f'{spec["action"]["cursor"]},{spec["action"]["no_cursor"]}',
+        )
+        for slot in range(
+            2,
+            int(POWER_SETTINGS['provider_capacity_maximum_stacks']) + 2,
+        )
+    )
+    for spec in POWER_SPECS
+    if (spec.get('provider') or {}).get('buildable')
+}
+POWER_RUNTIME_ACTION_TYPES = tuple(POWER_CLONE_ACTION_TYPES.values()) + tuple(
+    action
+    for actions in POWER_PROVIDER_SLOT_ACTION_TYPES.values()
+    for action in actions
+)
 RETIRED_POWER_ACTION_TYPES = frozenset({
     'DTAAIRSTRIKESPECIALACT',
     'DTACHEMICALSPECIALACT',
@@ -44,7 +64,7 @@ RETIRED_POWER_ACTION_TYPES = frozenset({
     'DTAVORTEXSPECIALACT',
 }) - {
     action_name
-    for action_name, _cursor_pair in POWER_CLONE_ACTION_TYPES.values()
+    for action_name, _cursor_pair in POWER_RUNTIME_ACTION_TYPES
 }
 MAX_TYPE_ID_LENGTH = 23
 POWER_AREA_CELLS_PER_STACK = float(
@@ -124,7 +144,7 @@ def ensure_power_action_types(path=None):
         key, separator, _value = content.partition('=')
         if separator:
             existing[key.strip().casefold()] = index
-    for action_name, cursor_pair in POWER_CLONE_ACTION_TYPES.values():
+    for action_name, cursor_pair in POWER_RUNTIME_ACTION_TYPES:
         desired = f'{action_name}={cursor_pair}'
         index = existing.get(action_name.casefold())
         if index is None:
@@ -257,7 +277,7 @@ def ensure_power_runtime_types(rule_sections, art_sections, rules_path=None, art
     }
     rule_lists = {
         list_name: list(rule_sections.pop(list_name, {}).values())
-        for list_name in ('WeaponTypes', 'Warheads')
+        for list_name in ('Weapons', 'Warheads')
     }
     art_lists = {
         'Animations': list(art_sections.pop('Animations', {}).values())
@@ -491,7 +511,10 @@ def _clone_power_effect_chain(
     # native weapon's range gate so every playable target remains valid.
     weapon_clone_values['Range'] = '9999'
     rule_output[weapon_clone] = weapon_clone_values
-    register('WeaponTypes', weapon_clone)
+    # DTA/Vinifera registers weapon extensions through [Weapons]. Putting a
+    # cloned weapon in the legacy [WeaponTypes] list leaves its extension null
+    # and crashes BuildingClass::Mission_Missile when a silo launches it.
+    register('Weapons', weapon_clone)
     enhanced_power = dict(power_values)
     enhanced_power['WeaponType'] = weapon_clone
     enhanced_power['Range'] = '9999'
@@ -686,7 +709,7 @@ def player_power_rules(
     reserved_rules = reserved_rules or {}
     for section in (
         'SuperWeaponTypes', 'BuildingTypes', 'VehicleTypes', 'AircraftTypes',
-        'WeaponTypes', 'Warheads', 'Animations', 'Structures', 'TaskForces',
+        'Weapons', 'Warheads', 'Animations', 'Structures', 'TaskForces',
         'ScriptTypes', 'TeamTypes',
     ):
         allocation_authored.setdefault(section, {}).update(
@@ -761,6 +784,7 @@ def player_power_rules(
     provider_cells = set()
     seen = set()
     power_buff_counts = {}
+    payload_unit_counts = {}
     recharge_multipliers = {}
     # Local import avoids the definition module's catalogue-time import of
     # POWER_SPECS while still enforcing saved-state stack caps at launch.
@@ -778,10 +802,22 @@ def player_power_rules(
             power_id = str(reward.get('superweapon') or '').upper()
             buff_type = str(reward.get('power_buff_type') or '')
             counts = power_buff_counts.setdefault(power_id, {})
-            counts[buff_type] = min(
-                counts.get(buff_type, 0) + 1,
-                power_buff_stack_limit(reward),
-            )
+            if buff_type == 'payload':
+                unit_id = str(reward.get('payload_unit_id') or '').upper()
+                payload_counts = payload_unit_counts.setdefault(power_id, {})
+                payload_counts[unit_id] = min(
+                    payload_counts.get(unit_id, 0) + 1,
+                    power_buff_stack_limit(reward),
+                )
+            else:
+                counts[buff_type] = min(
+                    counts.get(buff_type, 0) + 1,
+                    power_buff_stack_limit(reward),
+                )
+    for power_id, payload_counts in payload_unit_counts.items():
+        power_buff_counts.setdefault(power_id, {})['payload'] = sum(
+            payload_counts.values()
+        )
     for reward in rewards or ():
         if reward.get('kind') != 'superweapon' or not reward.get('dta_player_power'):
             continue
@@ -886,6 +922,7 @@ def player_power_rules(
         payload_units = ''
         if payload:
             payload_count = buff_counts.get('payload', 0)
+            units_per_buff = int(payload['units_per_buff'])
             aircraft_id = payload['aircraft_id']
             capacity_field = payload['capacity_field']
             aircraft = effective_section(mission_rules, aircraft_id)
@@ -898,7 +935,7 @@ def player_power_rules(
             payload_total = max(
                 1,
                 base_capacity
-                + payload_count * int(payload['units_per_buff']),
+                + payload_count * units_per_buff,
             )
             payload_units = str(payload_total)
             requested_paratrooper = str(paratrooper_unit_id or '').strip()
@@ -955,9 +992,29 @@ def player_power_rules(
                     if requested_paratrooper in reserved_rules
                     else 'E1'
                 )
+                configured_payload_counts = payload_unit_counts.get(
+                    source_id.upper(), {}
+                )
+                generic_payload_count = (
+                    configured_payload_counts.get('', 0) * units_per_buff
+                )
+                taskforce_members = [
+                    (base_capacity + generic_payload_count, drop_unit)
+                ]
+                option_ids = {
+                    str(option.get('id') or '').upper()
+                    for option in payload.get('unit_options', ())
+                }
+                taskforce_members.extend(
+                    (count * units_per_buff, unit_id)
+                    for unit_id, count in configured_payload_counts.items()
+                    if unit_id and unit_id in option_ids and count > 0
+                )
+                taskforce_members.append((1, aircraft_clone))
                 rules[taskforce_id] = {
-                    '0': f'{payload_total},{drop_unit}',
-                    '1': f'1,{aircraft_clone}',
+                    str(index): f'{count},{unit_id}'
+                    for index, (count, unit_id) in enumerate(taskforce_members)
+                } | {
                     'Name': 'DTA Randomizer Player Paradrop',
                     'Group': '-1',
                 }
@@ -1009,6 +1066,9 @@ def player_power_rules(
         runtime_lookup.add(clone_id.casefold())
         next_key += 1
         provider_id = ''
+        provider_ids = []
+        power_clone_ids = [clone_id]
+        provider_capacity = 1
         grant_mode = 'trigger'
         provider = spec.get('provider')
         if provider:
@@ -1035,6 +1095,27 @@ def player_power_rules(
                     ):
                         provider_values.pop(key, None)
                 provider_values.update(provider.get('values') or {})
+                cost_buffs = buff_counts.get('cost', 0)
+                if cost_buffs:
+                    try:
+                        provider_values['Cost'] = str(stacked_cost(
+                            provider_values.get('Cost', 0), cost_buffs
+                        ))
+                    except (TypeError, ValueError):
+                        pass
+                production_buffs = buff_counts.get('production', 0)
+                if production_buffs:
+                    try:
+                        base_multiplier = float(
+                            provider_values.get('BuildTimeMultiplier', 1.0)
+                        )
+                        provider_values['BuildTimeMultiplier'] = str(round(
+                            base_multiplier
+                            * stacking_multiplier('production', production_buffs),
+                            4,
+                        ))
+                    except (TypeError, ValueError):
+                        pass
                 provider_values.update({
                     'Image': str(
                         source_provider_values.get('Image') or provider_source
@@ -1044,6 +1125,7 @@ def player_power_rules(
                     'TechLevel': '1',
                     'Buildability': 'HumanOnly',
                     'AIBuildThis': 'no',
+                    'BuildLimit': '1',
                     'SuperWeapon': clone_id,
                 })
                 # Keep the native provider available to campaign AI while the
@@ -1082,6 +1164,7 @@ def player_power_rules(
                     'HasStupidGuardMode': 'false',
                 })
             rules[provider_id] = provider_values
+            provider_ids.append(provider_id)
             building_key = _next_list_key(
                 installed, allocation_authored, 'BuildingTypes', list_offsets
             )
@@ -1109,12 +1192,69 @@ def player_power_rules(
                 'source': provider_source,
                 'house': player_house,
                 'buildable': buildable_provider,
+                'slot': 1,
                 'coordinates': (
                     [provider_x, provider_y]
                     if provider_x is not None and provider_y is not None
                     else []
                 ),
             })
+            if buildable_provider:
+                provider_capacity = 1 + buff_counts.get('capacity', 0)
+                slot_actions = POWER_PROVIDER_SLOT_ACTION_TYPES.get(
+                    source_id.upper(), ()
+                )
+                for slot in range(2, provider_capacity + 1):
+                    slot_clone_id = _clone_auxiliary_id(
+                        source_id, f'POWER{slot}', occupied
+                    )
+                    slot_clone_values = dict(clone_values)
+                    slot_action = slot_actions[slot - 2][0]
+                    slot_clone_values.update({
+                        'Name': f'{clone_values["Name"]} #{slot}',
+                        'Action': slot_action,
+                    })
+                    rules[slot_clone_id] = slot_clone_values
+                    rules.setdefault('SuperWeaponTypes', {})[
+                        str(next_key)
+                    ] = slot_clone_id
+                    runtime_types.append(slot_clone_id)
+                    runtime_lookup.add(slot_clone_id.casefold())
+                    next_key += 1
+                    power_clone_ids.append(slot_clone_id)
+
+                    slot_provider_id = _clone_auxiliary_id(
+                        source_id, f'PROVIDER{slot}', occupied
+                    )
+                    slot_provider_values = dict(provider_values)
+                    provider_name = str(
+                        provider_values.get('Name') or clone_values['Name']
+                    )
+                    slot_provider_values.update({
+                        'Name': f'{provider_name} #{slot}',
+                        'EditorName': f'{provider_name} #{slot}',
+                        'SuperWeapon': slot_clone_id,
+                    })
+                    rules[slot_provider_id] = slot_provider_values
+                    building_key = _next_list_key(
+                        installed,
+                        allocation_authored,
+                        'BuildingTypes',
+                        list_offsets,
+                    )
+                    rules.setdefault('BuildingTypes', {})[
+                        building_key
+                    ] = slot_provider_id
+                    provider_ids.append(slot_provider_id)
+                    report['provider_buildings'].append({
+                        'power': source_id,
+                        'provider': slot_provider_id,
+                        'source': provider_source,
+                        'house': player_house,
+                        'buildable': True,
+                        'slot': slot,
+                        'coordinates': [],
+                    })
             if not buildable_provider:
                 grant_mode = 'provider'
         else:
@@ -1129,6 +1269,8 @@ def player_power_rules(
             'action': clone_action,
             'grant_mode': grant_mode,
             'provider': provider_id,
+            'providers': provider_ids,
+            'power_clones': power_clone_ids,
             'provider_source': (
                 provider_source if provider_id else ''
             ),
@@ -1136,7 +1278,14 @@ def player_power_rules(
             'damage_buffs': buff_counts.get('damage', 0),
             'area_buffs': buff_counts.get('area', 0),
             'payload_buffs': buff_counts.get('payload', 0),
+            'provider_cost_buffs': buff_counts.get('cost', 0),
+            'provider_production_buffs': buff_counts.get('production', 0),
+            'provider_capacity_buffs': buff_counts.get('capacity', 0),
+            'provider_capacity': provider_capacity,
             'payload_units': payload_units,
+            'payload_unit_counts': dict(
+                payload_unit_counts.get(source_id.upper(), {})
+            ),
             'payload_aircraft': (
                 payload['aircraft_id'] if payload else ''
             ),

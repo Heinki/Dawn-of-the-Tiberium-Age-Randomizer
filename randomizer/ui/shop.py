@@ -158,9 +158,13 @@ def build_shop_tab(self, workspace_tabs):
             state='disabled',
             style='Launch.TButton',
         )
-        launch_button.grid(row=5, column=0, sticky='ew')
+        from .preconditions import PreconditionPicker
+        preconditions = PreconditionPicker(card, self)
+        preconditions.grid(row=5, column=0, sticky='ew', pady=(0, 5))
+        preconditions.grid_remove()
+        launch_button.grid(row=6, column=0, sticky='ew')
         mission_actions = ttk.Frame(card)
-        mission_actions.grid(row=6, column=0, sticky='ew', pady=(5, 0))
+        mission_actions.grid(row=7, column=0, sticky='ew', pady=(5, 0))
         mission_actions.columnconfigure(0, weight=1)
         mission_actions.columnconfigure(1, weight=1)
         reroll_button = ttk.Button(
@@ -193,6 +197,7 @@ def build_shop_tab(self, workspace_tabs):
             'effect': effect_var,
             'effect_label': effect_label,
             'launch_button': launch_button,
+            'preconditions': preconditions,
             'reroll_button': reroll_button,
             'ease_button': ease_button,
             'tooltip': tooltip,

@@ -67,6 +67,13 @@ Read [configs/README.md](configs/README.md) before changing static data.
 7. `LaunchVinifera.dat game.exe --args="-SPAWN -CD."` starts the mission through DTA 16.0.2's SyringeEx launcher.
 8. The debug-log watcher records the score-screen Victory check exactly once. DTA has no uniform runtime event for map sub-objectives, so only mission victory awards progression rewards.
 
+Register deployed construction-yard clones in `[AI] BuildConst` and MCV
+clones in `[General] BaseUnit`. The engine uses those lists for player base
+checks as well as AI behavior. Building prerequisites must accept both native
+and cloned identities. During randomized access, always provide basic power
+and refining; earned unit categories also provide buildable replacement
+factories even when the mission starts with one.
+
 Shop Mode persists its selected offer before launch. Victory atomically awards
 Ore/Gems and creates the next offer; mission process exit without victory ends
 the run. Shop loadouts feed the same access, clone, power, starting-credit, and
@@ -98,6 +105,10 @@ Pure modules must not import `randomizer/application`. Tk variables stay on the 
   commitments, and victory receipts must remain idempotent.
 
 ## Validation
+
+Do not add unit tests or unit-test suites to this project. Use compilation,
+the existing non-invasive launcher diagnostics, generated-map inspection,
+and live gameplay checks to validate changes.
 
 Routine checks from `RandomizerLauncher`:
 

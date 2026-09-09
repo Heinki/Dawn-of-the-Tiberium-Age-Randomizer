@@ -228,6 +228,10 @@ def prepare_spawn_map(
                 )),
             )
 
+    from randomizer.dta.preconditions import precondition_map_rules
+    merge_ini_section_values(lines, precondition_map_rules(
+        mission, mission.get('_precondition_flags', {})
+    ))
     if extra_rules:
         merge_ini_section_values(lines, extra_rules)
     collateral_safeguards = preserve_collateral_damage_coefficients(lines)

@@ -69,6 +69,8 @@ UNIT_BUFF_WEIGHT_TYPES = (
 POWER_BUFF_WEIGHT_TYPES = (
     ('recharge', 'Recharge'),
     ('cost', 'Cost'),
+    ('production', 'Provider construction speed'),
+    ('capacity', 'Provider building capacity'),
     ('area', 'Area'),
     ('damage', 'Damage'),
     ('duration', 'Duration'),

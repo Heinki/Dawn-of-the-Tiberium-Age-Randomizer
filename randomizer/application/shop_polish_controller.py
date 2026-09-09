@@ -304,6 +304,7 @@ class ShopPolishController(ShopArchipelagoController):
     def refresh_progress_view(self):
         if not self._shop_mode_context_selected():
             return super().refresh_progress_view()
+        self.precondition_picker.set_mission(None)
         run = self._shop_context_run()
         if run is None:
             self.progress_label.config(
@@ -460,6 +461,7 @@ class ShopPolishController(ShopArchipelagoController):
             title = mission.get('title') or offer.mission_code
             faction = mission.get('side') or 'Unknown faction'
             card['code'] = offer.mission_code
+            card['preconditions'].set_mission(mission)
             card['name'].set(f'{title} ({offer.mission_code})')
             card['detail'].set(
                 f'Faction: {faction}\n'
