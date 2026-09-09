@@ -47,6 +47,10 @@ offers per stage. Victories award temporary Ore and permanent Gems. Ore buys
 units, defenses, powers, and buffs for the current run; Gems buy permanent
 unit access, permanent buffs, and account upgrades. A detected defeat ends the
 run, while permanent progression survives restarts and failed runs.
+Each mission allows one attempt: saving, loading, restarting, or closing the
+game before victory fails the committed mission. The launcher shows this rule
+before creating every new Shop run. DTA mission-triggered autosaves are ignored;
+they cannot be used to continue a Shop run.
 
 The first Shop mission offers Act 1 choices, including a fixed-unit or hero
 mission when available. From mission 2 onward, every remaining eligible

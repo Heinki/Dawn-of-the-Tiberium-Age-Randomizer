@@ -2819,6 +2819,25 @@ def run_self_check():
                 and client_launch_settings.get('ExtraCommandLineParams')
                 == 'game.exe --args="-SPAWN -CD."'
             ),
+            'dta_shop_save_load_restart_blocked': all((
+                LaunchController.dta_shop_rule_violation(
+                    'LOADING GAME [Saved Games\\SAVE1234.SAV]', 2
+                ) == 'loading a saved game',
+                LaunchController.dta_shop_rule_violation(
+                    'SAVING GAME [Saved Games\\SAVE1234.SAV - Test]', 2
+                ) == 'saving the mission',
+                not LaunchController.dta_shop_rule_violation(
+                    'SAVING GAME [Saved Games\\AUTOSAVE1.SAV - '
+                    'Mission Auto-Save (Slot 1)]',
+                    2,
+                ),
+                not LaunchController.dta_shop_rule_violation(
+                    'MapClass::Init_Clear entry', 2
+                ),
+                LaunchController.dta_shop_rule_violation(
+                    'MapClass::Init_Clear entry', 3
+                ) == 'restarting the mission',
+            )),
             'player_normal_keeps_selected_ai_difficulty': (
                 'DifficultyModeHuman=1' in player_normal_spawn_text
                 and 'DifficultyModeComputer=2' in player_normal_spawn_text
@@ -2846,6 +2865,7 @@ def run_self_check():
             'generated_map_enables_score_screen', 'original_map_unchanged',
             'spawn_contract_valid',
             'dta_syringe_launch_contract_valid',
+            'dta_shop_save_load_restart_blocked',
             'player_normal_keeps_selected_ai_difficulty',
             'legacy_map_rules_isolated',
             'safe_reward_pool_only',

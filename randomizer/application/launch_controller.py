@@ -100,6 +100,25 @@ from randomizer.ui.config import (
 
 class LaunchController:
 
+    @staticmethod
+    def dta_shop_rule_violation(line, init_clear_count):
+        """Describe a forbidden Shop save/load/restart log event."""
+        normalized = str(line or '').upper()
+        if 'LOADING GAME [' in normalized:
+            return 'loading a saved game'
+        if (
+            'SAVING GAME [' in normalized
+            and '\\AUTOSAVE' not in normalized
+            and 'MISSION AUTO-SAVE' not in normalized
+        ):
+            return 'saving the mission'
+        if (
+            'MAPCLASS::INIT_CLEAR ENTRY' in normalized
+            and init_clear_count > 2
+        ):
+            return 'restarting the mission'
+        return ''
+
     def unlocked_mission_codes(self):
         if not self.state:
             return [mission['code'] for mission in self.missions]
@@ -796,20 +815,38 @@ throw "Map $name was not found in expandmo*.mix"
         code = self.active_hook['mission_code']
         if self.active_hook.get('dta'):
             for line in text.splitlines():
-                if not score_screen_loaded(line):
-                    continue
-                # A randomizer replay of an already-completed mission still
-                # needs to stop at the score screen. Unlocking is idempotent,
-                # but game cleanup must run for both new and prior victories.
-                unlocked = self.unlock_mission_check(
-                    code, 'victory', 'DTA score screen'
-                )
-                if unlocked or self.is_mission_complete(code):
-                    self.active_hook.setdefault('seen', set()).add(
-                        'ScoreScreen: Loaded'
+                if score_screen_loaded(line):
+                    # A randomizer replay of an already-completed mission still
+                    # needs to stop at the score screen. Unlocking is idempotent,
+                    # but game cleanup must run for both new and prior victories.
+                    unlocked = self.unlock_mission_check(
+                        code, 'victory', 'DTA score screen'
                     )
-                    self.schedule_game_close_after_victory()
-                break
+                    if unlocked or self.is_mission_complete(code):
+                        self.active_hook.setdefault('seen', set()).add(
+                            'ScoreScreen: Loaded'
+                        )
+                        self.schedule_game_close_after_victory()
+                    break
+
+                if not self.shop_launch_active():
+                    continue
+                init_clear_count = self.active_hook.get(
+                    'dta_init_clear_count', 0
+                )
+                if 'MapClass::Init_Clear entry' in line:
+                    init_clear_count += 1
+                    self.active_hook['dta_init_clear_count'] = (
+                        init_clear_count
+                    )
+                violation = self.dta_shop_rule_violation(
+                    line, init_clear_count
+                )
+                if violation:
+                    self.stop_shop_mission_for_rule_violation(
+                        code, violation
+                    )
+                    break
             return
         markers = self.active_hook.get('markers', {})
         seen = self.active_hook.setdefault('seen', set())
@@ -882,8 +919,28 @@ throw "Map $name was not found in expandmo*.mix"
         )
 
     def close_game_after_victory(self, process, hook):
+        self.close_spawned_game(process, hook, 'after victory')
+
+    def stop_shop_mission_for_rule_violation(self, code, action):
+        hook = self.active_hook
+        process = self.active_game_process
+        if hook is None or hook.get('shop_rule_violation'):
+            return
+        hook['shop_rule_violation'] = action
+        source = f'Shop Mode forbids {action}'
+        self.append_log(
+            f'{source}. The committed mission counts as failed.',
+            error=True,
+        )
+        self.record_failed_mission_attempt(code, source)
+        if process is not None:
+            self.close_spawned_game(
+                process, hook, 'after a Shop Mode rule violation'
+            )
+
+    def close_spawned_game(self, process, hook, reason):
         # Do not close a later mission if the player managed to launch another
-        # game during the short victory delay.
+        # game while a delayed close is pending.
         if self.active_game_process is not process or self.active_hook is not hook:
             return
         if process.poll() is not None:
@@ -892,10 +949,12 @@ throw "Map $name was not found in expandmo*.mix"
         if sys.platform != 'win32':
             try:
                 os.killpg(process.pid, signal.SIGTERM)
-                self.append_log('Closed the spawned Wine process group after victory.')
+                self.append_log(
+                    f'Closed the spawned Wine process group {reason}.'
+                )
             except OSError as exc:
                 self.append_log(
-                    f'Could not close the game after victory: {exc}',
+                    f'Could not close the game {reason}: {exc}',
                     error=True,
                 )
             return
@@ -909,17 +968,19 @@ throw "Map $name was not found in expandmo*.mix"
             creationflags=creation_flags,
         )
         if result.returncode == 0:
-            self.append_log('Closed the spawned game after victory.')
+            self.append_log(f'Closed the spawned game {reason}.')
             return
 
         # Keep a direct executable fallback for the preserved process cleanup.
         # process fallback for unusual Windows environments where it is absent.
         try:
             process.terminate()
-            self.append_log('Closed the game launcher process after victory.')
+            self.append_log(f'Closed the game launcher process {reason}.')
         except OSError as exc:
             detail = (result.stderr or result.stdout or str(exc)).strip()
-            self.append_log(f'Could not close the game after victory: {detail}', error=True)
+            self.append_log(
+                f'Could not close the game {reason}: {detail}', error=True
+            )
 
     def poll_hook_log(self):
         if self.active_hook and self.active_hook.get('dta'):
@@ -929,6 +990,7 @@ throw "Map $name was not found in expandmo*.mix"
                 if previous_path != str(log_path):
                     self.active_hook['debug_path'] = str(log_path)
                     self.active_hook['offset'] = 0
+                    self.active_hook['dta_init_clear_count'] = 0
                 try:
                     size = log_path.stat().st_size
                     offset = min(size, self.active_hook.get('offset', 0))
