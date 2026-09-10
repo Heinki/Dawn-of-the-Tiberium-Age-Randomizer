@@ -157,7 +157,7 @@ class RewardController:
         if self.active_reward_mode() == 'Chaos':
             # Older saved seeds may contain both exact members of a curated
             # equivalent group. Collapse them at launch too, so legacy states
-            # cannot show duplicate sidebar entries such as SAM and RASAM.
+            # cannot show duplicate sidebar entries such as E4 and E4S.
             rewards = self.chaos_equivalent_access_pool(
                 rewards,
                 self.reward_factions_for_code(code),

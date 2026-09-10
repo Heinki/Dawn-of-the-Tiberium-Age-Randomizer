@@ -97,7 +97,7 @@
         "include_secondary_superweapon_rewards": false,
         "include_aid_power_rewards": true,
         "include_power_buff_rewards": true,
-        "unit_buff_catalogue_version": 3,
+        "unit_buff_catalogue_version": 5,
         "infantry_access_catalogue_version": 1,
         "power_buff_catalogue_version": 6,
         "dta_power_catalogue_version": 4,
@@ -116,7 +116,9 @@
           "build_limit",
           "cloak",
           "sensors",
-          "self_healing"
+          "self_healing",
+          "area",
+          "amphibious"
         ],
         "enabled_power_buff_types": ["recharge", "damage", "area", "payload", "cost", "production", "capacity"],
         "reward_weights": {
@@ -139,6 +141,8 @@
             "cost": 100,
             "production": 100,
             "self_healing": 100,
+            "area": 100,
+            "amphibious": 100,
             "sight": 100,
             "ammo": 100,
             "passenger_capacity": 100,

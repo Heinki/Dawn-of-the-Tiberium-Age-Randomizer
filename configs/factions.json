@@ -170,8 +170,7 @@
       ["GLST", "NLST", "ALST", "SLST"],
       ["ESCORTG", "ESCORTN", "ESCORTA", "ESCORTS"],
       ["TORPBOAT", "TORPCAT"],
-      ["GUN", "RAGUN"],
-      ["SAM", "RASAM"]
+      ["GUN", "RAGUN"]
     ],
     "tech_order": [
       "ENGINEER",

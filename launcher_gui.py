@@ -70,6 +70,7 @@ def run_self_check():
         MISSION_ASSISTANCE_BUFF_TYPES,
         _effective_buff_counts,
         _player_production_context,
+        _weapon_overrides,
         mission_assistance_rewards,
         player_production_isolation_rules,
         production_infrastructure_rewards,
@@ -378,7 +379,7 @@ def run_self_check():
         )
         medic_clone_rules, medic_clone_report = unit_specific_buff_rules(
             clone_mission,
-            [medic_access_reward, medic_range_reward],
+            [medic_access_reward, medic_range_reward, damage_reward],
             access_randomized=True,
         )
         medic_clone_entry = next(
@@ -394,6 +395,80 @@ def run_self_check():
         medic_weapon = medic_clone_rules.get(
             medic_clone.get('Primary', ''), {}
         )
+        healing_weapon_damage_values = [
+            weapon['damage']
+            for target in BUFF_TARGETS.values()
+            for weapon in target.get('weapons', {}).values()
+            if weapon.get('damage', 0) < 0
+        ]
+        mammoth_rewards = {
+            buff_type: next(
+                reward for reward in REWARD_POOL
+                if reward.get('unit') == 'HTNK'
+                and reward.get('buff_type') == buff_type
+            )
+            for buff_type in (
+                'reload', 'self_healing', 'amphibious',
+            )
+        }
+        mammoth_access_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('unit') == 'HTNK'
+            and reward.get('dta_production_access')
+        )
+        mammoth_clone_rules, mammoth_clone_report = unit_specific_buff_rules(
+            clone_mission,
+            [
+                mammoth_access_reward,
+                mammoth_rewards['self_healing'],
+                mammoth_rewards['amphibious'],
+                *(
+                    [mammoth_rewards['reload']]
+                    * buff_stack_limit(mammoth_rewards['reload'])
+                ),
+            ],
+            access_randomized=True,
+        )
+        mammoth_clone_entry = next(
+            (
+                entry for entry in mammoth_clone_report['applied']
+                if entry['unit'] == 'HTNK'
+            ),
+            {},
+        )
+        mammoth_clone = mammoth_clone_rules.get(
+            mammoth_clone_entry.get('output_type', ''), {}
+        )
+        mammoth_weapon = mammoth_clone_rules.get(
+            mammoth_clone.get('Primary', ''), {}
+        )
+        a10_access_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('unit') == 'A10'
+            and reward.get('dta_production_access')
+        )
+        a10_area_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('unit') == 'A10'
+            and reward.get('buff_type') == 'area'
+        )
+        a10_clone_rules, a10_clone_report = unit_specific_buff_rules(
+            clone_mission,
+            [a10_access_reward, a10_area_reward],
+            access_randomized=True,
+        )
+        a10_clone_entry = next(
+            (
+                entry for entry in a10_clone_report['applied']
+                if entry['unit'] == 'A10'
+            ),
+            {},
+        )
+        a10_clone = a10_clone_rules.get(
+            a10_clone_entry.get('output_type', ''), {}
+        )
+        a10_weapon = a10_clone_rules.get(a10_clone.get('Primary', ''), {})
+        a10_warhead = a10_clone_rules.get(a10_weapon.get('Warhead', ''), {})
         access_generated = APP_DIR / '.self_check_access_spawnmap.ini'
         try:
             merged_access_rules = {
@@ -538,6 +613,112 @@ def run_self_check():
             player_production_houses=mission_player_production_houses(
                 false_eagle['code']
             ),
+        )
+        captured_factory_expectations = {
+            'M_SE3': ('GDI', 'Nod,GDI'),
+            'M_SE6': ('Soviet', 'Nod,Soviet'),
+            'M_CRC11': ('Soviet', 'Allies,Soviet'),
+        }
+        captured_factory_results = {}
+        for mission_code, (foreign_house, expected_owners) in (
+            captured_factory_expectations.items()
+        ):
+            captured_mission = next(
+                mission for mission in missions
+                if mission['code'] == mission_code
+            )
+            captured_isolation, captured_context = (
+                player_production_isolation_rules(captured_mission)
+            )
+            captured_rules, captured_report = unit_specific_buff_rules(
+                captured_mission,
+                [foreign_infantry_reward],
+                access_randomized=True,
+                production_context=captured_context,
+                rule_overlays=captured_isolation,
+                production_owner_houses=mission_player_production_houses(
+                    mission_code
+                ),
+            )
+            captured_factory_results[mission_code] = (
+                captured_report.get('captured_production_houses')
+                == [foreign_house]
+                and captured_rules.get('E1A_PLAYER', {}).get('Owner')
+                == expected_owners
+            )
+
+        mcv_route_expectations = {
+            'M_SE6': ('NMCV', 'NFACT'),
+            'M_CURFEW_BREAKER': ('GMCV', 'GFACT'),
+            'M_A_BRIDGE_TOO_FEW': ('SMCV', 'SFACT'),
+            'M_CRC10': ('AMCV', 'AFACT'),
+            'M_CRC14': ('AMCV', 'AFACT'),
+        }
+        mcv_route_results = {}
+        crc10_mcv_rules = {}
+        for mission_code, (mcv_id, conyard_id) in mcv_route_expectations.items():
+            mcv_mission = next(
+                mission for mission in missions
+                if mission['code'] == mission_code
+            )
+            mcv_isolation, mcv_context = player_production_isolation_rules(
+                mcv_mission
+            )
+            mcv_rules, mcv_report = unit_specific_buff_rules(
+                mcv_mission,
+                [speed_reward],
+                buff_allied_helpers=True,
+                production_context=mcv_context,
+                rule_overlays=mcv_isolation,
+                production_owner_houses=mission_player_production_houses(
+                    mission_code
+                ),
+            )
+            mcv_entry = next((
+                item for item in mcv_report['applied']
+                if item['unit'] == mcv_id
+            ), {})
+            mcv_output = mcv_entry.get('output_type', '')
+            conyard_output = (mcv_entry.get('linked_deploy_route') or {}).get(
+                'output_type', ''
+            )
+            mcv_route_results[mission_code] = (
+                mcv_output
+                and conyard_output
+                and (mcv_entry.get('linked_deploy_route') or {}).get(
+                    'source_type'
+                ) == conyard_id
+                and mcv_output in comma_items(
+                    mcv_rules.get('General', {}).get('BaseUnit')
+                )
+                and conyard_output in comma_items(
+                    mcv_rules.get('AI', {}).get('BuildConst')
+                )
+            )
+            if mission_code == 'M_CRC10':
+                crc10_mcv_rules = mcv_rules
+        crc10_event_companions = {
+            trigger_id: event
+            for trigger_id, event in crc10_mcv_rules.get('Events', {}).items()
+            if trigger_id.startswith('DTABE')
+        }
+        crc10_deploy_progression_bridged = any(
+            comma_items(event)[1] == '32'
+            and crc10_mcv_rules.get('Triggers', {}).get(
+                trigger_id, ''
+            ).startswith('Allies1,')
+            and ',12,2,01000104,' in (
+                ',' + crc10_mcv_rules.get('Actions', {}).get(
+                    trigger_id, ''
+                ) + ','
+            )
+            and f',12,2,{trigger_id},' in (
+                ',' + crc10_mcv_rules.get('Actions', {}).get(
+                    '01000104', ''
+                ) + ','
+            )
+            for trigger_id, event in crc10_event_companions.items()
+            if len(comma_items(event)) == 4
         )
         starting_credit_reward = next(
             reward for reward in REWARD_POOL
@@ -861,13 +1042,13 @@ def run_self_check():
                 [ion_reward, ion_damage_buff, ion_area_buff],
             )
         )
-        duplicate_sam_rewards = [
+        distinct_sam_rewards = [
             reward for reward in REWARD_POOL
             if reward.get('dta_production_access')
             and reward.get('unit') in {'SAM', 'RASAM'}
         ]
-        collapsed_sam_rewards = RewardController.chaos_equivalent_access_pool(
-            duplicate_sam_rewards,
+        uncollapsed_sam_rewards = RewardController.chaos_equivalent_access_pool(
+            distinct_sam_rewards,
             {'Allies'},
         )
         allied_factory_rules, _allied_factory_report = (
@@ -1608,10 +1789,11 @@ def run_self_check():
                 'charging uses.' in nuke_tooltip
             ),
             'unlock_dashboard_factory_support_visible': (
-                'only the current mission faction\'s Barracks' in
+                'Factory support: Barracks (mission faction only)' in
                 rifle_factory_tooltip
                 and 'MCV/Construction Yard' in rifle_factory_tooltip
-                and 'Other factions\' factories stay unavailable.' in
+                and 'prerequisite-free' in rifle_factory_tooltip
+                and 'Other factions remain locked.' in
                 rifle_factory_tooltip
             ),
             'unlock_dashboard_global_buffs_visible': (
@@ -1937,11 +2119,11 @@ def run_self_check():
                 and set(collateral_hook['collateral_damage_safeguards'])
                 >= {'E2', 'E4'}
             ),
-            'dta_legacy_equivalent_sam_access_collapses': (
-                len(duplicate_sam_rewards) == 2
-                and len(collapsed_sam_rewards) == 1
-                and tech_ids_for_rewards(collapsed_sam_rewards)
-                <= {'SAM', 'RASAM'}
+            'dta_distinct_sam_access_remains_separate': (
+                len(distinct_sam_rewards) == 2
+                and len(uncollapsed_sam_rewards) == 2
+                and tech_ids_for_rewards(uncollapsed_sam_rewards)
+                == {'SAM', 'RASAM'}
             ),
             'dta_paradrop_payload_uses_badger_capacity': (
                 len(paradrop_actions) == 1
@@ -2674,6 +2856,15 @@ def run_self_check():
                 )
                 and 'GDI' not in false_eagle_enemy_rules
             ),
+            'reported_captured_factories_expose_unlocks': all(
+                captured_factory_results.values()
+            ),
+            'reported_mcv_routes_are_engine_registered': all(
+                mcv_route_results.values()
+            ),
+            'crc10_cloned_mcv_deploy_progresses_mission': (
+                crc10_deploy_progression_bridged
+            ),
             'dta_starting_credit_reward_is_capped_and_applied': (
                 buff_stack_limit(starting_credit_reward) == 20
                 and starting_credit_bonus([starting_credit_reward] * 25)
@@ -2690,6 +2881,32 @@ def run_self_check():
                 and medic_clone.get('OmniHealer') == 'yes'
                 and int(medic_weapon.get('Damage', 0)) < 0
                 and medic_weapon.get('Warhead') == 'Organic'
+            ),
+            'dta_healing_weapons_ignore_damage_buffs': (
+                len(healing_weapon_damage_values) >= 7
+                and all(
+                    'Damage' not in _weapon_overrides(
+                        {'Damage': str(damage)}, Counter({'damage': 1})
+                    )
+                    for damage in healing_weapon_damage_values
+                )
+            ),
+            'dta_mammoth_reload_and_vinifera_buffs_are_safe': (
+                mammoth_clone_entry.get('route') == 'production_access_clone'
+                and int(mammoth_weapon.get('ROF', 0)) == 4
+                and mammoth_clone.get('SelfHealing') == 'yes'
+                and mammoth_clone.get('SelfHealingCap') == '100%'
+                and float(mammoth_clone.get('SelfHealingRate', 0)) > 0
+                and int(mammoth_clone.get('SelfHealingStep', 0)) > 0
+                and mammoth_clone.get('MovementZone') == 'AmphibiousCrusher'
+                and mammoth_clone.get('SpeedType') == 'Amphibious'
+            ),
+            'dta_area_buff_clones_and_registers_warhead': (
+                a10_clone_entry.get('route') == 'production_access_clone'
+                and a10_weapon.get('Warhead') in set(
+                    a10_clone_rules.get('Warheads', {}).values()
+                )
+                and float(a10_warhead.get('CellSpread', 0)) > 4
             ),
             'vinifera_clone_written_to_generated_map': all(
                 value in clone_generated_text
@@ -2936,8 +3153,14 @@ def run_self_check():
             'access_clone_receives_unit_specific_buffs',
             'dta_access_unlocks_required_player_factories',
             'false_eagle_captured_gdi_base_exposes_unlocks',
+            'reported_captured_factories_expose_unlocks',
+            'reported_mcv_routes_are_engine_registered',
+            'crc10_cloned_mcv_deploy_progresses_mission',
             'dta_starting_credit_reward_is_capped_and_applied',
             'dta_medic_clone_keeps_healing',
+            'dta_healing_weapons_ignore_damage_buffs',
+            'dta_mammoth_reload_and_vinifera_buffs_are_safe',
+            'dta_area_buff_clones_and_registers_warhead',
             'vinifera_clone_written_to_generated_map',
             'clone_source_map_unchanged',
             'difficulty_fallback_valid',

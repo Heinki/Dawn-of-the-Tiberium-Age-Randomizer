@@ -76,6 +76,7 @@ PARATROOPER_BUFF_FIELDS = {
     'Primary', 'Secondary', 'Elite',
     'Cloakable', 'CloakingSpeed', 'Sensors',
     'SelfHealing', 'SelfHealingCap', 'SelfHealingRate', 'SelfHealingStep',
+    'OpportunityFire', 'NoMovingFire', 'MovementZone', 'SpeedType',
 }
 
 

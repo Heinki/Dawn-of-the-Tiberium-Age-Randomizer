@@ -5,6 +5,7 @@ The active static configuration targets Dawn of the Tiberium Age.
 - `missions.json` contains DTA campaign metadata, including Shadow Exodus and installed bonus maps, explicit build classifications, and mission reward multipliers. Stand-alone and non-finale CR Route A/B missions use x2; finales, the CR bonus mission, and every CR Route C mission use x3; all others use x1.
 - `factions.json` and `tier_one.json` contain DTA faction and production-family identities.
 - `factions.json` also defines curated equivalent-unit groups. Chaos keeps one access reward per group, preferring the current mission faction, while the shared-buff option applies one earned buff stack to every unlocked equivalent.
+- Nod and Soviet SAM Sites remain separate rewards because their weapon behavior differs.
 - `ui.json` defines DTA campaign filters, colors, difficulty choices, and preserved UI modes.
 - `default_player_config.json` keeps the existing settings structure with conservative DTA defaults.
 - `shop_mode.json` defines the ten-stage Shop economy,

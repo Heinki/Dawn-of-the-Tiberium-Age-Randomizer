@@ -1,5 +1,6 @@
 """Unlock display models, labels, sources, and tooltips."""
 
+from randomizer.rewards.display import inherited_unit_buff_rewards
 from randomizer.config.tuning import mission_assistance_stack_count
 
 from ._dependencies import (
@@ -1215,6 +1216,11 @@ class UnlockDataController:
             source_key = entry.get('source_key', entry['key'])
             if source_key in starting_unlock_source_by_key:
                 entry['condition'] = starting_unlock_source_by_key[source_key]
+        for entry in entries:
+            if entry.get('kind') == 'unit' and entry.get('status') == 'unlocked':
+                entry['inherited_buffs'] = inherited_unit_buff_rewards(
+                    earned_rewards, entry['id'],
+                )
         return entries
 
     def unlock_dashboard_tooltip(self, entry):
@@ -1251,7 +1257,7 @@ class UnlockDataController:
         ))
 
         def compact_sources(names):
-            visible = names[:3]
+            visible = names[:1]
             text = '; '.join(visible)
             if len(names) > len(visible):
                 text += f'; +{len(names) - len(visible)} more'
@@ -1267,10 +1273,9 @@ class UnlockDataController:
             lines.append(f'Mission: {entry["arsenal_mission_label"]}')
         if entry.get('production_building_role'):
             lines.append(
-                'Factory support: active unit access makes only the current '
-                f'mission faction\'s {entry["production_building_role"]} '
-                'prerequisite-free once you have an MCV/Construction Yard. '
-                'Other factions\' factories stay unavailable.'
+                f'Factory support: {entry["production_building_role"]} '
+                '(mission faction only), prerequisite-free with an '
+                'MCV/Construction Yard. Other factions remain locked.'
             )
             if entry['production_building_role'] == 'Air production building':
                 lines.append(
@@ -1326,7 +1331,7 @@ class UnlockDataController:
                 ))
         else:
             buffs = {}
-            active_effect_rewards = earned
+            active_effect_rewards = [*earned, *entry.get('inherited_buffs', ())]
             if (
                 (arsenal_entry and not entry.get('arsenal_selected'))
                 or (
@@ -1345,12 +1350,30 @@ class UnlockDataController:
                     buffs.setdefault(
                         key, {'reward': display_reward, 'count': 0}
                     )['count'] += 1
-            for buff in buffs.values():
-                effect_lines.extend(buff_effect_lines(
-                    buff['reward'],
-                    count=buff['count'],
-                    include_label=False,
-                ))
+            counts = {key: item['count'] for key, item in buffs.items()}
+            order = {kind: index for index, kind in enumerate((
+                'health', 'armor', 'damage', 'reload', 'range', 'area',
+                'speed', 'sight', 'cost', 'production',
+            ))}
+            for key, buff in sorted(buffs.items(), key=lambda item: order.get(item[0], 99)):
+                combined_health = 'health' in buffs and 'armor' in buffs
+                if combined_health and key == 'armor':
+                    continue
+                combined_row = combined_health and key == 'health'
+                summaries = buff_effect_lines(
+                    buff['reward'], count=buff['count'], include_label=False,
+                    include_stack=not combined_row, buff_counts=counts, multiline=True,
+                )
+                if combined_row and summaries:
+                    levels = []
+                    for kind in ('health', 'armor'):
+                        item = buffs[kind]
+                        level = effective_buff_count(item['reward'], item['count'])
+                        maximum = buff_stack_limit(item['reward'])
+                        levels.append(f'{kind.title()} {level}/{maximum}')
+                    summaries[0] = summaries[0].replace('Health ', 'Health + armor ', 1)
+                    summaries[0] += '\n    ' + ' · '.join(levels)
+                effect_lines.extend(summaries)
         if (
             entry.get('reward')
             and entry['status'] == 'unlocked'
@@ -1358,8 +1381,12 @@ class UnlockDataController:
         ):
             effect_lines.extend(reward_rule_summary(entry['reward']))
         if effect_lines:
-            lines.append('Current effects:')
-            lines.extend(f'• {line}' for line in effect_lines)
+            lines = [
+                *lines[:2], 'Current effects:',
+                *(f'• {line}' for line in effect_lines),
+                *(['Includes army-wide upgrades.'] if entry.get('inherited_buffs') else []),
+                '', *lines[2:],
+            ]
 
         inactive_arsenal_buffs = [
             reward

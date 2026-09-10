@@ -23,6 +23,7 @@ from randomizer.config.tuning import (
     REWARD_PLANNING,
     stacked_cost,
     stacked_self_heal_amount,
+    stacked_self_heal_rate,
     stacked_weapon_damage,
     stacked_weapon_rof,
     stacking_amount,
@@ -42,6 +43,15 @@ from randomizer.rewards.enemy_scaling import (
 def canonical_reward(reward):
     if not isinstance(reward, dict):
         return {}
+    if (
+        reward.get('buff_type') == 'opportunity_fire'
+        or str(reward.get('name', '')).endswith(' Run-and-Gun I')
+    ):
+        return {
+            'name': f'{reward.get("name", "Run-and-Gun")} (retired: unsupported moving fire)',
+            'description': 'Removed because this buff cannot reliably enable firing while moving.',
+            'kind': 'retired', 'retired_reward': True, 'rules': {},
+        }
     if reward.get('_runtime_canonical') and not reward.get('enemy_reward'):
         return reward
 
@@ -190,10 +200,10 @@ HOUSE_CATEGORY_SUFFIXES = {
 # CountryType Veteran* lists because the engine exposes no per-type equivalent.
 HOUSE_SCOPED_BUFF_TYPES = {'production', 'veteran'}
 HOUSE_WIDE_BUFF_TYPES = {'production'}
-WEAPON_STAT_BUFF_TYPES = {'damage', 'range', 'reload'}
+WEAPON_STAT_BUFF_TYPES = {'damage', 'range', 'reload', 'area'}
 UNIT_STAT_BUFF_TYPES = {
     'health', 'sight', 'ammo', 'passenger_capacity', 'open_topped',
-    'self_healing', 'cloak', 'sensors',
+    'self_healing', 'cloak', 'sensors', 'amphibious',
 }
 MAP_GUARDED_BUFF_TYPES = WEAPON_STAT_BUFF_TYPES | UNIT_STAT_BUFF_TYPES
 CLONE_REQUIRED_BUFF_TYPES = (
@@ -316,7 +326,7 @@ def _uncached_buff_stack_limit(reward):
         return power_buff_stack_limit(reward)
     buff_type = reward.get('buff_type')
     if buff_type in {
-        'production', 'armor', 'health', 'range', 'ammo',
+        'production', 'armor', 'health', 'range', 'area', 'ammo',
     }:
         return stacking_stack_limit(buff_type)
     if buff_type == 'sight':
@@ -344,17 +354,16 @@ def _uncached_buff_stack_limit(reward):
         configured = stacking_stack_limit(buff_type)
         if not values:
             return configured
-        previous = tuple(values)
         calculator = (
             stacked_weapon_damage
             if buff_type == 'damage'
             else stacked_weapon_rof
         )
+        final = tuple(calculator(value, configured) for value in values)
         for count in range(1, configured + 1):
             current = tuple(calculator(value, count) for value in values)
-            if current == previous:
-                return max(1, count - 1)
-            previous = current
+            if current == final:
+                return count
         return configured
     if buff_type == 'self_healing':
         fraction_per_stack = float(
@@ -388,7 +397,10 @@ def _uncached_buff_stack_limit(reward):
         if target.get('global_buff'):
             return configured
         return movement_speed_stack_limit(target) or configured
-    if buff_type in {'open_topped', 'cloak', 'sensors', 'veteran'}:
+    if buff_type in {
+        'open_topped', 'cloak', 'sensors', 'veteran',
+        'amphibious',
+    }:
         return 1
     return None
 
@@ -432,13 +444,52 @@ def starting_credit_bonus(rewards):
 
 
 def stack_label(count, limit=None):
-    text = f'Stacked {count} time' + ('s' if count != 1 else '')
-    if limit is not None:
-        text += f'; maximum {limit}'
-    return text
+    return f'{count}/{limit} stacks' if limit is not None else f'{count} stacks'
 
 
-def buff_effect_lines(reward, count=1, include_label=True, include_stack=True):
+def inherited_unit_buff_rewards(rewards, unit_id):
+    """Project earned army-wide effects onto a unit for display only.
+
+    Use that unit's canonical buff definition so base stats and stack caps
+    match its own clone. Never change the saved reward or grant unit access.
+    """
+    target = BUFF_TARGETS.get(unit_id, {})
+    if not target or target.get('global_buff'):
+        return []
+    inherited = []
+    for reward in canonical_rewards(list(rewards)):
+        if reward.get('kind') != 'buff' or not reward.get('global_buff'):
+            continue
+        kind = reward.get('buff_type')
+        source = BUFF_TARGETS.get(reward.get('unit'), {})
+        applies = bool(
+            reward.get('dta_global_clone_buff')
+            and kind in {'production', 'cost', 'speed', 'damage', 'reload'}
+        )
+        if not applies:
+            continue
+        unit_reward = REWARD_BY_BUFF_KEY.get((unit_id, kind))
+        if unit_reward is not None:
+            inherited.append(unit_reward)
+    return inherited
+
+
+def unit_buff_counts(rewards, unit_id):
+    """Combine earned copies from every source for one displayed unit."""
+    rewards = canonical_rewards(list(rewards))
+    inherited = inherited_unit_buff_rewards(rewards, unit_id)
+    counts = {}
+    for reward in [*rewards, *inherited]:
+        if reward.get('kind') != 'buff' or reward.get('unit') != unit_id:
+            continue
+        kind = reward.get('buff_type')
+        counts[kind] = effective_buff_count(reward, counts.get(kind, 0) + 1)
+    return counts
+
+
+def buff_effect_lines(
+    reward, count=1, include_label=True, include_stack=True, *, buff_counts=None, multiline=False,
+):
     reward = canonical_reward(reward)
     if reward.get('kind') != 'buff':
         return []
@@ -479,26 +530,73 @@ def buff_effect_lines(reward, count=1, include_label=True, include_stack=True):
     count = effective_buff_count(reward, count)
 
     def stacked(text):
-        if not include_stack:
+        if not include_stack or limit == 1:
             return text
-        return f'{text} ({stack_label(count, limit)})'
+        return f'{text} · {stack_label(count, limit)}'
+
+    def number(value):
+        return f'{value:,.6f}'.rstrip('0').rstrip('.')
+
+    def value_text(label, current, base, unit=''):
+        text = f'{prefix}{label} {number(current)}'
+        if count:
+            text += f' [{number(base)}]'
+        return [stacked(text + unit)]
+
+    def weapon_text(label, field, calculator, minimum=0, unit='', show_base=True):
+        pairs = {}
+        for weapon, stats in target.get('weapons', {}).items():
+            base = float(stats.get(field, 0))
+            if base <= minimum or not stats.get('buff_safe', True):
+                continue
+            current = calculator(base)
+            pairs.setdefault((current, base if show_base else None), []).append(weapon)
+        if not pairs:
+            return [stacked(f'{prefix}{label}: no applicable weapon')]
+        parts = []
+        for (current, base), weapons in pairs.items():
+            detail = number(current)
+            if count and show_base:
+                detail += f' [{number(base)}]'
+            detail += unit
+            if len(pairs) > 1:
+                detail = f'{" / ".join(weapons)}: {detail}'
+            parts.append(detail)
+        if multiline and len(parts) > 1:
+            return [stacked(f'{prefix}{label}') + '\n    ' + '\n    '.join(parts)]
+        return [stacked(f'{prefix}{label} ' + '; '.join(parts))]
+
+    def durability():
+        counts = dict(buff_counts or {})
+        counts[buff_type] = count
+        for kind in ('health', 'armor'):
+            other = REWARD_BY_BUFF_KEY.get((reward.get('unit'), kind))
+            if other:
+                counts[kind] = effective_buff_count(other, counts.get(kind, 0))
+        base = max(1, int(round(float(target.get('strength', 1)))))
+        health = stacking_multiplier('health', counts.get('health', 0))
+        armor = stacking_multiplier('armor', counts.get('armor', 0))
+        return base, max(1, int(round(base * health / armor)))
+
+    if target.get('global_buff') and buff_type in {'cost', 'damage', 'reload'}:
+        multiplier = stacking_multiplier(buff_type, count)
+        if buff_type == 'reload':
+            return [stacked(f'{prefix}Fire rate {round((1 / multiplier - 1) * 100)}% faster')]
+        label = {'cost': 'Cost', 'damage': 'Damage', 'reload': 'Reload time'}[buff_type]
+        return value_text(f'{label} multiplier', multiplier, 1, '×')
 
     if buff_type == 'production':
         multiplier = stacking_multiplier('production', count)
-        shorter = int(round((1.0 - multiplier) * 100))
         effect = (
             'Construction time'
             if target.get('category') in {'buildings', 'defenses'}
             else 'Production time'
         )
-        return [stacked(f'{prefix}{effect} {shorter}% shorter')]
+        return [stacked(f'{prefix}{effect} {round((1 - multiplier) * 100)}% shorter')]
     if buff_type == 'cost':
-        base_cost = int(round(float(target.get('cost', 0))))
-        final_cost = stacked_cost(base_cost, count)
-        cheaper = int(round(
-            (1.0 - (final_cost / base_cost)) * 100
-        )) if base_cost else 0
-        return [stacked(f'{prefix}Cost {cheaper}% cheaper')]
+        base = int(round(float(target.get('cost', 0))))
+        return value_text('Cost', stacked_cost(base, count), base, ' credits')
+
     if buff_type == 'speed':
         if target.get('global_buff'):
             return [stacked(
@@ -512,29 +610,23 @@ def buff_effect_lines(reward, count=1, include_label=True, include_stack=True):
             base_speed = int(round(float(target.get('speed', 1))))
             speed = capped_movement_speed(target, count)
             return [stacked(
-                f'{prefix}Speed {base_speed} -> {speed} '
-                f'(safe ceiling {safe_ceiling})'
+                f'{prefix}Speed {speed} [{base_speed}]'
             )]
         multiplier = stacking_multiplier('speed', count)
         faster = int(round((multiplier - 1.0) * 100))
         return [stacked(f'{prefix}Speed {faster}% faster')]
     if buff_type == 'armor':
-        multiplier = stacking_multiplier('armor', count)
-        # Armor is a received-damage multiplier. Express its inverse as
-        # effective durability so values can truthfully grow beyond 100%.
-        tougher = int(round(((1.0 / multiplier) - 1.0) * 100))
-        return [stacked(f'{prefix}Armor {tougher}% stronger')]
+        base, strength = durability()
+        return value_text('Armor durability', strength, base, ' HP')
+
     if buff_type == 'health':
-        multiplier = stacking_multiplier('health', count)
-        stronger = int(round((multiplier - 1.0) * 100))
-        return [stacked(f'{prefix}Health {stronger}% higher')]
+        base, strength = durability()
+        return value_text('Health', strength, base, ' HP')
+
     if buff_type == 'sight':
-        base_sight = int(round(float(target.get('sight', 0))))
-        sight = capped_sight_range(target, count)
-        return [stacked(
-            f'{prefix}Vision {base_sight} -> {sight} '
-            f'(engine ceiling {sight_range_ceiling()})'
-        )]
+        base = int(round(float(target.get('sight', 0))))
+        return value_text('Vision', capped_sight_range(target, count), base, ' cells')
+
     if buff_type == 'veteran':
         return [stacked(f'{prefix}Veteran start')]
     if buff_type in {'build_limit', 'building_limit'}:
@@ -544,34 +636,29 @@ def buff_effect_lines(reward, count=1, include_label=True, include_stack=True):
             if target.get('category') == 'special_buildings'
             else 'Simultaneous unit limit'
         )
-        return [stacked(f'{prefix}{subject} {base_limit} -> {base_limit + count}')]
+        return value_text(subject, base_limit + count, base_limit)
     if buff_type == 'damage':
-        percentages = []
-        for stats in target.get('weapons', {}).values():
-            base = int(round(float(stats.get('damage', 0))))
-            if base > 0:
-                final = stacked_weapon_damage(base, count)
-                percentages.append(int(round((final / base - 1.0) * 100)))
-        stronger = max(percentages, default=0)
-        return [stacked(f'{prefix}Damage {stronger}% higher')]
+        return weapon_text('Damage', 'damage', lambda base: stacked_weapon_damage(base, count))
+
     if buff_type == 'reload':
-        percentages = []
-        for stats in target.get('weapons', {}).values():
-            base = int(round(float(stats.get('rof', 0))))
-            if base > 1:
-                final = stacked_weapon_rof(base, count)
-                percentages.append(int(round((base / final - 1.0) * 100)))
-        low = min(percentages, default=0)
-        high = max(percentages, default=0)
-        amount = str(high) if low == high else f'{low}-{high}'
-        return [stacked(f'{prefix}Fire rate {amount}% faster')]
+        return weapon_text(
+            'Fire rate', 'rof',
+            lambda base: round((base / stacked_weapon_rof(base, count) - 1) * 100),
+            minimum=1, unit='% faster', show_base=False,
+        )
+
     if buff_type == 'range':
-        increase = stacking_amount('range', count)
-        if increase.is_integer():
-            increase_text = str(int(increase))
-        else:
-            increase_text = f'{increase:.1f}'
-        return [stacked(f'{prefix}Range +{increase_text}')]
+        return weapon_text(
+            'Range', 'range', lambda base: base + stacking_amount('range', count),
+            unit=' cells',
+        )
+
+    if buff_type == 'area':
+        return weapon_text(
+            'Area of effect', 'area_spread',
+            lambda base: base + stacking_amount('area', count), unit=' cells',
+        )
+
     if buff_type == 'ammo':
         increase = int(stacking_amount('ammo', count))
         base_ammo = int(target.get('ammo', 0))
@@ -579,36 +666,31 @@ def buff_effect_lines(reward, count=1, include_label=True, include_stack=True):
         ammo_label = _UNIT_POLICY_CONFIG['ammo_display_labels'].get(
             reward.get('unit'), 'Ammo'
         )
-        return [stacked(f'{prefix}{ammo_label} {base_ammo} -> {total_ammo}')]
+        return value_text(ammo_label, total_ammo, base_ammo)
     if buff_type == 'passenger_capacity':
         base_passengers = int(target.get('passengers', 0))
         return [stacked(
-            f'{prefix}Passenger capacity '
-            f'{base_passengers} -> {base_passengers + count}'
+            f'{prefix}Passenger capacity {base_passengers + count} '
+            f'[{base_passengers}]'
         )]
     if buff_type == 'open_topped':
         return [stacked(f'{prefix}Passengers can fire from transport')]
     if buff_type == 'self_healing':
-        base_strength = max(1, int(round(float(target.get('strength', 1)))))
+        _base, base_strength = durability()
         heal_amount = stacked_self_heal_amount(base_strength, count)
-        fraction = heal_amount / base_strength
+        tick_seconds = stacked_self_heal_rate(count) * 60
         return [stacked(
-            f'{prefix}Self-healing {fraction * 100:g}% maximum health per tick '
-            f'({heal_amount} HP)'
+            f'{prefix}Full self-healing: {heal_amount} HP every {tick_seconds:.2f}s'
         )]
+    if buff_type == 'amphibious':
+        return [stacked(f'{prefix}Amphibious movement enabled')]
     if buff_type == 'cloak':
         return [stacked(f'{prefix}Cloaking enabled')]
     if buff_type == 'sensors':
         sensor_range = int(round(
             target.get('sight', 5) + float(BUFF_EFFECTS['sensor_sight_bonus'])
         ))
-        sensor_text = f'{prefix}Sensors enabled ({sensor_range}-cell range)'
-        if include_stack:
-            sensor_text = (
-                f'{prefix}Sensors enabled ({sensor_range}-cell range; '
-                f'{stack_label(count, limit)})'
-            )
-        return [sensor_text]
+        return [stacked(f'{prefix}Sensors {sensor_range} cells')]
     return []
 
 

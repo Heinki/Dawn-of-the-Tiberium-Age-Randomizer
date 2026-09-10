@@ -303,6 +303,12 @@
     "player_production_houses": {
       "M_SE3": [
         "GDI"
+      ],
+      "M_SE6": [
+        "Soviet"
+      ],
+      "M_CRC11": [
+        "Soviet"
       ]
     },
     "player_power_houses": {},

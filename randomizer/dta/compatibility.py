@@ -50,11 +50,12 @@ def docking_rules(combined, generated, report):
 
 
 def building_event_rules(installed, authored, generated, report):
-    """Bridge enabled one-shot build events to production/deployment clones.
+    """Bridge one-shot building events to production/deployment clones.
 
-    Build events use heap indexes, not the arbitrary BuildingTypes INI keys.
-    A companion runs the authored actions when the clone is built. Either
-    path destroys the other trigger, so tutorial instructions run only once.
+    Built-by-player and building-exists events use heap indexes, not the
+    arbitrary BuildingTypes INI keys. A companion runs the authored actions
+    when the clone satisfies the event. Either path destroys the other
+    trigger, so mission progression runs only once.
     """
     buildings = list(dict.fromkeys([
         *installed.get('BuildingTypes', {}).values(),
@@ -72,6 +73,14 @@ def building_event_rules(installed, authored, generated, report):
     occupied = set(authored) | set(generated)
     for values in authored.values():
         occupied.update(values)
+    eligible_houses = {str(report.get('player_house') or '').casefold()}
+    eligible_houses.update(
+        str(house).casefold()
+        for item in report['applied']
+        for route in item.get('allied_helper_routes', ())
+        for house in route.get('scenario_houses', ())
+    )
+    eligible_houses.discard('')
 
     def unique(prefix):
         index = 1
@@ -85,9 +94,11 @@ def building_event_rules(installed, authored, generated, report):
         fields = list(comma_items(event))
         trigger = list(comma_items(authored.get('Triggers', {}).get(trigger_id)))
         if (
-            len(fields) != 4 or fields[:2] != ['1', '19']
+            len(fields) != 4
+            or fields[0] != '1'
+            or fields[1] not in {'19', '32'}
             or len(trigger) != 8 or trigger[3] != '0'
-            or trigger[0] != report['player_house']
+            or trigger[0].casefold() not in eligible_houses
         ):
             continue
         tags = [comma_items(value) for value in authored.get('Tags', {}).values()]

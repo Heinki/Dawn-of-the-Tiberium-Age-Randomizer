@@ -579,7 +579,7 @@ def _validate_tuning(sections, path):
                 path,
             )
 
-    for effect in ('range', 'sight', 'ammo'):
+    for effect in ('range', 'area', 'sight', 'ammo'):
         values = effects.get(effect)
         if (
             not isinstance(values, dict)
@@ -587,7 +587,7 @@ def _validate_tuning(sections, path):
             or values['amount_per_stack'] < 0
         ):
             _invalid(f'Invalid additive buff effect {effect!r}', path)
-    for effect in ('range', 'sight'):
+    for effect in ('range', 'area', 'sight'):
         values = effects[effect]
         maximum = values.get('maximum_amount')
         if (
@@ -596,6 +596,13 @@ def _validate_tuning(sections, path):
             or maximum < values['amount_per_stack']
         ):
             _invalid(f'Invalid maximum amount for buff effect {effect!r}', path)
+    minimum_area_spread = effects['area'].get('minimum_native_spread')
+    if (
+        not isinstance(minimum_area_spread, (int, float))
+        or isinstance(minimum_area_spread, bool)
+        or minimum_area_spread <= 0
+    ):
+        _invalid('Invalid minimum native spread for area buff effect', path)
     sight_maximum = effects['sight'].get('maximum_value')
     if (
         not isinstance(sight_maximum, int)
@@ -605,7 +612,7 @@ def _validate_tuning(sections, path):
         _invalid('Invalid maximum value for sight buff effect', path)
     for effect in (
         'production', 'cost', 'armor', 'health', 'damage', 'reload', 'range',
-        'sight', 'ammo',
+        'area', 'sight', 'ammo',
     ):
         stack_limit = effects[effect].get('stack_limit')
         if (
@@ -626,8 +633,34 @@ def _validate_tuning(sections, path):
         effects['defense_self_heal_fraction'] <= 0
         or effects['maximum_self_heal_fraction']
         < effects['defense_self_heal_fraction']
+        or effects['maximum_self_heal_fraction'] > 1
     ):
         _invalid('Invalid self-healing buff cap', path)
+
+    self_heal_rate = effects.get('self_heal_rate')
+    if (
+        not isinstance(self_heal_rate, dict)
+        or not all(
+            isinstance(self_heal_rate.get(key), (int, float))
+            and not isinstance(self_heal_rate[key], bool)
+            and self_heal_rate[key] > 0
+            for key in (
+                'minutes_at_15_fps', 'factor_per_stack', 'minimum_minutes',
+            )
+        )
+        or self_heal_rate['factor_per_stack'] > 1
+        or self_heal_rate['minimum_minutes']
+        > self_heal_rate['minutes_at_15_fps']
+    ):
+        _invalid('Invalid self-healing rate tuning', path)
+
+    reload_minimum = effects['reload'].get('minimum_value')
+    if (
+        not isinstance(reload_minimum, int)
+        or isinstance(reload_minimum, bool)
+        or reload_minimum < 1
+    ):
+        _invalid('Invalid reload minimum value', path)
 
     movement_speed = effects.get('movement_speed')
     movement_ceilings = (

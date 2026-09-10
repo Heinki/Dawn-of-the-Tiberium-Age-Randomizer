@@ -33,6 +33,7 @@ from .base import (
 from randomizer.config.tuning import (
     stacked_cost,
     stacked_self_heal_amount,
+    stacked_self_heal_rate,
     stacked_weapon_damage,
     stacked_weapon_rof,
 )
@@ -172,12 +173,21 @@ def apply_unit_buff_value(values, target, buff_type, count):
         values['OpenTopped'] = 'yes'
     elif buff_type == 'self_healing':
         values['SelfHealing'] = 'yes'
-        # Ares defaults to one hitpoint per RepairRate tick. Give every stack
-        # another configured fraction of effective maximum strength.
+        values['SelfHealingCap'] = '100%'
+        values['SelfHealingRate'] = format_multiplier(
+            stacked_self_heal_rate(count)
+        )
         current_strength = resolved_safe_strength(target, values)
-        values['SelfHealing.Amount'] = str(
+        values['SelfHealingStep'] = str(
             stacked_self_heal_amount(current_strength, count)
         )
+    elif buff_type == 'amphibious':
+        values['MovementZone'] = (
+            'AmphibiousCrusher'
+            if str(values.get('Crusher', '')).casefold() in {'yes', 'true', '1'}
+            else 'AmphibiousDestroyer'
+        )
+        values['SpeedType'] = 'Amphibious'
     elif buff_type == 'cloak':
         values['Cloakable'] = 'yes'
         values['Cloakable.Stages'] = '1'

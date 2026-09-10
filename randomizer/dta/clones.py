@@ -5,11 +5,13 @@ from hashlib import sha1
 
 from randomizer.config.static import static_config_section
 from randomizer.config.tuning import (
+    BUFF_EFFECTS,
     capped_movement_speed,
     capped_sight_range,
     mission_assistance_stack_count,
     stacked_cost,
     stacked_self_heal_amount,
+    stacked_self_heal_rate,
     stacked_weapon_damage,
     stacked_weapon_rof,
     stacking_amount,
@@ -882,17 +884,24 @@ def _unit_overrides(values, counts, target):
         and values.get('Sensors', '').casefold() not in {'yes', 'true', '1'}
     ):
         overrides['Sensors'] = 'yes'
-    if (
-        counts['self_healing']
-        and values.get('SelfHealing', '').casefold() not in {'yes', 'true', '1'}
-    ):
+    if counts['self_healing']:
         overrides['SelfHealing'] = 'yes'
-        overrides['SelfHealingCap'] = '50%'
-        overrides['SelfHealingRate'] = '.016'
+        overrides['SelfHealingCap'] = '100%'
+        overrides['SelfHealingRate'] = _number(stacked_self_heal_rate(
+            counts['self_healing']
+        ))
         overrides['SelfHealingStep'] = str(stacked_self_heal_amount(
-            values.get('Strength', target.get('strength', 1)),
+            overrides.get(
+                'Strength', values.get('Strength', target.get('strength', 1))
+            ),
             counts['self_healing'],
         ))
+    if counts['amphibious']:
+        crusher = values.get('Crusher', '').casefold() in {'yes', 'true', '1'}
+        overrides['MovementZone'] = (
+            'AmphibiousCrusher' if crusher else 'AmphibiousDestroyer'
+        )
+        overrides['SpeedType'] = 'Amphibious'
     return overrides
 
 
@@ -903,11 +912,12 @@ def _weapon_overrides(values, counts):
     if counts['damage']:
         try:
             base_damage = int(float(values.get('Damage')))
-            final_damage = stacked_weapon_damage(
-                values.get('Damage'), counts['damage']
-            )
-            if final_damage != base_damage:
-                overrides['Damage'] = str(final_damage)
+            if base_damage > 0:
+                final_damage = stacked_weapon_damage(
+                    values.get('Damage'), counts['damage']
+                )
+                if final_damage != base_damage:
+                    overrides['Damage'] = str(final_damage)
         except (TypeError, ValueError):
             pass
     if counts['reload']:
@@ -941,6 +951,27 @@ def _weapon_overrides(values, counts):
     return overrides
 
 
+def _warhead_overrides(values, counts):
+    """Return isolated Vinifera CellSpread changes for area-capable warheads."""
+    if not counts['area']:
+        return {}
+    try:
+        base_spread = float(values.get('CellSpread', -1))
+        if base_spread < 0:
+            base_spread = float(values.get('Spread', 0)) / 128.0
+    except (TypeError, ValueError):
+        return {}
+    # Tiny legacy spreads are impact falloff, not a meaningful blast. Only
+    # expand warheads whose native spread meets the configured AoE threshold.
+    if base_spread < float(BUFF_EFFECTS['area']['minimum_native_spread']):
+        return {}
+    return {
+        'CellSpread': _number(
+            base_spread + stacking_amount('area', counts['area'])
+        ),
+    }
+
+
 def _effective_buff_counts(values, target, counts, combined):
     """Discard legacy or inapplicable buffs before deciding to clone a type."""
     effective = Counter()
@@ -951,15 +982,31 @@ def _effective_buff_counts(values, target, counts, combined):
         if _unit_overrides(values, single, target):
             effective[buff_type] = count
             continue
-        if buff_type not in {'damage', 'range', 'reload'}:
+        if buff_type not in {'damage', 'range', 'reload', 'area'}:
             continue
         for weapon_key in WEAPON_KEYS:
             weapon_id = str(values.get(weapon_key) or '').strip()
             if not weapon_id:
                 continue
-            if _weapon_overrides(effective_section(combined, weapon_id), single):
+            weapon_values = effective_section(combined, weapon_id)
+            if _weapon_overrides(weapon_values, single):
                 effective[buff_type] = count
                 break
+            if buff_type == 'area':
+                try:
+                    positive_damage = float(weapon_values.get('Damage', 0)) > 0
+                except (TypeError, ValueError):
+                    positive_damage = False
+                warhead_id = str(weapon_values.get('Warhead') or '').strip()
+                if (
+                    positive_damage
+                    and warhead_id
+                    and _warhead_overrides(
+                        effective_section(combined, warhead_id), single
+                    )
+                ):
+                    effective[buff_type] = count
+                    break
     return effective
 
 
@@ -1182,6 +1229,7 @@ def unit_specific_buff_rules(
                 'production', 'cost', 'speed', 'armor', 'health', 'damage',
                 'reload', 'range', 'sight', 'ammo', 'passenger_capacity',
                 'build_limit', 'cloak', 'sensors', 'self_healing',
+                'area', 'amphibious',
             }
         ):
             continue
@@ -1327,7 +1375,7 @@ def unit_specific_buff_rules(
             })
             continue
         weapon_collision = bool(
-            {'damage', 'range', 'reload'}.intersection(counts)
+            {'damage', 'range', 'reload', 'area'}.intersection(counts)
             and collision['shared_weapon_users']
         )
         identity_collision = bool(
@@ -1529,7 +1577,8 @@ def unit_specific_buff_rules(
             rules.setdefault(list_name, {})[list_key] = output_id
 
         weapon_clones = {}
-        if {'damage', 'range', 'reload'}.intersection(counts):
+        warhead_clones = {}
+        if {'damage', 'range', 'reload', 'area'}.intersection(counts):
             for weapon_key in WEAPON_KEYS:
                 weapon_id = str(values.get(weapon_key) or '').strip()
                 if not weapon_id:
@@ -1539,7 +1588,48 @@ def unit_specific_buff_rules(
                 if clone_id is None:
                     weapon_values = effective_section(combined, weapon_id)
                     overrides = _weapon_overrides(weapon_values, counts)
-                    if not overrides:
+                    warhead_clone = ''
+                    if counts['area']:
+                        try:
+                            positive_damage = float(
+                                weapon_values.get('Damage', 0)
+                            ) > 0
+                        except (TypeError, ValueError):
+                            positive_damage = False
+                        warhead_id = str(
+                            weapon_values.get('Warhead') or ''
+                        ).strip()
+                        warhead_values = effective_section(
+                            combined, warhead_id
+                        ) if warhead_id else {}
+                        warhead_changes = (
+                            _warhead_overrides(warhead_values, counts)
+                            if positive_damage else {}
+                        )
+                        if warhead_changes:
+                            warhead_marker = warhead_id.casefold()
+                            warhead_clone = warhead_clones.get(
+                                warhead_marker, ''
+                            )
+                            if not warhead_clone:
+                                warhead_clone = _clone_id(
+                                    f'{unit_id}_{warhead_id}',
+                                    'PLAYER',
+                                    occupied,
+                                )
+                                cloned_warhead_values = dict(warhead_values)
+                                cloned_warhead_values.pop('BaseSection', None)
+                                cloned_warhead_values.pop('$Inherits', None)
+                                cloned_warhead_values.update(warhead_changes)
+                                rules[warhead_clone] = cloned_warhead_values
+                                warhead_list_key = _next_list_key(
+                                    installed, authored, 'Warheads', list_offsets
+                                )
+                                rules.setdefault('Warheads', {})[
+                                    warhead_list_key
+                                ] = warhead_clone
+                                warhead_clones[warhead_marker] = warhead_clone
+                    if not overrides and not warhead_clone:
                         continue
                     clone_id = _clone_id(
                         f'{unit_id}_{weapon_id}', 'PLAYER', occupied
@@ -1548,6 +1638,8 @@ def unit_specific_buff_rules(
                     cloned_weapon_values.pop('BaseSection', None)
                     cloned_weapon_values.pop('$Inherits', None)
                     cloned_weapon_values.update(overrides)
+                    if warhead_clone:
+                        cloned_weapon_values['Warhead'] = warhead_clone
                     rules[clone_id] = cloned_weapon_values
                     weapon_list_key = _next_list_key(
                         installed, authored, 'Weapons', list_offsets
@@ -1589,6 +1681,7 @@ def unit_specific_buff_rules(
                     if buff_type in {
                         'armor', 'health', 'damage', 'reload', 'range',
                         'sight', 'cloak', 'sensors', 'self_healing',
+                        'area',
                     }
                 })
                 linked_rules.update(
@@ -1602,10 +1695,61 @@ def unit_specific_buff_rules(
                     weapon_id = str(linked_values.get(weapon_key) or '').strip()
                     if not weapon_id:
                         continue
-                    overrides = _weapon_overrides(
-                        effective_section(combined, weapon_id), linked_counts
+                    linked_weapon_source = effective_section(
+                        combined, weapon_id
                     )
-                    if not overrides:
+                    overrides = _weapon_overrides(
+                        linked_weapon_source, linked_counts
+                    )
+                    linked_warhead_clone = ''
+                    if linked_counts['area']:
+                        try:
+                            positive_damage = float(
+                                linked_weapon_source.get('Damage', 0)
+                            ) > 0
+                        except (TypeError, ValueError):
+                            positive_damage = False
+                        warhead_id = str(
+                            linked_weapon_source.get('Warhead') or ''
+                        ).strip()
+                        warhead_values = effective_section(
+                            combined, warhead_id
+                        ) if warhead_id else {}
+                        warhead_changes = (
+                            _warhead_overrides(warhead_values, linked_counts)
+                            if positive_damage else {}
+                        )
+                        if warhead_changes:
+                            warhead_marker = warhead_id.casefold()
+                            linked_warhead_clone = warhead_clones.get(
+                                warhead_marker, ''
+                            )
+                            if not linked_warhead_clone:
+                                linked_warhead_clone = _clone_id(
+                                    f'{linked_source}_{warhead_id}',
+                                    'PLAYER',
+                                    occupied,
+                                )
+                                cloned_warhead_values = dict(warhead_values)
+                                cloned_warhead_values.pop('BaseSection', None)
+                                cloned_warhead_values.pop('$Inherits', None)
+                                cloned_warhead_values.update(warhead_changes)
+                                rules[linked_warhead_clone] = (
+                                    cloned_warhead_values
+                                )
+                                warhead_list_key = _next_list_key(
+                                    installed,
+                                    authored,
+                                    'Warheads',
+                                    list_offsets,
+                                )
+                                rules.setdefault('Warheads', {})[
+                                    warhead_list_key
+                                ] = linked_warhead_clone
+                                warhead_clones[warhead_marker] = (
+                                    linked_warhead_clone
+                                )
+                    if not overrides and not linked_warhead_clone:
                         continue
                     linked_weapon = _clone_id(
                         f'{linked_source}_{weapon_id}', 'PLAYER', occupied
@@ -1616,6 +1760,8 @@ def unit_specific_buff_rules(
                     linked_weapon_values.pop('BaseSection', None)
                     linked_weapon_values.pop('$Inherits', None)
                     linked_weapon_values.update(overrides)
+                    if linked_warhead_clone:
+                        linked_weapon_values['Warhead'] = linked_warhead_clone
                     rules[linked_weapon] = linked_weapon_values
                     weapon_list_key = _next_list_key(
                         installed, authored, 'Weapons', list_offsets

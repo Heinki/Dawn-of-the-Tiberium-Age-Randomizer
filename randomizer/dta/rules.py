@@ -222,13 +222,26 @@ def techno_catalogue():
             weapons = {}
             for weapon_id in weapon_ids:
                 weapon_values = effective_section(sections, weapon_id)
+                warhead_id = str(weapon_values.get('Warhead') or '').strip()
+                warhead_values = effective_section(sections, warhead_id)
+                try:
+                    area_spread = float(warhead_values.get('CellSpread', -1))
+                    if area_spread < 0:
+                        area_spread = float(
+                            warhead_values.get('Spread', 0)
+                        ) / 128.0
+                except (TypeError, ValueError):
+                    area_spread = 0.0
                 weapon_buff_safe = weapon_values.get(
                     'Spawner', ''
                 ).casefold() not in {'yes', 'true', '1'}
                 weapons[weapon_id] = {
+                    'id': weapon_id,
                     'damage': numeric_value(weapon_values, 'Damage'),
                     'rof': numeric_value(weapon_values, 'ROF'),
                     'range': decimal_value(weapon_values, 'Range'),
+                    'warhead': warhead_id,
+                    'area_spread': area_spread,
                     'buff_safe': weapon_buff_safe,
                 }
             special_reward = (
@@ -273,6 +286,17 @@ def techno_catalogue():
                     'yes', 'true', '1',
                 },
                 'self_healing': values.get('SelfHealing', '').casefold() in {
+                    'yes', 'true', '1',
+                },
+                'opportunity_fire': values.get(
+                    'OpportunityFire', ''
+                ).casefold() in {'yes', 'true', '1'},
+                'no_moving_fire': values.get(
+                    'NoMovingFire', ''
+                ).casefold() in {'yes', 'true', '1'},
+                'movement_zone': values.get('MovementZone', ''),
+                'speed_type': values.get('SpeedType', ''),
+                'crusher': values.get('Crusher', '').casefold() in {
                     'yes', 'true', '1',
                 },
                 'image': values.get('Image', type_id).upper(),

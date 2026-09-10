@@ -118,7 +118,19 @@ BUFF_TYPES = [
         'id': 'self_healing',
         'name': 'Regeneration',
         'setting_label': 'Self-healing',
-        'description': '{plural} regenerate health.',
+        'description': '{plural} regenerate to full health with faster, stronger ticks.',
+    },
+    {
+        'id': 'area',
+        'name': 'Blast Expansion',
+        'setting_label': 'Area of effect',
+        'description': '{plural} weapons damage a wider area.',
+    },
+    {
+        'id': 'amphibious',
+        'name': 'Amphibious Drive',
+        'setting_label': 'Amphibious movement',
+        'description': '{plural} can cross land and water.',
     },
 ]
 
@@ -232,6 +244,17 @@ def _allowed_buff_types(record):
         allowed.append('reload')
     if any(weapon.get('range', 0) > 0 for weapon in weapons):
         allowed.append('range')
+    offensive_weapons = tuple(
+        weapon for weapon in weapons if weapon.get('damage', 0) > 0
+    )
+    if any(
+        weapon.get('warhead')
+        and weapon.get('area_spread', 0) >= float(
+            BUFF_EFFECTS['area']['minimum_native_spread']
+        )
+        for weapon in offensive_weapons
+    ):
+        allowed.append('area')
     if (
         capped_sight_range(record, 1)
         > int(round(float(record.get('sight', 0))))
@@ -247,8 +270,15 @@ def _allowed_buff_types(record):
         allowed.append('cloak')
     if not record.get('sensors'):
         allowed.append('sensors')
-    if strength > 0 and not record.get('self_healing'):
+    if strength > 0:
         allowed.append('self_healing')
+    if (
+        record.get('category') == 'vehicles'
+        and not record.get('naval')
+        and str(record.get('movement_zone') or '').casefold()
+        in {'normal', 'crusher', 'destroyer'}
+    ):
+        allowed.append('amphibious')
     return allowed
 
 
@@ -267,6 +297,9 @@ for _record in _MOBILE_RECORDS:
         'passengers': _record['passengers'],
         'build_limit': _record.get('build_limit', 0),
         'weapons': dict(_record.get('weapons', {})),
+        'movement_zone': _record.get('movement_zone', ''),
+        'speed_type': _record.get('speed_type', ''),
+        'crusher': bool(_record.get('crusher')),
         'allowed_buff_types': _allowed_buff_types(_record),
         'dta_production_clone': True,
         'naval': bool(_record.get('naval')),
@@ -555,12 +588,12 @@ CLONE_REQUIRED_BUFF_TYPES = frozenset(
     {
         'production', 'cost', 'speed', 'armor', 'health', 'damage', 'reload',
         'range', 'sight', 'ammo', 'passenger_capacity', 'cloak', 'sensors',
-        'self_healing',
+        'self_healing', 'area', 'amphibious',
         'build_limit',
     }
 )
 HOUSE_SCOPED_BUFF_TYPES = frozenset()
-WEAPON_STAT_BUFF_TYPES = frozenset({'damage', 'range', 'reload'})
+WEAPON_STAT_BUFF_TYPES = frozenset({'damage', 'range', 'reload', 'area'})
 _UNIT_POLICY_CONFIG = {'ammo_display_labels': {}}
 
 _FACTION_CONFIG = load_static_config('factions.json')

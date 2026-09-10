@@ -96,7 +96,11 @@ def stacked_weapon_rof(base_rof, count):
     """Return ROF delay with at least one tick removed per useful stack."""
     base_rof = max(1, int(round(float(base_rof))))
     count = max(0, int(count))
-    rounded = max(1, int(round(
+    minimum = min(
+        base_rof,
+        max(1, int(BUFF_EFFECTS['reload'].get('minimum_value', 1))),
+    )
+    rounded = max(minimum, int(round(
         base_rof * stacking_multiplier('reload', count)
     )))
     if count > 0 and base_rof > 1:
@@ -116,6 +120,17 @@ def stacked_self_heal_amount(base_strength, count):
         float(BUFF_EFFECTS['defense_self_heal_fraction']) * count,
     )
     return min(maximum, max(1, int(round(base_strength * fraction))))
+
+
+def stacked_self_heal_rate(count):
+    """Return Vinifera minutes between self-healing ticks."""
+    values = BUFF_EFFECTS['self_heal_rate']
+    count = max(1, int(count))
+    rate = (
+        float(values['minutes_at_15_fps'])
+        * float(values['factor_per_stack']) ** (count - 1)
+    )
+    return max(float(values['minimum_minutes']), rate)
 
 
 @lru_cache(maxsize=None)
