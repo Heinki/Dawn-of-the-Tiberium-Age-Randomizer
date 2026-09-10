@@ -181,6 +181,10 @@ Python executable is installed elsewhere. These workflows still produce
 `DTARandomizer.exe` and `Archipelago/dta.apworld`; there is no separate
 Linux-only release format.
 
+APWorld builds package the checked-in catalogue. Maintainers changing reward
+or mission catalogue data must first regenerate it from an installed DTA copy
+with `python -m Archipelago.generate_catalogue`.
+
 ## AI-assisted development
 
 This project was developed with assistance from OpenAI's ChatGPT, including

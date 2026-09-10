@@ -136,3 +136,13 @@ python3 Archipelago/build_apworld.py
 ```
 
 Changes affecting mission parsing, map generation, difficulty, access, clones, buffs, launch, or completion require focused generated-map checks and relevant live DTA mission tests. Changes affecting the catalogue or APWorld require matching launcher and APWorld builds.
+
+Regenerate the checked-in APWorld catalogue from an installed DTA copy before
+building whenever reward or mission catalogue data changes:
+
+```powershell
+python -m Archipelago.generate_catalogue
+```
+
+APWorld packaging consumes that checked-in snapshot so clean CI checkouts do
+not require DTA's unversioned `INI/Rules.ini` files.

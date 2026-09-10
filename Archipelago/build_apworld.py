@@ -5,12 +5,10 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-import sys
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 
 ARCHIPELAGO_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = ARCHIPELAGO_DIR.parent
 MODULE_NAME = 'dta'
 SOURCE_DIR = ARCHIPELAGO_DIR / 'APWorld' / MODULE_NAME
 FIXED_TIMESTAMP = (2000, 1, 1, 0, 0, 0)
@@ -24,14 +22,13 @@ def archive_info(name: str) -> ZipInfo:
 
 
 def build(output_directory: Path) -> Path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-    from Archipelago.generate_catalogue import main as generate_catalogue
-
     manifest_path = SOURCE_DIR / 'archipelago.json'
+    catalogue_path = SOURCE_DIR / 'catalogue.json'
     if not manifest_path.is_file():
         raise FileNotFoundError(f'APWorld manifest not found: {manifest_path}')
+    if not catalogue_path.is_file():
+        raise FileNotFoundError(f'APWorld catalogue not found: {catalogue_path}')
 
-    generate_catalogue()
     output_directory = output_directory.resolve()
     output_directory.mkdir(parents=True, exist_ok=True)
     output_path = output_directory / f'{MODULE_NAME}.apworld'
