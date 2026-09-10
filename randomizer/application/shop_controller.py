@@ -1959,9 +1959,13 @@ class ShopController(ShopPolishController):
                 item_label,
                 'Source: ' + ' + '.join(record['sources']),
                 'Active for current run.',
-                '',
-                'Attached buffs:',
             ]
+            base_stats = self._shop_unit_base_stats(
+                target_id if not is_power else ''
+            )
+            if base_stats:
+                details.extend(('', base_stats))
+            details.extend(('', 'Attached buffs:'))
             details.extend(record['buff_lines'] or ('None',))
             self._shop_loadout_details[iid] = '\n'.join(details)
         self._rebuild_shop_loadout_upgrade_buttons()

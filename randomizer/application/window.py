@@ -607,6 +607,12 @@ class WindowController:
         self.shop_canvas.itemconfigure(
             self.shop_canvas_window, width=content_width
         )
+        # A Treeview's requested height is measured in rows. Letting that
+        # request size the notebook makes the lower half of its scrollbar sit
+        # below the canvas on shorter displays. Keep the complete active panel
+        # within one viewport; its Treeviews already provide their own scroll.
+        if hasattr(self, 'shop_panels'):
+            self.shop_panels.configure(height=max(420, event.height - 34))
         self.layout_shop_content(content_width)
         self.after_idle(self.resize_shop_canvas_window)
 

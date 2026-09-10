@@ -896,12 +896,6 @@ def _unit_overrides(values, counts, target):
             ),
             counts['self_healing'],
         ))
-    if counts['amphibious']:
-        crusher = values.get('Crusher', '').casefold() in {'yes', 'true', '1'}
-        overrides['MovementZone'] = (
-            'AmphibiousCrusher' if crusher else 'AmphibiousDestroyer'
-        )
-        overrides['SpeedType'] = 'Amphibious'
     return overrides
 
 
@@ -1229,7 +1223,7 @@ def unit_specific_buff_rules(
                 'production', 'cost', 'speed', 'armor', 'health', 'damage',
                 'reload', 'range', 'sight', 'ammo', 'passenger_capacity',
                 'build_limit', 'cloak', 'sensors', 'self_healing',
-                'area', 'amphibious',
+                'area',
             }
         ):
             continue

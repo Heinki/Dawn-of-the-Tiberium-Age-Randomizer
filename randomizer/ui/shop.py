@@ -305,6 +305,12 @@ def build_shop_tab(self, workspace_tabs):
         self.shop_catalogue_tree, '_shop_catalogue_upgrade_buttons'
     )
     self.shop_catalogue_tree.bind(
+        '<ButtonRelease-1>', self.click_shop_catalogue_upgrade_link, add='+'
+    )
+    self.shop_catalogue_tree.bind(
+        '<Motion>', self.update_shop_catalogue_upgrade_cursor, add='+'
+    )
+    self.shop_catalogue_tree.bind(
         '<<TreeviewSelect>>', self.refresh_shop_purchase_buttons
     )
     self.shop_catalogue_tooltip_view = TreeTooltip(
@@ -373,6 +379,12 @@ def build_shop_tab(self, workspace_tabs):
     self.shop_loadout_tree.column('upgrades', anchor='center')
     self.configure_shop_embedded_button_tree(
         self.shop_loadout_tree, '_shop_loadout_upgrade_buttons'
+    )
+    self.shop_loadout_tree.bind(
+        '<ButtonRelease-1>', self.click_loadout_upgrade_link, add='+'
+    )
+    self.shop_loadout_tree.bind(
+        '<Motion>', self.update_loadout_upgrade_cursor, add='+'
     )
     self.shop_loadout_tooltip_view = TreeTooltip(
         self.shop_loadout_tree, self.shop_loadout_tooltip

@@ -22,7 +22,6 @@ DEFENSE_BUILDING_IDS = frozenset({
 })
 ALWAYS_AVAILABLE_MOBILE_IDS = frozenset({
     'ENGINEER',
-    'GMCV', 'NMCV', 'AMCV', 'SMCV',
     'TDHARV', 'RAHARV',
     'GLST', 'NLST', 'ALST', 'SLST',
 })
@@ -271,6 +270,7 @@ def techno_catalogue():
                 'cost': cost,
                 'speed': speed,
                 'strength': strength,
+                'armor': values.get('Armor', ''),
                 'sight': numeric_value(values, 'Sight'),
                 'ammo': numeric_value(values, 'Ammo'),
                 'passengers': numeric_value(values, 'Passengers'),

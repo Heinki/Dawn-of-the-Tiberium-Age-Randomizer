@@ -11,13 +11,13 @@ LEGACY_CONFIG_PATH = LEGACY_CONFIG_DIR / CONFIG_PATH.name
 DEFAULT_CONFIG = static_config_section(
     'default_player_config.json', 'defaults', dict
 )
-UNIT_BUFF_CATALOGUE_VERSION = 5
+UNIT_BUFF_CATALOGUE_VERSION = 6
 UNIT_BUFF_TYPES_INTRODUCED = {
     1: ('passenger_capacity', 'open_topped'),
     2: ('health', 'range', 'sight', 'ammo', 'passenger_capacity', 'cloak', 'sensors'),
     3: ('self_healing',),
     4: ('build_limit',),
-    5: ('area', 'amphibious'),
+    5: ('area',),
 }
 POWER_BUFF_CATALOGUE_VERSION = 6
 POWER_BUFF_TYPES_INTRODUCED = {
@@ -125,14 +125,17 @@ def migrate_loaded_config(loaded):
     except (TypeError, ValueError):
         version = 0
     enabled = generation.get('enabled_buff_types')
-    if isinstance(enabled, list) and 'opportunity_fire' in enabled:
-        enabled[:] = [kind for kind in enabled if kind != 'opportunity_fire']
+    retired_buff_types = {'opportunity_fire', 'amphibious'}
+    if isinstance(enabled, list) and retired_buff_types.intersection(enabled):
+        enabled[:] = [kind for kind in enabled if kind not in retired_buff_types]
         changed = True
     weights = generation.get('reward_weights', {})
     unit_weights = weights.get('unit_buffs', {}) if isinstance(weights, dict) else {}
-    if isinstance(unit_weights, dict) and 'opportunity_fire' in unit_weights:
-        unit_weights.pop('opportunity_fire')
-        changed = True
+    if isinstance(unit_weights, dict):
+        for buff_type in retired_buff_types:
+            if buff_type in unit_weights:
+                unit_weights.pop(buff_type)
+                changed = True
     if isinstance(enabled, list):
         for introduced_version in range(
             version + 1,

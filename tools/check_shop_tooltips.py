@@ -113,6 +113,112 @@ class InlineEffectChecks(unittest.TestCase):
         self.assertIn('\n    Missile:', tooltip)
         self.assertEqual(tooltip.count('stacks'), 1)
 
+    def test_every_shop_unit_has_base_stats_tooltip(self):
+        access_entries = [
+            entry for entry in self.entries
+            if entry.reward_type is ShopRewardType.UNIT_ACCESS
+        ]
+        self.assertTrue(access_entries)
+        for entry in access_entries:
+            with self.subTest(unit=entry.target_id):
+                text = ShopPolishController._shop_unit_base_stats(
+                    entry.target_id
+                )
+                target = BUFF_TARGETS[entry.target_id]
+                self.assertIn('Base stats:', text)
+                self.assertIn(f'Health: {target["strength"]} HP', text)
+                self.assertIn(f'Cost: {target["cost"]} credits', text)
+
+    def test_mcv_access_and_deployment_stats_are_visible(self):
+        mcv_ids = {'GMCV', 'NMCV', 'AMCV', 'SMCV'}
+        access_ids = {
+            entry.target_id for entry in self.entries
+            if entry.reward_type is ShopRewardType.UNIT_ACCESS
+        }
+        self.assertTrue(mcv_ids.issubset(access_ids))
+        for mcv_id in mcv_ids:
+            text = ShopPolishController._shop_unit_base_stats(mcv_id)
+            self.assertIn('Deploys into:', text)
+
+    def test_every_embedded_upgrade_button_keeps_its_target(self):
+        calls = []
+
+        class FakeButton:
+            def __init__(self, _parent, **options):
+                self.command = options['command']
+                self.bindings = {}
+
+            def bind(self, sequence, callback):
+                self.bindings[sequence] = callback
+
+            def destroy(self):
+                pass
+
+        controller = SimpleNamespace(
+            _shop_catalogue_upgrade_targets={
+                'row-1': ('E1', False),
+                'row-2': ('IONCANNON', True),
+            },
+            _shop_catalogue_upgrade_buttons={},
+            shop_catalogue_tree=object(),
+            after_idle=lambda _callback: None,
+            _position_shop_tree_buttons=lambda *_args: None,
+            _open_shop_catalogue_upgrade_button=(
+                lambda row, target: calls.append((row, target))
+            ),
+        )
+        controller._clear_shop_tree_buttons = MethodType(
+            ShopPolishController._clear_shop_tree_buttons, controller
+        )
+        with patch(
+            'randomizer.application.shop_polish_controller.ttk.Button',
+            FakeButton,
+        ):
+            ShopPolishController._rebuild_shop_catalogue_upgrade_buttons(
+                controller
+            )
+        for button in controller._shop_catalogue_upgrade_buttons.values():
+            button.command()
+        self.assertEqual(calls, [
+            ('row-1', ('E1', False)),
+            ('row-2', ('IONCANNON', True)),
+        ])
+        self.assertTrue(all(
+            '<ButtonRelease-1>' in button.bindings
+            for button in controller._shop_catalogue_upgrade_buttons.values()
+        ))
+
+    def test_loadout_upgrade_click_uses_actual_upgrade_column(self):
+        calls = []
+
+        class FakeTree:
+            def identify_column(self, _x):
+                return '#4'
+
+            def identify_row(self, _y):
+                return 'loadout-row'
+
+            def selection_set(self, row):
+                calls.append(('selected', row))
+
+        controller = SimpleNamespace(
+            shop_loadout_tree=FakeTree(),
+            _shop_current_loadout_targets={
+                'loadout-row': ('E1', False),
+            },
+            _show_shop_buffs_for_target=lambda target, power=False: calls.append(
+                ('opened', target, power)
+            ),
+        )
+        result = ShopPolishController.click_loadout_upgrade_link(
+            controller, SimpleNamespace(x=10, y=10)
+        )
+        self.assertEqual(result, 'break')
+        self.assertEqual(calls, [
+            ('selected', 'loadout-row'),
+            ('opened', 'E1', False),
+        ])
+
     def test_dashboard_merges_health_and_armor(self):
         health_entry = next(e for e in self.entries if canonical_reward_for_id(e.reward_id).get('buff_type') == 'health')
         armor_entry = next(e for e in self.entries if e.target_id == health_entry.target_id and canonical_reward_for_id(e.reward_id).get('buff_type') == 'armor')

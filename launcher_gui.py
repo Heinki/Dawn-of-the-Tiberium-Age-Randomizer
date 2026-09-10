@@ -407,9 +407,7 @@ def run_self_check():
                 if reward.get('unit') == 'HTNK'
                 and reward.get('buff_type') == buff_type
             )
-            for buff_type in (
-                'reload', 'self_healing', 'amphibious',
-            )
+            for buff_type in ('reload', 'self_healing')
         }
         mammoth_access_reward = next(
             reward for reward in REWARD_POOL
@@ -421,7 +419,6 @@ def run_self_check():
             [
                 mammoth_access_reward,
                 mammoth_rewards['self_healing'],
-                mammoth_rewards['amphibious'],
                 *(
                     [mammoth_rewards['reload']]
                     * buff_stack_limit(mammoth_rewards['reload'])
@@ -664,9 +661,20 @@ def run_self_check():
             mcv_isolation, mcv_context = player_production_isolation_rules(
                 mcv_mission
             )
+            mcv_access_reward = next(
+                reward for reward in REWARD_POOL
+                if reward.get('unit') == mcv_id
+                and reward.get('dta_production_access')
+            )
+            mcv_speed_reward = next(
+                reward for reward in REWARD_POOL
+                if reward.get('unit') == mcv_id
+                and reward.get('buff_type') == 'speed'
+            )
             mcv_rules, mcv_report = unit_specific_buff_rules(
                 mcv_mission,
-                [speed_reward],
+                [mcv_access_reward, mcv_speed_reward],
+                access_randomized=True,
                 buff_allied_helpers=True,
                 production_context=mcv_context,
                 rule_overlays=mcv_isolation,
@@ -679,6 +687,7 @@ def run_self_check():
                 if item['unit'] == mcv_id
             ), {})
             mcv_output = mcv_entry.get('output_type', '')
+            mcv_output_rules = mcv_rules.get(mcv_output, {})
             conyard_output = (mcv_entry.get('linked_deploy_route') or {}).get(
                 'output_type', ''
             )
@@ -693,6 +702,12 @@ def run_self_check():
                 )
                 and conyard_output in comma_items(
                     mcv_rules.get('AI', {}).get('BuildConst')
+                )
+                and mcv_entry.get('route') == 'production_access_clone'
+                and mcv_output_rules.get('TechLevel') == '1'
+                and not any(
+                    str(key).casefold().startswith('prerequisite')
+                    for key in mcv_output_rules
                 )
             )
             if mission_code == 'M_CRC10':
@@ -2898,8 +2913,6 @@ def run_self_check():
                 and mammoth_clone.get('SelfHealingCap') == '100%'
                 and float(mammoth_clone.get('SelfHealingRate', 0)) > 0
                 and int(mammoth_clone.get('SelfHealingStep', 0)) > 0
-                and mammoth_clone.get('MovementZone') == 'AmphibiousCrusher'
-                and mammoth_clone.get('SpeedType') == 'Amphibious'
             ),
             'dta_area_buff_clones_and_registers_warhead': (
                 a10_clone_entry.get('route') == 'production_access_clone'

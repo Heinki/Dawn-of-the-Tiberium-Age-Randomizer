@@ -207,7 +207,7 @@ def unit_weapon_buff_rules(
             for buff_type in (
                 'health', 'armor', 'sight', 'ammo', 'passenger_capacity',
                 'open_topped', 'self_healing', 'cloak', 'sensors', 'cost',
-                'speed', 'amphibious',
+                'speed',
             ):
                 if buff_type in direct_types and apply_unit_buff_value(
                     unit_values,
@@ -349,7 +349,7 @@ def native_variant_unit_buff_rules(
         for buff_type in (
             'health', 'armor', 'sight', 'ammo', 'passenger_capacity',
             'open_topped', 'self_healing', 'cloak', 'sensors', 'production',
-            'cost', 'speed', 'amphibious',
+            'cost', 'speed',
         ):
             if buff_type in counts:
                 applied = (

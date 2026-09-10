@@ -3,7 +3,7 @@
 from collections import Counter
 from tkinter import ttk
 
-from randomizer.rewards.catalogue import unit_display_label
+from randomizer.rewards.catalogue import BUFF_TARGETS, unit_display_label
 from randomizer.rewards.display import (
     buff_effect_lines, reward_display_name, unit_buff_counts,
 )
@@ -40,9 +40,75 @@ from .shop_archipelago_controller import ShopArchipelagoController
 
 
 class ShopPolishController(ShopArchipelagoController):
+    @staticmethod
+    def _shop_unit_base_stats(target_id):
+        """Return installed DTA values for every Shop unit identity."""
+        target = BUFF_TARGETS.get(str(target_id or '').upper())
+        if not target or target.get('global_buff'):
+            return ''
+
+        def number(value):
+            try:
+                numeric = float(value)
+            except (TypeError, ValueError):
+                return str(value)
+            return str(int(numeric)) if numeric.is_integer() else f'{numeric:g}'
+
+        category = {
+            'infantry': 'Infantry',
+            'vehicles': 'Vehicle',
+            'aircraft': 'Aircraft',
+            'defenses': 'Defense',
+        }.get(target.get('category'), str(target.get('category') or 'Unit').title())
+        lines = [
+            'Base stats:',
+            f'  Type: {category}',
+            f'  Cost: {number(target.get("cost", 0))} credits',
+            f'  Health: {number(target.get("strength", 0))} HP',
+        ]
+        armor = str(target.get('armor') or '').strip()
+        if armor:
+            lines.append(f'  Armor: {armor}')
+        speed = target.get('speed', 0)
+        if speed:
+            lines.append(f'  Speed: {number(speed)}')
+        sight = target.get('sight', 0)
+        if sight:
+            lines.append(f'  Sight: {number(sight)} cells')
+        ammo = target.get('ammo', 0)
+        if ammo:
+            lines.append(f'  Ammo: {number(ammo)}')
+        passengers = target.get('passengers', 0)
+        if passengers:
+            lines.append(f'  Passengers: {number(passengers)}')
+        build_limit = target.get('build_limit', 0)
+        if build_limit:
+            lines.append(f'  Build limit: {number(build_limit)}')
+        deploys_into = str(target.get('deploys_into') or '').strip()
+        if deploys_into:
+            lines.append(f'  Deploys into: {deploys_into}')
+
+        weapons = target.get('weapons') or {}
+        if weapons:
+            lines.append('  Weapons:')
+            for weapon_id, stats in weapons.items():
+                values = []
+                for label, key in (
+                    ('damage', 'damage'), ('ROF', 'rof'), ('range', 'range')
+                ):
+                    value = stats.get(key, 0)
+                    if value:
+                        values.append(f'{label} {number(value)}')
+                if values:
+                    lines.append(f'    {weapon_id}: {", ".join(values)}')
+        return '\n'.join(lines)
+
     def configure_shop_embedded_button_tree(self, tree, button_attribute):
         """Keep real buttons aligned with visible Treeview action cells."""
         scrollbar = getattr(tree, '_shop_vertical_scrollbar', None)
+        horizontal_scrollbar = getattr(
+            tree, '_shop_horizontal_scrollbar', None
+        )
 
         def schedule_reflow(_event=None):
             self.after_idle(
@@ -62,6 +128,17 @@ class ShopPolishController(ShopArchipelagoController):
 
             tree.configure(yscrollcommand=update_scrollbar)
             scrollbar.configure(command=scroll_tree)
+        if horizontal_scrollbar is not None:
+            def update_horizontal_scrollbar(first, last):
+                horizontal_scrollbar.set(first, last)
+                schedule_reflow()
+
+            def scroll_tree_horizontally(*args):
+                tree.xview(*args)
+                schedule_reflow()
+
+            tree.configure(xscrollcommand=update_horizontal_scrollbar)
+            horizontal_scrollbar.configure(command=scroll_tree_horizontally)
         tree.bind('<Configure>', schedule_reflow, add='+')
         tree.bind('<MouseWheel>', schedule_reflow, add='+')
         tree.bind('<Button-4>', schedule_reflow, add='+')
@@ -98,15 +175,20 @@ class ShopPolishController(ShopArchipelagoController):
         self._clear_shop_tree_buttons(attribute)
         buttons = {}
         for iid, target in self._shop_catalogue_upgrade_targets.items():
+            def activate(_event=None, row=iid, value=target):
+                self._open_shop_catalogue_upgrade_button(row, value)
+                return 'break'
+
             button = ttk.Button(
                 self.shop_catalogue_tree,
                 text='Open Upgrades',
                 style='Launch.TButton',
                 takefocus=False,
-                command=lambda row=iid, value=target: (
-                    self._open_shop_catalogue_upgrade_button(row, value)
-                ),
+                command=activate,
             )
+            # Explicit mouse binding avoids platform-specific failures where a
+            # placed ttk.Button inside a Treeview never invokes its command.
+            button.bind('<ButtonRelease-1>', activate)
             buttons[iid] = button
         self.__dict__[attribute] = buttons
         self.after_idle(lambda: self._position_shop_tree_buttons(
@@ -122,15 +204,18 @@ class ShopPolishController(ShopArchipelagoController):
         self._clear_shop_tree_buttons(attribute)
         buttons = {}
         for iid, target in self._shop_current_loadout_targets.items():
+            def activate(_event=None, row=iid, value=target):
+                self._open_shop_loadout_upgrade_button(row, value)
+                return 'break'
+
             button = ttk.Button(
                 self.shop_loadout_tree,
                 text='Open Upgrades',
                 style='Launch.TButton',
                 takefocus=False,
-                command=lambda row=iid, value=target: (
-                    self._open_shop_loadout_upgrade_button(row, value)
-                ),
+                command=activate,
             )
+            button.bind('<ButtonRelease-1>', activate)
             buttons[iid] = button
         self.__dict__[attribute] = buttons
         self.after_idle(lambda: self._position_shop_tree_buttons(
@@ -1118,6 +1203,14 @@ class ShopPolishController(ShopArchipelagoController):
                     and entry.reward_id == run.stock_lock_reward_id
                     else ''
                 )
+                + (
+                    '\n\n' + self._shop_unit_base_stats(entry.target_id)
+                    if entry.reward_type in {
+                        ShopRewardType.UNIT_ACCESS,
+                        ShopRewardType.UNIT_BUFF,
+                    }
+                    else ''
+                )
             )
             if entry.reward_id == selected_reward_id:
                 restore_iid = iid
@@ -1148,7 +1241,7 @@ class ShopPolishController(ShopArchipelagoController):
         )
 
     def click_loadout_upgrade_link(self, event):
-        if self.shop_loadout_tree.identify_column(event.x) != '#3':
+        if self.shop_loadout_tree.identify_column(event.x) != '#4':
             return
         iid = self.shop_loadout_tree.identify_row(event.y)
         target = self._shop_current_loadout_targets.get(iid)
@@ -1160,7 +1253,7 @@ class ShopPolishController(ShopArchipelagoController):
     def update_loadout_upgrade_cursor(self, event):
         iid = self.shop_loadout_tree.identify_row(event.y)
         clickable = bool(
-            self.shop_loadout_tree.identify_column(event.x) == '#3'
+            self.shop_loadout_tree.identify_column(event.x) == '#4'
             and iid in self._shop_current_loadout_targets
         )
         self.shop_loadout_tree.configure(
@@ -1503,9 +1596,14 @@ class ShopPolishController(ShopArchipelagoController):
         reward_id = self._shop_permanent_rows.get(row_id)
         if not reward_id:
             return ''
+        entry = self._shop_entry_by_reward_id.get(reward_id)
+        stats = self._shop_unit_base_stats(
+            entry.target_id if entry is not None else ''
+        )
         return (
             f'{reward_id}\nPermanent local entitlement. '
             'Selectable in future Shop run loadouts.'
+            + (f'\n\n{stats}' if stats else '')
         )
 
     def shop_upgrade_tooltip(self, row_id):

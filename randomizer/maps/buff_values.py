@@ -181,13 +181,6 @@ def apply_unit_buff_value(values, target, buff_type, count):
         values['SelfHealingStep'] = str(
             stacked_self_heal_amount(current_strength, count)
         )
-    elif buff_type == 'amphibious':
-        values['MovementZone'] = (
-            'AmphibiousCrusher'
-            if str(values.get('Crusher', '')).casefold() in {'yes', 'true', '1'}
-            else 'AmphibiousDestroyer'
-        )
-        values['SpeedType'] = 'Amphibious'
     elif buff_type == 'cloak':
         values['Cloakable'] = 'yes'
         values['Cloakable.Stages'] = '1'

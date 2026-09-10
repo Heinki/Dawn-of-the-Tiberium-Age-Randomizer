@@ -167,6 +167,16 @@ def validate_shop_domain():
         any(entry.target_id == 'E1' for entry in unit_access),
         'Minigunner access missing from DTA Shop',
     )
+    unit_access_targets = {entry.target_id for entry in unit_access}
+    unit_buff_targets = {entry.target_id for entry in unit_buffs}
+    _require(
+        {'GMCV', 'NMCV', 'AMCV', 'SMCV'}.issubset(unit_access_targets),
+        'DTA Shop MCV access catalogue is incomplete',
+    )
+    _require(
+        unit_access_targets.issubset(unit_buff_targets),
+        'One or more DTA Shop units have no upgrades',
+    )
 
     for challenge in CHALLENGE_MODIFIERS:
         reward = canonical_reward_for_id(challenge.enemy_reward_id)
@@ -220,6 +230,11 @@ def validate_shop_domain():
         run_unit_price('BRIG') == 12
         and permanent_unit_price('BRIG') == 60,
         'Top-cost DTA vehicle Shop prices are incorrect',
+    )
+    _require(
+        run_unit_price('GMCV') == 12
+        and permanent_unit_price('GMCV') == 60,
+        'MCV Shop prices are incorrect',
     )
     _require(
         run_unit_price('SPY') == 3

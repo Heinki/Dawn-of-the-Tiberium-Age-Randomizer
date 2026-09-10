@@ -1,4 +1,4 @@
-"""Check removal of unsupported moving-fire upgrades without changing saves."""
+"""Check retired unsupported upgrades without changing saves."""
 import copy
 from collections import Counter
 from pathlib import Path
@@ -17,10 +17,12 @@ from randomizer.shop.catalogue import shop_catalogue
 
 class RetiredBuffChecks(unittest.TestCase):
     def test_not_offered_in_catalogues(self):
-        self.assertFalse(any(item['id'] == 'opportunity_fire' for item in BUFF_TYPES))
-        self.assertFalse(any(r.get('buff_type') == 'opportunity_fire' for r in REWARD_POOL))
+        retired = {'opportunity_fire', 'amphibious'}
+        self.assertTrue(retired.isdisjoint(item['id'] for item in BUFF_TYPES))
+        self.assertTrue(retired.isdisjoint(r.get('buff_type') for r in REWARD_POOL))
         self.assertFalse(any('Run-and-Gun' in entry.reward_id for entry in shop_catalogue()))
-        self.assertTrue(all('opportunity_fire' not in target.get('allowed_buff_types', ()) for target in BUFF_TARGETS.values()))
+        self.assertFalse(any('Amphibious Drive' in entry.reward_id for entry in shop_catalogue()))
+        self.assertTrue(all(retired.isdisjoint(target.get('allowed_buff_types', ())) for target in BUFF_TARGETS.values()))
 
     def test_saved_and_runtime_rewards_are_inert(self):
         name = 'GDI Mammoth Tank (HTNK) Run-and-Gun I'
@@ -40,14 +42,30 @@ class RetiredBuffChecks(unittest.TestCase):
         config = copy.deepcopy(DEFAULT_CONFIG)
         generation = config['generation']
         generation['unit_buff_catalogue_version'] = 4
-        generation['enabled_buff_types'] += ['opportunity_fire']
+        generation['enabled_buff_types'] += ['opportunity_fire', 'amphibious']
         generation['reward_weights']['unit_buffs']['opportunity_fire'] = 100
+        generation['reward_weights']['unit_buffs']['amphibious'] = 100
         self.assertTrue(migrate_loaded_config(config))
         self.assertNotIn('opportunity_fire', generation['enabled_buff_types'])
+        self.assertNotIn('amphibious', generation['enabled_buff_types'])
         self.assertNotIn('opportunity_fire', generation['reward_weights']['unit_buffs'])
+        self.assertNotIn('amphibious', generation['reward_weights']['unit_buffs'])
         self.assertIn('area', generation['enabled_buff_types'])
-        self.assertIn('amphibious', generation['enabled_buff_types'])
         self.assertFalse(migrate_loaded_config(config))
+
+    def test_saved_amphibious_rewards_are_inert(self):
+        name = 'GDI Mammoth Tank (HTNK) Amphibious Drive I'
+        for reward in (
+            {'name': name},
+            {'name': name, 'kind': 'buff', 'unit': 'HTNK', 'buff_type': 'amphibious'},
+            {'kind': 'buff', 'unit': 'HTNK', 'buff_type': 'amphibious', '_runtime_canonical': True},
+        ):
+            original = copy.deepcopy(reward)
+            retired = canonical_reward(reward)
+            self.assertTrue(retired.get('retired_reward'))
+            self.assertEqual(retired.get('rules'), {})
+            self.assertEqual(buff_effect_lines(reward), [])
+            self.assertEqual(reward, original)
 
     def test_native_ability_is_not_modified(self):
         target = BUFF_TARGETS['HTNK']

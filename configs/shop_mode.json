@@ -133,9 +133,9 @@
         "permanent_buff": 6
       },
       "AMCV": {
-        "run_access": null,
+        "run_access": 12,
         "run_buff": 6,
-        "permanent_access": null,
+        "permanent_access": 60,
         "permanent_buff": 12
       },
       "APACHE": {
@@ -391,9 +391,9 @@
         "permanent_buff": 6
       },
       "GMCV": {
-        "run_access": null,
+        "run_access": 12,
         "run_buff": 6,
-        "permanent_access": null,
+        "permanent_access": 60,
         "permanent_buff": 12
       },
       "GRENL": {
@@ -601,9 +601,9 @@
         "permanent_buff": 6
       },
       "NMCV": {
-        "run_access": null,
+        "run_access": 12,
         "run_buff": 6,
-        "permanent_access": null,
+        "permanent_access": 60,
         "permanent_buff": 12
       },
       "O279": {
@@ -793,9 +793,9 @@
         "permanent_buff": 6
       },
       "SMCV": {
-        "run_access": null,
+        "run_access": 12,
         "run_buff": 6,
-        "permanent_access": null,
+        "permanent_access": 60,
         "permanent_buff": 12
       },
       "SPEEDBOAT": {

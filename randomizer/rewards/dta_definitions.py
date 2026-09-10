@@ -126,12 +126,6 @@ BUFF_TYPES = [
         'setting_label': 'Area of effect',
         'description': '{plural} weapons damage a wider area.',
     },
-    {
-        'id': 'amphibious',
-        'name': 'Amphibious Drive',
-        'setting_label': 'Amphibious movement',
-        'description': '{plural} can cross land and water.',
-    },
 ]
 
 _GLOBAL_BUFF_TYPE_IDS = {
@@ -272,13 +266,6 @@ def _allowed_buff_types(record):
         allowed.append('sensors')
     if strength > 0:
         allowed.append('self_healing')
-    if (
-        record.get('category') == 'vehicles'
-        and not record.get('naval')
-        and str(record.get('movement_zone') or '').casefold()
-        in {'normal', 'crusher', 'destroyer'}
-    ):
-        allowed.append('amphibious')
     return allowed
 
 
@@ -297,9 +284,10 @@ for _record in _MOBILE_RECORDS:
         'passengers': _record['passengers'],
         'build_limit': _record.get('build_limit', 0),
         'weapons': dict(_record.get('weapons', {})),
-        'movement_zone': _record.get('movement_zone', ''),
-        'speed_type': _record.get('speed_type', ''),
-        'crusher': bool(_record.get('crusher')),
+        'armor': _record.get('armor', ''),
+        'tech_level': _record.get('tech_level', -1),
+        'prerequisites': tuple(_record.get('prerequisites', ())),
+        'deploys_into': _record.get('deploys_into', ''),
         'allowed_buff_types': _allowed_buff_types(_record),
         'dta_production_clone': True,
         'naval': bool(_record.get('naval')),
@@ -318,6 +306,9 @@ for _record in _DEFENSE_RECORDS:
         'ammo': _record['ammo'],
         'passengers': 0,
         'weapons': dict(_record.get('weapons', {})),
+        'armor': _record.get('armor', ''),
+        'tech_level': _record.get('tech_level', -1),
+        'prerequisites': tuple(_record.get('prerequisites', ())),
         'allowed_buff_types': _allowed_buff_types(_record),
         'dta_production_clone': True,
         'naval': False,
@@ -588,7 +579,7 @@ CLONE_REQUIRED_BUFF_TYPES = frozenset(
     {
         'production', 'cost', 'speed', 'armor', 'health', 'damage', 'reload',
         'range', 'sight', 'ammo', 'passenger_capacity', 'cloak', 'sensors',
-        'self_healing', 'area', 'amphibious',
+        'self_healing', 'area',
         'build_limit',
     }
 )
