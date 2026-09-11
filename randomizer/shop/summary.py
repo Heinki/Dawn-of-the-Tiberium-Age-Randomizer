@@ -73,6 +73,11 @@ def run_summary_lines(profile, run, mission_titles=None, config=SHOP_CONFIG):
         RunStatus.FAILED: 'RUN OVER',
         RunStatus.COMPLETED: 'RUN VICTORY',
     }[run.status]
+    token_definition = config.permanent_upgrades['free_buff_token']
+    free_buff_token_capacity = (
+        profile.upgrade_level('free_buff_token')
+        * int(token_definition.effects['tokens_per_level'])
+    )
     lines = [
         status_heading,
         f'Seed: {run.seed}',
@@ -83,7 +88,9 @@ def run_summary_lines(profile, run, mission_titles=None, config=SHOP_CONFIG):
         f'Buff stacks purchased: {sum(item.stacks for item in run.run_buffs)}',
         f'Free starting draft buffs: '
         f'{sum(item.stacks for item in run.starting_draft_buffs)}',
-        f'Free Buff Tokens used: {run.free_buff_tokens_used}',
+        f'Free Buff Tokens used this stage: '
+        f'{run.free_buff_tokens_used_stage} / {free_buff_token_capacity}',
+        f'Free Buff Tokens used this run: {run.free_buff_tokens_used}',
         f'Emergency Revivals used: {run.emergency_revivals_used}',
         f'Run difficulty: +{modifier_difficulty(run.modifiers)}',
         'Modifiers: ' + (
@@ -113,5 +120,4 @@ def run_summary_lines(profile, run, mission_titles=None, config=SHOP_CONFIG):
             for index, code in enumerate(run.completed_missions, start=1)
         )
     return tuple(lines)
-
 

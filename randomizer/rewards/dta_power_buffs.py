@@ -55,7 +55,7 @@ POWER_BUFF_TYPES = ({
     'description': (
         'Adds one infantry unit to each Paratroopers deployment. Variants name '
         'the delivered unit: standard infantry, Soviet Flamethrower, Chem '
-        'Warrior, Soviet Rocket Soldier, or Shock Trooper.'
+        'Warrior, Soviet Rocket Soldier, Shock Trooper, or Medic.'
     ),
     'maximum_stacks': int(POWER_SETTINGS['payload_maximum_stacks']),
 })

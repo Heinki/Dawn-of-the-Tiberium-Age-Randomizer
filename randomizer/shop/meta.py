@@ -229,7 +229,10 @@ def validate_starting_loadout(
             continue
         reward = canonical_reward_for_id(reward_id)
         entry = catalogue_entry(reward)
-        if entry is None or entry.reward_type is not ShopRewardType.UNIT_ACCESS:
+        if entry is None or entry.reward_type not in {
+            ShopRewardType.UNIT_ACCESS,
+            ShopRewardType.POWER_ACCESS,
+        }:
             return LoadoutValidation(
                 PurchaseResult.NOT_SHOP_ELIGIBLE,
                 tuple(selected),
@@ -239,7 +242,10 @@ def validate_starting_loadout(
         reward_tech_ids = tech_ids_for_rewards([reward])
         selected.append(reward_id)
         selected_ids.add(reward_id)
-        if reward_tech_ids - active:
+        if (
+            entry.reward_type is ShopRewardType.POWER_ACCESS
+            or reward_tech_ids - active
+        ):
             slots += 1
             if slots > maximum:
                 return LoadoutValidation(
@@ -255,4 +261,3 @@ def validate_starting_loadout(
         tuple(sorted(active)),
         slots,
     )
-

@@ -61,6 +61,7 @@ class CurrencyReward:
     challenge_hunter_run_coins: int = 0
     challenge_hunter_meta_coins: int = 0
     gem_dividend_meta_coins: int = 0
+    run_completion_meta_coins: int = 0
 
 
 @dataclass(frozen=True)
@@ -121,6 +122,8 @@ class ShopModeConfig:
     max_selected_permanent_units: int
     starting_run_coins: int
     maximum_starting_ore: int
+    run_completion_meta_coins: int
+    run_completion_modifier_meta_coins: int
     minimum_shop_price: int
     reroll_policy: str
     archipelago_purchase_locations: int
@@ -227,6 +230,7 @@ class ShopRun:
     run_buffs: tuple[BuffPurchase, ...] = ()
     starting_draft_buffs: tuple[BuffPurchase, ...] = ()
     free_buff_tokens_used: int = 0
+    free_buff_tokens_used_stage: int = 0
     emergency_revivals_used: int = 0
     mission_offers: tuple[MissionOffer, ...] = ()
     selected_mission_code: str | None = None
@@ -273,6 +277,7 @@ class ShopRun:
                 item.to_dict() for item in self.starting_draft_buffs
             ],
             'free_buff_tokens_used': self.free_buff_tokens_used,
+            'free_buff_tokens_used_stage': self.free_buff_tokens_used_stage,
             'emergency_revivals_used': self.emergency_revivals_used,
             'mission_offers': [item.to_dict() for item in self.mission_offers],
             'selected_mission_code': self.selected_mission_code,

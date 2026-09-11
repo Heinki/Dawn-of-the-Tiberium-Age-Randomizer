@@ -11,7 +11,11 @@ from .catalogue import (
 )
 from .economy import mission_reward, starting_run_coins
 from .mission_modifiers import mission_modifier_for_run_offer
-from .modifiers import modifier_effects
+from .modifiers import (
+    modifier_allows_faction_pool,
+    modifier_allows_loadout_entry,
+    modifier_effects,
+)
 from .meta import validate_starting_loadout
 from .model import (
     CurrencyReward,
@@ -107,67 +111,14 @@ def start_new_run(
     ap_entitlements = tuple(
         str(reward_id) for reward_id in ap_entitlement_ids if str(reward_id)
     )
-    entitlements = tuple(permanent_entitlement_ids) + ap_entitlements
-    loadout = validate_starting_loadout(
-        starter_tech_ids=starter_tech_ids,
-        selected_reward_ids=selected_reward_ids,
-        entitled_reward_ids=entitlements,
-        maximum_extra_units=maximum_extra_units,
-        config=config,
+    entitlements = (
+        tuple(permanent_entitlement_ids)
+        + tuple(permanent_power_entitlement_ids)
+        + ap_entitlements
     )
-    if not loadout.allowed:
-        raise ShopTransitionError(
-            f'Invalid Shop starting loadout: {loadout.result.value}'
-        )
-    power_entitlements = {
-        str(reward_id) for reward_id in permanent_power_entitlement_ids
-        if str(reward_id)
-    }
-    permanent_powers = tuple(dict.fromkeys(
-        str(reward_id) for reward_id in permanent_power_reward_ids
-        if str(reward_id)
-    ))
-    invalid_powers = []
-    for reward_id in permanent_powers:
-        entry = catalogue_entry(canonical_reward_for_id(reward_id))
-        if (
-            reward_id not in power_entitlements
-            or entry is None
-            or entry.reward_type is not ShopRewardType.POWER_ACCESS
-        ):
-            invalid_powers.append(reward_id)
-    if invalid_powers:
-        raise ShopTransitionError(
-            'Invalid permanent Shop power loadout: '
-            + ', '.join(invalid_powers)
-        )
-    reward_settings = dict(reward_settings or {})
-    faction_filter = str(
-        reward_settings.get('shop_faction_filter') or campaign_filter
+    requested_loadout = (
+        tuple(selected_reward_ids) + tuple(permanent_power_reward_ids)
     )
-    unavailable_loadout = [
-        reward_id for reward_id in loadout.selected_reward_ids
-        if not shop_entry_available(
-            catalogue_entry(canonical_reward_for_id(reward_id)),
-            campaign_filter=faction_filter,
-            reward_mode=reward_mode,
-            strict_faction=bool(reward_settings.get('shop_faction_filter')),
-        )
-    ]
-    unavailable_loadout.extend(
-        reward_id for reward_id in permanent_powers
-        if not shop_entry_available(
-            catalogue_entry(canonical_reward_for_id(reward_id)),
-            campaign_filter=faction_filter,
-            reward_mode=reward_mode,
-            strict_faction=bool(reward_settings.get('shop_faction_filter')),
-        )
-    )
-    if unavailable_loadout:
-        raise ShopTransitionError(
-            'Shop starting loadout is unavailable for current campaign: '
-            + ', '.join(unavailable_loadout)
-        )
     modifier_ids = tuple(dict.fromkeys(
         str(modifier_id) for modifier_id in modifiers if str(modifier_id)
     ))
@@ -178,6 +129,63 @@ def start_new_run(
     if unknown_modifiers:
         raise ShopTransitionError(
             f'Unknown Shop run modifier IDs: {unknown_modifiers}'
+        )
+    loadout = validate_starting_loadout(
+        starter_tech_ids=starter_tech_ids,
+        selected_reward_ids=requested_loadout,
+        entitled_reward_ids=entitlements,
+        maximum_extra_units=maximum_extra_units,
+        config=config,
+    )
+    if not loadout.allowed:
+        raise ShopTransitionError(
+            f'Invalid Shop starting loadout: {loadout.result.value}'
+        )
+    restricted_loadout = [
+        reward_id for reward_id in loadout.selected_reward_ids
+        for reward in [canonical_reward_for_id(reward_id)]
+        for entry in [catalogue_entry(reward)]
+        if not modifier_allows_loadout_entry(entry, reward, modifier_ids)
+    ]
+    if restricted_loadout:
+        raise ShopTransitionError(
+            'Low-Tech War does not allow Tier 3 units in the permanent '
+            'starting loadout: '
+            + ', '.join(restricted_loadout)
+        )
+    selected_units = tuple(
+        reward_id for reward_id in loadout.selected_reward_ids
+        if catalogue_entry(
+            canonical_reward_for_id(reward_id)
+        ).reward_type is ShopRewardType.UNIT_ACCESS
+    )
+    permanent_powers = tuple(
+        reward_id for reward_id in loadout.selected_reward_ids
+        if catalogue_entry(
+            canonical_reward_for_id(reward_id)
+        ).reward_type is ShopRewardType.POWER_ACCESS
+    )
+    reward_settings = dict(reward_settings or {})
+    faction_filter = str(
+        reward_settings.get('shop_faction_filter') or campaign_filter
+    )
+    if not modifier_allows_faction_pool(modifier_ids, faction_filter):
+        raise ShopTransitionError(
+            'Faction Roulette requires the All Factions Shop pool'
+        )
+    unavailable_loadout = [
+        reward_id for reward_id in loadout.selected_reward_ids
+        if not shop_entry_available(
+            catalogue_entry(canonical_reward_for_id(reward_id)),
+            campaign_filter=faction_filter,
+            reward_mode=reward_mode,
+            strict_faction=bool(reward_settings.get('shop_faction_filter')),
+        )
+    ]
+    if unavailable_loadout:
+        raise ShopTransitionError(
+            'Shop starting loadout is unavailable for current campaign: '
+            + ', '.join(unavailable_loadout)
         )
     updated_profile = replace(
         profile,
@@ -214,7 +222,7 @@ def start_new_run(
             for unit_id in starting_defense_ids
             if str(unit_id)
         )),
-        selected_permanent_units=loadout.selected_reward_ids,
+        selected_permanent_units=selected_units,
         permanent_power_unlocks_snapshot=permanent_powers,
         permanent_buffs_snapshot=tuple(permanent_buffs),
         starting_draft_buffs=tuple(starting_draft_buffs),
@@ -445,6 +453,16 @@ def apply_mission_victory(
         config=config,
     )
     if final_victory:
+        completion_bonus = (
+            config.run_completion_meta_coins
+            + len(tuple(dict.fromkeys(run.modifiers)))
+            * config.run_completion_modifier_meta_coins
+        )
+        reward = replace(
+            reward,
+            meta_coins=reward.meta_coins + completion_bonus,
+            run_completion_meta_coins=completion_bonus,
+        )
         dividend_level = profile.upgrade_level('gem_dividend')
         dividend_effects = config.permanent_upgrades['gem_dividend'].effects
         remaining_ore = run.run_coins + reward.run_coins
@@ -488,6 +506,9 @@ def apply_mission_victory(
         selected_mission_code=None,
         mission_committed=False,
         assisted_mission_code=None,
+        free_buff_tokens_used_stage=(
+            run.free_buff_tokens_used_stage if final_victory else 0
+        ),
         completed_missions=run.completed_missions + (mission_code,),
         rewarded_victories=run.rewarded_victories + (key,),
         stock_lock_reward_id=(
@@ -537,6 +558,7 @@ def apply_mission_failure(
             selected_mission_code=None,
             mission_committed=False,
             assisted_mission_code=None,
+            free_buff_tokens_used_stage=0,
         )
         return FailureTransition(revived, True, profile, True, 0)
     failed = replace(
@@ -571,4 +593,3 @@ def abandon_run(run):
         failed_stage=run.stage,
     )
     return FailureTransition(abandoned, True)
-

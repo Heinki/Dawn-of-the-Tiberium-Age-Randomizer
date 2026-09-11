@@ -448,6 +448,9 @@ def build_shop_tab(self, workspace_tabs):
     self.shop_permanent_unit_tree.bind(
         '<<TreeviewSelect>>', self.refresh_permanent_purchase_buttons
     )
+    self.shop_permanent_unit_tree.bind(
+        '<Double-1>', self.buy_selected_permanent_unit
+    )
     self.shop_permanent_tooltip_view = TreeTooltip(
         self.shop_permanent_unit_tree, self.shop_permanent_tooltip
     )
@@ -499,6 +502,9 @@ def build_shop_tab(self, workspace_tabs):
     self.shop_permanent_power_tree.bind(
         '<<TreeviewSelect>>', self.refresh_permanent_power_button
     )
+    self.shop_permanent_power_tree.bind(
+        '<Double-1>', self.buy_selected_permanent_power
+    )
     self.shop_permanent_power_tooltip_view = TreeTooltip(
         self.shop_permanent_power_tree, self.shop_permanent_power_tooltip
     )
@@ -547,6 +553,9 @@ def build_shop_tab(self, workspace_tabs):
     )
     self.shop_upgrade_tree.bind(
         '<<TreeviewSelect>>', self.refresh_permanent_purchase_buttons
+    )
+    self.shop_upgrade_tree.bind(
+        '<Double-1>', self.buy_selected_permanent_upgrade
     )
     self.shop_upgrade_tooltip_view = TreeTooltip(
         self.shop_upgrade_tree, self.shop_upgrade_tooltip
@@ -614,6 +623,9 @@ def build_shop_tab(self, workspace_tabs):
     self.shop_permanent_buff_tree.bind(
         '<<TreeviewSelect>>', self.refresh_permanent_buff_button
     )
+    self.shop_permanent_buff_tree.bind(
+        '<Double-1>', self.buy_selected_permanent_buff
+    )
     self.shop_permanent_buff_info_var = tk.StringVar(
         value='Select a permanently unlocked unit, then choose a buff.'
     )
@@ -676,6 +688,9 @@ def build_shop_tab(self, workspace_tabs):
     )
     self.shop_permanent_power_buff_tree.bind(
         '<<TreeviewSelect>>', self.refresh_permanent_power_buff_button
+    )
+    self.shop_permanent_power_buff_tree.bind(
+        '<Double-1>', self.buy_selected_permanent_power_buff
     )
     self.shop_permanent_power_buff_info_var = tk.StringVar(
         value='Select a permanently unlocked power, then choose a buff.'

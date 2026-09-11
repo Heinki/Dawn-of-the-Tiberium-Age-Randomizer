@@ -87,6 +87,7 @@ from randomizer.dta.clones import (
 )
 from randomizer.dta.enemies import enemy_buff_rules
 from randomizer.dta.powers import (
+    active_paradrop_unit_ids,
     ensure_power_action_types,
     ensure_power_runtime_types,
     player_power_rules,
@@ -1207,6 +1208,7 @@ throw "Map $name was not found in expandmo*.mix"
                     variant['_runtime_canonical'] = True
                     linked_buff_rewards.append(variant)
             active_rewards.extend(linked_buff_rewards)
+            paradrop_unit_ids = active_paradrop_unit_ids(active_rewards)
             isolation_rules, isolation_report = (
                 player_production_isolation_rules(mission)
             )
@@ -1264,6 +1266,7 @@ throw "Map $name was not found in expandmo*.mix"
                     self.shop_launch_active()
                     or self.active_reward_mode() in {'Chaos', ARSENAL_MODE}
                 ),
+                runtime_consumer_unit_ids=paradrop_unit_ids,
             )
             if self.shop_launch_active():
                 apply_shop_clone_modifiers(
@@ -1304,6 +1307,13 @@ throw "Map $name was not found in expandmo*.mix"
                     if item.get('unit') == 'E1S'
                     and item.get('output_type') != 'E1S'
                 ), ''),
+                paradrop_unit_routes={
+                    item.get('unit', '').upper(): item.get('output_type', '')
+                    for item in clone_report['applied']
+                    if item.get('unit', '').upper() in paradrop_unit_ids
+                    and item.get('output_type')
+                    != item.get('unit', '').upper()
+                },
                 reserved_rules=dta_rules,
                 production_context=isolation_report,
                 rule_overlays=isolation_rules,

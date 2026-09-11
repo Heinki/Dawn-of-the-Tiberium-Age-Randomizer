@@ -16,6 +16,8 @@ def validate_shop_mode_config(sections, path, invalid):
         'max_selected_permanent_units': (0, 100),
         'starting_run_coins': (0, 1000000),
         'maximum_starting_ore': (1, 1000000),
+        'run_completion_meta_coins': (0, 1000000),
+        'run_completion_modifier_meta_coins': (0, 1000000),
         'minimum_shop_price': (1, 1000000),
         'archipelago_purchase_locations': (0, 25),
         'archipelago_purchase_meta_coin_cost': (1, 1000000),
@@ -312,8 +314,6 @@ def validate_shop_mode_config(sections, path, invalid):
         'support_recharge_percent',
         'unit_inventory_flat',
         'power_inventory_flat',
-        'starter_veteran',
-        'starter_unit_count_flat',
         'disable_rerolls',
         'disable_assists',
         'disable_revivals',
@@ -322,6 +322,15 @@ def validate_shop_mode_config(sections, path, invalid):
         'liquidate_ore_after_victory',
         'challenge_meta_reward_percent',
         'normal_run_reward_percent',
+        'normal_run_reward_flat',
+        'exclude_tier_3_offers',
+        'exclude_special_offers',
+        'exclude_power_offers',
+        'cross_faction_power_offers',
+        'enemy_armor_stacks',
+        'force_hardest_difficulty',
+        'force_enemy_challenge',
+        'rotate_shop_faction',
     }
     percent_flat_pairs = {
         'run_reward_percent': 'run_reward_flat',
@@ -334,6 +343,7 @@ def validate_shop_mode_config(sections, path, invalid):
             effects.get('starting_run_coins_flat', 0) > 0
             or effects.get('run_reward_flat', 0) > 0
             or effects.get('meta_reward_flat', 0) > 0
+            or effects.get('mission_starting_credits_flat', 0) > 0
             or effects.get('run_reward_percent', 100) > 100
             or effects.get('meta_reward_percent', 100) > 100
             or effects.get('shop_price_percent', 100) < 100
@@ -342,9 +352,10 @@ def validate_shop_mode_config(sections, path, invalid):
             or effects.get('production_time_percent', 100) < 100
             or effects.get('unit_inventory_flat', 0) > 0
             or effects.get('power_inventory_flat', 0) > 0
-            or effects.get('starter_veteran', 0) > 0
             or effects.get('support_recharge_percent', 100) < 100
             or effects.get('challenge_meta_reward_percent', 100) > 100
+            or effects.get('force_enemy_challenge', 0) > 0
+            or effects.get('rotate_shop_faction', 0) > 0
         ))
         has_penalty = bool(isinstance(effects, dict) and (
             effects.get('starting_run_coins_flat', 0) < 0
@@ -358,7 +369,6 @@ def validate_shop_mode_config(sections, path, invalid):
             or effects.get('player_armor_percent', 100) < 100
             or effects.get('player_cost_percent', 100) > 100
             or effects.get('combat_production_time_percent', 100) > 100
-            or effects.get('starter_unit_count_flat', 0) < 0
             or effects.get('disable_rerolls', 0) > 0
             or effects.get('disable_assists', 0) > 0
             or effects.get('disable_revivals', 0) > 0
@@ -366,6 +376,14 @@ def validate_shop_mode_config(sections, path, invalid):
             or effects.get('mission_offer_count_flat', 0) < 0
             or effects.get('liquidate_ore_after_victory', 0) > 0
             or effects.get('normal_run_reward_percent', 100) < 100
+            or effects.get('normal_run_reward_flat', 0) < 0
+            or effects.get('exclude_tier_3_offers', 0) > 0
+            or effects.get('exclude_special_offers', 0) > 0
+            or effects.get('exclude_power_offers', 0) > 0
+            or effects.get('enemy_armor_stacks', 0) > 0
+            or effects.get('force_hardest_difficulty', 0) > 0
+            or effects.get('force_enemy_challenge', 0) > 0
+            or effects.get('rotate_shop_faction', 0) > 0
         ))
         mixes_percent_and_flat = bool(isinstance(effects, dict) and any(
             effects.get(percent_key, 100) != 100

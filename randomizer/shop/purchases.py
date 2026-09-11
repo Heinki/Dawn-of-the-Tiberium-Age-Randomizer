@@ -112,6 +112,11 @@ def apply_validated_run_purchase(
                 run.free_buff_tokens_used + 1
                 if consume_free_buff_token else run.free_buff_tokens_used
             ),
+            free_buff_tokens_used_stage=(
+                run.free_buff_tokens_used_stage + 1
+                if consume_free_buff_token
+                else run.free_buff_tokens_used_stage
+            ),
         )
     existing = {item.reward_id: item.quantity for item in run.run_purchases}
     existing[entry.reward_id] = existing.get(entry.reward_id, 0) + 1
@@ -124,5 +129,4 @@ def apply_validated_run_purchase(
         run_coins=run.run_coins - validation.cost,
         run_purchases=run_purchases,
     )
-
 

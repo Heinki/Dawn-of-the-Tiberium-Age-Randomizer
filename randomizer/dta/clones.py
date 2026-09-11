@@ -1232,6 +1232,7 @@ def unit_specific_buff_rules(
     rule_overlays=None,
     production_owner_houses=(),
     allow_foreign_factory_access=False,
+    runtime_consumer_unit_ids=(),
 ):
     """Build map-local original buffs or player production clones.
 
@@ -1246,6 +1247,20 @@ def unit_specific_buff_rules(
     combined = _merged_sections(installed, authored)
     if rule_overlays:
         combined = _merged_sections(combined, rule_overlays)
+    enhanced_combined = None
+    if mission.get('required_addon'):
+        # Enhanced DTA replaces both Mammoth art identities and adjusts their
+        # weapons.  The enhanced art supplies Vinifera's FiringSyncFrame
+        # values, which let the primary cannons fire during the shared missile
+        # rearm cycle.  Build Mammoth clones from the same effective runtime
+        # stack instead of flattening their Classic definitions into the map.
+        enhanced = ini_sections(GAME_ROOT / 'INI' / 'Enhance.ini')
+        enhanced_combined = _merged_sections(installed, enhanced)
+        enhanced_combined = _merged_sections(enhanced_combined, authored)
+        if rule_overlays:
+            enhanced_combined = _merged_sections(
+                enhanced_combined, rule_overlays
+            )
     production_context = (
         dict(production_context)
         if production_context is not None
@@ -1305,6 +1320,11 @@ def unit_specific_buff_rules(
     counts_by_unit = {}
     access_units = set()
     assistance_units = set()
+    runtime_consumer_units = {
+        str(unit_id).upper()
+        for unit_id in runtime_consumer_unit_ids
+        if unit_id
+    }
     global_counts = Counter()
     for reward in rewards or ():
         unit_id = str(reward.get('unit') or '').upper()
@@ -1368,6 +1388,7 @@ def unit_specific_buff_rules(
             elif access_randomized:
                 eligible = (
                     unit_id in access_units
+                    or unit_id in runtime_consumer_units
                     or (
                         unit_id in ALWAYS_AVAILABLE_MOBILE_IDS
                         and producible
@@ -1416,7 +1437,13 @@ def unit_specific_buff_rules(
         ):
             report['skipped'].append({'unit': unit_id, 'reason': 'unsupported_type'})
             continue
-        values = effective_section(combined, unit_id)
+        source_sections = (
+            enhanced_combined
+            if enhanced_combined is not None
+            and unit_id in MAMMOTH_DUAL_WEAPON_IDS
+            else combined
+        )
+        values = effective_section(source_sections, unit_id)
         if not values:
             report['skipped'].append({'unit': unit_id, 'reason': 'missing_rules'})
             continue
@@ -1439,7 +1466,7 @@ def unit_specific_buff_rules(
             values,
             target,
             counts_by_unit.get(unit_id, Counter()),
-            combined,
+            source_sections,
         )
         production_access = unit_id in access_units
         unlimited_build_limit = unit_id in unlimited_units
@@ -1469,6 +1496,7 @@ def unit_specific_buff_rules(
             and target.get('category') != 'buildings'
             and unit_id not in ALWAYS_AVAILABLE_MOBILE_IDS
             and unit_id not in assistance_units
+            and unit_id not in runtime_consumer_units
         ):
             report['skipped'].append({
                 'unit': unit_id,
@@ -1500,6 +1528,11 @@ def unit_specific_buff_rules(
             or weapon_collision
         )
         producible = _can_player_produce(values, production_house)
+        runtime_only = bool(
+            unit_id in runtime_consumer_units
+            and not production_access
+            and (access_randomized or not producible)
+        )
         if production_access and not producible:
             use_clone = True
         placement_only = bool(
@@ -1519,6 +1552,7 @@ def unit_specific_buff_rules(
             use_clone
             and production_context['shared_hostile_houses']
             and not placement_only
+            and not runtime_only
         ):
             report['skipped'].append({
                 'unit': unit_id,
@@ -1534,6 +1568,7 @@ def unit_specific_buff_rules(
             and not production_access
             and not player_mobile_placements
             and not helper_applicable
+            and unit_id not in runtime_consumer_units
         ):
             report['skipped'].append({
                 'unit': unit_id,
@@ -1648,6 +1683,18 @@ def unit_specific_buff_rules(
                 unit_rules['OmniHealer'] = 'yes'
             if placement_only:
                 unit_rules['TechLevel'] = '-1'
+            if runtime_only:
+                # A player-only external consumer (currently the custom
+                # paradrop) may spawn this clone without unlocking production.
+                unit_rules['TechLevel'] = '-1'
+            if target.get('category') in {
+                'infantry', 'vehicles', 'aircraft'
+            }:
+                # DTA enables veterancy for its native roster through
+                # Enhance.ini. Map-local clones do not inherit that later
+                # section, so copying Rules.ini's Trainable=no made every
+                # cloned access/buff unit unable to earn experience.
+                unit_rules['Trainable'] = 'yes'
             helper_family_fallback_needed = bool(
                 buff_allied_helpers
                 and production_house in helper_context['families']
@@ -1667,6 +1714,7 @@ def unit_specific_buff_rules(
                 producible
                 and (counts or production_access or unit_id in free_unit_providers)
                 and not placement_only
+                and not runtime_only
                 and not helper_family_fallback_needed
             ):
                 _add_forbidden_house(
@@ -1688,7 +1736,9 @@ def unit_specific_buff_rules(
                 marker = weapon_id.casefold()
                 clone_id = weapon_clones.get(marker)
                 if clone_id is None:
-                    weapon_values = effective_section(combined, weapon_id)
+                    weapon_values = effective_section(
+                        source_sections, weapon_id
+                    )
                     overrides = _weapon_overrides(weapon_values, counts)
                     warhead_clone = ''
                     if counts['area']:
@@ -1702,7 +1752,7 @@ def unit_specific_buff_rules(
                             weapon_values.get('Warhead') or ''
                         ).strip()
                         warhead_values = effective_section(
-                            combined, warhead_id
+                            source_sections, warhead_id
                         ) if warhead_id else {}
                         warhead_changes = (
                             _warhead_overrides(warhead_values, counts)
@@ -1767,11 +1817,11 @@ def unit_specific_buff_rules(
             ).strip()
             primary_values = (
                 rules.get(primary_id)
-                or effective_section(combined, primary_id)
+                or effective_section(source_sections, primary_id)
             )
             secondary_values = (
                 rules.get(secondary_id)
-                or effective_section(combined, secondary_id)
+                or effective_section(source_sections, secondary_id)
             )
             try:
                 primary_range = float(primary_values.get('Range', 0))
@@ -1802,12 +1852,15 @@ def unit_specific_buff_rules(
             for link_key, reverse_key in (
                 ('DeploysInto', 'UndeploysInto'),
                 ('UndeploysInto', 'DeploysInto'),
+                ('TransformsInto', 'TransformsInto'),
             ):
                 linked_source = str(values.get(link_key) or '').strip()
                 if linked_source.casefold() in {'', 'none'}:
                     continue
-                linked_values = effective_section(combined, linked_source)
+                linked_values = effective_section(source_sections, linked_source)
                 linked_target = catalogue.get(linked_source.upper())
+                if link_key == 'TransformsInto' and linked_target is None:
+                    linked_target = target
                 if not linked_values or not linked_target:
                     continue
                 linked_output = _clone_id(linked_source, 'PLAYER', occupied)
@@ -1822,6 +1875,10 @@ def unit_specific_buff_rules(
                 )
                 linked_rules['RequiredHouses'] = production_house
                 linked_rules['TechLevel'] = '-1'
+                if linked_target.get('category') in {
+                    'infantry', 'vehicles', 'aircraft'
+                }:
+                    linked_rules['Trainable'] = 'yes'
                 linked_counts = Counter({
                     buff_type: count
                     for buff_type, count in counts.items()
@@ -1843,7 +1900,7 @@ def unit_specific_buff_rules(
                     if not weapon_id:
                         continue
                     linked_weapon_source = effective_section(
-                        combined, weapon_id
+                        source_sections, weapon_id
                     )
                     overrides = _weapon_overrides(
                         linked_weapon_source, linked_counts
@@ -1860,7 +1917,7 @@ def unit_specific_buff_rules(
                             linked_weapon_source.get('Warhead') or ''
                         ).strip()
                         warhead_values = effective_section(
-                            combined, warhead_id
+                            source_sections, warhead_id
                         ) if warhead_id else {}
                         warhead_changes = (
                             _warhead_overrides(warhead_values, linked_counts)
@@ -1902,7 +1959,7 @@ def unit_specific_buff_rules(
                         f'{linked_source}_{weapon_id}', 'PLAYER', occupied
                     )
                     linked_weapon_values = dict(
-                        effective_section(combined, weapon_id)
+                        effective_section(source_sections, weapon_id)
                     )
                     linked_weapon_values.pop('BaseSection', None)
                     linked_weapon_values.pop('$Inherits', None)
@@ -1979,6 +2036,10 @@ def unit_specific_buff_rules(
                     helper_values['Image'] = values.get('Image', unit_id)
                     helper_values['Owner'] = helper_family
                     helper_values['RequiredHouses'] = helper_family
+                    if target.get('category') in {
+                        'infantry', 'vehicles', 'aircraft'
+                    }:
+                        helper_values['Trainable'] = 'yes'
                     rules[helper_output] = helper_values
                     list_name = TYPE_LIST_BY_CATEGORY[target['category']]
                     list_key = _next_list_key(
@@ -2047,6 +2108,8 @@ def unit_specific_buff_rules(
             'route': (
                 'player_placement_clone'
                 if placement_only
+                else 'runtime_consumer_clone'
+                if runtime_only
                 else 'production_access_clone'
                 if use_clone and production_access
                 else 'production_clone'

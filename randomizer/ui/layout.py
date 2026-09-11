@@ -629,7 +629,7 @@ def _build_right_panel(self, main_frame):
     shop_loadout_search.grid(
         row=13, column=0, columnspan=2, sticky='ew', pady=(0, 6)
     )
-    ttk.Label(shop_loadout_search, text='Search permanent units:').pack(
+    ttk.Label(shop_loadout_search, text='Search permanent unlocks:').pack(
         side='left'
     )
     ttk.Entry(
@@ -644,8 +644,8 @@ def _build_right_panel(self, main_frame):
         ('selected', 'name', 'tier', 'source'),
         (
             ('selected', 'Next Run', 90),
-            ('name', 'Starting Extra Unit', 330),
-            ('tier', 'Tier', 80),
+            ('name', 'Starting Unlock', 330),
+            ('tier', 'Tier / Type', 80),
             ('source', 'Source', 130),
         ),
         selectmode='none',
@@ -677,6 +677,7 @@ def _build_right_panel(self, main_frame):
         style='Shop.Reward.TLabel',
     ).grid(row=0, column=1, sticky='e', pady=(0, 6))
     self.shop_modifier_buttons = []
+    self.shop_modifier_button_by_id = {}
     for column in range(2):
         modifier_frame.columnconfigure(column, weight=1)
     for index, (modifier_id, variable) in enumerate(
@@ -694,6 +695,9 @@ def _build_right_panel(self, main_frame):
             modifier_card,
             text=f'Enable {definition.display_name}',
             variable=variable,
+            command=lambda modifier_id=modifier_id: (
+                self._shop_modifier_toggled(modifier_id)
+            ),
         )
         checkbutton.grid(row=0, column=0, sticky='w')
         ttk.Label(
@@ -704,6 +708,7 @@ def _build_right_panel(self, main_frame):
         ).grid(row=1, column=0, sticky='w', padx=(24, 0))
         WidgetTooltip(checkbutton, definition.description)
         self.shop_modifier_buttons.append(checkbutton)
+        self.shop_modifier_button_by_id[modifier_id] = checkbutton
 
     self.shop_setup_start_button = ttk.Button(
         shop_settings_frame,

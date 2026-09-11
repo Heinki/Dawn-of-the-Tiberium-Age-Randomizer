@@ -28,7 +28,10 @@ from randomizer.missions.tier_one import (
     TIER_ONE_DEFENSE_MARKER,
     TIER_ONE_ROLE_MARKERS,
 )
-from randomizer.dta.difficulty import resolve_mission_difficulty
+from randomizer.dta.difficulty import (
+    mission_difficulty_labels,
+    resolve_mission_difficulty,
+)
 from randomizer.shop.active import (
     active_shop_rewards,
     active_shop_starter_defense_ids,
@@ -62,9 +65,13 @@ from randomizer.shop.missions import (
 )
 from randomizer.shop.mission_modifiers import active_mission_modifier
 from randomizer.shop.modifiers import (
+    modifier_allows_faction_pool,
+    modifier_allows_loadout_entry,
     modifier_difficulty,
     modifier_effects,
+    modifier_forces_hardest_difficulty,
     modifier_mission_offer_count,
+    modifier_shop_faction,
 )
 from randomizer.shop.model import (
     SHOP_ACCESS_REWARD_MODE,
@@ -207,6 +214,19 @@ class ShopController(ShopPolishController):
         )
 
     def on_shop_faction_pool_changed(self, _event=None):
+        roulette = self.shop_modifier_vars.get('faction_roulette')
+        if (
+            roulette is not None
+            and roulette.get()
+            and self.shop_campaign_filter() != 'All Campaigns'
+        ):
+            roulette.set(False)
+            messagebox.showwarning(
+                'Faction Roulette Disabled',
+                'Faction Roulette requires the All Factions Shop pool. It '
+                'was disabled for the selected single-faction pool.',
+                parent=self,
+            )
         self.save_current_launcher_config()
         self.refresh_shop_mode()
 
@@ -501,23 +521,6 @@ class ShopController(ShopPolishController):
                     if reward.get('kind') == 'superweapon':
                         reward['superweapon_ignore_foreign_tech_gate'] = True
                     rewards.append(reward)
-            veteran_targets = set()
-            if self.shop_profile.upgrade_level('veteran_academy'):
-                for reward_id in run.selected_permanent_units:
-                    entry = self._shop_entry_by_reward_id.get(reward_id)
-                    if entry is not None and entry.target_id:
-                        veteran_targets.add(entry.target_id.upper())
-            if effects['starter_veteran']:
-                veteran_targets.update(active_shop_starter_unit_ids(run))
-            for target_id in sorted(veteran_targets):
-                target = BUFF_TARGETS.get(target_id, {})
-                reward_name = f'{target.get("label", target_id)} Veteran Training I'
-                try:
-                    reward = dict(canonical_reward_for_id(reward_name))
-                except KeyError:
-                    continue
-                if reward.get('buff_type') == 'veteran':
-                    rewards.append(reward)
             if effects['player_armor_percent'] != 1:
                 armor_seeds, _damage_seeds = (
                     self._shop_modifier_clone_seed_plan(run)
@@ -563,18 +566,26 @@ class ShopController(ShopPolishController):
 
     def active_enemy_scaling_entries(self):
         if self.shop_launch_active():
+            entries = []
+            effects = modifier_effects(self._shop_launch_run.modifiers)
+            for _index in range(max(0, effects['enemy_armor_stacks'])):
+                entries.append({
+                    'reward': canonical_reward_for_id('Enemy Armor I'),
+                    'source': 'Shop run modifier',
+                    'earned_from': 'Superweapon Arms Race',
+                })
             mission_modifier = self._active_shop_mission_modifier(
                 self._shop_launch_run
             )
-            if mission_modifier is None or not mission_modifier.enemy_reward_id:
-                return []
-            return [{
-                'reward': canonical_reward_for_id(
-                    mission_modifier.enemy_reward_id
-                ),
-                'source': 'Shop mission challenge',
-                'earned_from': mission_modifier.title,
-            }]
+            if mission_modifier is not None and mission_modifier.enemy_reward_id:
+                entries.append({
+                    'reward': canonical_reward_for_id(
+                        mission_modifier.enemy_reward_id
+                    ),
+                    'source': 'Shop mission challenge',
+                    'earned_from': mission_modifier.title,
+                })
+            return entries
         return super().active_enemy_scaling_entries()
 
     def launch_rewards_for_mission(self, code):
@@ -731,6 +742,10 @@ class ShopController(ShopPolishController):
     def shop_mission_difficulty_label(self, run, mission_code):
         if run is None:
             return DIFFICULTIES[0][0]
+        if modifier_forces_hardest_difficulty(run.modifiers):
+            return mission_difficulty_labels(
+                self._shop_mission(mission_code)
+            )[-1]
         return mission_difficulty(
             run.seed,
             run.stage,
@@ -760,6 +775,8 @@ class ShopController(ShopPolishController):
         value = self.shop_mission_difficulty_value(
             run, run.selected_mission_code
         )
+        if modifier_forces_hardest_difficulty(run.modifiers):
+            return value
         if run.assisted_mission_code == run.selected_mission_code:
             return max(0, value - 1)
         return value
@@ -773,7 +790,10 @@ class ShopController(ShopPolishController):
         )
         selected = (
             eased
-            if run.assisted_mission_code == run.selected_mission_code
+            if (
+                not modifier_forces_hardest_difficulty(run.modifiers)
+                and run.assisted_mission_code == run.selected_mission_code
+            )
             else normal
         )
         return resolve_mission_difficulty(mission, selected)
@@ -781,13 +801,31 @@ class ShopController(ShopPolishController):
     def _shop_mission(self, code):
         return self._mission_by_code.get(str(code).upper(), {})
 
-    def _shop_entry_available(self, entry, run=None):
+    def _shop_entry_available(self, entry, run=None, *, stock=False):
         if run is None:
             reward_mode = SHOP_REWARD_MODE
             campaign_filter = self.shop_campaign_filter()
         else:
             reward_mode = SHOP_REWARD_MODE
             campaign_filter = self.shop_run_faction_filter(run)
+            effects = modifier_effects(run.modifiers)
+            if stock:
+                campaign_filter = modifier_shop_faction(
+                    run.modifiers, run.stage, campaign_filter
+                )
+                if (
+                    effects['cross_faction_power_offers']
+                    and entry.reward_type is ShopRewardType.POWER_ACCESS
+                ):
+                    campaign_filter = 'All Campaigns'
+            elif (
+                effects['rotate_shop_faction']
+                and entry.reward_type in {
+                    ShopRewardType.UNIT_BUFF,
+                    ShopRewardType.POWER_BUFF,
+                }
+            ):
+                campaign_filter = 'All Campaigns'
         return shop_entry_available(
             entry,
             campaign_filter=campaign_filter,
@@ -1547,6 +1585,50 @@ class ShopController(ShopPolishController):
             * int(definition.effects['slots_per_level'])
         )
 
+    def _shop_modifier_toggled(self, modifier_id):
+        if modifier_id == 'faction_roulette':
+            variable = self.shop_modifier_vars[modifier_id]
+            if (
+                variable.get()
+                and self.shop_campaign_filter() != 'All Campaigns'
+            ):
+                variable.set(False)
+                messagebox.showwarning(
+                    'Faction Roulette Unavailable',
+                    'Choose All Factions before enabling Faction Roulette.',
+                    parent=self,
+                )
+            self._refresh_shop_setup()
+            return
+        if modifier_id != 'low_tech_war':
+            return
+        if not self.shop_modifier_vars[modifier_id].get():
+            self._refresh_shop_setup()
+            return
+        incompatible = []
+        for reward_id in tuple(self._shop_pending_loadout_selection):
+            reward = canonical_reward_for_id(reward_id)
+            entry = self._shop_entry_by_reward_id.get(reward_id)
+            if entry is not None and not modifier_allows_loadout_entry(
+                entry, reward, ('low_tech_war',)
+            ):
+                incompatible.append(reward_id)
+        self._shop_pending_loadout_selection.difference_update(incompatible)
+        self._shop_loadout_selection_initialized = True
+        self._refresh_shop_setup()
+        if incompatible:
+            names = ', '.join(
+                reward_display_name(canonical_reward_for_id(reward_id))
+                for reward_id in incompatible
+            )
+            messagebox.showwarning(
+                'Low-Tech War Loadout',
+                'Low-Tech War cannot use Tier 3 units from the permanent '
+                'starting loadout. Removed: '
+                + names,
+                parent=self,
+            )
+
     def toggle_shop_setup_unit(self, event):
         if (
             self.shop_run is not None
@@ -1562,7 +1644,7 @@ class ShopController(ShopPolishController):
         elif len(self._shop_pending_loadout_selection) >= self._maximum_shop_loadout():
             self._set_shop_message(
                 f'Starting loadout allows up to '
-                f'{self._maximum_shop_loadout()} extra units.',
+                f'{self._maximum_shop_loadout()} extra units or powers.',
                 error=True,
             )
             return 'break'
@@ -1647,8 +1729,14 @@ class ShopController(ShopPolishController):
             modifier_id for modifier_id, variable in self.shop_modifier_vars.items()
             if variable.get()
         )
-        effects = modifier_effects(modifiers)
         faction_filter = self.shop_campaign_filter()
+        if not modifier_allows_faction_pool(modifiers, faction_filter):
+            messagebox.showwarning(
+                'Faction Roulette Unavailable',
+                'Faction Roulette requires the All Factions Shop pool.',
+                parent=self,
+            )
+            return
         settings['shop_faction_filter'] = faction_filter
         starting_unit_markers = tuple(TIER_ONE_ROLE_MARKERS.values())
         starting_defense_markers = (TIER_ONE_DEFENSE_MARKER,)
@@ -1658,11 +1746,6 @@ class ShopController(ShopPolishController):
             faction_filter=faction_filter,
             excluded_unit_ids=settings.get('excluded_unit_access_ids', ()),
         )
-        if effects['starter_unit_count_flat'] == -2 and len(starting_units) >= 5:
-            # Preserve one infantry, one vehicle, and the aircraft role.
-            starting_units = (
-                starting_units[0], starting_units[2], starting_units[-1]
-            )
         starting_defenses = shop_starter_defense_ids(
             seed=seed,
             starting_defense_ids=starting_defense_markers,
@@ -1673,13 +1756,17 @@ class ShopController(ShopPolishController):
         starter_tech_ids.update(starting_defenses)
         ap_identity, ap_reward_ids = self.archipelago_shop_context()
         maximum_extra_units = self._maximum_shop_loadout()
-        permanent_entitlements = set(self.shop_profile.permanent_unit_unlocks)
-        selected = tuple(
+        unit_entitlements = set(self.shop_profile.permanent_unit_unlocks)
+        power_entitlements = set(self.shop_profile.permanent_power_unlocks)
+        selected_units = tuple(
             reward_id for reward_id in self._selected_loadout_reward_ids()
-            if reward_id in permanent_entitlements
+            if reward_id in unit_entitlements
+            for entry in [self._shop_entry_by_reward_id.get(reward_id)]
+            if entry is not None and self._shop_entry_available(entry)
         )
         permanent_powers = tuple(
-            reward_id for reward_id in self.shop_profile.permanent_power_unlocks
+            reward_id for reward_id in self._selected_loadout_reward_ids()
+            if reward_id in power_entitlements
             for entry in [self._shop_entry_by_reward_id.get(reward_id)]
             if entry is not None and self._shop_entry_available(entry)
         )
@@ -1687,7 +1774,7 @@ class ShopController(ShopPolishController):
         permanent_buff_targets.update(
             entry.target_id
             for reward_id in (
-                *selected,
+                *selected_units,
                 *permanent_powers,
                 *ap_unit_entitlement_ids(ap_reward_ids),
             )
@@ -1735,7 +1822,7 @@ class ShopController(ShopPolishController):
                 starter_tech_ids=starter_tech_ids,
                 starting_unit_ids=starting_units,
                 starting_defense_ids=starting_defenses,
-                selected_reward_ids=selected,
+                selected_reward_ids=selected_units,
                 permanent_power_reward_ids=permanent_powers,
                 permanent_entitlement_ids=(
                     self.shop_profile.permanent_unit_unlocks
@@ -2032,24 +2119,59 @@ class ShopController(ShopPolishController):
         self._shop_loadout_rows = {}
         maximum_loadout = self._maximum_shop_loadout()
         ap_identity, ap_reward_ids = self.archipelago_shop_context()
-        local_owned = set(self.shop_profile.permanent_unit_unlocks)
+        local_units = set(self.shop_profile.permanent_unit_unlocks)
+        local_powers = set(self.shop_profile.permanent_power_unlocks)
+        local_owned = local_units | local_powers
+        eligible_local_owned = {
+            entry.reward_id
+            for entry in (*self._shop_unit_entries, *self._shop_power_entries)
+            if entry.reward_id in local_owned
+            and self._shop_entry_available(entry)
+        }
         ap_owned = set(ap_unit_entitlement_ids(ap_reward_ids))
         active_run = bool(
             self.shop_run is not None
             and self.shop_run.status is RunStatus.ACTIVE
         )
+        loadout_modifiers = (
+            self.shop_run.modifiers
+            if active_run
+            else tuple(
+                modifier_id
+                for modifier_id, variable in self.shop_modifier_vars.items()
+                if variable.get()
+            )
+        )
+        eligible_local_owned = {
+            reward_id for reward_id in eligible_local_owned
+            for reward in [canonical_reward_for_id(reward_id)]
+            for entry in [self._shop_entry_by_reward_id.get(reward_id)]
+            if entry is not None
+            and modifier_allows_loadout_entry(
+                entry, reward, loadout_modifiers
+            )
+        }
         owned = local_owned | (ap_owned if active_run else set())
         if active_run:
-            selected = set(self.shop_run.selected_permanent_units)
-            self._shop_pending_loadout_selection = selected & local_owned
+            selected = set((
+                *self.shop_run.selected_permanent_units,
+                *self.shop_run.permanent_power_unlocks_snapshot,
+            ))
+            self._shop_pending_loadout_selection = (
+                selected & eligible_local_owned
+            )
         else:
             if not self._shop_loadout_selection_initialized:
                 self._shop_pending_loadout_selection = set(
-                    self.shop_run.selected_permanent_units
-                    if self.shop_run is not None else ()
-                ) & local_owned
+                    (
+                        *self.shop_run.selected_permanent_units,
+                        *self.shop_run.permanent_power_unlocks_snapshot,
+                    ) if self.shop_run is not None else ()
+                ) & eligible_local_owned
                 self._shop_loadout_selection_initialized = True
-            self._shop_pending_loadout_selection.intersection_update(local_owned)
+            self._shop_pending_loadout_selection.intersection_update(
+                eligible_local_owned
+            )
             selected = set(self._shop_pending_loadout_selection)
         if active_run:
             selected.update(ap_owned)
@@ -2060,16 +2182,20 @@ class ShopController(ShopPolishController):
                 'Received AP units are automatic and use no slots. '
                 if ap_identity else ''
             )
-            + 'Mandatory Tier 1 starters are automatic.'
+            + 'Permanent units and powers each use one slot. '
+            'Mandatory Tier 1 starters are automatic.'
             + (
-                f' {len(self.shop_profile.permanent_power_unlocks)} permanent '
-                'power(s) activate automatically.'
+                ' Low-Tech War blocks Tier 3 loadout entries.'
+                if 'low_tech_war' in loadout_modifiers else ''
             )
             + (' Selection locked during active run.' if active_run else '')
         )
         entries = sorted(
             (
-                entry for entry in self._shop_unit_entries
+                entry for entry in (
+                    *self._shop_unit_entries,
+                    *self._shop_power_entries,
+                )
                 if entry.reward_id in owned
                 and self._shop_entry_available(entry)
                 and (
@@ -2100,14 +2226,20 @@ class ShopController(ShopPolishController):
                         if entry.reward_id in selected else '—'
                     ),
                     entry.reward_id,
-                    (entry.tier or '').replace('_', ' ').title(),
+                    (
+                        'Power'
+                        if entry.reward_type is ShopRewardType.POWER_ACCESS
+                        else (entry.tier or '').replace('_', ' ').title()
+                    ),
                     (
                         'Permanent + AP'
                         if entry.reward_id in local_owned
                         and entry.reward_id in ap_owned
                         else 'AP Received'
                         if entry.reward_id in ap_owned
-                        else 'Permanent'
+                        else 'Permanent Power'
+                        if entry.reward_id in local_powers
+                        else 'Permanent Unit'
                     ),
                 ),
             }
@@ -2143,8 +2275,15 @@ class ShopController(ShopPolishController):
                 'Optional run-wide tradeoffs. Check any combination before '
                 'starting; both benefits and penalties apply for the whole run.'
             )
-        for button in self.shop_modifier_buttons:
-            button.configure(state='disabled' if modifiers_locked else 'normal')
+        single_faction = self.shop_campaign_filter() != 'All Campaigns'
+        for modifier_id, button in self.shop_modifier_button_by_id.items():
+            unavailable = (
+                modifier_id == 'faction_roulette' and single_faction
+            )
+            button.configure(
+                state='disabled'
+                if modifiers_locked or unavailable else 'normal'
+            )
         self._refresh_shop_modifier_difficulty()
 
     def _refresh_shop_modifier_difficulty(self, *_args):
@@ -2614,7 +2753,7 @@ class ShopController(ShopPolishController):
         values = self.shop_permanent_power_tree.item(selected[0], 'values')
         self.shop_permanent_power_info_var.set(
             f'{values[0]} • {values[1]} • {values[2]} • {values[3]}. '
-            'Permanent powers activate automatically in future Shop runs.'
+            'Permanent powers can be selected in future starting loadouts.'
         )
         self.shop_permanent_power_button.configure(
             text=f'Buy {values[0]} — {values[3]}' if allowed else values[2]
@@ -2652,7 +2791,7 @@ class ShopController(ShopPolishController):
             )
         )
 
-    def buy_selected_permanent_unit(self):
+    def buy_selected_permanent_unit(self, _event=None):
         selected = self.shop_permanent_unit_tree.selection()
         if not selected:
             return
@@ -2669,7 +2808,7 @@ class ShopController(ShopPolishController):
             self._report_profile_purchase(outcome, reward_id)
         self.refresh_shop_mode()
 
-    def buy_selected_permanent_power(self):
+    def buy_selected_permanent_power(self, _event=None):
         selected = self.shop_permanent_power_tree.selection()
         if not selected:
             return
@@ -2686,7 +2825,7 @@ class ShopController(ShopPolishController):
             self._report_profile_purchase(outcome, reward_id)
         self.refresh_shop_mode()
 
-    def buy_selected_permanent_upgrade(self):
+    def buy_selected_permanent_upgrade(self, _event=None):
         selected = self.shop_upgrade_tree.selection()
         if not selected:
             return
@@ -2701,7 +2840,7 @@ class ShopController(ShopPolishController):
             self._report_profile_purchase(outcome, upgrade_id)
         self.refresh_shop_mode()
 
-    def buy_selected_permanent_buff(self):
+    def buy_selected_permanent_buff(self, _event=None):
         selected = self.shop_permanent_buff_tree.selection()
         if not selected:
             return
@@ -2716,7 +2855,7 @@ class ShopController(ShopPolishController):
             self._report_profile_purchase(outcome, reward_id)
         self.refresh_shop_mode()
 
-    def buy_selected_permanent_power_buff(self):
+    def buy_selected_permanent_power_buff(self, _event=None):
         selected = self.shop_permanent_power_buff_tree.selection()
         if not selected:
             return

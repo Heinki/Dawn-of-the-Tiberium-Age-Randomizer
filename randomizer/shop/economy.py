@@ -52,6 +52,7 @@ def mission_reward(
         base_run_coins = int(
             base_run_coins * effects['normal_run_reward_percent']
         )
+        base_run_coins += effects['normal_run_reward_flat']
     base_run_coins = max(0, base_run_coins + effects['run_reward_flat'])
     meta_coins = max(0, meta_coins + effects['meta_reward_flat'])
     level = _bounded_upgrade_level(
@@ -310,4 +311,3 @@ def run_reward_price(
         additional_discount_ore=extra_ore,
         config=config,
     )
-

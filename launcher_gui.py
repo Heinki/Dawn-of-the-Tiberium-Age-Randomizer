@@ -83,6 +83,7 @@ def run_self_check():
         POWER_CLONE_ACTION_TYPES,
         POWER_PROVIDER_SLOT_ACTION_TYPES,
         POWER_SPECS,
+        active_paradrop_unit_ids,
         player_power_rules,
     )
     from randomizer.dta.rules import (
@@ -331,6 +332,34 @@ def run_self_check():
             ),
             {},
         )
+        special_clone_ids = ('P941', 'JEEPPTNK', 'TNKN')
+        special_clone_rewards = [
+            next(
+                reward for reward in REWARD_POOL
+                if reward.get('unit') == unit_id
+                and reward.get('dta_production_access')
+            )
+            for unit_id in special_clone_ids
+        ]
+        special_clone_rules, special_clone_report = unit_specific_buff_rules(
+            clone_mission,
+            special_clone_rewards,
+            access_randomized=True,
+        )
+        special_clone_entries = {
+            entry['unit']: entry
+            for entry in special_clone_report['applied']
+            if entry['unit'] in special_clone_ids
+        }
+        special_clone_outputs = {
+            unit_id: special_clone_entries.get(unit_id, {}).get('output_type')
+            for unit_id in special_clone_ids
+        }
+        p941_output = special_clone_outputs['P941']
+        p941_transform_route = special_clone_entries.get(
+            'P941', {}
+        ).get('linked_deploy_route') or {}
+        p941_transform_output = p941_transform_route.get('output_type')
         heavy_tank_health_reward = next(
             reward for reward in REWARD_POOL
             if reward.get('unit') == '3TNK'
@@ -1176,6 +1205,47 @@ def run_self_check():
             and reward.get('power_buff_type') == 'payload'
             and reward.get('payload_unit_id')
         ]
+        paradrop_unit_buff_rewards = [
+            next(
+                reward for reward in REWARD_POOL
+                if reward.get('unit') == unit_id
+                and reward.get('buff_type') == buff_type
+            )
+            for unit_id, buff_type in (
+                ('E5', 'damage'), ('SHOK', 'health'), ('MEDIC', 'health'),
+            )
+        ]
+        paradrop_test_rewards = [
+            paradrop_reward,
+            paradrop_payload_buff,
+            *paradrop_special_payload_buffs,
+            *paradrop_unit_buff_rewards,
+        ]
+        paradrop_consumer_ids = active_paradrop_unit_ids(
+            paradrop_test_rewards
+        )
+        paradrop_clone_rules, paradrop_clone_report = (
+            unit_specific_buff_rules(
+                allied_power_mission,
+                paradrop_unit_buff_rewards,
+                access_randomized=True,
+                runtime_consumer_unit_ids=paradrop_consumer_ids,
+            )
+        )
+        paradrop_unit_routes = {
+            item['unit']: item['output_type']
+            for item in paradrop_clone_report['applied']
+            if item['unit'] in paradrop_consumer_ids
+        }
+        paradrop_reserved_rules = {
+            section: dict(values)
+            for section, values in paradrop_clone_rules.items()
+        }
+        paradrop_reserved_rules['E1S_PLAYER'] = {
+            'Strength': '750',
+            'Sight': '5',
+            'Primary': 'E1S_PLAYER_WEAPON',
+        }
         paradrop_rules, paradrop_actions, paradrop_report = player_power_rules(
             allied_power_mission,
             [
@@ -1184,13 +1254,8 @@ def run_self_check():
                 *paradrop_special_payload_buffs,
             ],
             paratrooper_unit_id='E1S_PLAYER',
-            reserved_rules={
-                'E1S_PLAYER': {
-                    'Strength': '750',
-                    'Sight': '5',
-                    'Primary': 'E1S_PLAYER_WEAPON',
-                },
-            },
+            paradrop_unit_routes=paradrop_unit_routes,
+            reserved_rules=paradrop_reserved_rules,
         )
         crash_clone_rules = {}
         crash_clone_reports = {}
@@ -1571,6 +1636,18 @@ def run_self_check():
         paradrop_aircraft = paradrop_rules.get(
             paradrop_report.get('paradrop_aircraft', ''), {}
         )
+        paradrop_e5 = paradrop_clone_rules.get(
+            paradrop_unit_routes.get('E5', ''), {}
+        )
+        paradrop_e5_weapon = paradrop_clone_rules.get(
+            paradrop_e5.get('Primary', ''), {}
+        )
+        paradrop_shok = paradrop_clone_rules.get(
+            paradrop_unit_routes.get('SHOK', ''), {}
+        )
+        paradrop_medic = paradrop_clone_rules.get(
+            paradrop_unit_routes.get('MEDIC', ''), {}
+        )
         launch_color_source = mission_source_lines(tutorial_two['scenario'])
         enemy_reward = next(
             reward for reward in REWARD_POOL
@@ -1869,7 +1946,7 @@ def run_self_check():
                     'recharge', 'damage', 'area', 'payload',
                     'cost', 'production', 'capacity',
                     'payload:E4S', 'payload:E5',
-                    'payload:E3S', 'payload:SHOK',
+                    'payload:E3S', 'payload:SHOK', 'payload:MEDIC',
                 }
             ),
             'unlock_dashboard_tooltips_render': (
@@ -1887,6 +1964,7 @@ def run_self_check():
                 in paradrop_tooltip
                 and 'Each deployment adds 1 Shock Trooper.'
                 in paradrop_tooltip
+                and 'Each deployment adds 1 Medic.' in paradrop_tooltip
                 and 'Provider limit 2 buildings; up to 2 independently '
                 'charging uses.' in nuke_tooltip
             ),
@@ -1948,7 +2026,7 @@ def run_self_check():
                 {
                     str(reward.get('payload_unit_id') or '')
                     for reward in grid_payload_plan
-                } == {'', 'E4S', 'E5', 'E3S', 'SHOK'}
+                } == {'', 'E4S', 'E5', 'E3S', 'SHOK', 'MEDIC'}
                 and {
                     reward_display_name(reward)
                     for reward in paradrop_payload_pool
@@ -1961,6 +2039,7 @@ def run_self_check():
                     'Soviet Paratroopers: Each deployment adds 1 Soviet Rocket '
                     'Soldier.',
                     'Soviet Paratroopers: Each deployment adds 1 Shock Trooper.',
+                    'Soviet Paratroopers: Each deployment adds 1 Medic.',
                 }
                 and all(
                     str(reward.get('payload_unit_label') or '')
@@ -2250,16 +2329,33 @@ def run_self_check():
                 and paradrop_team.get('Waypoint') == '100'
                 and paradrop_taskforce.get('0') == '6,E1S_PLAYER'
                 and paradrop_taskforce.get('1') == '1,E4S'
-                and paradrop_taskforce.get('2') == '1,E5'
+                and paradrop_taskforce.get('2') == '1,E5_PLAYER'
                 and paradrop_taskforce.get('3') == '1,E3S'
-                and paradrop_taskforce.get('4') == '1,SHOK'
-                and paradrop_taskforce.get('5')
+                and paradrop_taskforce.get('4') == '1,SHOK_PLAYER'
+                and paradrop_taskforce.get('5') == '1,MEDIC_PLAYER'
+                and paradrop_taskforce.get('6')
                 == f'1,{paradrop_report["paradrop_aircraft"]}'
-                and paradrop_aircraft.get('Passengers') == '10'
-                and paradrop_report['applied'][0]['payload_buffs'] == 5
-                and paradrop_report['applied'][0]['payload_units'] == '10'
+                and paradrop_report.get('paradrop_unit_routes') == {
+                    'E5': 'E5_PLAYER',
+                    'SHOK': 'SHOK_PLAYER',
+                    'MEDIC': 'MEDIC_PLAYER',
+                }
+                and paradrop_e5.get('TechLevel') == '-1'
+                and int(paradrop_e5_weapon.get('Damage', 0)) > 52
+                and paradrop_shok.get('TechLevel') == '-1'
+                and int(paradrop_shok.get('Strength', 0)) > 800
+                and paradrop_medic.get('TechLevel') == '-1'
+                and paradrop_medic.get('OmniHealer') == 'yes'
+                and paradrop_aircraft.get('Passengers') == '11'
+                and paradrop_report['applied'][0]['payload_buffs'] == 6
+                and paradrop_report['applied'][0]['payload_units'] == '11'
                 and paradrop_report['applied'][0]['payload_unit_counts'] == {
-                    '': 1, 'E4S': 1, 'E5': 1, 'E3S': 1, 'SHOK': 1,
+                    '': 1,
+                    'E4S': 1,
+                    'E5': 1,
+                    'E3S': 1,
+                    'SHOK': 1,
+                    'MEDIC': 1,
                 }
                 and paradrop_report['applied'][0]['payload_aircraft']
                 == 'BADGER'
@@ -2348,6 +2444,38 @@ def run_self_check():
                 ) == 'GDI'
                 and 'BuiltAt' not in tutorial_clone_rules.get('DOG_PLAYER', {})
                 and tutorial_clone_report['map_objects_rewritten'] == 0
+            ),
+            'dta_player_clones_gain_experience': (
+                set(special_clone_entries) == set(special_clone_ids)
+                and all(
+                    output_id
+                    and special_clone_rules.get(output_id, {}).get(
+                        'Trainable'
+                    ) == 'yes'
+                    for output_id in special_clone_outputs.values()
+                )
+                and p941_transform_output
+                and special_clone_rules.get(
+                    p941_transform_output, {}
+                ).get('Trainable') == 'yes'
+            ),
+            'dta_p941_transform_clone_works': (
+                p941_output
+                and p941_transform_output
+                and p941_transform_route.get('source_type') == 'SP941'
+                and p941_transform_route.get('link') == 'TransformsInto'
+                and special_clone_rules.get(p941_output, {}).get(
+                    'TransformsInto'
+                ) == p941_transform_output
+                and special_clone_rules.get(
+                    p941_transform_output, {}
+                ).get('TransformsInto') == p941_output
+                and special_clone_rules.get(
+                    p941_transform_output, {}
+                ).get('Secondary') == 'P941Nuke'
+                and special_clone_rules.get(
+                    p941_transform_output, {}
+                ).get('GuardRange') == '11.5'
             ),
             'safe_reward_pool_only': all(
                 reward.get('dta_production_clone')
@@ -3013,17 +3141,21 @@ def run_self_check():
             ),
             'dta_mammoth_reload_and_vinifera_buffs_are_safe': (
                 mammoth_clone_entry.get('route') == 'production_access_clone'
-                and mammoth_clone.get('Image') == 'HTNK'
+                and mammoth_clone.get('Image') == 'HTNKE'
                 and mammoth_clone.get('Primary') in mammoth_clone_rules
                 and mammoth_clone.get('Secondary') in mammoth_clone_rules
                 and int(mammoth_weapon.get('ROF', 0)) == 4
+                and int(mammoth_weapon.get('Damage', 0)) == 30
+                and int(mammoth_secondary_weapon.get('Damage', 0)) == 20
                 and float(mammoth_weapon.get('Range', 0))
                 >= float(mammoth_secondary_weapon.get('Range', 0))
                 and mammoth_weapon.get('Warhead') == 'AP'
-                and mammoth_secondary_weapon.get('Warhead') == 'MslHEAA'
-                and soviet_mammoth_clone.get('Image') == '4TNK'
+                and mammoth_secondary_weapon.get('Warhead') == 'TuskWH'
+                and soviet_mammoth_clone.get('Image') == '4TNKE'
+                and int(soviet_mammoth_primary.get('Damage', 0)) == 44
+                and int(soviet_mammoth_secondary.get('Damage', 0)) == 15
                 and soviet_mammoth_primary.get('Warhead') == 'APRA'
-                and soviet_mammoth_secondary.get('Warhead') == 'MslHEAA'
+                and soviet_mammoth_secondary.get('Warhead') == 'RATuskWH'
                 and float(soviet_mammoth_primary.get('Range', 0))
                 >= float(soviet_mammoth_secondary.get('Range', 0))
                 and mammoth_clone.get('SelfHealing') == 'yes'
@@ -3231,6 +3363,8 @@ def run_self_check():
             'dta_engineer_cameo_extracted',
             'dta_active_unit_cameos_or_text_complete',
             'dta_allied_helpers_use_buffed_clones',
+            'dta_player_clones_gain_experience',
+            'dta_p941_transform_clone_works',
             'dta_harvester_clones_keep_harvester_identity',
             'dta_harvesters_survive_refinery_clones',
             'dta_refinery_spawns_working_harvester_clone',

@@ -80,6 +80,33 @@ PARATROOPER_BUFF_FIELDS = {
 }
 
 
+def active_paradrop_unit_ids(rewards):
+    """Return infantry identities consumed by the active player paradrop."""
+    power_id = 'DROPPODSPECIAL'
+    if not any(
+        reward.get('kind') == 'superweapon'
+        and reward.get('dta_player_power')
+        and str(reward.get('superweapon') or '').upper() == power_id
+        for reward in rewards or ()
+    ):
+        return set()
+    payload = POWER_SPEC_BY_ID.get(power_id, {}).get('payload', {})
+    allowed = {
+        str(option.get('id') or '').upper()
+        for option in payload.get('unit_options', ())
+    }
+    unit_ids = {'E1', 'E1S'}
+    unit_ids.update(
+        unit_id
+        for reward in rewards or ()
+        if reward.get('dta_player_power_buff')
+        and str(reward.get('superweapon') or '').upper() == power_id
+        and (unit_id := str(reward.get('payload_unit_id') or '').upper())
+        in allowed
+    )
+    return unit_ids
+
+
 def power_unlock_rewards():
     return [
         {
@@ -696,6 +723,7 @@ def player_power_rules(
     rewards,
     launch_building_ids=(),
     paratrooper_unit_id='',
+    paradrop_unit_routes=None,
     reserved_rules=None,
     production_context=None,
     rule_overlays=None,
@@ -708,6 +736,11 @@ def player_power_rules(
         section: dict(values) for section, values in authored.items()
     }
     reserved_rules = reserved_rules or {}
+    paradrop_unit_routes = {
+        str(source).upper(): str(output)
+        for source, output in (paradrop_unit_routes or {}).items()
+        if source and output
+    }
     for section in (
         'SuperWeaponTypes', 'BuildingTypes', 'VehicleTypes', 'AircraftTypes',
         'Weapons', 'Warheads', 'Animations', 'Structures', 'TaskForces',
@@ -744,6 +777,7 @@ def player_power_rules(
         'paratrooper_unit': '',
         'paratrooper_buff_source': '',
         'paratrooper_buff_fields': [],
+        'paradrop_unit_routes': {},
         'paradrop_team': '',
         'paradrop_aircraft': '',
         'exclusive_native_provider_fields': [],
@@ -939,7 +973,11 @@ def player_power_rules(
                 + payload_count * units_per_buff,
             )
             payload_units = str(payload_total)
-            requested_paratrooper = str(paratrooper_unit_id or '').strip()
+            requested_paratrooper = (
+                paradrop_unit_routes.get('E1S')
+                or paradrop_unit_routes.get('E1')
+                or str(paratrooper_unit_id or '').strip()
+            )
             inherited_values = reserved_rules.get(requested_paratrooper, {})
             inherited_buffs = sorted(
                 key
@@ -1007,7 +1045,10 @@ def player_power_rules(
                     for option in payload.get('unit_options', ())
                 }
                 taskforce_members.extend(
-                    (count * units_per_buff, unit_id)
+                    (
+                        count * units_per_buff,
+                        paradrop_unit_routes.get(unit_id, unit_id),
+                    )
                     for unit_id, count in configured_payload_counts.items()
                     if unit_id and unit_id in option_ids and count > 0
                 )
@@ -1059,6 +1100,11 @@ def player_power_rules(
                 report['paratrooper_unit'] = drop_unit
                 report['paratrooper_buff_source'] = requested_paratrooper
                 report['paratrooper_buff_fields'] = inherited_buffs
+                report['paradrop_unit_routes'] = {
+                    unit_id: paradrop_unit_routes.get(unit_id, unit_id)
+                    for unit_id in {'E1', 'E1S', *option_ids}
+                    if unit_id in paradrop_unit_routes
+                }
                 report['paradrop_team'] = team_id
                 report['paradrop_aircraft'] = aircraft_clone
         rules.setdefault('SuperWeaponTypes', {})[str(next_key)] = clone_id

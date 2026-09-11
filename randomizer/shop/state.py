@@ -337,7 +337,13 @@ def normalize_shop_run(document, *, config=SHOP_CONFIG):
         raise ShopStateError(
             'Only a failed Shop run may record failure fields'
         )
-    modifiers = _unique_strings(document.get('modifiers'), 'modifiers')
+    modifiers = tuple(
+        modifier_id
+        for modifier_id in _unique_strings(
+            document.get('modifiers'), 'modifiers'
+        )
+        if modifier_id != 'elite_force'
+    )
     unknown_modifiers = [
         modifier_id for modifier_id in modifiers
         if modifier_id not in config.modifiers
@@ -444,6 +450,10 @@ def normalize_shop_run(document, *, config=SHOP_CONFIG):
         free_buff_tokens_used=_nonnegative_int(
             document.get('free_buff_tokens_used'), 'free_buff_tokens_used'
         ),
+        free_buff_tokens_used_stage=_nonnegative_int(
+            document.get('free_buff_tokens_used_stage'),
+            'free_buff_tokens_used_stage',
+        ),
         emergency_revivals_used=_nonnegative_int(
             document.get('emergency_revivals_used'),
             'emergency_revivals_used',
@@ -464,4 +474,3 @@ def normalize_shop_run(document, *, config=SHOP_CONFIG):
         failed_mission_code=failed_mission,
         failed_stage=failed_stage,
     )
-

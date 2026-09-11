@@ -61,7 +61,6 @@ UNIT_BUFF_WEIGHT_TYPES = (
     ('open_topped', 'Passenger firing'),
     ('cloak', 'Cloaking'),
     ('sensors', 'Sensors'),
-    ('veteran', 'Veterancy'),
     ('build_limit', 'Unique / hero unit limit'),
     ('building_limit', 'Special building limit'),
     ('other', 'Other existing buffs'),

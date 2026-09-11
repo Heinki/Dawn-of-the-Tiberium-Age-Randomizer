@@ -239,6 +239,12 @@
               "label": "Shock Trooper",
               "plural": "Shock Troopers",
               "maximum_stacks": 5
+            },
+            {
+              "id": "MEDIC",
+              "label": "Medic",
+              "plural": "Medics",
+              "maximum_stacks": 5
             }
           ]
         },
