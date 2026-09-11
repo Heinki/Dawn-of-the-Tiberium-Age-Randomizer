@@ -50,13 +50,19 @@ visible in the Randomizer.
 **Save Player YAML** exports a reusable player file. A separate standalone seed
 is not required, and there is no YAML import step in the launcher. Reuse that
 file for additional rooms with the same settings; every Archipelago generation
-assigns a fresh Randomizer seed. Re-export only after changing launcher settings.
+creates a fresh Randomizer run from its seed. Re-export only after changing launcher settings.
 
-The YAML contains readable `launcher_settings` plus a checksum-protected,
-seed-independent `generated_world` template holding mission order, Grid, reward
-locations, placements, and compatibility data. Archipelago restores settings,
-assigns the room-specific seed, then signs data sent to the launcher. Do not
-edit generated template data by hand.
+The YAML contains only readable `launcher_settings`. Archipelago generates the
+mission order, Grid, starting unlocks, reward pool, placements, and signed run
+manifest during multiworld generation. The launcher receives that manifest from
+the server when connecting. DTA unit buffs and Shop progression remain part of
+the normal DTA generation rules.
+
+You can edit settings in the YAML directly. Omitted settings use the APWorld's
+bundled defaults. Reusing the same Archipelago seed and settings reproduces the
+same run; a different Archipelago seed generates new randomized content. Classic
+mode keeps its authored mission order. Restarting an existing room preserves its
+run. Install the updated `dta.apworld` before using settings-only YAML files.
 
 ## Generate and host the room
 
@@ -173,3 +179,24 @@ extra checks; stage-marker receipts never become ordinary Shop rewards.
 For release validation, generate a room with the packaged APWorld, inspect the
 generated YAML and item fill, then connect the launcher and verify the handshake
 and Shop controls. This project does not maintain unit-test suites.
+
+## Development verification
+
+The APWorld build bundles the shared `randomizer/generation` code, static
+configuration, mission metadata, and unit catalogue under a private namespace.
+It reads resources directly from the archive; generation does not need DTA files
+or the launcher installed. Both build scripts use the same Python builder.
+
+After changing mission or reward definitions, run
+`python -m Archipelago.generate_catalogue` from the launcher directory, then
+`python Archipelago/build_apworld.py`. The builder rejects a stale catalogue.
+
+Run the generation regression checks with Archipelago's Python environment:
+
+```sh
+/path/to/Archipelago/.venv/bin/python tools/check_archipelago_generation.py --ap-root /path/to/Archipelago
+```
+
+These checks cover settings-only YAML, deterministic seed generation, all four
+progression modes, all three reward modes, edited settings, legacy input,
+launcher/server manifest parity, and real Archipelago item placement.

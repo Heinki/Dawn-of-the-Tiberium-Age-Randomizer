@@ -9810,6 +9810,13 @@
       "id": 81065933
     },
     {
+      "name": "Soviet Paratroopers Medic Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066258
+    },
+    {
       "name": "Soviet Paratroopers Rapid Charging I",
       "classification": "useful",
       "category": "power_buffs",
@@ -13697,7 +13704,7 @@
       ]
     }
   ],
-  "catalogue_checksum": "3b9ee96cf221105a0808a4b00672b4702831ad68ea8a0142444a55ed5bb2fba8",
+  "catalogue_checksum": "8e25d615d0858bd45f3751ce6070f0b99fcaa2055295968188ffc435e87599da",
   "locations": [
     {
       "name": "Tutorial Mission 1 - Mission Complete - Reward 1",

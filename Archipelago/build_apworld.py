@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
@@ -28,6 +29,21 @@ def build(output_directory: Path) -> Path:
         raise FileNotFoundError(f'APWorld manifest not found: {manifest_path}')
     if not catalogue_path.is_file():
         raise FileNotFoundError(f'APWorld catalogue not found: {catalogue_path}')
+
+    sys.path.insert(0, str(ARCHIPELAGO_DIR.parent))
+    from Archipelago.bundle_generation import generation_files
+    from Archipelago.catalogue_contract import runtime_catalogue_checksum
+    from randomizer.core.paths import BATTLE_CLIENT_INI
+    from randomizer.missions.catalogue import parse_missions
+
+    catalogue = json.loads(catalogue_path.read_text(encoding='utf-8'))
+    if catalogue['catalogue_checksum'] != runtime_catalogue_checksum():
+        raise ValueError(
+            'APWorld catalogue is stale. Run python -m Archipelago.generate_catalogue '
+            'from the launcher directory before building.'
+        )
+    bundled_files = generation_files()
+    missions_data = json.dumps(parse_missions(BATTLE_CLIENT_INI), sort_keys=True).encode('utf-8')
 
     output_directory = output_directory.resolve()
     output_directory.mkdir(parents=True, exist_ok=True)
@@ -59,6 +75,9 @@ def build(output_directory: Path) -> Path:
                 archive_info(f'{MODULE_NAME}/{relative}'),
                 source.read_bytes(),
             )
+        for name, data in bundled_files:
+            archive.writestr(archive_info(name), data)
+        archive.writestr(archive_info(f'{MODULE_NAME}/generation_missions.json'), missions_data)
         archive.writestr(
             archive_info(f'{MODULE_NAME}/archipelago.json'),
             manifest_data,

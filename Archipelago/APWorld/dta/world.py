@@ -1,4 +1,4 @@
-"""Manifest-driven Dawn of the Tiberium Age Archipelago world."""
+"""Settings-driven Dawn of the Tiberium Age Archipelago world."""
 
 from collections import Counter
 
@@ -21,11 +21,7 @@ from .data import (
     location_entries,
     shop_item_location_entries,
 )
-from .manifest import (
-    instantiate_manifest,
-    parse_manifest,
-    validate_launcher_settings,
-)
+from .manifest import parse_manifest
 from .options import DTAOptions
 
 
@@ -75,17 +71,18 @@ class DTAWorld(World):
     }
 
     def generate_early(self) -> None:
-        template = parse_manifest(
-            self.options.generated_world.value or self.options.run_manifest.value
-        )
-        launcher_settings = validate_launcher_settings(
-            self.options.launcher_settings.value,
-            template,
-        )
-        self.run_manifest = instantiate_manifest(
-            template,
-            launcher_settings,
-            f"DTA-{self.random.randrange(0x10000000):08X}",
+        from .generation import generate_manifest
+
+        settings = self.options.launcher_settings.value
+        legacy = self.options.generated_world.value or self.options.run_manifest.value
+        if legacy and not settings:
+            template = parse_manifest(legacy)
+            # Old exports remain readable, but their frozen world is regenerated.
+            settings = template.get("frozen_settings", {}).get("launcher")
+            if not settings:
+                raise ValueError("Legacy YAML has no launcher_settings; export it again.")
+        self.run_manifest = generate_manifest(
+            settings, f"DTA-{self.random.getrandbits(64):016X}"
         )
 
     def create_item(self, name: str) -> DTAItem:
