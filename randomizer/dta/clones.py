@@ -39,6 +39,7 @@ TYPE_LIST_BY_CATEGORY = {
 WEAPON_KEYS = (
     'Primary', 'Secondary', 'Elite', 'ElitePrimary', 'EliteSecondary',
 )
+TYPE_TRANSITION_KEYS = ('DeploysInto', 'UndeploysInto', 'TransformsInto')
 MAMMOTH_DUAL_WEAPON_IDS = {'HTNK', '4TNK'}
 HOUSE_MASK_FIELDS = {
     'owner',
@@ -1879,21 +1880,39 @@ def unit_specific_buff_rules(
                     'infantry', 'vehicles', 'aircraft'
                 }:
                     linked_rules['Trainable'] = 'yes'
-                linked_counts = Counter({
-                    buff_type: count
-                    for buff_type, count in counts.items()
-                    if buff_type in {
-                        'armor', 'health', 'damage', 'reload', 'range',
-                        'sight', 'cloak', 'sensors', 'self_healing',
-                        'area',
-                    }
-                })
+                # A deployed or transformed form is still the same earned
+                # unit. Apply every compatible stack to that form instead of
+                # silently restoring native speed, ammo, capacity, or limits.
+                linked_counts = _effective_buff_counts(
+                    linked_values,
+                    linked_target,
+                    counts,
+                    source_sections,
+                )
                 linked_rules.update(
-                    _unit_overrides(linked_values, linked_counts, target)
+                    _unit_overrides(
+                        linked_values, linked_counts, linked_target
+                    )
                 )
                 linked_rules['CameoPriority'] = str(
                     _faction_cameo_priority(linked_target)
                 )
+                # Flattening an inherited deployed form can retain the mobile
+                # source's forward link (for example DEPCRUIS inheriting
+                # DeploysInto=DEPCRUIS). Never let a player clone transition
+                # through either native identity: route the real reverse edge
+                # to the root clone and disable inherited self-links.
+                for transition_key in TYPE_TRANSITION_KEYS:
+                    transition_target = str(
+                        linked_values.get(transition_key) or ''
+                    ).strip()
+                    if transition_target.casefold() == unit_id.casefold():
+                        linked_rules[transition_key] = output_id
+                    elif (
+                        transition_target.casefold()
+                        == linked_source.casefold()
+                    ):
+                        linked_rules[transition_key] = 'none'
                 linked_rules[reverse_key] = output_id
                 for weapon_key in WEAPON_KEYS:
                     weapon_id = str(linked_values.get(weapon_key) or '').strip()
@@ -1996,9 +2015,11 @@ def unit_specific_buff_rules(
         )
         if helper_original_safe:
             helper_original_values = _unit_overrides(values, counts, target)
-            for weapon_key in WEAPON_KEYS:
-                if unit_rules.get(weapon_key):
-                    helper_original_values[weapon_key] = unit_rules[weapon_key]
+            for inherited_key in (*WEAPON_KEYS, *TYPE_TRANSITION_KEYS):
+                if unit_rules.get(inherited_key):
+                    helper_original_values[inherited_key] = unit_rules[
+                        inherited_key
+                    ]
             rules.setdefault(unit_id, {}).update(helper_original_values)
 
         helper_routes = []
@@ -2019,6 +2040,7 @@ def unit_specific_buff_rules(
                 )
                 if helper_family == production_house and use_clone:
                     helper_output = output_id
+                    helper_linked_route = linked_route
                 else:
                     helper_output = _clone_id(
                         unit_id,
@@ -2046,6 +2068,51 @@ def unit_specific_buff_rules(
                         installed, authored, list_name, list_offsets
                     )
                     rules.setdefault(list_name, {})[list_key] = helper_output
+                    helper_linked_route = None
+                    if linked_route:
+                        linked_source = linked_route['source_type']
+                        player_linked_output = linked_route['output_type']
+                        helper_linked_output = _clone_id(
+                            linked_source,
+                            f'HELPER_{helper_family.upper()}',
+                            occupied,
+                        )
+                        helper_linked_values = dict(
+                            rules[player_linked_output]
+                        )
+                        helper_linked_values['Owner'] = helper_family
+                        helper_linked_values['RequiredHouses'] = helper_family
+                        for transition_key in TYPE_TRANSITION_KEYS:
+                            transition_target = str(
+                                helper_linked_values.get(transition_key) or ''
+                            )
+                            if transition_target == output_id:
+                                helper_linked_values[
+                                    transition_key
+                                ] = helper_output
+                        rules[helper_linked_output] = helper_linked_values
+                        linked_target = catalogue.get(linked_source.upper())
+                        if linked_target:
+                            linked_list_name = TYPE_LIST_BY_CATEGORY[
+                                linked_target['category']
+                            ]
+                            linked_list_key = _next_list_key(
+                                installed,
+                                authored,
+                                linked_list_name,
+                                list_offsets,
+                            )
+                            rules.setdefault(linked_list_name, {})[
+                                linked_list_key
+                            ] = helper_linked_output
+                        helper_values[
+                            linked_route['link']
+                        ] = helper_linked_output
+                        helper_linked_route = {
+                            'source_type': linked_source,
+                            'output_type': helper_linked_output,
+                            'link': linked_route['link'],
+                        }
                 rewritten = []
                 for reference in (
                     references['placements']
@@ -2069,6 +2136,7 @@ def unit_specific_buff_rules(
                     'output_type': helper_output,
                     'production_routed': helper_producible,
                     'native_ai_fallback_buffed': helper_original_safe,
+                    'linked_deploy_route': helper_linked_route,
                     'references_rewritten': rewritten,
                 })
 

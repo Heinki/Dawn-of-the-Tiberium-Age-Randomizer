@@ -38,21 +38,39 @@ def apply_shop_clone_modifiers(rule_sections, handled_by_unit, settings):
         report = handled_by_unit
         handled_by_unit = {}
         weapon_fields = {
-            'primary', 'secondary', 'eliteprimary', 'elitesecondary',
+            'primary', 'secondary', 'elite', 'eliteprimary', 'elitesecondary',
             'deathweapon', 'explosion',
         }
         for item in report.get('applied', ()):
             source_id = str(item.get('unit') or '').upper()
             clone_id = str(item.get('output_type') or '')
-            clone_values = rule_sections.get(clone_id, {})
+            linked_routes = list(item.get('linked_deploy_routes') or ())
+            linked_route = item.get('linked_deploy_route')
+            if linked_route and linked_route not in linked_routes:
+                linked_routes.append(linked_route)
+            clone_ids = [
+                candidate for candidate in dict.fromkeys((
+                    clone_id,
+                    *(
+                        str(route.get('output_type') or '')
+                        for route in linked_routes
+                    ),
+                ))
+                if candidate in rule_sections
+            ]
             weapon_ids = {
-                str(value) for key, value in clone_values.items()
-                if str(key).casefold() in weapon_fields
-                and str(value) in rule_sections
-                and _key(rule_sections[str(value)], 'Damage') is not None
+                str(value)
+                for candidate in clone_ids
+                for key, value in rule_sections.get(candidate, {}).items()
+                if (
+                    str(key).casefold() in weapon_fields
+                    and str(value) in rule_sections
+                    and _key(rule_sections[str(value)], 'Damage') is not None
+                )
             }
             handled_by_unit[source_id] = {
                 'clone_id': clone_id,
+                'clone_ids': clone_ids,
                 'weapon_clone_ids': {
                     weapon_id: weapon_id for weapon_id in weapon_ids
                 },
@@ -89,15 +107,21 @@ def apply_shop_clone_modifiers(rule_sections, handled_by_unit, settings):
         clone_values = rule_sections.get(clone_id)
         if not clone_id or clone_values is None:
             continue
+        clone_ids = list(dict.fromkeys(
+            str(candidate)
+            for candidate in (
+                (details or {}).get('clone_ids') or (clone_id,)
+            )
+            if str(candidate) in rule_sections
+        ))
         target = BUFF_TARGETS.get(str(source_id).upper(), {})
         category = str(target.get('category') or '')
 
         if armor_factor != 1.0:
             base_strength = target.get('strength', 1)
-            current = _number(clone_values, 'Strength', base_strength)
             # active_launch_rewards adds one Armor stack solely to guarantee
             # an isolated clone. Remove that seed stack, then apply the run
-            # tradeoff to the fully buffed value.
+            # tradeoff to every deploy/transform form's fully buffed value.
             existing_stacks = armor_seed_stacks.get(str(source_id).upper())
             correction = armor_factor
             if existing_stacks is not None:
@@ -105,10 +129,18 @@ def apply_shop_clone_modifiers(rule_sections, handled_by_unit, settings):
                     stacking_multiplier('armor', existing_stacks + 1)
                     / stacking_multiplier('armor', existing_stacks)
                 )
-            _set_number(
-                clone_values, 'Strength', current * correction, integer=True
-            )
-            counts['armor_clones'] += 1
+            for candidate in clone_ids:
+                candidate_values = rule_sections[candidate]
+                current = _number(
+                    candidate_values, 'Strength', base_strength
+                )
+                _set_number(
+                    candidate_values,
+                    'Strength',
+                    current * correction,
+                    integer=True,
+                )
+                counts['armor_clones'] += 1
 
         combined_production = production_factor
         if category in _COMBAT_CATEGORIES:
@@ -154,4 +186,3 @@ def apply_shop_clone_modifiers(rule_sections, handled_by_unit, settings):
                 )
                 counts['damage_weapons'] += 1
     return counts
-

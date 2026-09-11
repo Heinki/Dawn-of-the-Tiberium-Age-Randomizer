@@ -68,6 +68,8 @@ def run_self_check():
     from randomizer.dta.access import player_infantry_access_rules
     from randomizer.dta.clones import (
         MISSION_ASSISTANCE_BUFF_TYPES,
+        TYPE_TRANSITION_KEYS,
+        WEAPON_KEYS,
         _effective_buff_counts,
         _player_production_context,
         _weapon_overrides,
@@ -892,6 +894,138 @@ def run_self_check():
             for item in faction_priority_report['applied']
         }
         installed_sections = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
+        harvester_type_ids = {
+            item.upper()
+            for item in comma_items(
+                installed_sections.get('General', {}).get('HarvesterUnit')
+            )
+        }
+        transition_sources = {}
+        transition_test_rewards = []
+        for unit_id, target in BUFF_TARGETS.items():
+            if (
+                target.get('category')
+                not in {'infantry', 'vehicles', 'aircraft'}
+                or unit_id in harvester_type_ids
+            ):
+                continue
+            source_values = effective_section(installed_sections, unit_id)
+            links = {
+                key: str(source_values.get(key) or '').strip().upper()
+                for key in TYPE_TRANSITION_KEYS
+                if str(source_values.get(key) or '').strip().casefold()
+                not in {'', 'none'}
+            }
+            if not links:
+                continue
+            transition_sources[unit_id] = links
+            for selector in ('access', 'health', 'speed', 'damage'):
+                reward = next((
+                    item for item in REWARD_POOL
+                    if item.get('unit') == unit_id
+                    and (
+                        item.get('dta_production_access')
+                        if selector == 'access'
+                        else item.get('buff_type') == selector
+                    )
+                ), None)
+                if reward is not None:
+                    transition_test_rewards.append(reward)
+        transition_rules, transition_report = unit_specific_buff_rules(
+            clone_mission,
+            transition_test_rewards,
+            access_randomized=True,
+        )
+        transition_entries = {
+            item['unit']: item for item in transition_report['applied']
+            if item['unit'] in transition_sources
+        }
+        transition_form_results = {}
+        for unit_id, links in transition_sources.items():
+            entry = transition_entries.get(unit_id, {})
+            route = entry.get('linked_deploy_route') or {}
+            root_output = entry.get('output_type', '')
+            linked_source = str(route.get('source_type') or '').upper()
+            linked_output = route.get('output_type', '')
+            root_clone = transition_rules.get(root_output, {})
+            linked_clone = transition_rules.get(linked_output, {})
+            linked_native = effective_section(
+                installed_sections, linked_source
+            )
+            native_family = {unit_id, *links.values()}
+            leaked_transitions = {
+                key: value
+                for clone in (root_clone, linked_clone)
+                for key, value in clone.items()
+                if key in TYPE_TRANSITION_KEYS
+                and str(value).upper() in native_family
+            }
+            has_health_reward = any(
+                reward.get('unit') == unit_id
+                and reward.get('buff_type') == 'health'
+                for reward in transition_test_rewards
+            )
+            health_kept = not has_health_reward or (
+                int(float(linked_clone.get('Strength', 0)))
+                > int(float(linked_native.get('Strength', 0)))
+            )
+            linked_target = catalogue_records.get(linked_source, {})
+            has_speed_reward = any(
+                reward.get('unit') == unit_id
+                and reward.get('buff_type') == 'speed'
+                for reward in transition_test_rewards
+            )
+            speed_kept = (
+                not has_speed_reward
+                or linked_target.get('category')
+                not in {'infantry', 'vehicles', 'aircraft'}
+                or float(linked_native.get('Speed', 0) or 0) <= 0
+                or float(linked_clone.get('Speed', 0) or 0)
+                > float(linked_native.get('Speed', 0))
+            )
+            damage_checks = []
+            for weapon_key in WEAPON_KEYS:
+                native_weapon_id = str(
+                    linked_native.get(weapon_key) or ''
+                ).strip()
+                native_weapon = effective_section(
+                    installed_sections, native_weapon_id
+                )
+                try:
+                    native_damage = int(float(native_weapon.get('Damage', 0)))
+                except (TypeError, ValueError):
+                    native_damage = 0
+                if (
+                    native_damage <= 0
+                    or native_weapon.get('Spawner', '').casefold()
+                    in {'yes', 'true', '1'}
+                ):
+                    continue
+                clone_weapon = transition_rules.get(
+                    linked_clone.get(weapon_key, ''), {}
+                )
+                damage_checks.append(
+                    int(float(clone_weapon.get('Damage', 0))) > native_damage
+                )
+            has_damage_reward = any(
+                reward.get('unit') == unit_id
+                and reward.get('buff_type') == 'damage'
+                for reward in transition_test_rewards
+            )
+            damage_kept = (
+                not has_damage_reward
+                or not damage_checks
+                or any(damage_checks)
+            )
+            transition_form_results[unit_id] = all((
+                root_output,
+                linked_output,
+                root_clone.get(route.get('link')) == linked_output,
+                not leaked_transitions,
+                health_kept,
+                speed_kept,
+                damage_kept,
+            ))
         installed_e2 = effective_section(installed_sections, 'E2')
         installed_e2_weapon = effective_section(
             installed_sections, installed_e2.get('Primary')
@@ -2477,6 +2611,12 @@ def run_self_check():
                     p941_transform_output, {}
                 ).get('GuardRange') == '11.5'
             ),
+            'dta_all_transition_forms_keep_buffs': (
+                bool(transition_sources)
+                and set(transition_form_results) == set(transition_sources)
+                and all(transition_form_results.values())
+            ),
+            'dta_transition_buff_units': sorted(transition_sources),
             'safe_reward_pool_only': all(
                 reward.get('dta_production_clone')
                 or reward.get('dta_production_access')
@@ -3365,6 +3505,7 @@ def run_self_check():
             'dta_allied_helpers_use_buffed_clones',
             'dta_player_clones_gain_experience',
             'dta_p941_transform_clone_works',
+            'dta_all_transition_forms_keep_buffs',
             'dta_harvester_clones_keep_harvester_identity',
             'dta_harvesters_survive_refinery_clones',
             'dta_refinery_spawns_working_harvester_clone',

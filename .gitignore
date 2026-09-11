@@ -39,6 +39,7 @@ __pycache__/
 .coverage.*
 htmlcov/
 .ipynb_checkpoints/
+/bugreports
 
 # Local environments and secrets
 .env
