@@ -72,27 +72,39 @@
     "power_target_prices": {
       "AIRSTRIKESPECIAL": {
         "run_access": 8,
-        "run_buff": 4
+        "run_buff": 4,
+        "permanent_access": 40,
+        "permanent_buff": 8
       },
       "CHEMICALSPECIAL": {
         "run_access": 12,
-        "run_buff": 6
+        "run_buff": 6,
+        "permanent_access": 60,
+        "permanent_buff": 12
       },
       "DROPPODSPECIAL": {
         "run_access": 5,
-        "run_buff": 3
+        "run_buff": 3,
+        "permanent_access": 25,
+        "permanent_buff": 5
       },
       "IONCANNONSPECIAL": {
         "run_access": 10,
-        "run_buff": 5
+        "run_buff": 5,
+        "permanent_access": 50,
+        "permanent_buff": 10
       },
       "MULTISPECIAL": {
         "run_access": 12,
-        "run_buff": 6
+        "run_buff": 6,
+        "permanent_access": 60,
+        "permanent_buff": 12
       },
       "VORTEXSPECIAL": {
         "run_access": 10,
-        "run_buff": 5
+        "run_buff": 5,
+        "permanent_access": 50,
+        "permanent_buff": 10
       }
     },
     "unit_target_prices": {

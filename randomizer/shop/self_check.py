@@ -7,17 +7,26 @@ from randomizer.core.paths import BATTLE_CLIENT_INI
 from randomizer.missions.catalogue import parse_missions
 from randomizer.rewards.catalogue import canonical_reward
 
-from .active import active_shop_tech_ids, shop_starter_defense_ids, shop_starter_unit_ids
+from .active import (
+    active_shop_power_ids,
+    active_shop_rewards,
+    active_shop_tech_ids,
+    shop_starter_defense_ids,
+    shop_starter_unit_ids,
+)
 from .catalogue import canonical_reward_for_id, shop_catalogue
 from .config import SHOP_CONFIG
 from .missions_self_check import validate_shop_mission_selection
 from .economy import (
     mission_reward,
     permanent_buff_price,
+    permanent_power_buff_price,
+    permanent_power_price,
     permanent_unit_price,
     run_buff_price,
     run_unit_price,
 )
+from .meta import purchase_permanent_buff, purchase_permanent_power
 from .mission_modifiers import CHALLENGE_MODIFIERS, PLAYER_BOON_MODIFIERS
 from .missions import (
     classify_mission,
@@ -247,6 +256,66 @@ def validate_shop_domain():
         and SHOP_CONFIG.power_target_prices['IONCANNONSPECIAL'].run_access == 10
         and SHOP_CONFIG.power_target_prices['MULTISPECIAL'].run_access == 12,
         'DTA Shop power prices are not strength-specific',
+    )
+    _require(
+        permanent_power_price('DROPPODSPECIAL') == 25
+        and permanent_power_price('IONCANNONSPECIAL') == 50
+        and permanent_power_price('MULTISPECIAL') == 60
+        and permanent_power_buff_price('DROPPODSPECIAL') == 5
+        and permanent_power_buff_price('IONCANNONSPECIAL') == 10,
+        'DTA permanent Shop power prices are incorrect',
+    )
+
+    power_entry = next(
+        entry for entry in power_access
+        if entry.target_id == 'IONCANNONSPECIAL'
+    )
+    power_buff_entry = next(
+        entry for entry in power_buffs
+        if entry.target_id == power_entry.target_id
+    )
+    permanent_profile = ShopProfile(meta_coins=200)
+    blocked_power_buff = purchase_permanent_buff(
+        permanent_profile,
+        canonical_reward_for_id(power_buff_entry.reward_id),
+        price=permanent_power_buff_price(power_buff_entry.target_id),
+    )
+    power_purchase = purchase_permanent_power(
+        permanent_profile,
+        canonical_reward_for_id(power_entry.reward_id),
+        price=permanent_power_price(power_entry.target_id),
+    )
+    power_buff_purchase = purchase_permanent_buff(
+        power_purchase.profile,
+        canonical_reward_for_id(power_buff_entry.reward_id),
+        price=permanent_power_buff_price(power_buff_entry.target_id),
+    )
+    _require(
+        blocked_power_buff.validation.result.value == 'requires_power_access'
+        and power_purchase.validation.allowed
+        and power_buff_purchase.validation.allowed,
+        'DTA permanent Shop power purchase validation failed',
+    )
+    permanent_power_transition = start_new_run(
+        power_buff_purchase.profile,
+        run_id='dta-shop-permanent-power-self-check',
+        seed='DTA-SHOP-PERMANENT-POWER',
+        mission_offers=first_offers,
+        eligible_mission_codes=(mission['code'] for mission in missions),
+        reward_mode='Chaos',
+        permanent_power_reward_ids=(power_entry.reward_id,),
+        permanent_power_entitlement_ids=(power_entry.reward_id,),
+        permanent_buffs=power_buff_purchase.profile.permanent_buffs,
+    )
+    _require(
+        power_entry.target_id in active_shop_power_ids(
+            permanent_power_transition.run
+        )
+        and sum(
+            reward.get('name') == power_buff_entry.reward_id
+            for reward in active_shop_rewards(permanent_power_transition.run)
+        ) == 1,
+        'DTA permanent Shop power or buff did not activate for a new run',
     )
 
     transition = start_new_run(

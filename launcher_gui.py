@@ -331,6 +331,41 @@ def run_self_check():
             ),
             {},
         )
+        heavy_tank_health_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('unit') == '3TNK'
+            and reward.get('buff_type') == 'health'
+        )
+        reinforcement_routes = {}
+        for mission_code, taskforce_ids in {
+            'M_CD1': ('01000003',),
+            'M_CHAINBREAKER': ('01000102', '01000256'),
+        }.items():
+            reinforcement_mission = next(
+                mission for mission in missions
+                if mission['code'] == mission_code
+            )
+            reinforcement_rules, reinforcement_report = (
+                unit_specific_buff_rules(
+                    reinforcement_mission,
+                    [heavy_tank_health_reward],
+                )
+            )
+            heavy_output = next(
+                item['output_type']
+                for item in reinforcement_report['applied']
+                if item['unit'] == '3TNK'
+            )
+            reinforcement_routes[mission_code] = all(
+                any(
+                    len(fields := comma_items(value)) >= 2
+                    and fields[1] == heavy_output
+                    for value in reinforcement_rules.get(
+                        taskforce_id, {}
+                    ).values()
+                )
+                for taskforce_id in taskforce_ids
+            )
         clone_source = mission_source_path(clone_mission['scenario'])
         clone_before_hash = sha256(clone_source.read_bytes()).hexdigest()
         clone_generated = APP_DIR / '.self_check_clone_spawnmap.ini'
@@ -439,6 +474,38 @@ def run_self_check():
         mammoth_weapon = mammoth_clone_rules.get(
             mammoth_clone.get('Primary', ''), {}
         )
+        mammoth_secondary_weapon = mammoth_clone_rules.get(
+            mammoth_clone.get('Secondary', ''), {}
+        )
+        soviet_mammoth_access = next(
+            reward for reward in REWARD_POOL
+            if reward.get('unit') == '4TNK'
+            and reward.get('dta_production_access')
+        )
+        soviet_mammoth_reload = next(
+            reward for reward in REWARD_POOL
+            if reward.get('unit') == '4TNK'
+            and reward.get('buff_type') == 'reload'
+        )
+        soviet_mammoth_rules, soviet_mammoth_report = (
+            unit_specific_buff_rules(
+                clone_mission,
+                [soviet_mammoth_access, soviet_mammoth_reload],
+                access_randomized=True,
+            )
+        )
+        soviet_mammoth_output = next(
+            item['output_type']
+            for item in soviet_mammoth_report['applied']
+            if item['unit'] == '4TNK'
+        )
+        soviet_mammoth_clone = soviet_mammoth_rules[soviet_mammoth_output]
+        soviet_mammoth_primary = soviet_mammoth_rules[
+            soviet_mammoth_clone['Primary']
+        ]
+        soviet_mammoth_secondary = soviet_mammoth_rules[
+            soviet_mammoth_clone['Secondary']
+        ]
         a10_access_reward = next(
             reward for reward in REWARD_POOL
             if reward.get('unit') == 'A10'
@@ -573,6 +640,26 @@ def run_self_check():
             }
             for family in ('GDI', 'Nod', 'Allies', 'Soviet')
         }
+        naval_factory_access = {}
+        for naval_unit_id in (
+            'ESCORTG', 'ESCORTN', 'ESCORTA', 'ESCORTS', 'MSUB'
+        ):
+            naval_access_reward = next(
+                reward for reward in REWARD_POOL
+                if reward.get('dta_production_access')
+                and reward.get('unit') == naval_unit_id
+            )
+            naval_factory_access[naval_unit_id] = {
+                reward['unit']
+                for reward in production_infrastructure_rewards(
+                    [naval_access_reward],
+                    enabled=True,
+                    production_context={
+                        'original_production_house': 'Soviet',
+                        'production_house': 'Soviet',
+                    },
+                )
+            }
         false_eagle = next(
             mission for mission in missions if mission['code'] == 'M_SE3'
         )
@@ -2519,7 +2606,7 @@ def run_self_check():
                 for unit_id in crash_unit_missions
             ),
             'player_starting_units_use_player_clone': (
-                starter_report['map_objects_rewritten'] == 3
+                starter_report['map_objects_rewritten'] >= 3
                 and any(
                     item.get('unit') == 'MTNK'
                     and len(item.get('player_placements_rewritten', ())) == 3
@@ -2703,7 +2790,14 @@ def run_self_check():
                 and clone_entry.get('output_type') == '3TNK_PLAYER'
                 and clone_rules.get('3TNK', {}).get('ForbiddenHouses') == 'Soviet'
                 and clone_rules.get('3TNK_PLAYER', {}).get('RequiredHouses') == 'Soviet'
-                and clone_report['map_objects_rewritten'] == 0
+                and any(
+                    entry.get('source_type') == '3TNK'
+                    and entry.get('output_type') == '3TNK_PLAYER'
+                    for route in clone_report.get(
+                        'player_taskforce_routes', ()
+                    )
+                    for entry in route.get('entries_rewritten', ())
+                )
             ),
             'all_unit_specific_buffs_use_production_clones': (
                 any(
@@ -2848,6 +2942,17 @@ def run_self_check():
                     for source_id in ('PYLE', 'WEAP')
                 )
             ),
+            'dta_repair_ships_unlock_naval_factory': (
+                naval_factory_access == {
+                    unit_id: {'RAPOWR', 'RAPROC', 'RASPEN'}
+                    for unit_id in (
+                        'ESCORTG', 'ESCORTN', 'ESCORTA', 'ESCORTS', 'MSUB'
+                    )
+                }
+            ),
+            'dta_player_transport_reinforcements_use_buffed_clones': all(
+                reinforcement_routes.values()
+            ),
             'false_eagle_captured_gdi_base_exposes_unlocks': (
                 set(false_eagle_report.get('captured_production_houses', ()))
                 == {'GDI', 'Nod', 'Allies', 'Soviet'}
@@ -2908,7 +3013,19 @@ def run_self_check():
             ),
             'dta_mammoth_reload_and_vinifera_buffs_are_safe': (
                 mammoth_clone_entry.get('route') == 'production_access_clone'
+                and mammoth_clone.get('Image') == 'HTNK'
+                and mammoth_clone.get('Primary') in mammoth_clone_rules
+                and mammoth_clone.get('Secondary') in mammoth_clone_rules
                 and int(mammoth_weapon.get('ROF', 0)) == 4
+                and float(mammoth_weapon.get('Range', 0))
+                >= float(mammoth_secondary_weapon.get('Range', 0))
+                and mammoth_weapon.get('Warhead') == 'AP'
+                and mammoth_secondary_weapon.get('Warhead') == 'MslHEAA'
+                and soviet_mammoth_clone.get('Image') == '4TNK'
+                and soviet_mammoth_primary.get('Warhead') == 'APRA'
+                and soviet_mammoth_secondary.get('Warhead') == 'MslHEAA'
+                and float(soviet_mammoth_primary.get('Range', 0))
+                >= float(soviet_mammoth_secondary.get('Range', 0))
                 and mammoth_clone.get('SelfHealing') == 'yes'
                 and mammoth_clone.get('SelfHealingCap') == '100%'
                 and float(mammoth_clone.get('SelfHealingRate', 0)) > 0
@@ -3165,6 +3282,8 @@ def run_self_check():
             'orphan_unit_buffs_do_not_grant_access',
             'access_clone_receives_unit_specific_buffs',
             'dta_access_unlocks_required_player_factories',
+            'dta_repair_ships_unlock_naval_factory',
+            'dta_player_transport_reinforcements_use_buffed_clones',
             'false_eagle_captured_gdi_base_exposes_unlocks',
             'reported_captured_factories_expose_unlocks',
             'reported_mcv_routes_are_engine_registered',

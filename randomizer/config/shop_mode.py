@@ -136,7 +136,10 @@ def validate_shop_mode_config(sections, path, invalid):
             not _is_nonempty_string(target_id)
             or target_id != target_id.upper()
             or not isinstance(prices, dict)
-            or set(prices) != {'run_access', 'run_buff'}
+            or set(prices) != {
+                'run_access', 'run_buff',
+                'permanent_access', 'permanent_buff',
+            }
             or any(
                 value is not None and (
                     not isinstance(value, int)
@@ -145,6 +148,10 @@ def validate_shop_mode_config(sections, path, invalid):
                 )
                 for value in prices.values()
             )
+            or (prices.get('run_access') is None)
+            != (prices.get('permanent_access') is None)
+            or (prices.get('run_buff') is None)
+            != (prices.get('permanent_buff') is None)
             or all(value is None for value in prices.values())
         ):
             invalid(
@@ -389,4 +396,3 @@ def validate_shop_mode_config(sections, path, invalid):
             or mixes_percent_and_flat
         ):
             invalid(f'Invalid Shop Mode modifier {modifier_id!r}', path)
-

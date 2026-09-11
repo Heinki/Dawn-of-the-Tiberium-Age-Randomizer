@@ -257,8 +257,10 @@ class ShopPolishController(ShopArchipelagoController):
         for tree_name in (
             'shop_catalogue_tree',
             'shop_permanent_unit_tree',
+            'shop_permanent_power_tree',
             'shop_upgrade_tree',
             'shop_permanent_buff_tree',
+            'shop_permanent_power_buff_tree',
             'shop_loadout_select_tree',
         ):
             tree = getattr(self, tree_name, None)
@@ -294,7 +296,10 @@ class ShopPolishController(ShopArchipelagoController):
         return tuple(
             canonical_reward_for_id(reward_id)
             for reward_id in (
-                profile.permanent_unit_unlocks if profile is not None else ()
+                (
+                    *profile.permanent_unit_unlocks,
+                    *profile.permanent_power_unlocks,
+                ) if profile is not None else ()
             )
         )
 
@@ -313,7 +318,10 @@ class ShopPolishController(ShopArchipelagoController):
             return []
         return [
             ('Selected permanent Shop unlock', canonical_reward_for_id(reward_id))
-            for reward_id in run.selected_permanent_units
+            for reward_id in (
+                *run.selected_permanent_units,
+                *run.permanent_power_unlocks_snapshot,
+            )
         ]
 
     def unlock_dashboard_sources(self):
@@ -1604,6 +1612,15 @@ class ShopPolishController(ShopArchipelagoController):
             f'{reward_id}\nPermanent local entitlement. '
             'Selectable in future Shop run loadouts.'
             + (f'\n\n{stats}' if stats else '')
+        )
+
+    def shop_permanent_power_tooltip(self, row_id):
+        reward_id = self._shop_permanent_power_rows.get(row_id)
+        if not reward_id:
+            return ''
+        return (
+            f'{reward_id}\nPermanent local power entitlement. '
+            'Automatically active in future Shop runs.'
         )
 
     def shop_upgrade_tooltip(self, row_id):

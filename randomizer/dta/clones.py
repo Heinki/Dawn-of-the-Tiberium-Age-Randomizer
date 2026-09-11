@@ -39,6 +39,7 @@ TYPE_LIST_BY_CATEGORY = {
 WEAPON_KEYS = (
     'Primary', 'Secondary', 'Elite', 'ElitePrimary', 'EliteSecondary',
 )
+MAMMOTH_DUAL_WEAPON_IDS = {'HTNK', '4TNK'}
 HOUSE_MASK_FIELDS = {
     'owner',
     'requiredhouses',
@@ -688,6 +689,111 @@ def _helper_unit_references(authored, sections, unit_id, helper_context):
     return by_family
 
 
+def _rewrite_player_taskforces(
+    rules,
+    report,
+    installed,
+    authored,
+    output_by_source,
+    player_house,
+    occupied,
+    list_offsets,
+):
+    """Route player reinforcement teams through player production clones.
+
+    Campaign reinforcements are usually created from TaskForces rather than
+    from the map's placement lists. Keep an exclusively player-owned
+    TaskForce in place. If one is shared with another house, clone it and
+    retarget only the player's TeamTypes.
+    """
+    player_key = str(player_house or '').casefold()
+    replacements = {
+        str(source).upper(): str(output)
+        for source, output in output_by_source.items()
+        if str(source).upper() != str(output).upper()
+    }
+    if not player_key or not replacements:
+        report['player_taskforce_routes'] = []
+        return
+
+    section_names = {name.casefold(): name for name in authored}
+    consumers = {}
+    for team_section, values in authored.items():
+        taskforce = str(values.get('TaskForce') or '').strip()
+        if not taskforce:
+            continue
+        consumers.setdefault(taskforce.casefold(), []).append({
+            'section': team_section,
+            'house': str(values.get('House') or '').strip(),
+        })
+
+    routes = []
+    for taskforce_key, team_consumers in consumers.items():
+        player_consumers = [
+            item for item in team_consumers
+            if item['house'].casefold() == player_key
+        ]
+        if not player_consumers:
+            continue
+        taskforce_section = section_names.get(taskforce_key, '')
+        if not taskforce_section:
+            continue
+
+        rewritten_values = dict(authored.get(taskforce_section, {}))
+        rewritten_entries = []
+        for key, value in authored.get(taskforce_section, {}).items():
+            fields = list(comma_items(value))
+            if len(fields) < 2:
+                continue
+            output_id = replacements.get(fields[1].upper())
+            if not output_id:
+                continue
+            source_id = fields[1].upper()
+            fields[1] = output_id
+            rewritten_values[key] = ','.join(fields)
+            rewritten_entries.append({
+                'section': taskforce_section,
+                'key': key,
+                'source_type': source_id,
+                'output_type': output_id,
+            })
+        if not rewritten_entries:
+            continue
+
+        player_exclusive = len(player_consumers) == len(team_consumers)
+        output_taskforce = taskforce_section
+        retargeted_teams = []
+        if player_exclusive:
+            for entry in rewritten_entries:
+                rules.setdefault(taskforce_section, {})[entry['key']] = (
+                    rewritten_values[entry['key']]
+                )
+        else:
+            output_taskforce = _clone_id(
+                taskforce_section, 'PLAYER_TF', occupied
+            )
+            rules[output_taskforce] = rewritten_values
+            list_key = _next_list_key(
+                installed, authored, 'TaskForces', list_offsets
+            )
+            rules.setdefault('TaskForces', {})[list_key] = output_taskforce
+            for consumer in player_consumers:
+                rules.setdefault(consumer['section'], {})['TaskForce'] = (
+                    output_taskforce
+                )
+                retargeted_teams.append(consumer['section'])
+
+        report['map_objects_rewritten'] += len(rewritten_entries)
+        routes.append({
+            'source_taskforce': taskforce_section,
+            'output_taskforce': output_taskforce,
+            'player_exclusive': player_exclusive,
+            'teamtypes_retargeted': retargeted_teams,
+            'entries_rewritten': rewritten_entries,
+        })
+    report['player_taskforce_routes'] = routes
+
+
 def _add_forbidden_house(rules, unit_id, values, production_house):
     existing = list(comma_items(
         rules.get(unit_id, {}).get(
@@ -1129,9 +1235,10 @@ def unit_specific_buff_rules(
 ):
     """Build map-local original buffs or player production clones.
 
-    Direct player placements may use the player clone. When enabled, isolated
-    allied AI families receive helper clones and helper-exclusive TaskForces
-    are rerouted. Enemy placements, teams, triggers, and scripts stay original.
+    Direct player placements and player-owned reinforcement TaskForces may use
+    the player clone. When enabled, isolated allied AI families receive helper
+    clones and helper-exclusive TaskForces are rerouted. Enemy placements,
+    teams, triggers, and scripts stay original.
     """
     source = mission_source_path(mission.get('scenario'))
     installed = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
@@ -1186,6 +1293,7 @@ def unit_specific_buff_rules(
         'applied': [],
         'skipped': [],
         'map_objects_rewritten': 0,
+        'player_taskforce_routes': [],
     }
     if not production_house or production_house.casefold() not in registered_houses:
         report['skipped'].append({
@@ -1644,6 +1752,51 @@ def unit_specific_buff_rules(
                     weapon_clones[marker] = clone_id
                 unit_rules[weapon_key] = clone_id
 
+        # Vinifera doubles a weapon's selection score when it is in range.
+        # DTA Mammoths have a 6-cell rocket and a 5.7-cell cannon, so a fast
+        # clone can stop in that narrow rocket-only band and keep using its
+        # anti-air weapon against armor. Give the player clone a private
+        # primary weapon whose range reaches the native secondary envelope.
+        # Can_Fire still rejects the cannon against aircraft, preserving AA.
+        if use_clone and unit_id in MAMMOTH_DUAL_WEAPON_IDS:
+            primary_id = str(
+                unit_rules.get('Primary') or values.get('Primary') or ''
+            ).strip()
+            secondary_id = str(
+                unit_rules.get('Secondary') or values.get('Secondary') or ''
+            ).strip()
+            primary_values = (
+                rules.get(primary_id)
+                or effective_section(combined, primary_id)
+            )
+            secondary_values = (
+                rules.get(secondary_id)
+                or effective_section(combined, secondary_id)
+            )
+            try:
+                primary_range = float(primary_values.get('Range', 0))
+                secondary_range = float(secondary_values.get('Range', 0))
+            except (TypeError, ValueError):
+                primary_range = secondary_range = 0
+            if 0 < primary_range < secondary_range:
+                if primary_id not in rules:
+                    primary_clone = _clone_id(
+                        f'{unit_id}_{primary_id}', 'PLAYER', occupied
+                    )
+                    cloned_primary_values = dict(primary_values)
+                    cloned_primary_values.pop('BaseSection', None)
+                    cloned_primary_values.pop('$Inherits', None)
+                    rules[primary_clone] = cloned_primary_values
+                    weapon_list_key = _next_list_key(
+                        installed, authored, 'Weapons', list_offsets
+                    )
+                    rules.setdefault('Weapons', {})[
+                        weapon_list_key
+                    ] = primary_clone
+                    primary_id = primary_clone
+                    unit_rules['Primary'] = primary_clone
+                rules[primary_id]['Range'] = _number(secondary_range)
+
         linked_route = None
         if use_clone and not is_harvester:
             for link_key, reverse_key in (
@@ -1912,6 +2065,16 @@ def unit_specific_buff_rules(
         item['unit'].upper(): item['output_type']
         for item in report['applied']
     }
+    _rewrite_player_taskforces(
+        rules,
+        report,
+        installed,
+        authored,
+        output_by_source,
+        player_house,
+        occupied,
+        list_offsets,
+    )
     for source_id, output_id in output_by_source.items():
         values = effective_section(combined, source_id)
         free_output = output_by_source.get(values.get('FreeUnit', '').upper())
