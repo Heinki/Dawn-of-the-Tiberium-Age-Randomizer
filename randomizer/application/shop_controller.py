@@ -2315,6 +2315,21 @@ class ShopController(ShopPolishController):
             self.shop_modifier_difficulty_var.set(
                 f'Run difficulty +{score}'
             )
+        if hasattr(self, 'shop_modifier_victory_bonus_var'):
+            modifier_gems_each = (
+                self.shop_config.run_completion_modifier_meta_coins
+            )
+            modifier_gems = (
+                len(tuple(dict.fromkeys(modifiers)))
+                * modifier_gems_each
+            )
+            base_gems = self.shop_config.run_completion_meta_coins
+            self.shop_modifier_victory_bonus_var.set(
+                f'Run victory reward: +{base_gems} base Gems. Modifier '
+                f'bonus: +{modifier_gems} Gems (+{modifier_gems_each} each). '
+                f'Total: +{base_gems + modifier_gems} Gems. Enabled run '
+                'modifiers stay active for the full run.'
+            )
 
     def _refresh_permanent_shop(self):
         active_run = bool(

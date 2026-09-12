@@ -38,7 +38,12 @@ from randomizer.shop.inventory import (
 from randomizer.shop.mission_modifiers import (
     mission_modifier_for_run_offer,
 )
-from randomizer.shop.summary import reward_breakdown_lines, run_summary_lines
+from randomizer.shop.summary import (
+    reward_breakdown_lines,
+    run_modifier_bonus_text,
+    run_modifier_reward_delta,
+    run_summary_lines,
+)
 from randomizer.shop.transitions import ShopTransitionError
 
 from .shop_archipelago_controller import ShopArchipelagoController
@@ -549,6 +554,19 @@ class ShopPolishController(ShopArchipelagoController):
                     'challenge_hunter'
                 ),
             )
+            modifier_run_coins, modifier_meta_coins = (
+                run_modifier_reward_delta(
+                    offer.economy_class,
+                    victory_coin_bonus_level=self.shop_profile.upgrade_level(
+                        'victory_run_coin_bonus'
+                    ),
+                    modifiers=run.modifiers,
+                    mission_modifier=mission_modifier,
+                    challenge_hunter_level=self.shop_profile.upgrade_level(
+                        'challenge_hunter'
+                    ),
+                )
+            )
             selected = bool(
                 run.mission_committed
                 and run.selected_mission_code == offer.mission_code
@@ -588,6 +606,12 @@ class ShopPolishController(ShopArchipelagoController):
                 f'Base +{definition.run_coins} Ore / '
                 f'+{gem_text(definition.meta_coins)}  •  '
                 f'Estimated +{reward.run_coins} / +{reward.meta_coins}'
+                + (
+                    '\n' + run_modifier_bonus_text(
+                        modifier_run_coins, modifier_meta_coins
+                    )
+                    if run.modifiers else ''
+                )
                 + ('  •  Full reward retained' if assisted else '')
             )
             card['effect'].set(
@@ -1731,11 +1755,22 @@ class ShopPolishController(ShopArchipelagoController):
         )
         dividend = transition.reward.gem_dividend_meta_coins
         completion_bonus = transition.reward.run_completion_meta_coins
+        modifier_completion_gems = (
+            len(tuple(dict.fromkeys(previous_run.modifiers)))
+            * self.shop_config.run_completion_modifier_meta_coins
+            if completion_bonus else 0
+        )
+        base_completion_gems = completion_bonus - modifier_completion_gems
         self._set_shop_message(
             f'{source}: {code} victory. ' + ' | '.join(lines)
             + (
-                f' | Run Victory: +{gem_text(completion_bonus)}'
+                f' | Run Victory: +{gem_text(base_completion_gems)}'
                 if completion_bonus else ''
+            )
+            + (
+                f' | Run modifier bonus: '
+                f'+{gem_text(modifier_completion_gems)}'
+                if modifier_completion_gems else ''
             )
             + (
                 f' | Gem Dividend: +{gem_text(dividend)}'

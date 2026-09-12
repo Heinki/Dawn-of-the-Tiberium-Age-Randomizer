@@ -664,18 +664,30 @@ def _build_right_panel(self, main_frame):
     )
     self.shop_modifier_status_var = tk.StringVar(value='')
     self.shop_modifier_difficulty_var = tk.StringVar(value='Difficulty +0')
+    self.shop_modifier_victory_bonus_var = tk.StringVar(value=(
+        'Run victory reward: '
+        f'+{self.shop_config.run_completion_meta_coins} base Gems, plus '
+        f'+{self.shop_config.run_completion_modifier_meta_coins} Gems per '
+        'enabled modifier. Enabled run modifiers stay active for the full run.'
+    ))
+    ttk.Label(
+        modifier_frame,
+        textvariable=self.shop_modifier_victory_bonus_var,
+        style='Shop.Reward.TLabel',
+        wraplength=720,
+    ).grid(row=0, column=0, columnspan=2, sticky='w', pady=(0, 6))
     ttk.Label(
         modifier_frame,
         textvariable=self.shop_modifier_status_var,
         style='Shop.Help.TLabel',
         wraplength=720,
-    ).grid(row=0, column=0, columnspan=2, sticky='w', pady=(0, 6))
+    ).grid(row=1, column=0, columnspan=2, sticky='w', pady=(0, 6))
     ttk.Label(
         modifier_frame,
         textvariable=self.shop_modifier_difficulty_var,
         font=('Segoe UI', 10, 'bold'),
         style='Shop.Reward.TLabel',
-    ).grid(row=0, column=1, sticky='e', pady=(0, 6))
+    ).grid(row=1, column=1, sticky='e', pady=(0, 6))
     self.shop_modifier_buttons = []
     self.shop_modifier_button_by_id = {}
     for column in range(2):
@@ -686,7 +698,7 @@ def _build_right_panel(self, main_frame):
         definition = self.shop_config.modifiers[modifier_id]
         modifier_card = ttk.Frame(modifier_frame, padding=(0, 2))
         modifier_card.grid(
-            row=1 + index // 2,
+            row=2 + index // 2,
             column=index % 2,
             sticky='ew',
             padx=(0, 12),
