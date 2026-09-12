@@ -198,7 +198,7 @@ maintainer.
 
 ## Status
 
-The mission catalogue, cameos, map generation, launch contract, broad buffs, unit and defense buffs, production access, automatic production infrastructure, six power unlocks, supported power buffs, starting-credit rewards, optional enemy buffs, Randomizer Arsenal, and Archipelago catalogue are implemented and covered by the non-invasive self-check. Access clones use `TechLevel=1`, remove inherited prerequisites, `BuiltAt`, and nonpositive build locks, and retain positive simultaneous-unit caps. Standard mode activates only rewards matching the selected mission's faction; Chaos retains cross-faction access. Old buffs for still-locked units are ignored at launch instead of granting access.
+The mission catalogue, cameos, map generation, launch contract, broad buffs, unit and defense buffs, production access, automatic production infrastructure, seven power unlocks, supported power buffs, starting-credit rewards, optional enemy buffs, Randomizer Arsenal, and Archipelago catalogue are implemented and covered by the non-invasive self-check. Access clones use `TechLevel=1`, remove inherited prerequisites, `BuiltAt`, and nonpositive build locks, and retain positive simultaneous-unit caps. Standard mode activates only rewards matching the selected mission's faction; Chaos retains cross-faction access. Old buffs for still-locked units are ignored at launch instead of granting access.
 
 All active mission maps were checked for map-local power types. The obsolete duplicate `EMPulseSpecial` alias is not a reward.
 

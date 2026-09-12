@@ -2509,13 +2509,6 @@
       "id": 81064053
     },
     {
-      "name": "Demolition Truck (DTRK) Extra Ammunition I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064633
-    },
-    {
       "name": "Demolition Truck (DTRK) Logistics I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -7472,6 +7465,62 @@
       "id": 81065040
     },
     {
+      "name": "Nod Tank Paradrop Expanded Deployment I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066259
+    },
+    {
+      "name": "Nod Tank Paradrop Flame Tank Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066262
+    },
+    {
+      "name": "Nod Tank Paradrop Nod Artillery Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066268
+    },
+    {
+      "name": "Nod Tank Paradrop Nod Buggy Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066264
+    },
+    {
+      "name": "Nod Tank Paradrop Rapid Charging I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066260
+    },
+    {
+      "name": "Nod Tank Paradrop Recon Bike Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066265
+    },
+    {
+      "name": "Nod Tank Paradrop SSM Launcher Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066266
+    },
+    {
+      "name": "Nod Tank Paradrop Stealth Tank Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066267
+    },
+    {
       "name": "Obelisk of Light (OBLI) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -11700,6 +11749,13 @@
       "id": 81065339
     },
     {
+      "name": "Unlock Nod Tank Paradrop",
+      "classification": "progression",
+      "category": "power_unlocks",
+      "repeatable": false,
+      "id": 81066261
+    },
+    {
       "name": "Unlock Obelisk of Light (OBLI)",
       "classification": "progression",
       "category": "unit_unlocks",
@@ -13704,7 +13760,7 @@
       ]
     }
   ],
-  "catalogue_checksum": "8e25d615d0858bd45f3751ce6070f0b99fcaa2055295968188ffc435e87599da",
+  "catalogue_checksum": "4e72d7f36001779b7d89f43a660fc1b28b913a7a22cd3f9ac4ad65a560e92fa0",
   "locations": [
     {
       "name": "Tutorial Mission 1 - Mission Complete - Reward 1",

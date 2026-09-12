@@ -254,7 +254,9 @@ def _allowed_buff_types(record):
         > int(round(float(record.get('sight', 0))))
     ):
         allowed.append('sight')
-    if record.get('ammo', 0) > 0:
+    # Demolition Truck is consumed by its only attack. Extra ammunition can
+    # never produce another shot, so do not expose a dead reward in any mode.
+    if record['id'] != 'DTRK' and record.get('ammo', 0) > 0:
         allowed.append('ammo')
     if record.get('passengers', 0) > 0:
         allowed.append('passenger_capacity')
@@ -454,7 +456,8 @@ def _power_buff_reward(spec, buff_id, payload_option=None):
         reward.update({
             'name': f'{spec["label"]} {label} Reinforcements I',
             'description': (
-                f'Adds one {label} to each Paratroopers deployment per stack.'
+                f'Adds one {label} to each {spec["label"]} deployment per '
+                'stack.'
             ),
             'payload_unit_id': payload_option['id'],
             'payload_unit_label': label,
@@ -462,13 +465,20 @@ def _power_buff_reward(spec, buff_id, payload_option=None):
             'maximum_stacks': int(payload_option.get('maximum_stacks', 5)),
         })
     elif buff_id == 'payload':
+        payload = spec.get('payload') or {}
+        label = str(
+            payload.get('baseline_unit_label') or 'standard infantry unit'
+        )
+        plural = str(
+            payload.get('baseline_unit_plural') or f'{label}s'
+        )
         reward.update({
             'description': (
-                'Adds one standard infantry unit to each Paratroopers '
-                'deployment per stack.'
+                f'Adds one {label} to each {spec["label"]} deployment per '
+                'stack.'
             ),
-            'payload_unit_label': 'standard infantry unit',
-            'payload_unit_plural': 'standard infantry units',
+            'payload_unit_label': label,
+            'payload_unit_plural': plural,
         })
     return reward
 
@@ -573,7 +583,9 @@ LIMITED_HERO_UNIT_IDS = frozenset(
     if record.get('build_limit', 0) > 0
 )
 NONTRAINABLE_UNIT_IDS = frozenset()
-MANDATORY_EXCLUDED_BUFF_TYPE_IDS = {}
+MANDATORY_EXCLUDED_BUFF_TYPE_IDS = {
+    'ammo': frozenset({'DTRK'}),
+}
 SPECIAL_REWARD_UNIT_IDS = frozenset()
 CLONE_REQUIRED_BUFF_TYPES = frozenset(
     {

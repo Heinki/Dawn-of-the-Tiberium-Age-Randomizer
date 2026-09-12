@@ -90,6 +90,12 @@
         "permanent_access": 25,
         "permanent_buff": 5
       },
+      "TANKDROPSPECIAL": {
+        "run_access": 7,
+        "run_buff": 4,
+        "permanent_access": 32,
+        "permanent_buff": 8
+      },
       "IONCANNONSPECIAL": {
         "run_access": 10,
         "run_buff": 5,

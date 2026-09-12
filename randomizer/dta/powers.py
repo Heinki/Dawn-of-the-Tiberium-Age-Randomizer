@@ -81,28 +81,42 @@ PARATROOPER_BUFF_FIELDS = {
 
 
 def active_paradrop_unit_ids(rewards):
-    """Return infantry identities consumed by the active player paradrop."""
-    power_id = 'DROPPODSPECIAL'
-    if not any(
-        reward.get('kind') == 'superweapon'
-        and reward.get('dta_player_power')
-        and str(reward.get('superweapon') or '').upper() == power_id
+    """Return unit identities consumed by active player paradrop powers."""
+    active_power_ids = {
+        str(reward.get('superweapon') or '').upper()
         for reward in rewards or ()
-    ):
-        return set()
-    payload = POWER_SPEC_BY_ID.get(power_id, {}).get('payload', {})
-    allowed = {
-        str(option.get('id') or '').upper()
-        for option in payload.get('unit_options', ())
+        if reward.get('kind') == 'superweapon'
+        and reward.get('dta_player_power')
     }
-    unit_ids = {'E1', 'E1S'}
+    payload_specs = {
+        power_id: POWER_SPEC_BY_ID.get(power_id, {}).get('payload', {})
+        for power_id in active_power_ids
+        if POWER_SPEC_BY_ID.get(power_id, {}).get('payload')
+    }
+    unit_ids = set()
+    for payload in payload_specs.values():
+        baseline_unit_id = str(
+            payload.get('baseline_unit_id') or 'E1S'
+        ).upper()
+        unit_ids.add(baseline_unit_id)
+        if baseline_unit_id == 'E1S':
+            unit_ids.add('E1')
+    allowed_by_power = {
+        power_id: {
+            str(option.get('id') or '').upper()
+            for option in payload.get('unit_options', ())
+        }
+        for power_id, payload in payload_specs.items()
+    }
     unit_ids.update(
         unit_id
         for reward in rewards or ()
         if reward.get('dta_player_power_buff')
-        and str(reward.get('superweapon') or '').upper() == power_id
+        and (
+            power_id := str(reward.get('superweapon') or '').upper()
+        ) in payload_specs
         and (unit_id := str(reward.get('payload_unit_id') or '').upper())
-        in allowed
+        in allowed_by_power[power_id]
     )
     return unit_ids
 
@@ -973,11 +987,20 @@ def player_power_rules(
                 + payload_count * units_per_buff,
             )
             payload_units = str(payload_total)
-            requested_paratrooper = (
-                paradrop_unit_routes.get('E1S')
-                or paradrop_unit_routes.get('E1')
-                or str(paratrooper_unit_id or '').strip()
-            )
+            baseline_unit_id = str(
+                payload.get('baseline_unit_id') or 'E1S'
+            ).upper()
+            if baseline_unit_id == 'E1S':
+                requested_paratrooper = (
+                    paradrop_unit_routes.get('E1S')
+                    or paradrop_unit_routes.get('E1')
+                    or str(paratrooper_unit_id or '').strip()
+                )
+            else:
+                requested_paratrooper = (
+                    paradrop_unit_routes.get(baseline_unit_id)
+                    or baseline_unit_id
+                )
             inherited_values = reserved_rules.get(requested_paratrooper, {})
             inherited_buffs = sorted(
                 key
@@ -1029,7 +1052,11 @@ def player_power_rules(
                 drop_unit = (
                     requested_paratrooper
                     if requested_paratrooper in reserved_rules
-                    else 'E1'
+                    else (
+                        baseline_unit_id
+                        if baseline_unit_id != 'E1S'
+                        else 'E1'
+                    )
                 )
                 configured_payload_counts = payload_unit_counts.get(
                     source_id.upper(), {}
@@ -1102,7 +1129,9 @@ def player_power_rules(
                 report['paratrooper_buff_fields'] = inherited_buffs
                 report['paradrop_unit_routes'] = {
                     unit_id: paradrop_unit_routes.get(unit_id, unit_id)
-                    for unit_id in {'E1', 'E1S', *option_ids}
+                    for unit_id in {
+                        baseline_unit_id, 'E1', 'E1S', *option_ids,
+                    }
                     if unit_id in paradrop_unit_routes
                 }
                 report['paradrop_team'] = team_id

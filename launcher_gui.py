@@ -1391,6 +1391,76 @@ def run_self_check():
             paradrop_unit_routes=paradrop_unit_routes,
             reserved_rules=paradrop_reserved_rules,
         )
+        tank_paradrop_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('superweapon') == 'TankDropSpecial'
+            and reward.get('dta_player_power')
+        )
+        tank_paradrop_payload_buff = next(
+            reward for reward in REWARD_POOL
+            if reward.get('superweapon') == 'TankDropSpecial'
+            and reward.get('power_buff_type') == 'payload'
+        )
+        tank_paradrop_recharge_buff = next(
+            reward for reward in REWARD_POOL
+            if reward.get('superweapon') == 'TankDropSpecial'
+            and reward.get('power_buff_type') == 'recharge'
+        )
+        tank_paradrop_vehicle_ids = {
+            'BGGY', 'BIKE', 'FTNK', 'ARTY', 'MLRS', 'STNK',
+        }
+        tank_paradrop_vehicle_payload_buffs = [
+            reward for reward in REWARD_POOL
+            if reward.get('superweapon') == 'TankDropSpecial'
+            and reward.get('power_buff_type') == 'payload'
+            and reward.get('payload_unit_id') in tank_paradrop_vehicle_ids
+        ]
+        tank_paradrop_unit_buff_rewards = [
+            next(
+                reward for reward in REWARD_POOL
+                if reward.get('unit') == unit_id
+                and reward.get('buff_type') == 'health'
+            )
+            for unit_id in {'LTNK', *tank_paradrop_vehicle_ids}
+        ]
+        tank_paradrop_test_rewards = [
+            tank_paradrop_reward,
+            tank_paradrop_payload_buff,
+            tank_paradrop_recharge_buff,
+            *tank_paradrop_vehicle_payload_buffs,
+            *tank_paradrop_unit_buff_rewards,
+        ]
+        tank_paradrop_consumer_ids = active_paradrop_unit_ids(
+            tank_paradrop_test_rewards
+        )
+        tank_paradrop_clone_rules, tank_paradrop_clone_report = (
+            unit_specific_buff_rules(
+                allied_power_mission,
+                tank_paradrop_unit_buff_rewards,
+                access_randomized=True,
+                runtime_consumer_unit_ids=tank_paradrop_consumer_ids,
+            )
+        )
+        tank_paradrop_unit_routes = {
+            item['unit']: item['output_type']
+            for item in tank_paradrop_clone_report['applied']
+            if item['unit'] in tank_paradrop_consumer_ids
+        }
+        (
+            tank_paradrop_rules,
+            tank_paradrop_actions,
+            tank_paradrop_report,
+        ) = player_power_rules(
+            allied_power_mission,
+            [
+                tank_paradrop_reward,
+                tank_paradrop_payload_buff,
+                tank_paradrop_recharge_buff,
+                *tank_paradrop_vehicle_payload_buffs,
+            ],
+            paradrop_unit_routes=tank_paradrop_unit_routes,
+            reserved_rules=tank_paradrop_clone_rules,
+        )
         crash_clone_rules = {}
         crash_clone_reports = {}
         crash_unit_missions = {
@@ -1678,6 +1748,7 @@ def run_self_check():
 
         ion_tooltip = power_tooltip_smoke('IonCannonSpecial')
         paradrop_tooltip = power_tooltip_smoke('DropPodSpecial')
+        tank_paradrop_tooltip = power_tooltip_smoke('TankDropSpecial')
         nuke_tooltip = power_tooltip_smoke('MultiSpecial')
         all_power_rewards = [
             reward for reward in REWARD_POOL
@@ -1770,6 +1841,22 @@ def run_self_check():
         paradrop_aircraft = paradrop_rules.get(
             paradrop_report.get('paradrop_aircraft', ''), {}
         )
+        tank_paradrop_entry = tank_paradrop_report['applied'][0]
+        tank_paradrop_team = tank_paradrop_rules.get(
+            tank_paradrop_report.get('paradrop_team', ''), {}
+        )
+        tank_paradrop_taskforce = tank_paradrop_rules.get(
+            tank_paradrop_team.get('TaskForce', ''), {}
+        )
+        tank_paradrop_aircraft = tank_paradrop_rules.get(
+            tank_paradrop_report.get('paradrop_aircraft', ''), {}
+        )
+        tank_paradrop_vehicle_clones = {
+            unit_id: tank_paradrop_clone_rules.get(
+                tank_paradrop_unit_routes.get(unit_id, ''), {}
+            )
+            for unit_id in {'LTNK', *tank_paradrop_vehicle_ids}
+        }
         paradrop_e5 = paradrop_clone_rules.get(
             paradrop_unit_routes.get('E5', ''), {}
         )
@@ -2035,7 +2122,7 @@ def run_self_check():
                     and reward.get('superweapon') == spec['id']
                 } == (
                     {'recharge', 'payload'}
-                    if spec['id'] == 'DropPodSpecial'
+                    if spec['id'] in {'DropPodSpecial', 'TankDropSpecial'}
                     else {'recharge', 'damage', 'area'}
                     if spec['id'] == 'IonCannonSpecial'
                     else {
@@ -2081,6 +2168,8 @@ def run_self_check():
                     'cost', 'production', 'capacity',
                     'payload:E4S', 'payload:E5',
                     'payload:E3S', 'payload:SHOK', 'payload:MEDIC',
+                    'payload:BGGY', 'payload:BIKE', 'payload:FTNK',
+                    'payload:ARTY', 'payload:MLRS', 'payload:STNK',
                 }
             ),
             'unlock_dashboard_tooltips_render': (
@@ -2099,6 +2188,17 @@ def run_self_check():
                 and 'Each deployment adds 1 Shock Trooper.'
                 in paradrop_tooltip
                 and 'Each deployment adds 1 Medic.' in paradrop_tooltip
+                and 'Recharge time 10.0% faster.' in tank_paradrop_tooltip
+                and 'Each deployment adds 1 Nod Light Tank.'
+                in tank_paradrop_tooltip
+                and all(
+                    f'Each deployment adds 1 {label}.'
+                    in tank_paradrop_tooltip
+                    for label in {
+                        'Nod Buggy', 'Recon Bike', 'Flame Tank',
+                        'Nod Artillery', 'SSM Launcher', 'Stealth Tank',
+                    }
+                )
                 and 'Provider limit 2 buildings; up to 2 independently '
                 'charging uses.' in nuke_tooltip
             ),
@@ -2494,6 +2594,62 @@ def run_self_check():
                 and paradrop_report['applied'][0]['payload_aircraft']
                 == 'BADGER'
             ),
+            'dta_tank_paradrop_uses_shadow_exodus_payload': (
+                tank_paradrop_consumer_ids
+                == {'LTNK', *tank_paradrop_vehicle_ids}
+                and len(tank_paradrop_actions) == 1
+                and tank_paradrop_entry['recharge_buffs'] == 1
+                and tank_paradrop_entry['payload_buffs'] == 7
+                and tank_paradrop_entry['payload_units'] == '12'
+                and tank_paradrop_entry['payload_unit_counts'] == {
+                    '': 1,
+                    'BGGY': 1,
+                    'BIKE': 1,
+                    'FTNK': 1,
+                    'ARTY': 1,
+                    'MLRS': 1,
+                    'STNK': 1,
+                }
+                and tank_paradrop_entry['payload_aircraft'] == 'BADGER'
+                and tank_paradrop_rules[tank_paradrop_entry['clone']][
+                    'RechargeTime'
+                ] == '8.1'
+                and tank_paradrop_team.get('House')
+                == tank_paradrop_report['player_house']
+                and {
+                    value for key, value in tank_paradrop_taskforce.items()
+                    if str(key).isdigit()
+                } == {
+                    '6,LTNK_PLAYER',
+                    *{
+                        f'1,{unit_id}_PLAYER'
+                        for unit_id in tank_paradrop_vehicle_ids
+                    },
+                    f'1,{tank_paradrop_report["paradrop_aircraft"]}',
+                }
+                and tank_paradrop_aircraft.get('Passengers') == '12'
+                and tank_paradrop_report.get('paradrop_unit_routes') == {
+                    unit_id: f'{unit_id}_PLAYER'
+                    for unit_id in {'LTNK', *tank_paradrop_vehicle_ids}
+                }
+                and all(
+                    clone.get('TechLevel') == '-1'
+                    and int(clone.get('Strength', 0)) > int(
+                        effective_section(installed_sections, unit_id).get(
+                            'Strength', 0
+                        )
+                    )
+                    for unit_id, clone in tank_paradrop_vehicle_clones.items()
+                )
+            ),
+            'dta_demolition_truck_ammo_buff_removed': (
+                'ammo' not in BUFF_TARGETS['DTRK']['allowed_buff_types']
+                and not any(
+                    reward.get('unit') == 'DTRK'
+                    and reward.get('buff_type') == 'ammo'
+                    for reward in REWARD_POOL
+                )
+            ),
             'dta_enemy_buffs_exclude_player_family': (
                 enemy_rules.get('Nod', {}).get('Armor') == '1.1'
                 and 'GDI' not in enemy_rules
@@ -2806,7 +2962,7 @@ def run_self_check():
             'dta_building_gated_powers_enabled': (
                 {spec['id'] for spec in POWER_SPECS}
                 == {
-                    'IonCannonSpecial', 'DropPodSpecial',
+                    'IonCannonSpecial', 'DropPodSpecial', 'TankDropSpecial',
                     'AirstrikeSpecial', 'ChemicalSpecial',
                     'MultiSpecial', 'VortexSpecial',
                 }
@@ -2815,6 +2971,7 @@ def run_self_check():
                     'DTACHEMICALSPECIALACT',
                     'DTAMULTISPECIALACT',
                     'DTAVORTEXSPECIALACT',
+                    'DTATANKDROPSPECIALACT',
                 }.issubset(ini_sections(
                     GAME_ROOT / 'INI' / 'Action.ini'
                 ).get('ActionTypes', {}))
@@ -3539,6 +3696,8 @@ def run_self_check():
             'dta_power_lists_preserve_war_factory_clones',
             'dta_exclusive_buffed_ion_cannon_works',
             'dta_paradrop_payload_uses_badger_capacity',
+            'dta_tank_paradrop_uses_shadow_exodus_payload',
+            'dta_demolition_truck_ammo_buff_removed',
             'dta_enemy_buffs_exclude_player_family',
             'dta_player_color_list_valid',
             'dta_loose_mission_launch_source_valid',

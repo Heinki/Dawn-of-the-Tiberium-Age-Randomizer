@@ -173,7 +173,7 @@ def validate_shop_domain():
     ]
     _require(len(unit_access) >= 100, 'DTA Shop unit access catalogue is incomplete')
     _require(len(unit_buffs) >= 500, 'DTA Shop unit buff catalogue is incomplete')
-    _require(len(power_access) == 6, 'DTA Shop power access catalogue is incomplete')
+    _require(len(power_access) == 7, 'DTA Shop power access catalogue is incomplete')
     _require(len(power_buffs) >= 10, 'DTA Shop power buff catalogue is incomplete')
     paradrop_payload_choices = {
         str(canonical_reward_for_id(entry.reward_id).get('payload_unit_id') or '')
@@ -187,6 +187,35 @@ def validate_shop_domain():
             '', 'E4S', 'E5', 'E3S', 'SHOK', 'MEDIC',
         },
         'DTA Shop selectable Paratroopers payload catalogue is incomplete',
+    )
+    tank_paradrop_buffs = {
+        canonical_reward_for_id(entry.reward_id).get('power_buff_type')
+        for entry in power_buffs
+        if entry.target_id == 'TANKDROPSPECIAL'
+    }
+    _require(
+        tank_paradrop_buffs == {'recharge', 'payload'},
+        'DTA Shop Tank Paradrop upgrades are incomplete',
+    )
+    tank_paradrop_payload_choices = {
+        str(canonical_reward_for_id(entry.reward_id).get('payload_unit_id') or '')
+        for entry in power_buffs
+        if entry.target_id == 'TANKDROPSPECIAL'
+        and canonical_reward_for_id(entry.reward_id).get('payload_unit_id')
+    }
+    _require(
+        tank_paradrop_payload_choices
+        == {'BGGY', 'BIKE', 'FTNK', 'ARTY', 'MLRS', 'STNK'},
+        'DTA Shop Tank Paradrop vehicle catalogue is incomplete',
+    )
+    _require(
+        not any(
+            entry.target_id == 'DTRK'
+            and canonical_reward_for_id(entry.reward_id).get('buff_type')
+            == 'ammo'
+            for entry in unit_buffs
+        ),
+        'DTA Shop still exposes the ineffective Demolition Truck ammo upgrade',
     )
     provider_capacity_targets = {
         entry.target_id
@@ -503,15 +532,18 @@ def validate_shop_domain():
     )
     _require(
         SHOP_CONFIG.power_target_prices['DROPPODSPECIAL'].run_access == 5
+        and SHOP_CONFIG.power_target_prices['TANKDROPSPECIAL'].run_access == 7
         and SHOP_CONFIG.power_target_prices['IONCANNONSPECIAL'].run_access == 10
         and SHOP_CONFIG.power_target_prices['MULTISPECIAL'].run_access == 12,
         'DTA Shop power prices are not strength-specific',
     )
     _require(
         permanent_power_price('DROPPODSPECIAL') == 25
+        and permanent_power_price('TANKDROPSPECIAL') == 32
         and permanent_power_price('IONCANNONSPECIAL') == 50
         and permanent_power_price('MULTISPECIAL') == 60
         and permanent_power_buff_price('DROPPODSPECIAL') == 5
+        and permanent_power_buff_price('TANKDROPSPECIAL') == 8
         and permanent_power_buff_price('IONCANNONSPECIAL') == 10,
         'DTA permanent Shop power prices are incorrect',
     )

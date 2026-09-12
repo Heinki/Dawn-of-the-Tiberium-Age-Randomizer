@@ -249,6 +249,77 @@
           ]
         },
         "buffs": ["recharge", "payload"]
+      },
+      {
+        "id": "TankDropSpecial",
+        "label": "Nod Tank Paradrop",
+        "description": "Grants a repeating Nod Tank Paradrop based on the Light Tank airlifts used in Shadow Exodus.",
+        "factions": ["Nod"],
+        "category": "aid",
+        "values": {
+          "Name": "Nod Tank Paradrop",
+          "Type": "DropPod",
+          "IsPowered": "false",
+          "RechargeVoice": "",
+          "ChargingVoice": "",
+          "ImpatientVoice": "",
+          "SuspendVoice": "",
+          "RechargeTime": "9",
+          "SidebarImage": "LTNKICON"
+        },
+        "action": {
+          "id": "DTATANKDROPSPECIALACT",
+          "cursor": "NuclearBomb",
+          "no_cursor": "NuclearBomb"
+        },
+        "payload": {
+          "aircraft_id": "BADGER",
+          "capacity_field": "Passengers",
+          "baseline_capacity": 5,
+          "baseline_unit_id": "LTNK",
+          "baseline_unit_label": "Nod Light Tank",
+          "baseline_unit_plural": "Nod Light Tanks",
+          "units_per_buff": 1,
+          "unit_options": [
+            {
+              "id": "BGGY",
+              "label": "Nod Buggy",
+              "plural": "Nod Buggies",
+              "maximum_stacks": 5
+            },
+            {
+              "id": "BIKE",
+              "label": "Recon Bike",
+              "plural": "Recon Bikes",
+              "maximum_stacks": 5
+            },
+            {
+              "id": "FTNK",
+              "label": "Flame Tank",
+              "plural": "Flame Tanks",
+              "maximum_stacks": 5
+            },
+            {
+              "id": "ARTY",
+              "label": "Nod Artillery",
+              "plural": "Nod Artillery",
+              "maximum_stacks": 5
+            },
+            {
+              "id": "MLRS",
+              "label": "SSM Launcher",
+              "plural": "SSM Launchers",
+              "maximum_stacks": 5
+            },
+            {
+              "id": "STNK",
+              "label": "Stealth Tank",
+              "plural": "Stealth Tanks",
+              "maximum_stacks": 5
+            }
+          ]
+        },
+        "buffs": ["recharge", "payload"]
       }
     ]
   }

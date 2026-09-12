@@ -290,6 +290,12 @@ def ensure_superweapon_cameos(superweapon_ids, sidebar_overrides=None):
                 ).upper()
                 cameo = _effective_art_value(art, provider_art_id, 'cameo')
         if not cameo:
+            cameo = str(
+                (POWER_SPEC_BY_ID.get(power_id, {}).get('values') or {}).get(
+                    'SidebarImage', ''
+                )
+            )
+        if not cameo:
             cameo = _effective_art_value(rules, power_id, 'sidebarimage')
         if not cameo:
             continue

@@ -1,2 +1,0 @@
-- Tank Paradrops as a new power
-- Archipelago check for yaml file and examples etc (for check of implementation /home/heinki/Archipelago/ Starcraft 2 or Risk of Rain 2)

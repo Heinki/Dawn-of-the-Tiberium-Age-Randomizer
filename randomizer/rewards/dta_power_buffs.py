@@ -53,9 +53,8 @@ POWER_BUFF_TYPES = ({
     'name': 'Expanded Deployment',
     'setting_label': 'Delivered units',
     'description': (
-        'Adds one infantry unit to each Paratroopers deployment. Variants name '
-        'the delivered unit: standard infantry, Soviet Flamethrower, Chem '
-        'Warrior, Soviet Rocket Soldier, Shock Trooper, or Medic.'
+        'Adds one unit to each paradrop deployment. Variant rewards identify '
+        'the delivered infantry or vehicle.'
     ),
     'maximum_stacks': int(POWER_SETTINGS['payload_maximum_stacks']),
 })
@@ -117,7 +116,7 @@ def power_buff_effect_text(reward, stack_count=1):
         unit_label = str(reward.get(label_key) or '').strip()
         if unit_label:
             return f'Each deployment adds {count} {unit_label}.'
-        return f'Delivered infantry +{count}.'
+        return f'Delivered units +{count}.'
     reduction = (1.0 - (0.9 ** count)) * 100.0
     return f'Recharge time {reduction:.1f}% faster.'
 
