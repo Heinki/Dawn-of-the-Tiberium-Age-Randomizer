@@ -500,8 +500,12 @@ def _build_right_panel(self, main_frame):
     ttk.Label(
         shop_settings_frame,
         text=(
-            'Shop Mode manages its own ten-mission run, economy, starter '
-            'access, mission offers, rewards, and failure rules.'
+            f'Shop run = complete {self.shop_config.run_length}-stage session. '
+            'Stage = numbered step '
+            f'(Stage 1 / {self.shop_config.run_length}). Mission = map chosen '
+            'for that stage. Each '
+            'selected mission gets one attempt. An Emergency Revival repeats '
+            'a failed stage with new mission choices.'
         ),
         style='Muted.TLabel',
         justify='left',

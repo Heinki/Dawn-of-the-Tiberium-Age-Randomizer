@@ -22,7 +22,7 @@ Start with [README.md](README.md) for current scope and runtime behavior. This g
 - `randomizer/rewards/planning.py`: deterministic reward-slot planning.
 - `randomizer/rewards/dta_definitions.py`: active DTA access and buff catalogue.
 - `randomizer/rewards/display.py`: reward canonicalization, stacking, and display.
-- `randomizer/shop/`: pure Shop economy, mission offers, catalogue, purchases,
+- `randomizer/shop/`: pure Shop economy, mission choices, catalogue, purchases,
   modifiers, lifecycle transitions, normalization, and persistence.
 - `randomizer/shop/catalogue.py`: DTA runtime-catalogue and target-price adapter.
 - `randomizer/shop/mission_modifiers.py`: deterministic player boons and
@@ -48,7 +48,7 @@ Read [configs/README.md](configs/README.md) before changing static data.
 - `randomizer/ui/`: widget construction, layouts, themes, grids, cameos, and tooltips.
 - `randomizer/application/shop_controller.py`: Shop workspace, launch context,
   victory/failure transitions, and DTA reward integration.
-- `randomizer/ui/shop.py`: mission cards, run stock, loadout, permanent
+- `randomizer/ui/shop.py`: mission cards, stage stock, loadout, permanent
   progression, and summaries.
 - `randomizer/maps/shop_modifiers.py`: Shop run modifiers over isolated DTA
   player clones.

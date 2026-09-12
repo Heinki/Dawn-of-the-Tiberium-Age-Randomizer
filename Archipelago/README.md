@@ -172,9 +172,9 @@ the room, then connect the launcher. **Start Shop Mode** remains available after
 connection validation and after a failed or completed run. Generation settings
 remain locked while connected. Shop seeds contain 120 shuffled item locations.
 Each mission victory releases up to 12 previously unchecked locations across
-failed and restarted runs. Completing mission 10 releases every location still
+failed and restarted runs. Completing stage 10 releases every location still
 unchecked before reporting the goal. AP purchases remain available as early
-extra checks; stage-marker receipts never become ordinary Shop rewards.
+extra checks; stage-victory marker receipts never become ordinary Shop rewards.
 
 For release validation, generate a room with the packaged APWorld, inspect the
 generated YAML and item fill, then connect the launcher and verify the handshake

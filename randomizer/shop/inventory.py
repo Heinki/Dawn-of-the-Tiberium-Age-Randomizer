@@ -16,7 +16,7 @@ def _rotating_inventory(
     stream_name,
     excluded_target_ids=(),
 ):
-    """Return stable stock for one run stage.
+    """Return stable stock for one Shop stage.
 
     Baseline membership changes only when seed or stage changes. Active targets
     are removed and replaced without disturbing remaining baseline offers.
@@ -156,5 +156,3 @@ def guarantee_premium_offer(
     if replacement is not None:
         stock[replacement] = candidates[0]
     return tuple(stock)
-
-

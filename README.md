@@ -42,8 +42,10 @@ see the [Archipelago player guide](Archipelago/README.md).
 
 ## Shop Mode
 
-Shop Mode is a deterministic ten-mission roguelite run with three mission
-offers per stage. Victories award temporary Ore and permanent Gems. Ore buys
+Shop Mode is a deterministic roguelite. One **Shop run** is the complete
+ten-stage session. A **stage** is one numbered step in that run, displayed as
+`Stage 1 / 10`. A **mission** is one of the three maps offered at that stage.
+Victories award temporary Ore and permanent Gems. Ore buys
 units, defenses, powers, and buffs for the current run; Gems buy permanent
 unit access, permanent buffs, and account upgrades. A detected defeat ends the
 run, while permanent progression survives restarts and failed runs.
@@ -52,8 +54,12 @@ game before victory fails the committed mission. The launcher shows this rule
 before creating every new Shop run. DTA mission-triggered autosaves are ignored;
 they cannot be used to continue a Shop run.
 
-The first Shop mission offers Act 1 choices, including a fixed-unit or hero
-mission when available. From mission 2 onward, every remaining eligible
+An **Emergency Revival** keeps a Shop run alive after a failed mission. It
+repeats the same stage with new mission choices. Without an available Emergency
+Revival, a failed mission ends the run.
+
+The first Shop stage offers Act 1 mission choices, including a fixed-unit or
+hero mission when available. From stage 2 onward, every remaining eligible
 mission has equal selection probability, regardless of class or run length.
 All three choices can be finales. Completed missions cannot repeat, and the
 configured mission pool still applies.
@@ -72,8 +78,8 @@ Shop challenge cards therefore use DTA's isolated hostile-house Armor and
 Production modifiers. Player boon cards use Player Army clone buffs or
 starting credits. Native enemy/script identities remain unchanged.
 
-Shop Gems and permanent unlocks live in `shop_profile.json`; current-run Ore,
-purchases, mission offers, commitments, and victory receipts live in
+Permanent Gems and permanent unlocks live in `shop_profile.json`; Run Ore,
+purchases, mission choices, commitments, and victory receipts live in
 `shop_run.json`. Two-file transitions use `shop_transaction.json` for crash
 recovery. Packaged builds store these files under `RandomizerLauncherData`.
 

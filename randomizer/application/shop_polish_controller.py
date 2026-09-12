@@ -422,11 +422,11 @@ class ShopPolishController(ShopArchipelagoController):
             self.progress_label.config(text=(
                 f'Seed: {run.seed} | Shop Mode | {run.reward_mode}\n'
                 f'Stage: {run.stage}/{run.run_length} | '
-                f'Completed: {len(run.completed_missions)} | '
-                f'Ore: {run.run_coins} | '
-                f'Status: {run.status.value.title()}'
+                f'Missions Won: {len(run.completed_missions)} | '
+                f'Run Ore: {run.run_coins} | '
+                f'Run Status: {run.status.value.title()}'
             ))
-            lines = ['Current mission offers', '======================']
+            lines = ['Current mission choices', '=======================']
             for offer in run.mission_offers:
                 mission = self._shop_mission(offer.mission_code)
                 mission_modifier = mission_modifier_for_run_offer(
@@ -701,7 +701,7 @@ class ShopPolishController(ShopArchipelagoController):
             elif base_difficulty <= 0:
                 assist_text = 'Already Easy'
             elif run.assisted_mission_code:
-                assist_text = 'Assist Used This Stage'
+                assist_text = f'Assist Used for Stage {run.stage}'
             elif assists_left:
                 assist_text = f'Ease Difficulty ({assists_left} left)'
             else:
@@ -1152,7 +1152,8 @@ class ShopPolishController(ShopArchipelagoController):
             )
             self.shop_catalogue_help_var.set(
                 f'{len(candidates)} current offers, including {power_count} '
-                f'powers, for stage {run.stage if run is not None else "—"}. '
+                f'powers, for stage '
+                f'{run.stage if run is not None else "—"}. '
                 f'{rotation_note}'
                 'Stock changes after each mission victory. Buy an item, then '
                 'use its Open Upgrades button.'
@@ -1491,11 +1492,11 @@ class ShopPolishController(ShopArchipelagoController):
         templates = {
             'mission_reroll': (
                 f'Each level grants +{effects.get("rerolls_per_level", 0)} '
-                'single-mission reroll per run.'
+                'single-mission reroll per Shop run.'
             ),
             'mission_difficulty_assist': (
                 f'Each level grants +{effects.get("assists_per_level", 0)} '
-                'mission assist per run. Assist lowers game difficulty one '
+                'mission assist per Shop run. Assist lowers game difficulty one '
                 'step for chosen mission without reducing its reward.'
             ),
             'victory_run_coin_bonus': (
@@ -1513,7 +1514,7 @@ class ShopPolishController(ShopArchipelagoController):
                 'This is not Shop Ore.'
             ),
             'shop_discount': (
-                f'Each level reduces run-shop prices by '
+                f'Each level reduces current-run Shop prices by '
                 f'{effects.get("ore_per_level", 0)} Ore, minimum price 1 Ore.'
             ),
             'extra_shop_stock': (
@@ -1527,11 +1528,12 @@ class ShopPolishController(ShopArchipelagoController):
             ),
             'emergency_revival': (
                 f'Each level grants {effects.get("revivals_per_run", 0)} '
-                'automatic mission-failure rescue per run. Same stage, new offers.'
+                'automatic Emergency Revival per Shop run. A failed mission '
+                'is replaced; the same stage continues.'
             ),
             'free_buff_token': (
                 f'Each level grants +{effects.get("tokens_per_level", 0)} '
-                'free run-shop buff purchase for every mission stage. '
+                'free current-run Shop buff purchase for every stage. '
                 'Tokens are used first.'
             ),
             'challenge_hunter': (
@@ -1541,7 +1543,8 @@ class ShopPolishController(ShopArchipelagoController):
                 f'+{gem_text(1)}.'
             ),
             'recovery_salvage': (
-                'When an unrescued mission defeat ends the run, each level '
+                'When a mission defeat ends the run without an Emergency '
+                'Revival, each level '
                 f'banks up to {effects.get("ore_per_level", 0)} Ore from '
                 'that run\'s unspent balance. Banked Ore is added once to the next '
                 'run\'s starting Ore, then consumed. Total bank is capped at '
@@ -1549,7 +1552,8 @@ class ShopPolishController(ShopArchipelagoController):
                 'winning a run does not bank Ore.'
             ),
             'discount_specialization': (
-                f'Each level reduces all run-shop unit, buff, and power prices '
+                f'Each level reduces all current-run Shop unit, buff, and '
+                'power prices '
                 f'by {effects.get("ore_per_level", 0)} Ore, minimum price 1 Ore.'
             ),
             'permanent_challenge_slots': (
@@ -1720,7 +1724,8 @@ class ShopPolishController(ShopArchipelagoController):
             ):
                 mission = self._shop_mission(code)
                 tree.insert(
-                    '', 'end', values=(stage, mission.get('title') or code)
+                    '', 'end',
+                    values=(stage, mission.get('title') or code),
                 )
         self.refresh_shop_summary()
 

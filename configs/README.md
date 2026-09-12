@@ -17,8 +17,8 @@ The active static configuration targets Dawn of the Tiberium Age.
 
 DTA unit and defense catalogues are derived from installed game data at runtime. Firestorm and obsolete power aliases remain disabled.
 
-The first Shop mission offers Act 1 choices, including a fixed-unit or hero
-mission when available. From mission 2 onward, every remaining eligible
+The first Shop stage offers Act 1 mission choices, including a fixed-unit or
+hero mission when available. From stage 2 onward, every remaining eligible
 mission has equal selection probability, regardless of class or run length.
 All three choices can be finales. Completed missions cannot repeat, and the
 configured mission pool still applies.

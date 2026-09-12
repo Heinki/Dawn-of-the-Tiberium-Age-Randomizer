@@ -111,7 +111,10 @@ def validate_shop_domain():
     repeated_offers = generate_mission_offers(
         missions, run_seed='DTA-SHOP-SELF-CHECK', stage=1
     )
-    _require(first_offers == repeated_offers, 'Shop mission offers are not deterministic')
+    _require(
+        first_offers == repeated_offers,
+        'Shop mission choices are not deterministic',
+    )
     _require(
         len(first_offers) == SHOP_CONFIG.mission_offer_count,
         'Shop opening offer count is incorrect',
@@ -674,7 +677,7 @@ def validate_shop_domain():
             is not None and modifier.challenge
             for offer in hardcore_run.mission_offers
         ),
-        'Hardcore does not assign an enemy challenge to every mission offer',
+        'Hardcore does not assign an enemy challenge to every mission choice',
     )
     completion_modifiers = tuple(SHOP_CONFIG.modifiers)[:8]
     completion_run = commit_selected_mission(
