@@ -8,6 +8,7 @@
       "dark_mode": false,
       "hide_reward_details": false,
       "hide_locked_grid_missions": false,
+      "shop_mode_rules_acknowledged": false,
       "seed": "",
       "campaign_filter": "All Campaigns",
       "shop_faction_pool": "All Factions",

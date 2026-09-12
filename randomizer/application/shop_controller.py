@@ -18,6 +18,7 @@ from ._dependencies import (
     custom_sidebar_preview,
     ensure_superweapon_cameos,
     ensure_unit_cameos,
+    save_config,
 )
 
 from randomizer.rewards.catalogue import REWARD_POOL, canonical_reward, unit_display_label
@@ -1695,6 +1696,24 @@ class ShopController(ShopPolishController):
         settings['enemy_scaling'] = enemy_scaling
         return settings
 
+    def _confirm_shop_mode_rules(self):
+        if self.config.get('shop_mode_rules_acknowledged', False):
+            return True
+        if not messagebox.askokcancel(
+            'Shop Mode Rules',
+            'Shop Mode is a one-attempt run.\n\n'
+            'Do not save, load, or restart a mission. Any of these actions, '
+            'a defeat, or closing the game before victory counts as a failed '
+            'mission and can end the run.\n\n'
+            'Select OK only when you are ready to begin.',
+            icon='warning',
+            parent=self,
+        ):
+            return False
+        self.config['shop_mode_rules_acknowledged'] = True
+        save_config(self.config)
+        return True
+
     def start_shop_run(self):
         if not self.missions:
             messagebox.showwarning(
@@ -1708,16 +1727,7 @@ class ShopController(ShopPolishController):
                 parent=self,
             )
             return
-        if not messagebox.askokcancel(
-            'Shop Mode Rules',
-            'Shop Mode is a one-attempt run.\n\n'
-            'Do not save, load, or restart a mission. Any of these actions, '
-            'a defeat, or closing the game before victory counts as a failed '
-            'mission and can end the run.\n\n'
-            'Select OK only when you are ready to begin.',
-            icon='warning',
-            parent=self,
-        ):
+        if not self._confirm_shop_mode_rules():
             return
         requested_seed = self.seed_var.get().strip()
         seed = requested_seed or uuid.uuid4().hex[:16].upper()
