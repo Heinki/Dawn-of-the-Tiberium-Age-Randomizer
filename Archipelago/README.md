@@ -187,9 +187,11 @@ configuration, mission metadata, and unit catalogue under a private namespace.
 It reads resources directly from the archive; generation does not need DTA files
 or the launcher installed. Both build scripts use the same Python builder.
 
-After changing mission or reward definitions, run
+After changing mission, reward, or unit definitions, run
 `python -m Archipelago.generate_catalogue` from the launcher directory, then
-`python Archipelago/build_apworld.py`. The builder rejects a stale catalogue.
+`python Archipelago/build_apworld.py`. The builder rejects mismatched catalogue
+and generation snapshots. Building only needs checked-in files; DTA is required
+when regenerating snapshots.
 
 Run the generation regression checks with Archipelago's Python environment:
 

@@ -49,7 +49,7 @@ $releaseManifest = [ordered]@{
     launcher_version = $launcherVersion
     archipelago_version = "0.6.7"
     apworld_game = $worldSourceManifest.game
-    apworld_version = $worldSourceManifest.world_version
+    apworld_version = $launcherVersion
     files = $payloadHashes
 } | ConvertTo-Json -Depth 5
 [IO.File]::WriteAllText(

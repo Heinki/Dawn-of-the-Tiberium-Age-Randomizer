@@ -12,6 +12,7 @@ from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 ARCHIPELAGO_DIR = Path(__file__).resolve().parent
 MODULE_NAME = 'dta'
 SOURCE_DIR = ARCHIPELAGO_DIR / 'APWorld' / MODULE_NAME
+GENERATION_SNAPSHOT = ARCHIPELAGO_DIR / 'generation_snapshot.json'
 FIXED_TIMESTAMP = (2000, 1, 1, 0, 0, 0)
 
 
@@ -29,21 +30,56 @@ def build(output_directory: Path) -> Path:
         raise FileNotFoundError(f'APWorld manifest not found: {manifest_path}')
     if not catalogue_path.is_file():
         raise FileNotFoundError(f'APWorld catalogue not found: {catalogue_path}')
+    if not GENERATION_SNAPSHOT.is_file():
+        raise FileNotFoundError(
+            f'APWorld generation snapshot not found: {GENERATION_SNAPSHOT}'
+        )
 
     sys.path.insert(0, str(ARCHIPELAGO_DIR.parent))
-    from Archipelago.bundle_generation import generation_files
-    from Archipelago.catalogue_contract import runtime_catalogue_checksum
-    from randomizer.core.paths import BATTLE_CLIENT_INI
-    from randomizer.missions.catalogue import parse_missions
+    from Archipelago.bundle_generation import (
+        frozen_techno_records,
+        generation_files,
+    )
+    from randomizer.core.version import APP_VERSION
 
     catalogue = json.loads(catalogue_path.read_text(encoding='utf-8'))
+    generation_snapshot = json.loads(
+        GENERATION_SNAPSHOT.read_text(encoding='utf-8')
+    )
+    if generation_snapshot.get('schema_version') != 1:
+        raise ValueError('Unsupported APWorld generation snapshot schema.')
+    if (
+        generation_snapshot.get('catalogue_checksum')
+        != catalogue.get('catalogue_checksum')
+    ):
+        raise ValueError(
+            'APWorld catalogue and generation snapshot differ. Run '
+            'python -m Archipelago.generate_catalogue from the launcher '
+            'directory before building.'
+        )
+    techno_records = generation_snapshot.get('techno_catalogue')
+    missions = generation_snapshot.get('missions')
+    if not isinstance(techno_records, list) or not techno_records:
+        raise ValueError('APWorld generation snapshot has no techno catalogue.')
+    if not isinstance(missions, list) or not missions:
+        raise ValueError('APWorld generation snapshot has no missions.')
+
+    # Validate current reward/config code against checked-in game-derived data.
+    # Importing these modules is safe after replacing both live DTA readers.
+    from randomizer.dta import rules as dta_rules
+    from randomizer.missions import catalogue as mission_catalogue
+    dta_rules.techno_catalogue = lambda: frozen_techno_records(techno_records)
+    mission_catalogue.parse_missions = lambda _path: missions
+    from Archipelago.catalogue_contract import runtime_catalogue_checksum
     if catalogue['catalogue_checksum'] != runtime_catalogue_checksum():
         raise ValueError(
-            'APWorld catalogue is stale. Run python -m Archipelago.generate_catalogue '
-            'from the launcher directory before building.'
+            'APWorld catalogue is stale. Run python -m '
+            'Archipelago.generate_catalogue from the launcher directory '
+            'before building.'
         )
-    bundled_files = generation_files()
-    missions_data = json.dumps(parse_missions(BATTLE_CLIENT_INI), sort_keys=True).encode('utf-8')
+
+    bundled_files = generation_files(techno_records)
+    missions_data = json.dumps(missions, sort_keys=True).encode('utf-8')
 
     output_directory = output_directory.resolve()
     output_directory.mkdir(parents=True, exist_ok=True)
@@ -51,6 +87,7 @@ def build(output_directory: Path) -> Path:
 
     manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
     manifest.update({
+        'world_version': APP_VERSION,
         'compatible_version': 8,
         'version': 8,
         'maximum_ap_version': '0.6.7',

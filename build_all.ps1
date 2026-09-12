@@ -26,29 +26,12 @@ try {
     $launcherVersion = (& python -c (
         "from randomizer.core.version import APP_VERSION; print(APP_VERSION)"
     )).Trim()
-    $worldManifestPath = Join-Path $PSScriptRoot (
-        "Archipelago\APWorld\dta\archipelago.json"
-    )
-    $worldManifest = Get-Content -LiteralPath $worldManifestPath -Raw |
-        ConvertFrom-Json
-    $worldContractPath = Join-Path $PSScriptRoot (
-        "Archipelago\APWorld\dta\manifest.py"
-    )
-    $worldContract = Get-Content -LiteralPath $worldContractPath -Raw
-
     if (-not (Test-Path -LiteralPath $launcherPath -PathType Leaf)) {
         throw "Launcher output is missing: $launcherPath"
     }
     if (-not (Test-Path -LiteralPath $apworldPath -PathType Leaf)) {
         throw "APWorld output is missing: $apworldPath"
     }
-    if ($worldContract -notmatch (
-        'RANDOMIZER_VERSION\s*=\s*["'']' +
-        [Regex]::Escape($launcherVersion) + '["'']'
-    )) {
-        throw "APWorld launcher compatibility does not match v$launcherVersion."
-    }
-
     $fileVersion = (Get-Item -LiteralPath $launcherPath).VersionInfo.FileVersion
     if (-not $fileVersion.StartsWith($launcherVersion)) {
         throw (
@@ -61,7 +44,7 @@ try {
         launcher = $launcherPath
         launcher_version = $launcherVersion
         apworld = $apworldPath
-        apworld_version = $worldManifest.world_version
+        apworld_version = $launcherVersion
     })
 }
 finally {

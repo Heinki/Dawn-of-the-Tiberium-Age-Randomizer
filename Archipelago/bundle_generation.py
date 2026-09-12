@@ -43,16 +43,29 @@ def static_config_section(relative_path, section, expected_type):
 '''
 
 
-def generation_files():
-    """Yield deterministic archive entries for the source dependency closure."""
-    from randomizer.dta.rules import techno_catalogue
+def frozen_techno_records(techno_records):
+    """Restore tuple fields lost when generated records pass through JSON."""
+    return tuple(
+        {
+            **record,
+            **{
+                key: tuple(record.get(key, ()))
+                for key in ('owners', 'playable_owners', 'prerequisites')
+            },
+        }
+        for record in techno_records
+    )
 
+
+def generation_files(techno_records):
+    """Yield deterministic archive entries for the source dependency closure."""
+    techno_records = frozen_techno_records(techno_records)
     pending = ['randomizer.generation.service', 'Archipelago.run_manifest']
     seen = set()
     output = {
         'dta/_vendor/__init__.py': b'',
         'dta/_vendor/randomizer/dta/_generation_techno.py':
-            ('RECORDS = ' + pprint.pformat(techno_catalogue(), sort_dicts=True) + '\n').encode('utf-8'),
+            ('RECORDS = ' + pprint.pformat(techno_records, sort_dicts=True) + '\n').encode('utf-8'),
     }
     while pending:
         module = pending.pop()

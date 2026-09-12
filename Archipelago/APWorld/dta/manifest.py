@@ -6,6 +6,7 @@ from copy import deepcopy
 from hashlib import sha256
 import json
 
+from ._vendor.randomizer.core.version import APP_VERSION as RANDOMIZER_VERSION
 from .data import (
     CATALOGUE_CHECKSUM,
     ITEM_DATA,
@@ -18,7 +19,6 @@ from .data import (
 
 
 MANIFEST_SCHEMA_VERSION = 1
-RANDOMIZER_VERSION = "1.5"
 
 
 class ManifestError(ValueError):

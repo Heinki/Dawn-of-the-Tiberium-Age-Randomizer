@@ -106,6 +106,10 @@ Pure modules must not import `randomizer/application`. Tk variables stay on the 
 
 ## Validation
 
+`randomizer/core/version.py` is the only release-version source. APWorld and
+release manifests receive `APP_VERSION` during packaging; never duplicate the
+version in APWorld source files or build scripts.
+
 Do not add unit tests or unit-test suites to this project. Use compilation,
 the existing non-invasive launcher diagnostics, generated-map inspection,
 and live gameplay checks to validate changes.
@@ -137,12 +141,13 @@ python3 Archipelago/build_apworld.py
 
 Changes affecting mission parsing, map generation, difficulty, access, clones, buffs, launch, or completion require focused generated-map checks and relevant live DTA mission tests. Changes affecting the catalogue or APWorld require matching launcher and APWorld builds.
 
-Regenerate the checked-in APWorld catalogue from an installed DTA copy before
-building whenever reward or mission catalogue data changes:
+Regenerate the checked-in APWorld catalogue and generation snapshots from an
+installed DTA copy before building whenever reward, mission, or unit catalogue
+data changes:
 
 ```powershell
 python -m Archipelago.generate_catalogue
 ```
 
-APWorld packaging consumes that checked-in snapshot so clean CI checkouts do
-not require DTA's unversioned `INI/Rules.ini` files.
+APWorld packaging consumes those checked-in snapshots so clean CI checkouts do
+not require DTA's unversioned `INI/Rules.ini` or `INI/Battle.ini` files.
