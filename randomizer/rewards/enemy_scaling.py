@@ -4,18 +4,42 @@ import random
 import re
 
 from randomizer.config.static import load_static_config
+from randomizer.config.tuning import stacking_multiplier
 
 
 _CONFIG = load_static_config('rewards/enemy_scaling.json')
 ENEMY_SCALING_DEFAULTS = dict(_CONFIG['defaults'])
-ENEMY_BUFF_DEFINITIONS = tuple(dict(item) for item in _CONFIG['buffs'])
+
+def _tier_unit_buff_definitions():
+    definitions = []
+    for tier in (1, 2, 3):
+        for template in _CONFIG.get('tier_unit_buff_templates', ()):
+            definition = dict(template)
+            definition.update({
+                'id': f'tier{tier}_{template["id"]}',
+                'name': f'Enemy T{tier} {template["name"]} I',
+                'type': template['name'],
+                'category': f'Tier {tier} units',
+                'effect': 'unit',
+                'tier': tier,
+            })
+            definitions.append(definition)
+    return definitions
+
+
+ENEMY_BUFF_DEFINITIONS = tuple(
+    [dict(item) for item in _CONFIG['buffs']]
+    + _tier_unit_buff_definitions()
+)
 ENEMY_BUFF_BY_ID = {
     str(item['id']): item for item in ENEMY_BUFF_DEFINITIONS
 }
 SUPPORTED_AI_REWARD_IDS = frozenset(
     definition['id']
     for definition in ENEMY_BUFF_DEFINITIONS
-    if definition.get('effect') in {'armor', 'production'}
+    if definition.get('effect') in {
+        'armor', 'production', 'firepower', 'reload', 'speed', 'unit'
+    }
 )
 
 
@@ -33,8 +57,29 @@ def _enemy_group_ids(*, effects=(), types=()):
 ENEMY_BUFF_GROUP_DEFINITIONS = (
     {
         'id': 'stat_bonuses',
-        'label': 'AI stat bonuses',
-        'effect_ids': _enemy_group_ids(effects={'armor'}),
+        'label': 'AI unit durability / mobility',
+        'effect_ids': tuple(
+            definition['id'] for definition in ENEMY_BUFF_DEFINITIONS
+            if definition.get('effect') in {'armor', 'speed'}
+            or (
+                definition.get('effect') == 'unit'
+                and definition.get('unit_buff_type')
+                in {'health', 'armor', 'speed', 'sight', 'ammo'}
+            )
+        ),
+    },
+    {
+        'id': 'weapon_bonuses',
+        'label': 'AI unit weapon buffs',
+        'effect_ids': tuple(
+            definition['id'] for definition in ENEMY_BUFF_DEFINITIONS
+            if definition.get('effect') in {'firepower', 'reload'}
+            or (
+                definition.get('effect') == 'unit'
+                and definition.get('unit_buff_type')
+                in {'damage', 'range', 'reload'}
+            )
+        ),
     },
     {
         'id': 'production',
@@ -45,10 +90,8 @@ ENEMY_BUFF_GROUP_DEFINITIONS = (
 UNSUPPORTED_AI_REWARD_REASONS = (
     'AI unit unlocks skipped: generic production changes can replace '
     'story-critical unit identities or alter mission scripts.',
-    'AI support powers skipped: no support power has verified end-to-end '
-    'in-game AI launch evidence yet.',
-    'AI superweapons skipped: generated ownership and AI targeting are '
-    'validated, but no AI launch has been observed in an engine log yet.',
+    'AI support powers and superweapons skipped: DTA enemy rewards use only '
+    'verified stat, production, and native-unit buffs.',
 )
 MAX_AI_REWARDS_PER_COMPLETION = 10
 MAX_ENEMY_BUFF_CAP = 100
@@ -98,10 +141,11 @@ def normalize_enemy_scaling_settings(value):
     )
     if not isinstance(allowed_source, (list, tuple, set)):
         allowed_source = ENEMY_SCALING_DEFAULTS['allowed_buff_ids']
+    allowed_values = {str(item) for item in allowed_source}
     allowed = [
         buff_id for buff_id in ENEMY_BUFF_BY_ID
         if buff_id in SUPPORTED_AI_REWARD_IDS
-        and buff_id in {str(item) for item in allowed_source}
+        and ('*' in allowed_values or buff_id in allowed_values)
     ]
     caps_source = source.get('caps')
     if not isinstance(caps_source, dict):
@@ -174,10 +218,16 @@ def build_enemy_reward_pool(power_rewards):
             'enemy_type': definition['type'],
             'enemy_category': definition['category'],
             'enemy_effect': definition['effect'],
+            'tier': int(definition.get('tier', 0)),
+            'unit_buff_type': definition.get('unit_buff_type'),
             'enemy_country_suffix': definition.get('country_suffix', ''),
             'enemy_per_stack_percent': float(
                 definition.get('per_stack_percent', 0)
             ),
+            'enemy_per_stack_value': float(definition.get(
+                'per_stack_value', definition.get('per_stack_percent', 0)
+            )),
+            'enemy_value_unit': str(definition.get('value_unit', '%')),
             'enemy_minimum_engine_multiplier': float(
                 definition.get('minimum_engine_multiplier', 0.001)
             ),
@@ -222,6 +272,9 @@ def enemy_effect_values(reward, count=1, base_engine_value=1.0):
             definition.get('per_stack_percent', 0),
         )
     ))
+    per_stack_value = max(0.0, float(reward.get(
+        'enemy_per_stack_value', definition.get('per_stack_value', per_stack)
+    )))
     try:
         base_engine_value = float(base_engine_value)
     except (TypeError, ValueError):
@@ -243,6 +296,29 @@ def enemy_effect_values(reward, count=1, base_engine_value=1.0):
         )))
         relative_engine = max(minimum, 1.0 - (fraction * count))
         received_damage = None
+    elif effect in {'firepower', 'speed'}:
+        relative_engine = 1.0 + (fraction * count)
+        received_damage = None
+    elif effect == 'reload':
+        minimum = max(0.001, float(reward.get(
+            'enemy_minimum_engine_multiplier',
+            definition.get('minimum_engine_multiplier', 0.001),
+        )))
+        relative_engine = max(minimum, 1.0 - (fraction * count))
+        received_damage = None
+    elif effect == 'unit':
+        buff_type = definition.get('unit_buff_type')
+        if buff_type in {'health', 'damage', 'speed'}:
+            relative_engine = stacking_multiplier(buff_type, count)
+        elif buff_type == 'armor':
+            relative_engine = 1.0 / max(
+                0.001, stacking_multiplier('armor', count)
+            )
+        elif buff_type == 'reload':
+            relative_engine = stacking_multiplier('reload', count)
+        else:
+            relative_engine = 1.0
+        received_damage = None
     else:
         relative_engine = 1.0
         received_damage = None
@@ -253,13 +329,22 @@ def enemy_effect_values(reward, count=1, base_engine_value=1.0):
     relative_applied = final_engine / base_engine_value
     displayed = (
         (relative_applied - 1.0) * 100.0
-        if effect == 'armor'
+        if effect in {'armor', 'firepower', 'speed'}
+        or (
+            effect == 'unit'
+            and definition.get('unit_buff_type')
+            in {'health', 'damage', 'speed', 'armor'}
+        )
         else (1.0 - relative_applied) * 100.0
-        if effect == 'production'
+        if effect in {'production', 'reload'}
+        or (
+            effect == 'unit'
+            and definition.get('unit_buff_type') == 'reload'
+        )
         else 0.0
     )
     return {
-        'per_stack_value': per_stack,
+        'per_stack_value': per_stack_value,
         'current_stacks': count,
         'maximum_stacks': maximum,
         'base_engine_value': base_engine_value,
@@ -284,6 +369,34 @@ def enemy_effect_text(reward, count=1, base_engine_value=1.0):
             f'{category} Production '
             f'{values["displayed_percentage"]}% faster'
         )
+    if effect == 'firepower':
+        return f'{category} Damage +{values["displayed_percentage"]}%'
+    if effect == 'reload':
+        return f'{category} Reload delay {values["displayed_percentage"]}% shorter'
+    if effect == 'speed':
+        return f'{category} Speed +{values["displayed_percentage"]}%'
+    if effect == 'unit':
+        buff_type = definition.get('unit_buff_type')
+        value = definition.get('per_stack_value', 0) * int(count)
+        if buff_type == 'health':
+            detail = f'Health +{values["displayed_percentage"]}%'
+        elif buff_type == 'armor':
+            detail = f'Armor {values["displayed_percentage"]}% stronger'
+        elif buff_type == 'speed':
+            detail = f'Speed +{values["displayed_percentage"]}%'
+        elif buff_type == 'damage':
+            detail = f'Damage +{values["displayed_percentage"]}%'
+        elif buff_type == 'reload':
+            detail = f'Reload delay {values["displayed_percentage"]}% shorter'
+        elif buff_type == 'sight':
+            detail = f'Sight +{value:g} cells'
+        elif buff_type == 'range':
+            detail = f'Range +{value:g} cells'
+        elif buff_type == 'ammo':
+            detail = f'Ammo +{value:g}'
+        else:
+            detail = definition.get('name', 'stronger')
+        return f'{category} {detail}'
     if effect == 'power':
         return f'{definition.get("name", "AI power")} unlocked for hostile AI'
     return definition.get('name', 'Hostile AI strengthened')

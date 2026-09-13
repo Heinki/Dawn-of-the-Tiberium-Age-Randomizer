@@ -262,6 +262,7 @@ def permanent_upgrade_price(
 def run_reward_price(
     entry,
     *,
+    current_stacks=0,
     shop_discount_level=0,
     modifiers=(),
     specialization='',
@@ -284,6 +285,13 @@ def run_reward_price(
         specialization_level * int(per_level)
         + max(0, int(coupon_discount_ore))
     )
+    try:
+        current_stacks = max(0, int(current_stacks))
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f'Invalid Shop Mode buff stack count: {current_stacks!r}'
+        ) from exc
+    stack_surcharge = 0
     if entry.reward_type is ShopRewardType.UNIT_ACCESS:
         base_price = _unit_target_price(
             config, entry.target_id, 'run_access'
@@ -292,6 +300,17 @@ def run_reward_price(
         base_price = _unit_target_price(
             config, entry.target_id, 'run_buff'
         )
+        if entry.tier == 'tier_1':
+            # Preserve the affordable reviewed starting price, then increase
+            # each repeated cheap-unit buff by one Ore.
+            stack_surcharge = current_stacks
+        elif entry.tier == 'tier_2':
+            # Mid-tier base prices are already higher. Increase every other
+            # stack so useful upgrades remain affordable early in a run.
+            stack_surcharge = current_stacks // 2
+        else:
+            # Expensive Tier 3 units need only a very small repeat surcharge.
+            stack_surcharge = current_stacks // 3
     elif entry.reward_type is ShopRewardType.POWER_ACCESS:
         base_price = _power_target_price(
             config, entry.target_id, 'run_access'
@@ -300,11 +319,12 @@ def run_reward_price(
         base_price = _power_target_price(
             config, entry.target_id, 'run_buff'
         )
+        stack_surcharge = current_stacks
     else:
         raise ValueError(
             f'Unknown Shop Mode reward type: {entry.reward_type!r}'
         )
-    return discounted_shop_price(
+    return stack_surcharge + discounted_shop_price(
         base_price,
         shop_discount_level=shop_discount_level,
         modifiers=modifiers,

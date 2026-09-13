@@ -7,7 +7,7 @@
       "reward_enabled": false,
       "rewards_per_completed_objective": 0,
       "rewards_per_completed_mission": 0,
-      "allowed_buff_ids": ["enemy_armor", "enemy_production"],
+      "allowed_buff_ids": ["*"],
       "caps": {
         "enemy_armor": 5,
         "enemy_production": 5
@@ -17,8 +17,8 @@
       {
         "id": "enemy_armor",
         "name": "Enemy Armor I",
-        "type": "stat",
-        "category": "enemy",
+        "type": "Armor",
+        "category": "Forces",
         "effect": "armor",
         "country_suffix": "Armor",
         "per_stack_percent": 10,
@@ -27,12 +27,106 @@
       {
         "id": "enemy_production",
         "name": "Enemy Production I",
-        "type": "production",
-        "category": "enemy",
+        "type": "Production Speed",
+        "category": "Forces",
         "effect": "production",
         "country_suffix": "BuildTime",
         "per_stack_percent": 10,
         "minimum_engine_multiplier": 0.5,
+        "maximum_stacks": 5
+      },
+      {
+        "id": "enemy_firepower",
+        "name": "Enemy Firepower I",
+        "type": "Firepower",
+        "category": "Forces",
+        "effect": "firepower",
+        "per_stack_percent": 10,
+        "maximum_stacks": 5
+      },
+      {
+        "id": "enemy_reload",
+        "name": "Enemy Fire Rate I",
+        "type": "Fire Rate",
+        "category": "Forces",
+        "effect": "reload",
+        "per_stack_percent": 10,
+        "minimum_engine_multiplier": 0.5,
+        "maximum_stacks": 5
+      },
+      {
+        "id": "enemy_speed",
+        "name": "Enemy Mobility I",
+        "type": "Mobility",
+        "category": "Forces",
+        "effect": "speed",
+        "per_stack_percent": 8,
+        "maximum_stacks": 5
+      }
+    ],
+    "tier_unit_buff_templates": [
+      {
+        "id": "health",
+        "name": "Health",
+        "unit_buff_type": "health",
+        "per_stack_value": 15,
+        "value_unit": "%",
+        "maximum_stacks": 5
+      },
+      {
+        "id": "armor",
+        "name": "Armor",
+        "unit_buff_type": "armor",
+        "per_stack_value": 10,
+        "value_unit": "% damage reduction",
+        "maximum_stacks": 5
+      },
+      {
+        "id": "speed",
+        "name": "Mobility",
+        "unit_buff_type": "speed",
+        "per_stack_value": 10,
+        "value_unit": "%",
+        "maximum_stacks": 5
+      },
+      {
+        "id": "sight",
+        "name": "Vision",
+        "unit_buff_type": "sight",
+        "per_stack_value": 1,
+        "value_unit": "cell",
+        "maximum_stacks": 5
+      },
+      {
+        "id": "damage",
+        "name": "Firepower",
+        "unit_buff_type": "damage",
+        "per_stack_value": 15,
+        "value_unit": "%",
+        "maximum_stacks": 5
+      },
+      {
+        "id": "reload",
+        "name": "Fire Rate",
+        "unit_buff_type": "reload",
+        "per_stack_value": 10,
+        "value_unit": "% shorter delay",
+        "maximum_stacks": 5
+      },
+      {
+        "id": "range",
+        "name": "Weapon Range",
+        "unit_buff_type": "range",
+        "per_stack_value": 0.5,
+        "value_unit": "cell",
+        "maximum_stacks": 5
+      },
+      {
+        "id": "ammo",
+        "name": "Ammo",
+        "unit_buff_type": "ammo",
+        "per_stack_value": 1,
+        "value_unit": "round",
         "maximum_stacks": 5
       }
     ]

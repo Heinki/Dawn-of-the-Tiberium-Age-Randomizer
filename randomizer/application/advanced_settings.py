@@ -1316,7 +1316,13 @@ class AdvancedSettingsController:
         for group, check in getattr(
             self, 'enemy_buff_group_controls', []
         ):
-            check.configure(state='normal')
+            check.configure(state=(
+                'normal' if self.enemy_reward_pool_var.get() else 'disabled'
+            ))
+        if hasattr(self, 'enemy_mission_rewards_spinbox'):
+            self.enemy_mission_rewards_spinbox.configure(state=(
+                'normal' if self.enemy_reward_pool_var.get() else 'disabled'
+            ))
         self.refresh_enemy_reward_setting_help()
         self.prioritize_no_build_missions_check.configure(
             state=(

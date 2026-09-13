@@ -152,6 +152,16 @@ def effective_section(sections, section_id, _seen=None):
 
 
 @lru_cache(maxsize=1)
+def installed_effective_sections():
+    """Return flattened installed Rules.ini sections for map-local cloning."""
+    sections = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
+    return {
+        name: effective_section(sections, name)
+        for name in sections
+    }
+
+
+@lru_cache(maxsize=1)
 def techno_catalogue():
     """Build the DTA catalogue from the installed consolidated Rules.ini."""
     sections = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')

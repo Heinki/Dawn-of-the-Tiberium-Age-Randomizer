@@ -2,6 +2,7 @@
 
 from .starting_unlocks import build_starting_unlocks_tab
 from .general_settings import build_general_settings
+from .enemy_scaling import build_enemy_scaling_settings
 
 from ._builder_dependencies import (
     ARSENAL_FACTIONS,
@@ -968,6 +969,8 @@ def _build_gameplay_settings(self, settings_frame):
             definition['description']
             + ' Existing pool toggles, exclusions, weights, prerequisites, and caps still apply.',
         )
+
+    build_enemy_scaling_settings(self, reward_frame)
 
     arsenal_frame = ttk.LabelFrame(
         settings_frame,

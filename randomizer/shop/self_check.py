@@ -7,6 +7,7 @@ from tempfile import TemporaryDirectory
 from randomizer.core.paths import BATTLE_CLIENT_INI
 from randomizer.missions.catalogue import parse_missions
 from randomizer.rewards.catalogue import canonical_reward
+from randomizer.rewards.enemy_scaling import ENEMY_BUFF_DEFINITIONS
 from randomizer.rewards.weights import UNIT_BUFF_WEIGHT_TYPES
 
 from .active import (
@@ -30,6 +31,7 @@ from .economy import (
     permanent_power_buff_price,
     permanent_power_price,
     permanent_unit_price,
+    run_reward_price,
     run_buff_price,
     run_unit_price,
     starting_run_coins,
@@ -42,7 +44,9 @@ from .meta import (
 from .mission_modifiers import (
     CHALLENGE_MODIFIERS,
     PLAYER_BOON_MODIFIERS,
+    mission_blocks_shop_enemy_buffs,
     mission_modifier_for_run_offer,
+    shop_enemy_scaling_entries,
 )
 from .missions import (
     classify_mission,
@@ -52,6 +56,7 @@ from .missions import (
 )
 from .model import (
     MissionEconomyClass,
+    MissionOffer,
     PurchaseResult,
     RunStatus,
     ShopProfile,
@@ -522,6 +527,24 @@ def validate_shop_domain():
         and permanent_unit_price('BRIG') == 60,
         'Top-cost DTA vehicle Shop prices are incorrect',
     )
+    tier_by_target = {
+        entry.target_id: entry.tier for entry in unit_access
+    }
+    special_unit_entries = [
+        entry for entry in unit_access
+        if canonical_reward_for_id(entry.reward_id).get('special_reward')
+    ]
+    _require(
+        tier_by_target.get('BRIG') == 'tier_3'
+        and tier_by_target.get('BFRT') == 'tier_3'
+        and tier_by_target.get('MRV') == 'tier_3'
+        and tier_by_target.get('GRENL') == 'tier_2'
+        and tier_by_target.get('THIEF') == 'tier_1'
+        and sum(
+            entry.tier == 'tier_3' for entry in special_unit_entries
+        ) > len(special_unit_entries) // 2,
+        'Special/map-only DTA Shop unit tiers are incorrect',
+    )
     _require(
         run_unit_price('GMCV') == 12
         and permanent_unit_price('GMCV') == 60,
@@ -532,6 +555,53 @@ def validate_shop_domain():
         and permanent_buff_price('SPY') == 5
         and run_buff_price('BRIG') == 6,
         'DTA target-specific Shop utility or buff prices are incorrect',
+    )
+    tier_buff_entries = {
+        tier: next(entry for entry in unit_buffs if entry.tier == tier)
+        for tier in ('tier_1', 'tier_2', 'tier_3')
+    }
+    tier_price_deltas = {
+        tier: tuple(
+            run_reward_price(entry, current_stacks=stacks)
+            - run_reward_price(entry)
+            for stacks in (1, 2, 3)
+        )
+        for tier, entry in tier_buff_entries.items()
+    }
+    _require(
+        tier_price_deltas == {
+            'tier_1': (1, 2, 3),
+            'tier_2': (0, 1, 1),
+            'tier_3': (0, 0, 1),
+        },
+        'DTA Shop repeat-buff prices do not scale by unit tier',
+    )
+    _require(
+        tuple(
+            run_reward_price(
+                tier_buff_entries['tier_1'],
+                current_stacks=stacks,
+                shop_discount_level=5,
+                specialization_level=5,
+            )
+            for stacks in (0, 1, 2, 3)
+        ) == (1, 2, 3, 4),
+        'DTA Shop discounts flatten repeat Tier 1 buff prices',
+    )
+    enemy_effect_ids = {
+        definition['id'] for definition in ENEMY_BUFF_DEFINITIONS
+    }
+    _require(
+        {
+            'enemy_armor', 'enemy_production', 'enemy_firepower',
+            'enemy_reload', 'enemy_speed', 'tier1_health', 'tier1_damage',
+            'tier1_reload', 'tier2_health', 'tier3_health',
+        }.issubset(enemy_effect_ids)
+        and not any(
+            definition.get('effect') == 'power'
+            for definition in ENEMY_BUFF_DEFINITIONS
+        ),
+        'DTA enemy buff pool is incomplete or contains forbidden powers',
     )
     _require(
         SHOP_CONFIG.power_target_prices['DROPPODSPECIAL'].run_access == 5
@@ -651,6 +721,47 @@ def validate_shop_domain():
         == (power_entry.reward_id,),
         'Mixed permanent loadout does not preserve selected units and powers',
     )
+    random_unlock_profile = ShopProfile(
+        permanent_upgrades={
+            'random_tier_1_unlock': 3,
+            'random_tier_2_unlock': 3,
+            'random_tier_3_unlock': 3,
+        }
+    )
+    random_unlock_options = {
+        'run_id': 'dta-shop-random-unlock-self-check',
+        'seed': 'DTA-SHOP-RANDOM-UNLOCK',
+        'mission_offers': first_offers,
+        'reward_mode': 'Chaos',
+        'selected_reward_ids': (unit_loadout_entry.reward_id,),
+        'permanent_entitlement_ids': (unit_loadout_entry.reward_id,),
+        'maximum_extra_units': 1,
+    }
+    random_unlock_run = start_new_run(
+        random_unlock_profile, **random_unlock_options
+    ).run
+    random_entries = [
+        next(
+            entry for entry in unit_access
+            if entry.reward_id == reward_id
+        )
+        for reward_id in random_unlock_run.random_starting_unit_unlocks
+    ]
+    _require(
+        len(random_entries) == 9
+        and {
+            tier: sum(entry.tier == tier for entry in random_entries)
+            for tier in ('tier_1', 'tier_2', 'tier_3')
+        } == {'tier_1': 3, 'tier_2': 3, 'tier_3': 3}
+        and unit_loadout_entry.reward_id
+        not in random_unlock_run.random_starting_unit_unlocks
+        and len({entry.target_id for entry in random_entries}) == 9
+        and random_unlock_run.random_starting_unit_unlocks
+        == start_new_run(
+            random_unlock_profile, **random_unlock_options
+        ).run.random_starting_unit_unlocks,
+        'Permanent random tier unlocks are invalid, duplicate, or unstable',
+    )
     _require(
         SHOP_CONFIG.permanent_upgrades[
             'expanded_loadout'
@@ -669,6 +780,52 @@ def validate_shop_domain():
         starting_defense_ids=starter_defenses,
         reward_mode='Chaos',
         reward_settings={'shop_faction_filter': 'GDI'},
+    )
+    base_build_mission = next(
+        mission for mission in missions
+        if mission.get('build_classification') == 'base_build'
+    )
+    base_build_offer = MissionOffer(
+        base_build_mission['code'], classify_mission(base_build_mission)
+    )
+    progressive_stage_counts = []
+    for stage in (1, 4, 5, transition.run.run_length):
+        staged_run = replace(
+            transition.run,
+            stage=stage,
+            mission_offers=(base_build_offer,),
+        )
+        entries = shop_enemy_scaling_entries(
+            staged_run, base_build_offer, base_build_mission
+        )
+        progressive_stage_counts.append(sum(
+            entry['source'] == 'Shop stage scaling' for entry in entries
+        ))
+    _require(
+        progressive_stage_counts == [0, 0, 1, 9],
+        'Shop enemy buffs do not start late and increase with run progress',
+    )
+    protected_missions = [
+        mission for mission in missions
+        if mission_blocks_shop_enemy_buffs(mission)
+    ]
+    _require(
+        protected_missions
+        and all(
+            not shop_enemy_scaling_entries(
+                replace(
+                    transition.run,
+                    stage=transition.run.run_length,
+                    mission_offers=(MissionOffer(
+                        mission['code'], classify_mission(mission)
+                    ),),
+                ),
+                MissionOffer(mission['code'], classify_mission(mission)),
+                mission,
+            )
+            for mission in protected_missions
+        ),
+        'Shop no-build missions received enemy buffs',
     )
     hardcore_run = replace(transition.run, modifiers=('hardcore',))
     _require(
@@ -760,8 +917,9 @@ def validate_shop_domain():
             transition.profile,
             permanent_upgrades={'free_buff_token': 3},
         )
+        token_run = replace(transition.run, run_coins=100)
         repository.commit(
-            token_profile, transition.run, 'self-check-purchase-setup'
+            token_profile, token_run, 'self-check-purchase-setup'
         )
         service = ShopProgressionService(repository)
         e2_access = next(
@@ -786,7 +944,9 @@ def validate_shop_domain():
         )
         _require(
             tuple(item.cost for item in buff_purchases[:3]) == (0, 0, 0)
-            and buff_purchases[3].cost == run_buff_price('E2')
+            and buff_purchases[3].cost == run_reward_price(
+                e2_damage, current_stacks=3
+            )
             and purchased_run.free_buff_tokens_used == 3
             and purchased_run.free_buff_tokens_used_stage == 3,
             'Free Buff Tokens are not applied per mission stage',

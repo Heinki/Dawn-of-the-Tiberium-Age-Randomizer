@@ -86,6 +86,9 @@ from randomizer.dta.clones import (
     unit_specific_buff_rules,
 )
 from randomizer.dta.enemies import enemy_buff_rules
+from randomizer.dta.rules import installed_effective_sections
+from randomizer.maps.enemy_scaling import enemy_native_unit_buff_rules
+from randomizer.maps.ini import all_section_value_maps
 from randomizer.dta.powers import (
     active_paradrop_unit_ids,
     ensure_power_action_types,
@@ -1332,13 +1335,53 @@ throw "Map $name was not found in expandmo*.mix"
             for section, values in power_rules.items():
                 dta_rules.setdefault(section, {}).update(values)
             enemy_rewards = self.active_enemy_scaling_rewards()
+            launch_enemy_rewards = [
+                reward for reward in [*active_rewards, *enemy_rewards]
+                if reward.get('enemy_reward')
+            ]
+            if mission.get('no_build') or mission.get('true_no_build'):
+                launch_enemy_rewards = []
             enemy_rules, enemy_report = enemy_buff_rules(
                 mission,
-                [*active_rewards, *enemy_rewards],
+                launch_enemy_rewards,
                 player_production_houses=configured_production_houses,
             )
             for section, values in enemy_rules.items():
                 dta_rules.setdefault(section, {}).update(values)
+            enemy_unit_rules, enemy_units, enemy_unit_skips, enemy_applications = (
+                enemy_native_unit_buff_rules(
+                    source_lines,
+                    enemy_report['hostile_houses'],
+                    launch_enemy_rewards,
+                    installed_effective_sections(),
+                    all_section_value_maps(source_lines),
+                )
+            )
+            for section, values in enemy_unit_rules.items():
+                target_values = dta_rules.setdefault(section, {})
+                if section not in {
+                    'WeaponTypes', 'InfantryTypes', 'VehicleTypes',
+                    'AircraftTypes', 'BuildingTypes', 'SuperWeaponTypes',
+                }:
+                    target_values.update(values)
+                    continue
+                registered = {
+                    str(value).casefold() for value in target_values.values()
+                }
+                numeric_keys = [
+                    int(key) for key in target_values
+                    if str(key).isdigit()
+                ]
+                next_key = max([99999, *numeric_keys]) + 1
+                for key, value in values.items():
+                    if str(value).casefold() in registered:
+                        continue
+                    output_key = str(key)
+                    while output_key in target_values:
+                        output_key = str(next_key)
+                        next_key += 1
+                    target_values[output_key] = value
+                    registered.add(str(value).casefold())
 
             credit_rules, credit_report = player_starting_credit_rules(
                 source_lines,
@@ -1392,6 +1435,10 @@ throw "Map $name was not found in expandmo*.mix"
                 power_actions=power_actions,
                 power_house=power_report['player_house'],
             )
+            self.record_enemy_reward_applications(
+                mission_code,
+                [*enemy_report['applications'], *enemy_applications],
+            )
             if isolation_report.get('isolation_applied'):
                 details = ', '.join(
                     f'{item["house"]} ActsLike {item["old_acts_like"]} to '
@@ -1443,6 +1490,19 @@ throw "Map $name was not found in expandmo*.mix"
                     'Applied DTA enemy-only buffs to production families: '
                     + ', '.join(enemy_report['hostile_families'])
                     + '. Player/allied families were excluded.'
+                )
+            if enemy_units:
+                self.append_log(
+                    'Applied safe DTA enemy tier-unit buffs: '
+                    + ', '.join(enemy_units)
+                    + '. Shared player/allied units were excluded.'
+                )
+            if enemy_unit_skips:
+                self.append_log(
+                    'Skipped unsafe enemy unit buff targets: '
+                    + '; '.join(enemy_unit_skips[:8])
+                    + ('; ...' if len(enemy_unit_skips) > 8 else '')
+                    + '.'
                 )
             orphan_buffs = [
                 item for item in clone_report['skipped']

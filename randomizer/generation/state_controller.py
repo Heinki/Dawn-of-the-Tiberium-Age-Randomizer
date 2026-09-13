@@ -30,15 +30,8 @@ from randomizer.ui.config import REWARD_MODES
 
 
 def disabled_enemy_scaling_settings(source=None):
-    """Keep the unfinished hostile-AI reward feature inert."""
-    settings = normalize_enemy_scaling_settings(source)
-    settings.update({
-        'reward_enabled': False,
-        'rewards_per_completed_objective': 0,
-        'rewards_per_completed_mission': 0,
-        'allowed_buff_ids': [],
-    })
-    return settings
+    """Normalize the now-supported hostile-AI reward settings."""
+    return normalize_enemy_scaling_settings(source)
 
 
 class GenerationSettings:
@@ -428,4 +421,3 @@ class GenerationSettings:
         else:
             mode = REWARD_MODES[0]
         return 'Chaos' if mode == 'Chaos (Experimental)' else mode
-

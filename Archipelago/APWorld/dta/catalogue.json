@@ -2796,11 +2796,200 @@
       "id": 81065477
     },
     {
+      "name": "Enemy Fire Rate I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066269
+    },
+    {
+      "name": "Enemy Firepower I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066270
+    },
+    {
+      "name": "Enemy Mobility I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066271
+    },
+    {
       "name": "Enemy Production I",
       "classification": "trap",
       "category": "enemy_buffs",
       "repeatable": true,
       "id": 81065478
+    },
+    {
+      "name": "Enemy T1 Ammo I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066272
+    },
+    {
+      "name": "Enemy T1 Armor I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066273
+    },
+    {
+      "name": "Enemy T1 Fire Rate I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066274
+    },
+    {
+      "name": "Enemy T1 Firepower I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066275
+    },
+    {
+      "name": "Enemy T1 Health I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066276
+    },
+    {
+      "name": "Enemy T1 Mobility I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066277
+    },
+    {
+      "name": "Enemy T1 Vision I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066278
+    },
+    {
+      "name": "Enemy T1 Weapon Range I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066279
+    },
+    {
+      "name": "Enemy T2 Ammo I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066280
+    },
+    {
+      "name": "Enemy T2 Armor I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066281
+    },
+    {
+      "name": "Enemy T2 Fire Rate I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066282
+    },
+    {
+      "name": "Enemy T2 Firepower I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066283
+    },
+    {
+      "name": "Enemy T2 Health I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066284
+    },
+    {
+      "name": "Enemy T2 Mobility I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066285
+    },
+    {
+      "name": "Enemy T2 Vision I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066286
+    },
+    {
+      "name": "Enemy T2 Weapon Range I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066287
+    },
+    {
+      "name": "Enemy T3 Ammo I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066288
+    },
+    {
+      "name": "Enemy T3 Armor I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066289
+    },
+    {
+      "name": "Enemy T3 Fire Rate I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066290
+    },
+    {
+      "name": "Enemy T3 Firepower I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066291
+    },
+    {
+      "name": "Enemy T3 Health I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066292
+    },
+    {
+      "name": "Enemy T3 Mobility I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066293
+    },
+    {
+      "name": "Enemy T3 Vision I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066294
+    },
+    {
+      "name": "Enemy T3 Weapon Range I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066295
     },
     {
       "name": "Enforcer (BFRT) Armor Plating I",
@@ -13760,7 +13949,7 @@
       ]
     }
   ],
-  "catalogue_checksum": "4e72d7f36001779b7d89f43a660fc1b28b913a7a22cd3f9ac4ad65a560e92fa0",
+  "catalogue_checksum": "3be78e5cfd4b273a798fcd5d13b77dc6c90b5f2b538bbfea32522c1b16e2825a",
   "locations": [
     {
       "name": "Tutorial Mission 1 - Mission Complete - Reward 1",

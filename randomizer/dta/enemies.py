@@ -4,7 +4,10 @@ from collections import Counter
 
 from randomizer.dta.maps import mission_source_path
 from randomizer.dta.rules import comma_items, ini_sections
-from randomizer.rewards.enemy_scaling import enemy_effect_values
+from randomizer.rewards.enemy_scaling import (
+    enemy_effect_text,
+    enemy_effect_values,
+)
 
 
 FAMILY_BY_ACTS_LIKE = {0: 'GDI', 1: 'Nod', 2: 'Allies', 3: 'Soviet'}
@@ -85,13 +88,21 @@ def enemy_buff_rules(mission, rewards, player_production_houses=()):
         if family.get(name) and family[name] not in friendly_families
     }
 
+    protected_no_build = bool(
+        mission.get('no_build')
+        or mission.get('true_no_build')
+        or mission.get('build_classification') in {
+            'true_no_build', 'no_build_production',
+        }
+    )
     counts = Counter(
         str(reward.get('enemy_effect_id') or '')
         for reward in rewards or ()
-        if reward.get('enemy_reward')
+        if reward.get('enemy_reward') and not protected_no_build
     )
     rules = {}
     applied = []
+    applications = []
     for reward in rewards or ():
         effect_id = str(reward.get('enemy_effect_id') or '')
         if not reward.get('enemy_reward') or effect_id in {item['effect_id'] for item in applied}:
@@ -100,18 +111,38 @@ def enemy_buff_rules(mission, rewards, player_production_houses=()):
         if count <= 0:
             continue
         effect = reward.get('enemy_effect')
-        field = 'Armor' if effect == 'armor' else 'BuildTime' if effect == 'production' else ''
-        if not field:
+        fields = {
+            'armor': ('Armor',),
+            'production': ('BuildTime',),
+            'firepower': ('Firepower',),
+            'reload': ('ROF',),
+            'speed': ('Groundspeed', 'Airspeed'),
+        }.get(effect, ())
+        if not fields:
             continue
         value = enemy_effect_values(reward, count)['final_engine_value']
         serialized = f'{value:.3f}'.rstrip('0').rstrip('.')
         for target_family in hostile_families:
-            rules.setdefault(target_family, {})[field] = serialized
+            for field in fields:
+                rules.setdefault(target_family, {})[field] = serialized
+        for house in sorted(hostile_houses):
+            if family.get(house) not in hostile_families:
+                continue
+            applications.append({
+                **enemy_effect_values(reward, count),
+                'effect_id': effect_id,
+                'effect': enemy_effect_text(reward, count),
+                'category': str(reward.get('enemy_category') or 'Enemy forces'),
+                'house': house,
+                'country': family.get(house, ''),
+                'target': family.get(house, ''),
+                'engine_field': '/'.join(fields),
+            })
         applied.append({
             'effect_id': effect_id,
             'stacks': count,
             'families': sorted(hostile_families),
-            'field': field,
+            'field': '/'.join(fields),
             'value': serialized,
         })
     return rules, {
@@ -119,5 +150,7 @@ def enemy_buff_rules(mission, rewards, player_production_houses=()):
         'friendly_families': sorted(friendly_families),
         'hostile_houses': sorted(hostile_houses),
         'hostile_families': sorted(hostile_families),
+        'protected_no_build': protected_no_build,
         'applied': applied,
+        'applications': applications,
     }

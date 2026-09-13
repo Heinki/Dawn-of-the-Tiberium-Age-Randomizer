@@ -304,10 +304,8 @@ class EnemyScalingController:
     def active_enemy_scaling_rewards(self):
         return [entry['reward'] for entry in self.active_enemy_scaling_entries()]
 
-    def record_enemy_reward_applications(self, code, applications):
-        """Persist exact receipts only after generated map mutations succeed."""
-        if not self.state or not code:
-            return
+    def normalize_enemy_reward_applications(self, code, applications):
+        """Validate exact receipts produced by successful map mutations."""
         normalized = []
         for item in applications or ():
             if not isinstance(item, dict):
@@ -367,6 +365,18 @@ class EnemyScalingController:
             item['effect_id'], item['house'].casefold(), item['target'].casefold(),
             item['current_stacks'], item['source'], item['earned_from'],
         ))
+        return normalized
+
+    def enemy_reward_application_records(self):
+        return (self.state or {}).get('enemy_reward_applications', {})
+
+    def record_enemy_reward_applications(self, code, applications):
+        """Persist exact receipts only after generated map mutations succeed."""
+        if not self.state or not code:
+            return
+        normalized = self.normalize_enemy_reward_applications(
+            code, applications
+        )
         records = self.state.setdefault('enemy_reward_applications', {})
         if records.get(code) == normalized:
             return
@@ -376,9 +386,9 @@ class EnemyScalingController:
 
     def enemy_scaling_dashboard_rows(self):
         rows = []
-        for mission, applications in self.state.get(
-            'enemy_reward_applications', {}
-        ).items():
+        for mission, applications in (
+            self.enemy_reward_application_records().items()
+        ):
             for item in applications or ():
                 if not isinstance(item, dict):
                     continue
@@ -416,11 +426,15 @@ class EnemyScalingController:
         ))
 
     def enemy_buff_catalogue_entries(self):
-        """Show a bonus card only after a generated map applied it."""
+        """Show acquired/assigned buffs and confirmed map applications."""
+        earned = {}
+        for entry in self.active_enemy_scaling_entries():
+            reward = entry.get('reward') if isinstance(entry, dict) else None
+            effect_id = str((reward or {}).get('enemy_effect_id') or '')
+            if effect_id in ENEMY_BUFF_BY_ID and isinstance(reward, dict):
+                earned.setdefault(effect_id, []).append(entry)
         applications = {}
-        for mission, records in (
-            (self.state or {}).get('enemy_reward_applications', {}).items()
-        ):
+        for mission, records in self.enemy_reward_application_records().items():
             for record in records or ():
                 if not isinstance(record, dict):
                     continue
@@ -456,53 +470,79 @@ class EnemyScalingController:
         for definition in ENEMY_BUFF_DEFINITIONS:
             effect_id = definition['id']
             receipts = applications.get(effect_id, ())
-            if not receipts:
+            earned_entries = earned.get(effect_id, ())
+            if not receipts and not earned_entries:
                 continue
-            _index, applied = max(
-                enumerate(receipts),
-                key=lambda pair: (
-                    pair[1]['current_stacks'], pair[0]
-                ),
+            reward = (
+                earned_entries[0]['reward']
+                if earned_entries else definition
             )
-            adjective = (
-                'stronger'
-                if definition.get('effect') == 'armor'
-                else 'faster'
+            maximum = max(1, int(reward.get(
+                'enemy_maximum', definition.get('maximum_stacks', 1)
+            )))
+            earned_count = min(maximum, len(earned_entries))
+            applied = None
+            if receipts:
+                _index, applied = max(
+                    enumerate(receipts),
+                    key=lambda pair: (
+                        pair[1]['current_stacks'], pair[0]
+                    ),
+                )
+            current = max(
+                earned_count,
+                int(applied['current_stacks']) if applied else 0,
             )
+            effect = enemy_effect_text(reward, max(1, current))
+            category_prefix = f'{definition["category"]} '
+            if effect.startswith(category_prefix):
+                effect = effect[len(category_prefix):]
+            status = 'applied' if applied is not None else 'earned'
             headline = (
                 f'Enemy {definition["category"]} {definition["type"]} '
-                '— Applied'
+                f'— {"Applied" if applied else "Assigned"}'
             )
-            per_stack = f'{applied["per_stack_value"]:g}%'
-            engine_value = f'{applied["final_engine_value"]:.3f}'.rstrip(
-                '0'
-            ).rstrip('.')
-            tooltip = '\n'.join((
+            unit = str(definition.get(
+                'value_unit',
+                '%' if definition.get('effect') != 'unit' else '',
+            ))
+            per_stack_value = (
+                applied['per_stack_value'] if applied
+                else reward.get('enemy_per_stack_value', 0)
+            )
+            per_stack = f'{float(per_stack_value):g} {unit}'.strip()
+            detail_lines = [
                 headline,
                 '—',
                 'Current effects:',
                 (
-                    f'• {definition["type"]} '
-                    f'{applied["displayed_percentage"]}% {adjective} '
-                    f'(Stacked {applied["current_stacks"]} times; maximum '
-                    f'{applied["maximum_stacks"]})'
+                    f'• {effect} '
+                    f'(Stacked {current} times; maximum {maximum})'
                 ),
                 f'• Configured per stack: {per_stack}',
-                (
+            ]
+            if applied:
+                engine_value = f'{applied["final_engine_value"]:.3f}'.rstrip(
+                    '0'
+                ).rstrip('.')
+                detail_lines.append(
                     '• Confirmed engine value: '
                     f'{applied.get("engine_field", "multiplier")}='
                     f'{engine_value}'
-                ),
-            ))
+                )
+            elif earned_entries:
+                detail_lines.append(
+                    '• Applied only where hostile ownership is proven safe.'
+                )
+            tooltip = '\n'.join(detail_lines)
             entries.append({
                 'id': effect_id,
                 'label': (
                     f'{definition["category"]}\n{definition["type"]}\n'
-                    f'{applied["displayed_percentage"]}% {adjective}\n'
-                    f'Stack {applied["current_stacks"]}/'
-                    f'{applied["maximum_stacks"]}'
+                    f'{effect}\n'
+                    f'Stack {current}/{maximum}'
                 ),
-                'status': 'applied',
+                'status': status,
                 'tooltip': tooltip,
             })
         return entries

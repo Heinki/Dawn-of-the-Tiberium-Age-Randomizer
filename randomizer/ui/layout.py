@@ -595,6 +595,14 @@ def _build_right_panel(self, main_frame):
     self.shop_include_no_build_production_missions_check.grid(
         row=1, column=0, sticky='w', pady=(4, 0)
     )
+    self.shop_buff_allied_helpers_check = ttk.Checkbutton(
+        shop_mission_filters,
+        text='Share purchased buffs with allied helpers',
+        variable=self.buff_allied_helpers_var,
+    )
+    self.shop_buff_allied_helpers_check.grid(
+        row=2, column=0, sticky='w', pady=(4, 0)
+    )
     WidgetTooltip(
         self.shop_include_no_build_missions_check,
         'Include true no-build missions using fixed or scripted units.',
@@ -602,6 +610,12 @@ def _build_right_panel(self, main_frame):
     WidgetTooltip(
         self.shop_include_no_build_production_missions_check,
         'Include missions without normal base building but with limited production.',
+    )
+    WidgetTooltip(
+        self.shop_buff_allied_helpers_check,
+        'Applies purchased unit buffs to reviewed allied helper forces when '
+        'they can be isolated safely. Shared or hostile native unit types '
+        'remain unchanged. This choice is exported to Archipelago.',
     )
     ttk.Label(
         shop_settings_frame,
@@ -897,6 +911,83 @@ def _build_info_tabs(self, info_tabs):
     self.bind_all('<Control-f>', self.focus_unlock_search, add='+')
     self.bind_all('<F3>', self.find_unlock_next, add='+')
     self.bind_all('<Shift-F3>', self.find_unlock_previous, add='+')
+
+    enemy_buffs_page = ttk.Frame(info_tabs, padding=(8, 8, 8, 8))
+    self.enemy_buffs_tab = enemy_buffs_page
+    enemy_buffs_page.columnconfigure(0, weight=1)
+    enemy_buffs_page.rowconfigure(2, weight=1)
+    info_tabs.add(enemy_buffs_page, text='Enemy Buffs')
+    ttk.Label(
+        enemy_buffs_page,
+        text='Acquired and applied enemy buffs',
+        font=('Segoe UI', 10, 'bold'),
+        justify='left',
+    ).grid(row=0, column=0, sticky='ew')
+    ttk.Label(
+        enemy_buffs_page,
+        text=(
+            'Assigned buffs appear immediately. Applied cards confirm a safe '
+            'target in the generated mission; no-build missions apply none.'
+        ),
+        style='Muted.TLabel',
+        wraplength=820,
+        justify='left',
+    ).grid(row=1, column=0, sticky='ew', pady=(1, 6))
+    enemy_buffs_canvas = tk.Canvas(
+        enemy_buffs_page,
+        borderwidth=0,
+        highlightthickness=0,
+        background=self.style.lookup('TFrame', 'background') or '#f0f0f0',
+    )
+    self.enemy_buffs_canvas = enemy_buffs_canvas
+    enemy_buffs_scrollbar = ttk.Scrollbar(
+        enemy_buffs_page,
+        orient='vertical',
+        command=enemy_buffs_canvas.yview,
+    )
+    self.enemy_buffs_scrollbar = enemy_buffs_scrollbar
+    enemy_buffs_canvas.configure(yscrollcommand=enemy_buffs_scrollbar.set)
+    enemy_buffs_canvas.grid(row=2, column=0, sticky='nsew')
+    enemy_buffs_scrollbar.grid(row=2, column=1, sticky='ns')
+    self.enemy_buff_catalogue_frame = ttk.Frame(
+        enemy_buffs_canvas,
+        padding=(1, 1, 1, 1),
+    )
+    enemy_buffs_window = enemy_buffs_canvas.create_window(
+        (0, 0),
+        window=self.enemy_buff_catalogue_frame,
+        anchor='nw',
+    )
+    self.enemy_buff_catalogue_frame.bind(
+        '<Configure>',
+        lambda event, target=enemy_buffs_canvas: (
+            target.configure(scrollregion=target.bbox('all')),
+            self.layout_enemy_buff_cards(event),
+        ),
+        add='+',
+    )
+    enemy_buffs_canvas.bind(
+        '<Configure>',
+        lambda event, target=enemy_buffs_canvas, item=enemy_buffs_window: (
+            target.itemconfigure(item, width=event.width),
+            self.layout_enemy_buff_cards(event),
+        ),
+        add='+',
+    )
+    enemy_buffs_canvas.bind(
+        '<MouseWheel>',
+        lambda event, target=enemy_buffs_canvas: (
+            self.on_unlock_mousewheel(event, target)
+        ),
+        add='+',
+    )
+    self.enemy_buff_catalogue_frame.bind(
+        '<MouseWheel>',
+        lambda event, target=enemy_buffs_canvas: (
+            self.on_unlock_mousewheel(event, target)
+        ),
+        add='+',
+    )
 
     info_tabs.bind(
         '<<NotebookTabChanged>>',

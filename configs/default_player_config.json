@@ -173,25 +173,13 @@
           "reward_enabled": false,
           "rewards_per_completed_objective": 0,
           "rewards_per_completed_mission": 0,
-          "allowed_buff_ids": [
-            "infantry_armor",
-            "vehicle_armor",
-            "aircraft_armor",
-            "defense_armor",
-            "infantry_production",
-            "vehicle_production",
-            "aircraft_production",
-            "defense_production"
-          ],
+          "allowed_buff_ids": ["*"],
           "caps": {
-            "infantry_armor": 5,
-            "vehicle_armor": 5,
-            "aircraft_armor": 5,
-            "defense_armor": 5,
-            "infantry_production": 5,
-            "vehicle_production": 5,
-            "aircraft_production": 5,
-            "defense_production": 5
+            "enemy_armor": 5,
+            "enemy_production": 5,
+            "enemy_firepower": 5,
+            "enemy_reload": 5,
+            "enemy_speed": 5
           }
         },
         "failure_assistance": false,

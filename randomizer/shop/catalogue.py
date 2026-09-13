@@ -38,15 +38,32 @@ def _unit_tiers():
         target_id = _root_access_unit(canonical)
         if not target_id:
             continue
-        values = canonical.get('rules', {}).get(target_id, {})
-        raw_level = next(
-            (
-                value for key, value in values.items()
-                if str(key).lower() == 'techlevel'
-            ),
-            1,
-        )
-        tiers[target_id] = arsenal_tier_for_tech_level(raw_level)
+        target = BUFF_TARGETS.get(target_id, {})
+        raw_level = target.get('tech_level', 1)
+        try:
+            native_level = int(raw_level)
+        except (TypeError, ValueError):
+            native_level = 1
+        if native_level > 0:
+            tiers[target_id] = arsenal_tier_for_tech_level(native_level)
+            continue
+
+        # Special/map-only units use TechLevel=-1 in installed rules. Their
+        # generated access reward must use TechLevel=1, but that unlock value
+        # is not their strength tier. Target-specific Shop prices already
+        # carry the reviewed strength curve, so use its matching bands.
+        definition = SHOP_CONFIG.unit_target_prices.get(target_id)
+        access_price = definition.run_access if definition is not None else None
+        if access_price is None or int(access_price) <= 4:
+            tiers[target_id] = 'tier_1'
+        elif target.get('special_reward') and int(access_price) == 5:
+            tiers[target_id] = 'tier_2'
+        elif target.get('special_reward'):
+            tiers[target_id] = 'tier_3'
+        elif int(access_price) <= 7:
+            tiers[target_id] = 'tier_2'
+        else:
+            tiers[target_id] = 'tier_3'
     return tiers
 
 

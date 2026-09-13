@@ -940,12 +940,11 @@ def _validate_enemy_scaling(sections, path):
                 or maximum != 1
             ):
                 _invalid(f'Invalid enemy AI power {effect_id!r}', path)
-        elif (
-            definition['effect'] not in {'armor', 'production'}
-            or not _is_nonempty_string(definition.get('country_suffix'))
-        ):
+        elif definition['effect'] not in {
+            'armor', 'production', 'firepower', 'reload', 'speed'
+        }:
             _invalid(f'Invalid AI-only house reward {effect_id!r}', path)
-        if definition['effect'] == 'production':
+        if definition['effect'] in {'production', 'reload'}:
             minimum = definition.get('minimum_engine_multiplier')
             if (
                 not isinstance(minimum, (int, float))
@@ -956,15 +955,48 @@ def _validate_enemy_scaling(sections, path):
                 _invalid(
                     f'Invalid enemy production clamp {effect_id!r}', path
                 )
-    if set(defaults['allowed_buff_ids']) - seen:
+    for index, template in enumerate(
+        sections.get('tier_unit_buff_templates', ())
+    ):
+        required = {
+            'id', 'name', 'unit_buff_type', 'per_stack_value', 'value_unit',
+            'maximum_stacks',
+        }
+        if not isinstance(template, dict) or not required.issubset(template):
+            _invalid(f'Invalid enemy tier-unit template {index}', path)
+        if (
+            not all(_is_nonempty_string(template[key]) for key in (
+                'id', 'name', 'unit_buff_type', 'value_unit',
+            ))
+            or not isinstance(template['maximum_stacks'], int)
+            or isinstance(template['maximum_stacks'], bool)
+            or template['maximum_stacks'] < 1
+            or not isinstance(template['per_stack_value'], (int, float))
+            or isinstance(template['per_stack_value'], bool)
+            or template['per_stack_value'] <= 0
+        ):
+            _invalid(f'Invalid enemy tier-unit template {index}', path)
+        for tier in (1, 2, 3):
+            effect_id = f'tier{tier}_{template["id"]}'
+            if effect_id in seen:
+                _invalid(f'Duplicate AI reward {effect_id!r}', path)
+            seen.add(effect_id)
+    allowed = set(defaults['allowed_buff_ids'])
+    if allowed != {'*'} and allowed - seen:
         _invalid('Unknown default AI reward IDs', path)
-    if set(defaults['caps']) != seen:
-        _invalid('AI reward caps must cover every reward', path)
+    if set(defaults['caps']) - seen:
+        _invalid('AI reward caps contain unknown rewards', path)
+    maximums = {
+        item['id']: item['maximum_stacks']
+        for item in sections['buffs']
+    }
+    maximums.update({
+        f'tier{tier}_{item["id"]}': item['maximum_stacks']
+        for item in sections.get('tier_unit_buff_templates', ())
+        for tier in (1, 2, 3)
+    })
     for effect_id, cap in defaults['caps'].items():
-        maximum = next(
-            item['maximum_stacks'] for item in sections['buffs']
-            if item['id'] == effect_id
-        )
+        maximum = maximums[effect_id]
         if (
             not isinstance(cap, int) or isinstance(cap, bool)
             or cap < 0 or cap > maximum
