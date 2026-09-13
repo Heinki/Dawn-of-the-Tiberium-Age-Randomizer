@@ -22,7 +22,7 @@ from .data import (
     shop_item_location_entries,
 )
 from .manifest import parse_manifest
-from .options import DTAOptions
+from .options import DTAOptions, DTA_OPTION_GROUPS, launcher_settings_from_options
 
 
 class DTAItem(Item):
@@ -35,6 +35,7 @@ class DTALocation(Location):
 
 class DTAWebWorld(WebWorld):
     theme = "partyTime"
+    option_groups = DTA_OPTION_GROUPS
     tutorials = [
         Tutorial(
             "Dawn of the Tiberium Age Multiworld Setup Guide",
@@ -81,6 +82,8 @@ class DTAWorld(World):
             settings = template.get("frozen_settings", {}).get("launcher")
             if not settings:
                 raise ValueError("Legacy YAML has no launcher_settings; export it again.")
+        if not settings:
+            settings = launcher_settings_from_options(self.options)
         self.run_manifest = generate_manifest(
             settings, f"DTA-{self.random.getrandbits(64):016X}"
         )

@@ -47,12 +47,19 @@ visible in the Randomizer.
 6. Give the YAML to the room host, or place it in Archipelago's `Players`
    folder if you are generating the room yourself.
 
+You can also create the YAML without opening the Randomizer. Install the
+matching APWorld, open Archipelago's **Options Creator**, select **Dawn of the
+Tiberium Age**, configure the grouped Randomizer options, enter the slot name,
+and select **Export Options**. Both workflows generate the same nested launcher
+settings when Archipelago builds the room.
+
 **Save Player YAML** exports a reusable player file. A separate standalone seed
 is not required, and there is no YAML import step in the launcher. Reuse that
 file for additional rooms with the same settings; every Archipelago generation
 creates a fresh Randomizer run from its seed. Re-export only after changing launcher settings.
 
-The YAML contains only readable `launcher_settings`. Archipelago generates the
+Launcher-exported YAML contains readable `launcher_settings`. Options Creator
+YAML contains equivalent individual game options. Archipelago generates the
 mission order, Grid, starting unlocks, reward pool, placements, and signed run
 manifest during multiworld generation. The launcher receives that manifest from
 the server when connecting. DTA unit buffs and Shop progression remain part of

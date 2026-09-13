@@ -134,6 +134,49 @@ class GenerationTests(unittest.TestCase):
             self.assertNotEqual(first['grid'], updated['grid'])
             self.assertNotEqual(first['randomizer_seed'], updated['randomizer_seed'])
 
+    def test_option_creator_fields_build_launcher_settings(self):
+        from BaseClasses import MultiWorld
+        from Options import (
+            Choice, FreeText, NamedRange, OptionCounter, OptionList, OptionSet,
+            Range, TextChoice, Toggle, Visibility,
+        )
+
+        supported = (
+            NamedRange, Range, Toggle, TextChoice, Choice, FreeText,
+            OptionSet, OptionList, OptionCounter,
+        )
+        visible = {
+            name: option for name, option in DTAWorld.options_dataclass.type_hints.items()
+            if option.visibility & (Visibility.simple_ui | Visibility.complex_ui)
+        }
+        self.assertTrue(visible)
+        self.assertTrue(all(issubclass(option, supported) for option in visible.values()))
+
+        multiworld = MultiWorld(1)
+        multiworld.game[1] = DTAWorld.game
+        multiworld.player_name = {1: 'Commander'}
+        multiworld.set_seed(2468)
+        values = {
+            'campaign': 'tutorial',
+            'mission_goal': 5,
+            'progression_mode': 'grid_mode',
+            'difficulty': 'hard',
+            'start_with_tier_one_units': True,
+        }
+        args = Namespace(**{
+            name: {1: option.from_any(values.get(name, option.default))}
+            for name, option in DTAWorld.options_dataclass.type_hints.items()
+        })
+        multiworld.set_options(args)
+        world = multiworld.worlds[1]
+        world.generate_early()
+        settings = world.run_manifest['frozen_settings']['launcher']
+        self.assertEqual(settings['campaign_filter'], 'Tutorial')
+        self.assertEqual(settings['mission_goal'], 5)
+        self.assertEqual(settings['progression_mode'], 'Grid Mode')
+        self.assertEqual(settings['difficulty'], 'Hard')
+        self.assertTrue(settings['generation']['start_with_tier_one_units'])
+
     def test_real_ap_generation_fill_and_slot_data(self):
         from BaseClasses import MultiWorld, CollectionState
         from worlds.AutoWorld import call_all
@@ -145,7 +188,10 @@ class GenerationTests(unittest.TestCase):
                 multiworld.player_name = {1: 'Commander'}
                 multiworld.set_seed(123456)
                 args = Namespace(**{
-                    name: {1: option.from_any({'progression_mode': mode} if name == 'launcher_settings' else option.default)}
+                    name: {1: option.from_any(
+                        mode.lower().replace(' ', '_')
+                        if name == 'progression_mode' else option.default
+                    )}
                     for name, option in DTAWorld.options_dataclass.type_hints.items()
                 })
                 multiworld.set_options(args)
