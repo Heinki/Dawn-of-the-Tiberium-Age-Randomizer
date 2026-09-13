@@ -52,15 +52,6 @@ def canonical_reward(reward):
             'description': 'Removed because this buff cannot reliably enable firing while moving.',
             'kind': 'retired', 'retired_reward': True, 'rules': {},
         }
-    if (
-        reward.get('buff_type') == 'amphibious'
-        or str(reward.get('name', '')).endswith(' Amphibious Drive I')
-    ):
-        return {
-            'name': f'{reward.get("name", "Amphibious Drive")} (retired: unsupported)',
-            'description': 'Removed because this buff does not work reliably in DTA.',
-            'kind': 'retired', 'retired_reward': True, 'rules': {},
-        }
     if reward.get('_runtime_canonical') and not reward.get('enemy_reward'):
         return reward
 
@@ -212,7 +203,7 @@ HOUSE_WIDE_BUFF_TYPES = {'production'}
 WEAPON_STAT_BUFF_TYPES = {'damage', 'range', 'reload', 'area'}
 UNIT_STAT_BUFF_TYPES = {
     'health', 'sight', 'ammo', 'passenger_capacity', 'open_topped',
-    'self_healing', 'cloak', 'sensors',
+    'self_healing', 'cloak', 'sensors', 'amphibious',
 }
 MAP_GUARDED_BUFF_TYPES = WEAPON_STAT_BUFF_TYPES | UNIT_STAT_BUFF_TYPES
 CLONE_REQUIRED_BUFF_TYPES = (
@@ -407,7 +398,7 @@ def _uncached_buff_stack_limit(reward):
             return configured
         return movement_speed_stack_limit(target) or configured
     if buff_type in {
-        'open_topped', 'cloak', 'sensors', 'veteran',
+        'open_topped', 'cloak', 'sensors', 'veteran', 'amphibious',
     }:
         return 1
     return None
@@ -690,6 +681,8 @@ def buff_effect_lines(
         return [stacked(
             f'{prefix}Full self-healing: {heal_amount} HP every {tick_seconds:.2f}s'
         )]
+    if buff_type == 'amphibious':
+        return [stacked(f'{prefix}Amphibious movement enabled')]
     if buff_type == 'cloak':
         return [stacked(f'{prefix}Cloaking enabled')]
     if buff_type == 'sensors':

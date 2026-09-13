@@ -16,6 +16,7 @@ from randomizer.config.tuning import (
 )
 from randomizer.config.static import load_static_config
 from randomizer.dta.powers import POWER_SPECS, power_unlock_rewards
+from randomizer.dta.movement import supports_amphibious_drive
 from randomizer.dta.rules import ALWAYS_AVAILABLE_MOBILE_IDS, techno_catalogue
 from randomizer.rewards.dta_power_buffs import (
     POWER_BUFF_TYPES,
@@ -125,6 +126,12 @@ BUFF_TYPES = [
         'name': 'Blast Expansion',
         'setting_label': 'Area of effect',
         'description': '{plural} weapons damage a wider area.',
+    },
+    {
+        'id': 'amphibious',
+        'name': 'Amphibious Drive',
+        'setting_label': 'Amphibious movement',
+        'description': '{plural} can cross land and water.',
     },
 ]
 
@@ -268,6 +275,8 @@ def _allowed_buff_types(record):
         allowed.append('sensors')
     if strength > 0:
         allowed.append('self_healing')
+    if supports_amphibious_drive(record):
+        allowed.append('amphibious')
     return allowed
 
 
@@ -290,6 +299,8 @@ for _record in _MOBILE_RECORDS:
         'tech_level': _record.get('tech_level', -1),
         'prerequisites': tuple(_record.get('prerequisites', ())),
         'deploys_into': _record.get('deploys_into', ''),
+        'movement_zone': _record.get('movement_zone', ''),
+        'speed_type': _record.get('speed_type', ''),
         'allowed_buff_types': _allowed_buff_types(_record),
         'dta_production_clone': True,
         'naval': bool(_record.get('naval')),
@@ -591,7 +602,7 @@ CLONE_REQUIRED_BUFF_TYPES = frozenset(
     {
         'production', 'cost', 'speed', 'armor', 'health', 'damage', 'reload',
         'range', 'sight', 'ammo', 'passenger_capacity', 'cloak', 'sensors',
-        'self_healing', 'area',
+        'self_healing', 'area', 'amphibious',
         'build_limit',
     }
 )

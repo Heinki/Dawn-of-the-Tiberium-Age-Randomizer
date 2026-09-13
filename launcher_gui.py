@@ -81,6 +81,10 @@ def run_self_check():
     from randomizer.dta.cameos import TEXT_ONLY_CAMEO_IDS
     from randomizer.dta.difficulty import resolve_mission_difficulty
     from randomizer.dta.enemies import enemy_buff_rules
+    from randomizer.dta.movement import (
+        AMPHIBIOUS_DRIVE_OVERRIDES,
+        has_water_movement,
+    )
     from randomizer.dta.powers import (
         POWER_CLONE_ACTION_TYPES,
         POWER_PROVIDER_SLOT_ACTION_TYPES,
@@ -1035,6 +1039,7 @@ def run_self_check():
         )
         apc_buff_types = {
             'health', 'range', 'sight', 'passenger_capacity', 'cloak', 'sensors',
+            'amphibious',
         }
         apc_buff_rewards = [
             reward for reward in REWARD_POOL
@@ -3260,6 +3265,20 @@ def run_self_check():
                 and float(generated_apc_weapon.get('Range', 0))
                 > float(installed_apc_weapon.get('Range', 0))
             ),
+            'dta_amphibious_drive_uses_hover_mlrs_fields': (
+                'amphibious' in apc_buff_types
+                and all(
+                    generated_apc.get(key) == value
+                    for key, value in AMPHIBIOUS_DRIVE_OVERRIDES.items()
+                )
+                and all(
+                    target.get('category') == 'vehicles'
+                    and not target.get('naval')
+                    and not has_water_movement(target)
+                    for unit_id, target in BUFF_TARGETS.items()
+                    if 'amphibious' in target.get('allowed_buff_types', ())
+                )
+            ),
             'unit_vision_and_speed_caps_are_exact': (
                 sight_range_ceiling() == 10
                 and all(
@@ -3712,6 +3731,7 @@ def run_self_check():
             'vinifera_production_clone_generated',
             'all_unit_specific_buffs_use_production_clones',
             'dta_extended_unit_buffs_work',
+            'dta_amphibious_drive_uses_hover_mlrs_fields',
             'unit_vision_and_speed_caps_are_exact',
             'orphan_unit_buffs_do_not_grant_access',
             'access_clone_receives_unit_specific_buffs',

@@ -37,6 +37,7 @@ from randomizer.config.tuning import (
     stacked_weapon_damage,
     stacked_weapon_rof,
 )
+from randomizer.dta.movement import amphibious_drive_overrides
 
 
 MIN_SAFE_TECHNO_STRENGTH = 2
@@ -181,6 +182,11 @@ def apply_unit_buff_value(values, target, buff_type, count):
         values['SelfHealingStep'] = str(
             stacked_self_heal_amount(current_strength, count)
         )
+    elif buff_type == 'amphibious':
+        overrides = amphibious_drive_overrides(values, target)
+        if not overrides:
+            return False
+        values.update(overrides)
     elif buff_type == 'cloak':
         values['Cloakable'] = 'yes'
         values['Cloakable.Stages'] = '1'

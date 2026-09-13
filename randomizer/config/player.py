@@ -11,13 +11,14 @@ LEGACY_CONFIG_PATH = LEGACY_CONFIG_DIR / CONFIG_PATH.name
 DEFAULT_CONFIG = static_config_section(
     'default_player_config.json', 'defaults', dict
 )
-UNIT_BUFF_CATALOGUE_VERSION = 6
+UNIT_BUFF_CATALOGUE_VERSION = 7
 UNIT_BUFF_TYPES_INTRODUCED = {
     1: ('passenger_capacity', 'open_topped'),
     2: ('health', 'range', 'sight', 'ammo', 'passenger_capacity', 'cloak', 'sensors'),
     3: ('self_healing',),
     4: ('build_limit',),
     5: ('area',),
+    7: ('amphibious',),
 }
 POWER_BUFF_CATALOGUE_VERSION = 6
 POWER_BUFF_TYPES_INTRODUCED = {
@@ -125,7 +126,7 @@ def migrate_loaded_config(loaded):
     except (TypeError, ValueError):
         version = 0
     enabled = generation.get('enabled_buff_types')
-    retired_buff_types = {'opportunity_fire', 'amphibious'}
+    retired_buff_types = {'opportunity_fire'}
     if isinstance(enabled, list) and retired_buff_types.intersection(enabled):
         enabled[:] = [kind for kind in enabled if kind not in retired_buff_types]
         changed = True

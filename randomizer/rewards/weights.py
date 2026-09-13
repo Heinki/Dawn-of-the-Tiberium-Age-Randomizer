@@ -55,6 +55,7 @@ UNIT_BUFF_WEIGHT_TYPES = (
     ('production', 'Production time'),
     ('self_healing', 'Healing'),
     ('area', 'Area of effect'),
+    ('amphibious', 'Amphibious movement'),
     ('sight', 'Vision'),
     ('ammo', 'Ammo'),
     ('passenger_capacity', 'Passenger capacity'),

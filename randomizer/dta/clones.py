@@ -19,6 +19,7 @@ from randomizer.config.tuning import (
 )
 from randomizer.core.paths import GAME_ROOT
 from randomizer.dta.maps import mission_source_path
+from randomizer.dta.movement import amphibious_drive_overrides
 from randomizer.dta.rules import (
     ALWAYS_AVAILABLE_MOBILE_IDS,
     catalogue_by_id,
@@ -1003,6 +1004,8 @@ def _unit_overrides(values, counts, target):
             ),
             counts['self_healing'],
         ))
+    if counts['amphibious']:
+        overrides.update(amphibious_drive_overrides(values, target))
     return overrides
 
 
@@ -1352,7 +1355,7 @@ def unit_specific_buff_rules(
                 'production', 'cost', 'speed', 'armor', 'health', 'damage',
                 'reload', 'range', 'sight', 'ammo', 'passenger_capacity',
                 'build_limit', 'cloak', 'sensors', 'self_healing',
-                'area',
+                'area', 'amphibious',
             }
         ):
             continue

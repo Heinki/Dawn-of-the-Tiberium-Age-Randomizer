@@ -234,6 +234,13 @@
       "id": 81064476
     },
     {
+      "name": "Allied APC (RAAPC) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066296
+    },
+    {
       "name": "Allied APC (RAAPC) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -316,6 +323,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064489
+    },
+    {
+      "name": "Allied Artillery (RAARTY) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066297
     },
     {
       "name": "Allied Artillery (RAARTY) Armor Plating I",
@@ -661,6 +675,13 @@
       "id": 81064509
     },
     {
+      "name": "Allied Light Tank (1TNK) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066298
+    },
+    {
       "name": "Allied Light Tank (1TNK) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -745,6 +766,13 @@
       "id": 81063983
     },
     {
+      "name": "Allied Medium Tank (2TNK) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066299
+    },
+    {
       "name": "Allied Medium Tank (2TNK) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -827,6 +855,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81063989
+    },
+    {
+      "name": "Allied Mobile Construction Vehicle (AMCV) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066300
     },
     {
       "name": "Allied Mobile Construction Vehicle (AMCV) Armor Plating I",
@@ -967,6 +1002,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064533
+    },
+    {
+      "name": "Anti-Aircraft Truck (MFLAK) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066301
     },
     {
       "name": "Anti-Aircraft Truck (MFLAK) Armor Plating I",
@@ -1291,6 +1333,13 @@
       "id": 81064005
     },
     {
+      "name": "Battle Rig (BRIG) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066302
+    },
+    {
       "name": "Battle Rig (BRIG) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -1473,6 +1522,13 @@
       "id": 81064011
     },
     {
+      "name": "Behemoth Tank (BEHEMOTH) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066303
+    },
+    {
       "name": "Behemoth Tank (BEHEMOTH) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -1569,6 +1625,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064581
+    },
+    {
+      "name": "Beluminator (BEHEPLSM) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066304
     },
     {
       "name": "Beluminator (BEHEPLSM) Armor Plating I",
@@ -1975,6 +2038,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064612
+    },
+    {
+      "name": "Chrono Tank (CTNK) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066305
     },
     {
       "name": "Chrono Tank (CTNK) Armor Plating I",
@@ -2495,6 +2565,13 @@
       "id": 81065649
     },
     {
+      "name": "Demolition Truck (DTRK) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066306
+    },
+    {
       "name": "Demolition Truck (DTRK) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -2563,6 +2640,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064638
+    },
+    {
+      "name": "Disc Launcher (DISCARTY) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066307
     },
     {
       "name": "Disc Launcher (DISCARTY) Armor Plating I",
@@ -2647,6 +2731,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064063
+    },
+    {
+      "name": "Drone Launcher (CARRTRUK) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066308
     },
     {
       "name": "Drone Launcher (CARRTRUK) Armor Plating I",
@@ -2992,6 +3083,13 @@
       "id": 81066295
     },
     {
+      "name": "Enforcer (BFRT) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066309
+    },
+    {
       "name": "Enforcer (BFRT) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -3312,6 +3410,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064707
+    },
+    {
+      "name": "Flame Tank (FTNK) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066310
     },
     {
       "name": "Flame Tank (FTNK) Armor Plating I",
@@ -3783,6 +3888,13 @@
       "id": 81065490
     },
     {
+      "name": "GDI Mammoth Tank (HTNK) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066311
+    },
+    {
       "name": "GDI Mammoth Tank (HTNK) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -3867,6 +3979,13 @@
       "id": 81064093
     },
     {
+      "name": "GDI Medium Tank (MTNK) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066312
+    },
+    {
       "name": "GDI Medium Tank (MTNK) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -3949,6 +4068,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064099
+    },
+    {
+      "name": "GDI Mobile Construction Vehicle (GMCV) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066313
     },
     {
       "name": "GDI Mobile Construction Vehicle (GMCV) Armor Plating I",
@@ -4145,6 +4271,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065956
+    },
+    {
+      "name": "Gatling Tank (GTNK) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066314
     },
     {
       "name": "Gatling Tank (GTNK) Armor Plating I",
@@ -4483,6 +4616,13 @@
       "id": 81064121
     },
     {
+      "name": "Harbinger (SCRINTNK) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066315
+    },
+    {
       "name": "Harbinger (SCRINTNK) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -4581,6 +4721,13 @@
       "id": 81064788
     },
     {
+      "name": "Heavy Artillery (LTNKCRUS) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066316
+    },
+    {
       "name": "Heavy Artillery (LTNKCRUS) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -4663,6 +4810,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064799
+    },
+    {
+      "name": "Heavy Raider (RAIDER) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066317
     },
     {
       "name": "Heavy Raider (RAIDER) Armor Plating I",
@@ -4754,6 +4908,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065682
+    },
+    {
+      "name": "Heavy Tank (3TNK) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066318
     },
     {
       "name": "Heavy Tank (3TNK) Armor Plating I",
@@ -5183,6 +5344,13 @@
       "id": 81064831
     },
     {
+      "name": "Hum-vee (JEEP) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066319
+    },
+    {
       "name": "Hum-vee (JEEP) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -5258,6 +5426,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064157
+    },
+    {
+      "name": "Ilhemoth (ILHEMOTH) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066320
     },
     {
       "name": "Ilhemoth (ILHEMOTH) Armor Plating I",
@@ -5356,6 +5531,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064847
+    },
+    {
+      "name": "Illuminator (PLSM) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066321
     },
     {
       "name": "Illuminator (PLSM) Armor Plating I",
@@ -5743,6 +5925,13 @@
       "id": 81064175
     },
     {
+      "name": "M.A.D. Tank (QTNK) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066322
+    },
+    {
       "name": "M.A.D. Tank (QTNK) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -6051,6 +6240,13 @@
       "id": 81064886
     },
     {
+      "name": "Mammoth Artillery (HTNKARTY) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066323
+    },
+    {
       "name": "Mammoth Artillery (HTNKARTY) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -6287,6 +6483,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064203
+    },
+    {
+      "name": "Microwave Tank (MWAVE) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066324
     },
     {
       "name": "Microwave Tank (MWAVE) Armor Plating I",
@@ -6604,6 +6807,13 @@
       "id": 81064227
     },
     {
+      "name": "Missile Tank (TTNKMSL) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066325
+    },
+    {
       "name": "Missile Tank (TTNKMSL) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -6688,6 +6898,13 @@
       "id": 81065613
     },
     {
+      "name": "Mobile Repair Vehicle (MRV) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066326
+    },
+    {
       "name": "Mobile Repair Vehicle (MRV) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -6763,6 +6980,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065711
+    },
+    {
+      "name": "Mobile SAM-Site (MWAVEMSAM) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066327
     },
     {
       "name": "Mobile SAM-Site (MWAVEMSAM) Armor Plating I",
@@ -6847,6 +7071,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064972
+    },
+    {
+      "name": "Mobile Sensor Array (MSA) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066328
     },
     {
       "name": "Mobile Sensor Array (MSA) Armor Plating I",
@@ -6989,6 +7220,13 @@
       "id": 81064991
     },
     {
+      "name": "Nod Artillery (ARTY) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066329
+    },
+    {
       "name": "Nod Artillery (ARTY) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -7071,6 +7309,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065002
+    },
+    {
+      "name": "Nod Buggy (BGGY) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066330
     },
     {
       "name": "Nod Buggy (BGGY) Armor Plating I",
@@ -7388,6 +7633,13 @@
       "id": 81065021
     },
     {
+      "name": "Nod Light Tank (LTNK) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066331
+    },
+    {
       "name": "Nod Light Tank (LTNK) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -7470,6 +7722,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064275
+    },
+    {
+      "name": "Nod Mobile Construction Vehicle (NMCV) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066332
     },
     {
       "name": "Nod Mobile Construction Vehicle (NMCV) Armor Plating I",
@@ -7780,6 +8039,13 @@
       "id": 81065518
     },
     {
+      "name": "Object 279 (O279) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066333
+    },
+    {
       "name": "Object 279 (O279) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -7948,6 +8214,13 @@
       "id": 81064285
     },
     {
+      "name": "Ore Truck (RAHARV) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066334
+    },
+    {
       "name": "Ore Truck (RAHARV) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -8009,6 +8282,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065060
+    },
+    {
+      "name": "Phase Tank (PTNK) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066335
     },
     {
       "name": "Phase Tank (PTNK) Armor Plating I",
@@ -8284,6 +8564,13 @@
       "id": 81064295
     },
     {
+      "name": "Quad Tank (SHILKA) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066336
+    },
+    {
       "name": "Quad Tank (SHILKA) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -8373,6 +8660,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065086
+    },
+    {
+      "name": "Railgun Tank (TNKN) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066337
     },
     {
       "name": "Railgun Tank (TNKN) Armor Plating I",
@@ -8466,6 +8760,13 @@
       "id": 81065097
     },
     {
+      "name": "Ranger (RANG) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066338
+    },
+    {
       "name": "Ranger (RANG) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -8541,6 +8842,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064301
+    },
+    {
+      "name": "Recon Bike (BIKE) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066339
     },
     {
       "name": "Recon Bike (BIKE) Armor Plating I",
@@ -8781,6 +9089,13 @@
       "id": 81065989
     },
     {
+      "name": "Rocket Hum-vee (JEEPPTNK) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066340
+    },
+    {
       "name": "Rocket Hum-vee (JEEPPTNK) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -8856,6 +9171,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065123
+    },
+    {
+      "name": "Rocket Launcher (MSAM) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066341
     },
     {
       "name": "Rocket Launcher (MSAM) Armor Plating I",
@@ -9185,6 +9507,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065547
+    },
+    {
+      "name": "SSM Launcher (MLRS) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066342
     },
     {
       "name": "SSM Launcher (MLRS) Armor Plating I",
@@ -9845,6 +10174,13 @@
       "id": 81065188
     },
     {
+      "name": "Soviet Mammoth Tank (4TNK) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066343
+    },
+    {
       "name": "Soviet Mammoth Tank (4TNK) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -9927,6 +10263,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064379
+    },
+    {
+      "name": "Soviet Mobile Construction Vehicle (SMCV) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066344
     },
     {
       "name": "Soviet Mobile Construction Vehicle (SMCV) Armor Plating I",
@@ -10223,6 +10566,13 @@
       "id": 81066018
     },
     {
+      "name": "Stealth APC (STAPC) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066345
+    },
+    {
       "name": "Stealth APC (STAPC) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -10305,6 +10655,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065733
+    },
+    {
+      "name": "Stealth Tank (STNK) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066346
     },
     {
       "name": "Stealth Tank (STNK) Armor Plating I",
@@ -10454,6 +10811,13 @@
       "id": 81064401
     },
     {
+      "name": "Subterranean APC (SAPC) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066347
+    },
+    {
       "name": "Subterranean APC (SAPC) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -10522,6 +10886,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065236
+    },
+    {
+      "name": "TD APC (APC) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066348
     },
     {
       "name": "TD APC (APC) Armor Plating I",
@@ -10606,6 +10977,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065248
+    },
+    {
+      "name": "Tank Destroyer (TNKD) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066349
     },
     {
       "name": "Tank Destroyer (TNKD) Armor Plating I",
@@ -10783,6 +11161,13 @@
       "id": 81064411
     },
     {
+      "name": "Termite (TERMITE) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066350
+    },
+    {
       "name": "Termite (TERMITE) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -10937,6 +11322,13 @@
       "id": 81065559
     },
     {
+      "name": "Tesla Tank (TTNK) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066351
+    },
+    {
       "name": "Tesla Tank (TTNK) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -11082,6 +11474,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065752
+    },
+    {
+      "name": "Tiberium Harvester (TDHARV) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066352
     },
     {
       "name": "Tiberium Harvester (TDHARV) Armor Plating I",
@@ -12274,6 +12673,13 @@
       "id": 81065369
     },
     {
+      "name": "V2 Launcher (V2RL) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066353
+    },
+    {
       "name": "V2 Launcher (V2RL) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -12454,6 +12860,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064439
+    },
+    {
+      "name": "X-O Power Suit (XO) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066354
     },
     {
       "name": "X-O Power Suit (XO) Armor Plating I",
@@ -13949,7 +14362,7 @@
       ]
     }
   ],
-  "catalogue_checksum": "3be78e5cfd4b273a798fcd5d13b77dc6c90b5f2b538bbfea32522c1b16e2825a",
+  "catalogue_checksum": "d06761435e58d27c1b487047de2e8c8597d1e7ed5cf2148a5c604969c291025f",
   "locations": [
     {
       "name": "Tutorial Mission 1 - Mission Complete - Reward 1",
