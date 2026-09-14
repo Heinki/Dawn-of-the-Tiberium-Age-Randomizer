@@ -1499,6 +1499,28 @@ throw "Map $name was not found in expandmo*.mix"
                     + ', '.join(item['power'] for item in power_report['applied'])
                     + f' to {power_report["player_house"]}. Enemy houses received none.'
                 )
+            if power_report.get('paradrop_plane_count', 0) > 1:
+                paradrop_entry = next(
+                    (
+                        item for item in power_report['applied']
+                        if item['power'] in power_report['paradrop_power_ids']
+                    ),
+                    {},
+                )
+                payload_type_count = 1 + sum(
+                    bool(unit_id) and count > 0
+                    for unit_id, count in paradrop_entry.get(
+                        'payload_unit_counts', {}
+                    ).items()
+                )
+                self.append_log(
+                    'Paradrop payload scheduled across '
+                    f'{power_report["paradrop_plane_count"]} full-load '
+                    'aircraft; all '
+                    f'{payload_type_count} payload types and '
+                    f'{power_report["paradrop_payload_units"]} units '
+                    'included.'
+                )
             if enemy_report['applied']:
                 self.append_log(
                     'Applied DTA enemy-only buffs to production families: '

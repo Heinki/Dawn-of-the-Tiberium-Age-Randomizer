@@ -103,6 +103,7 @@ def run_self_check():
         unit_collision_report,
     )
     from randomizer.launch.options import spawn_ini_text
+    from randomizer.maps.ini import parse_action_groups
     from randomizer.maps.settings import mission_house_color_rules
     from randomizer.missions.access import original_mcv_access_rules
     from randomizer.missions.overrides import MISSION_ORIGINAL_MCV_ACCESS_IDS
@@ -1816,12 +1817,74 @@ def run_self_check():
         paradrop_team = paradrop_rules.get(
             paradrop_report.get('paradrop_team', ''), {}
         )
-        paradrop_taskforce = paradrop_rules.get(
-            paradrop_team.get('TaskForce', ''), {}
-        )
+        paradrop_wave_team_ids = paradrop_report.get(
+            'paradrop_team_waves', {}
+        ).get('DropPodSpecial', [])
+        paradrop_wave_teams = [
+            paradrop_rules.get(team_id, {})
+            for team_id in paradrop_wave_team_ids
+        ]
+        paradrop_wave_taskforces = [
+            paradrop_rules.get(team.get('TaskForce', ''), {})
+            for team in paradrop_wave_teams
+        ]
         paradrop_aircraft = paradrop_rules.get(
             paradrop_report.get('paradrop_aircraft', ''), {}
         )
+        paradrop_wave_payload = Counter()
+        paradrop_wave_aircraft_entries = []
+        paradrop_wave_member_counts = []
+        paradrop_wave_passenger_counts = []
+        for taskforce in paradrop_wave_taskforces:
+            members = [
+                value for key, value in taskforce.items()
+                if str(key).isdigit()
+            ]
+            paradrop_wave_member_counts.append(len(members))
+            paradrop_wave_passenger_counts.append(sum(
+                int(member.split(',', 1)[0])
+                for member in members
+                if member.split(',', 1)[1]
+                != paradrop_report.get('paradrop_aircraft')
+            ))
+            for member in members:
+                count, unit_id = member.split(',', 1)
+                if unit_id == paradrop_report.get('paradrop_aircraft'):
+                    paradrop_wave_aircraft_entries.append(member)
+                else:
+                    paradrop_wave_payload[unit_id] += int(count)
+        paradrop_expected_payload = Counter({
+            paradrop_report.get('paratrooper_unit'): 5 + int(
+                paradrop_report['applied'][0]['payload_unit_counts'].get(
+                    '', 0
+                )
+            )
+        })
+        paradrop_expected_payload.update({
+            paradrop_report.get('paradrop_unit_routes', {}).get(
+                unit_id, unit_id
+            ): count
+            for unit_id, count in paradrop_report['applied'][0][
+                'payload_unit_counts'
+            ].items()
+            if unit_id
+        })
+        paradrop_generated_wave_trigger_ids = (
+            set(paradrop_rules.get('Events', {}))
+            & set(paradrop_rules.get('Actions', {}))
+            & set(paradrop_rules.get('Triggers', {}))
+        )
+        paradrop_wave_trigger_ids = paradrop_report.get(
+            'paradrop_wave_triggers', {}
+        ).get('DropPodSpecial', [])
+        paradrop_wave_actions = [
+            parse_action_groups(
+                paradrop_rules.get('Actions', {}).get(
+                    trigger_id, ''
+                )
+            )
+            for trigger_id in paradrop_wave_trigger_ids
+        ]
         paradrop_e5 = paradrop_clone_rules.get(
             paradrop_unit_routes.get('E5', ''), {}
         )
@@ -2558,14 +2621,73 @@ def run_self_check():
                 and paradrop_team.get('House')
                 == paradrop_report['player_house']
                 and paradrop_team.get('Waypoint') == '100'
-                and paradrop_taskforce.get('0') == '6,E1S_PLAYER'
-                and paradrop_taskforce.get('1') == '5,FTNK'
-                and paradrop_taskforce.get('2') == '5,ARTY'
-                and paradrop_taskforce.get('3') == '4,MLRS'
-                and paradrop_taskforce.get('4')
-                == f'1,{paradrop_report["paradrop_aircraft"]}'
-                and paradrop_report['paradrop_collapsed_payload_units']
-                == {'DropPodSpecial': 11}
+                and paradrop_report.get('paradrop_plane_count') == 4
+                and len(paradrop_wave_team_ids) == 4
+                and len(set(paradrop_wave_team_ids)) == 4
+                and all(
+                    team.get('House') == paradrop_report['player_house']
+                    and team.get('Waypoint') == '100'
+                    and team.get('Script') == paradrop_team.get('Script')
+                    for team in paradrop_wave_teams
+                )
+                and all(
+                    count <= 5 for count in paradrop_wave_member_counts
+                )
+                and all(
+                    count > 0
+                    for count in paradrop_wave_passenger_counts
+                )
+                and paradrop_wave_aircraft_entries == [
+                    f'1,{paradrop_report["paradrop_aircraft"]}'
+                ] * 4
+                and paradrop_wave_payload == paradrop_expected_payload
+                and sum(paradrop_wave_payload.values()) == 20
+                and not paradrop_report[
+                    'paradrop_collapsed_payload_units'
+                ]
+                and paradrop_report['applied'][0][
+                    'collapsed_payload_units'
+                ] == 0
+                and paradrop_report['applied'][0][
+                    'paradrop_plane_count'
+                ] == 4
+                and len(paradrop_wave_trigger_ids) == 1
+                and paradrop_generated_wave_trigger_ids == set(
+                    paradrop_wave_trigger_ids
+                )
+                and all(
+                    paradrop_rules.get('Events', {}).get(trigger_id)
+                    == '1,34,0,100'
+                    for trigger_id in paradrop_wave_trigger_ids
+                )
+                and all(count == 3 and len(groups) == 3
+                        for count, groups in paradrop_wave_actions)
+                and [group[:3]
+                     for _count, groups in paradrop_wave_actions
+                     for group in groups] == [
+                    ['7', '1', team_id]
+                    for team_id in paradrop_wave_team_ids[1:]
+                ]
+                and all(
+                    group[3:] == ['0', '0', '0', '0', 'A']
+                    for _count, groups in paradrop_wave_actions
+                    for group in groups
+                )
+                and paradrop_wave_trigger_ids[0]
+                in paradrop_rules.get('Tags', {}).get(
+                    paradrop_wave_teams[0].get('Tag', ''), ''
+                )
+                and all(
+                    not team.get('Tag') for team in paradrop_wave_teams[1:]
+                )
+                and all(
+                    paradrop_rules.get('Triggers', {}).get(
+                        trigger_id, ''
+                    ).startswith(
+                        f'{paradrop_report["player_house"]},<none>,'
+                    )
+                    for trigger_id in paradrop_wave_trigger_ids
+                )
                 and paradrop_report.get('paradrop_unit_routes') == {
                     'E5': 'E5_PLAYER',
                     'SHOK': 'SHOK_PLAYER',
