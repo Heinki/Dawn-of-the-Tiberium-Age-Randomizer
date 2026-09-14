@@ -1237,13 +1237,16 @@ def unit_specific_buff_rules(
     production_owner_houses=(),
     allow_foreign_factory_access=False,
     runtime_consumer_unit_ids=(),
+    native_direct_unit_ids=(),
 ):
     """Build map-local original buffs or player production clones.
 
     Direct player placements and player-owned reinforcement TaskForces may use
     the player clone. When enabled, isolated allied AI families receive helper
     clones and helper-exclusive TaskForces are rerouted. Enemy placements,
-    teams, triggers, and scripts stay original.
+    teams, triggers, and scripts stay original. Reviewed mission-critical
+    native identities can opt out of cloning when exact-type Events require
+    the player to build that original type.
     """
     source = mission_source_path(mission.get('scenario'))
     installed = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
@@ -1329,6 +1332,11 @@ def unit_specific_buff_rules(
         for unit_id in runtime_consumer_unit_ids
         if unit_id
     }
+    native_direct_units = {
+        str(unit_id).upper()
+        for unit_id in native_direct_unit_ids
+        if unit_id
+    }
     global_counts = Counter()
     for reward in rewards or ():
         unit_id = str(reward.get('unit') or '').upper()
@@ -1360,6 +1368,10 @@ def unit_specific_buff_rules(
         ):
             continue
         counts_by_unit.setdefault(unit_id, Counter())[buff_type] += 1
+    # Mission-required native identities are temporary access grants. Treat
+    # their earned buffs as active even when this seed did not award the
+    # corresponding permanent unlock.
+    access_units.update(native_direct_units)
 
     catalogue = catalogue_by_id()
     unlimited_units = set()
@@ -1531,6 +1543,8 @@ def unit_specific_buff_rules(
             or identity_collision
             or weapon_collision
         )
+        if unit_id in native_direct_units and collision['original_type_buff_safe']:
+            use_clone = False
         producible = _can_player_produce(values, production_house)
         runtime_only = bool(
             unit_id in runtime_consumer_units
@@ -1589,6 +1603,7 @@ def unit_specific_buff_rules(
 
         output_id = unit_id
         unit_rules = _unit_overrides(values, counts, target)
+        helper_family_fallback_needed = False
         if use_clone:
             output_id = _clone_id(unit_id, 'PLAYER', occupied)
             clone_values = dict(values)

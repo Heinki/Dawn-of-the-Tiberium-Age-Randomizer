@@ -104,6 +104,8 @@ def run_self_check():
     )
     from randomizer.launch.options import spawn_ini_text
     from randomizer.maps.settings import mission_house_color_rules
+    from randomizer.missions.access import original_mcv_access_rules
+    from randomizer.missions.overrides import MISSION_ORIGINAL_MCV_ACCESS_IDS
     from randomizer.application.unlock_data import UnlockDataController
     from randomizer.application.reward_controller import RewardController
     from randomizer.application.launch_controller import LaunchController
@@ -834,6 +836,47 @@ def run_self_check():
             )
             if mission_code == 'M_CRC10':
                 crc10_mcv_rules = mcv_rules
+        se6 = next(mission for mission in missions if mission['code'] == 'M_SE6')
+        se6_native_mcv_ids = MISSION_ORIGINAL_MCV_ACCESS_IDS.get('M_SE6', ())
+        se6_native_mcv_access = original_mcv_access_rules(
+            mission_source_lines(se6['scenario']),
+            se6_native_mcv_ids,
+        )
+        se6_isolation, se6_context = player_production_isolation_rules(se6)
+        se6_mcv_access_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('unit') == 'NMCV'
+            and reward.get('dta_production_access')
+        )
+        se6_mcv_speed_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('unit') == 'NMCV'
+            and reward.get('buff_type') == 'speed'
+        )
+        se6_native_rules, se6_native_report = unit_specific_buff_rules(
+            se6,
+            [se6_mcv_access_reward, se6_mcv_speed_reward],
+            access_randomized=True,
+            production_context=se6_context,
+            rule_overlays=se6_isolation,
+            production_owner_houses=mission_player_production_houses('M_SE6'),
+            allow_foreign_factory_access=True,
+            native_direct_unit_ids=se6_native_mcv_ids,
+        )
+        se6_native_entry = next((
+            item for item in se6_native_report['applied']
+            if item['unit'] == 'NMCV'
+        ), {})
+        se6_access_locks, _se6_access_report = player_infantry_access_rules(
+            se6,
+            [se6_mcv_access_reward],
+            True,
+            production_context=se6_context,
+            rule_overlays=se6_isolation,
+        )
+        se6_final_mcv_rules = dict(se6_access_locks.get('NMCV', {}))
+        se6_final_mcv_rules.update(se6_native_rules.get('NMCV', {}))
+        se6_final_mcv_rules.update(se6_native_mcv_access.get('NMCV', {}))
         crc10_event_companions = {
             trigger_id: event
             for trigger_id, event in crc10_mcv_rules.get('Events', {}).items()
@@ -3335,6 +3378,19 @@ def run_self_check():
             'reported_mcv_routes_are_engine_registered': all(
                 mcv_route_results.values()
             ),
+            'se6_requires_buildable_native_nod_mcv': (
+                set(se6_native_mcv_ids) == {'NMCV'}
+                and se6_native_mcv_access.get('NMCV', {}).get('TechLevel')
+                == '1'
+                and 'Nod' in comma_items(
+                    se6_native_mcv_access.get('NMCV', {}).get('Owner')
+                )
+                and se6_native_entry.get('output_type') == 'NMCV'
+                and se6_native_entry.get('route') == 'original_type'
+                and 'NMCV_PLAYER' not in se6_native_rules
+                and float(se6_final_mcv_rules.get('Speed', 0)) > 0
+                and se6_final_mcv_rules.get('ForbiddenHouses') == 'none'
+            ),
             'crc10_cloned_mcv_deploy_progresses_mission': (
                 crc10_deploy_progression_bridged
             ),
@@ -3549,7 +3605,8 @@ def run_self_check():
             'legacy_map_rules_isolated': True,
             'dta_reward_adapter_status': (
                 'shared ActsLike houses receive distinct production masks; '
-                'all buffs use player-production clones; powers use '
+                'buffs use player-production clones except reviewed '
+                'exact-objective identities; powers use '
                 'map-local player-house grants; direct player starting units may '
                 'use non-buildable clones while enemy and scripted identities remain '
                 'unchanged; live production and save/load need verification'
@@ -3650,6 +3707,7 @@ def run_self_check():
             'false_eagle_captured_gdi_base_exposes_unlocks',
             'reported_captured_factories_expose_unlocks',
             'reported_mcv_routes_are_engine_registered',
+            'se6_requires_buildable_native_nod_mcv',
             'crc10_cloned_mcv_deploy_progresses_mission',
             'dta_starting_credit_reward_is_capped_and_applied',
             'dta_medic_clone_keeps_healing',

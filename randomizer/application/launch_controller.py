@@ -1225,6 +1225,14 @@ throw "Map $name was not found in expandmo*.mix"
                 for section, values in isolation_rules.items()
             }
             source_lines = mission_source_lines(scenario)
+            native_mcv_ids = MISSION_ORIGINAL_MCV_ACCESS_IDS.get(
+                str(mission_code).upper(), ()
+            )
+            native_mcv_rules = original_mcv_access_rules(
+                source_lines,
+                native_mcv_ids,
+                additional_build_houses=(),
+            )
             configured_production_houses = (
                 mission_player_production_houses(mission_code)
             )
@@ -1270,6 +1278,7 @@ throw "Map $name was not found in expandmo*.mix"
                     or self.active_reward_mode() in {'Chaos', ARSENAL_MODE}
                 ),
                 runtime_consumer_unit_ids=paradrop_unit_ids,
+                native_direct_unit_ids=native_mcv_ids,
             )
             if self.shop_launch_active():
                 apply_shop_clone_modifiers(
@@ -1290,6 +1299,11 @@ throw "Map $name was not found in expandmo*.mix"
             for section, values in access_rules.items():
                 dta_rules.setdefault(section, {}).update(values)
             for section, values in clone_rules.items():
+                dta_rules.setdefault(section, {}).update(values)
+            # Randomized access locks every native mobile type. Apply reviewed
+            # mission identities last so exact-type objective Events can see
+            # the build and the required original remains on the sidebar.
+            for section, values in native_mcv_rules.items():
                 dta_rules.setdefault(section, {}).update(values)
             updated_power_actions = ensure_power_action_types()
             if updated_power_actions:

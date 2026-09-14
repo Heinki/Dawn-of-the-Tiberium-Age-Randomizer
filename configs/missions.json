@@ -319,7 +319,11 @@
     "clone_only_country_buff_types": {},
     "scripted_player_buff_taskforces": {},
     "team_house_overrides": {},
-    "original_mcv_access": {},
+    "original_mcv_access": {
+      "M_SE6": [
+        "NMCV"
+      ]
+    },
     "native_production_gate_exclusions": {},
     "special_infantry_factory_exclusions": {},
     "victory_hook_action_ids": {},
