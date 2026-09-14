@@ -55,7 +55,7 @@ In a power `provider`, `source` names the installed BuildingType template. Optio
 
 The global `Starting Credits +1,000` reward adds 10 House-credit units at launch because DTA stores campaign House balances in hundreds. Stacks cap at 20, for a maximum 20,000-credit bonus.
 
-DTA's paradrop hook first searches for a team named `PARADROPINF_<player house heap ID>`. The generated map supplies that player-only team with a cloned `BADGER` and the player's buffed Soviet rifle-infantry clone. This bypasses the hook's global hardcoded `E1` and native `BADGER` fallback without changing enemy paradrops.
+DTA's paradrop hook first searches for a team named `PARADROPINF_<player house heap ID>`. The generated map supplies that player-only team with a cloned `BADGER` and the player's buffed Soviet infantry payload. This bypasses the hook's global hardcoded `E1` and native `BADGER` fallback without changing Vinifera or enemy paradrops. Tiberian Sun TaskForces can contain at most five member types, including the aircraft. When more than three special infantry variants are unlocked, the generator rotates three variants by mission and preserves the total earned unit count.
 
 Installed DTA techno identities and cameo mappings come from `INI/Rules.ini`, `INI/Art.ini`, and the native MIX archives at runtime. They are not copied from the source game's roster snapshots.
 

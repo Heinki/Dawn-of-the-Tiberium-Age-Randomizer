@@ -7913,62 +7913,6 @@
       "id": 81065040
     },
     {
-      "name": "Nod Tank Paradrop Expanded Deployment I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81066259
-    },
-    {
-      "name": "Nod Tank Paradrop Flame Tank Reinforcements I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81066262
-    },
-    {
-      "name": "Nod Tank Paradrop Nod Artillery Reinforcements I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81066268
-    },
-    {
-      "name": "Nod Tank Paradrop Nod Buggy Reinforcements I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81066264
-    },
-    {
-      "name": "Nod Tank Paradrop Rapid Charging I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81066260
-    },
-    {
-      "name": "Nod Tank Paradrop Recon Bike Reinforcements I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81066265
-    },
-    {
-      "name": "Nod Tank Paradrop SSM Launcher Reinforcements I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81066266
-    },
-    {
-      "name": "Nod Tank Paradrop Stealth Tank Reinforcements I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81066267
-    },
-    {
       "name": "Obelisk of Light (OBLI) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -10391,6 +10335,20 @@
       "id": 81065933
     },
     {
+      "name": "Soviet Paratroopers Grenade Launcher Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066355
+    },
+    {
+      "name": "Soviet Paratroopers Machine-Gunner Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066356
+    },
+    {
       "name": "Soviet Paratroopers Medic Reinforcements I",
       "classification": "useful",
       "category": "power_buffs",
@@ -12335,13 +12293,6 @@
       "category": "unit_unlocks",
       "repeatable": false,
       "id": 81065339
-    },
-    {
-      "name": "Unlock Nod Tank Paradrop",
-      "classification": "progression",
-      "category": "power_unlocks",
-      "repeatable": false,
-      "id": 81066261
     },
     {
       "name": "Unlock Obelisk of Light (OBLI)",
@@ -14362,7 +14313,7 @@
       ]
     }
   ],
-  "catalogue_checksum": "d06761435e58d27c1b487047de2e8c8597d1e7ed5cf2148a5c604969c291025f",
+  "catalogue_checksum": "d6047d1d6fa9190d1378a9fe0d9c3e9ba397929c0d3cb8651208b9fc16e3641b",
   "locations": [
     {
       "name": "Tutorial Mission 1 - Mission Complete - Reward 1",

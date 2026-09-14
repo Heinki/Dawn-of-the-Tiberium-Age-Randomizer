@@ -61,6 +61,7 @@ RETIRED_POWER_ACTION_TYPES = frozenset({
     'DTAAIRSTRIKESPECIALACT',
     'DTACHEMICALSPECIALACT',
     'DTAMULTISPECIALACT',
+    'DTATANKDROPSPECIALACT',
     'DTAVORTEXSPECIALACT',
 }) - {
     action_name
@@ -78,6 +79,44 @@ PARATROOPER_BUFF_FIELDS = {
     'SelfHealing', 'SelfHealingCap', 'SelfHealingRate', 'SelfHealingStep',
     'OpportunityFire', 'NoMovingFire', 'MovementZone', 'SpeedType',
 }
+PARADROP_TASKFORCE_MEMBER_LIMIT = 5
+PARADROP_PAYLOAD_TYPE_LIMIT = PARADROP_TASKFORCE_MEMBER_LIMIT - 1
+
+
+def _bounded_paradrop_members(mission_code, power_id, members):
+    """Fit one paradrop into TS's five-member TaskForce representation."""
+    payload_members = list(members[:-1])
+    aircraft_member = members[-1]
+    if len(payload_members) <= PARADROP_PAYLOAD_TYPE_LIMIT:
+        return [*payload_members, aircraft_member], 0
+
+    baseline = payload_members[0]
+    variants = payload_members[1:]
+    variant_slots = PARADROP_PAYLOAD_TYPE_LIMIT - 1
+    digest = sha1(
+        f'{mission_code}:{power_id}'.encode('utf-8')
+    ).digest()
+    offset = int.from_bytes(digest[:4], 'little') % len(variants)
+    selected = [
+        variants[(offset + index) % len(variants)]
+        for index in range(variant_slots)
+    ]
+    selected_ids = {unit_id for _count, unit_id in selected}
+    selected_counts = {unit_id: count for count, unit_id in selected}
+    overflow = 0
+    destination = 0
+    for count, unit_id in variants:
+        if unit_id in selected_ids:
+            continue
+        overflow += count
+        selected_id = selected[destination % len(selected)][1]
+        selected_counts[selected_id] += count
+        destination += 1
+    return [
+        baseline,
+        *((selected_counts[unit_id], unit_id) for _count, unit_id in selected),
+        aircraft_member,
+    ], overflow
 
 
 def active_paradrop_unit_ids(rewards):
@@ -794,6 +833,10 @@ def player_power_rules(
         'paradrop_unit_routes': {},
         'paradrop_team': '',
         'paradrop_aircraft': '',
+        'paradrop_power_ids': [],
+        'paradrop_combined': False,
+        'paradrop_payload_units': '0',
+        'paradrop_collapsed_payload_units': {},
         'exclusive_native_provider_fields': [],
         'exclusive_native_grants_removed': 0,
     }
@@ -835,6 +878,7 @@ def player_power_rules(
     power_buff_counts = {}
     payload_unit_counts = {}
     recharge_multipliers = {}
+    paradrop_deployments = []
     # Local import avoids the definition module's catalogue-time import of
     # POWER_SPECS while still enforcing saved-state stack caps at launch.
     from randomizer.rewards.dta_power_buffs import power_buff_stack_limit
@@ -887,6 +931,7 @@ def player_power_rules(
             report['skipped'].append({'power': source_id, 'reason': 'missing_power_rules'})
             continue
         clone_id = _clone_type_id(source_id, occupied)
+        runtime_index = len(runtime_types)
         # Start from exact installed/map-local power definition. Config values
         # then apply player identity, recharge, voices, and sidebar adjustments.
         clone_values = dict(effective_section(mission_rules, source_id))
@@ -1014,10 +1059,9 @@ def player_power_rules(
                 and str(value).strip().casefold() == player_house.casefold()
             ), None)
             if house_heap_id is not None:
-                # Vinifera first searches for PARADROPINF_<HouseHeapID>. A
+                # Vinifera searches for PARADROPINF_<HouseHeapID>. A
                 # predeclared player-only team bypasses its fallback E1/BADGER
-                # task force, so payload and infantry buffs do not touch enemy
-                # paradrops or native types.
+                # task force without changing the engine or enemy paradrops.
                 team_id = f'PARADROPINF_{house_heap_id}'
                 occupied.add(team_id.casefold())
                 taskforce_id = _clone_auxiliary_id(
@@ -1073,13 +1117,21 @@ def player_power_rules(
                 }
                 taskforce_members.extend(
                     (
-                        count * units_per_buff,
+                        configured_payload_counts[unit_id] * units_per_buff,
                         paradrop_unit_routes.get(unit_id, unit_id),
                     )
-                    for unit_id, count in configured_payload_counts.items()
-                    if unit_id and unit_id in option_ids and count > 0
+                    for option in payload.get('unit_options', ())
+                    if (
+                        (unit_id := str(option.get('id') or '').upper())
+                        and configured_payload_counts.get(unit_id, 0) > 0
+                    )
                 )
                 taskforce_members.append((1, aircraft_clone))
+                taskforce_members, collapsed_payload_count = (
+                    _bounded_paradrop_members(
+                        mission.get('code', ''), source_id, taskforce_members
+                    )
+                )
                 rules[taskforce_id] = {
                     str(index): f'{count},{unit_id}'
                     for index, (count, unit_id) in enumerate(taskforce_members)
@@ -1136,8 +1188,29 @@ def player_power_rules(
                 }
                 report['paradrop_team'] = team_id
                 report['paradrop_aircraft'] = aircraft_clone
+                paradrop_deployments.append({
+                    'power': source_id,
+                    'team': team_id,
+                    'taskforce': taskforce_id,
+                    'script': script_id,
+                    'aircraft': aircraft_clone,
+                    'capacity_field': capacity_field,
+                    'members': taskforce_members,
+                    'baseline_unit': drop_unit,
+                    'drop_unit': drop_unit,
+                    'requested_paratrooper': requested_paratrooper,
+                    'inherited_buffs': inherited_buffs,
+                    'unit_routes': {
+                        unit_id: paradrop_unit_routes.get(unit_id, unit_id)
+                        for unit_id in {
+                            baseline_unit_id, 'E1', 'E1S', *option_ids,
+                        }
+                        if unit_id in paradrop_unit_routes
+                    },
+                    'is_infantry': baseline_unit_id == 'E1S',
+                    'collapsed_payload_count': collapsed_payload_count,
+                })
         rules.setdefault('SuperWeaponTypes', {})[str(next_key)] = clone_id
-        runtime_index = len(runtime_types)
         runtime_types.append(clone_id)
         runtime_lookup.add(clone_id.casefold())
         next_key += 1
@@ -1366,6 +1439,66 @@ def player_power_rules(
                 payload['aircraft_id'] if payload else ''
             ),
         })
+    if paradrop_deployments:
+        power_order = {
+            spec['id'].upper(): index for index, spec in enumerate(POWER_SPECS)
+        }
+        paradrop_deployments.sort(key=lambda item: power_order.get(
+            item['power'].upper(), len(power_order)
+        ))
+        primary = paradrop_deployments[0]
+        collapsed_payload_units = {
+            deployment['power']: deployment['collapsed_payload_count']
+            for deployment in paradrop_deployments
+            if deployment['collapsed_payload_count']
+        }
+        combined_capacity = sum(
+            sum(count for count, _unit_id in deployment['members'][:-1])
+            for deployment in paradrop_deployments
+        )
+        infantry_deployment = next((
+            deployment for deployment in paradrop_deployments
+            if deployment['is_infantry']
+        ), primary)
+        report['paratrooper_unit'] = infantry_deployment['drop_unit']
+        report['paratrooper_buff_source'] = (
+            infantry_deployment['requested_paratrooper']
+        )
+        report['paratrooper_buff_fields'] = (
+            infantry_deployment['inherited_buffs']
+        )
+        report['paradrop_unit_routes'] = {
+            unit_id: output_id
+            for deployment in paradrop_deployments
+            for unit_id, output_id in deployment['unit_routes'].items()
+        }
+        report['paradrop_team'] = primary['team']
+        report['paradrop_aircraft'] = primary['aircraft']
+        report['paradrop_teams'] = {
+            deployment['power']: deployment['team']
+            for deployment in paradrop_deployments
+        }
+        report['paradrop_power_ids'] = [
+            deployment['power'] for deployment in paradrop_deployments
+        ]
+        report['paradrop_combined'] = False
+        report['paradrop_payload_units'] = str(combined_capacity)
+        report['paradrop_collapsed_payload_units'] = (
+            collapsed_payload_units
+        )
+        for entry in report['applied']:
+            if entry['power'] in report['paradrop_power_ids']:
+                deployment = next(
+                    item for item in paradrop_deployments
+                    if item['power'] == entry['power']
+                )
+                entry['paradrop_team'] = deployment['team']
+                entry['combined_payload_units'] = str(sum(
+                    count for count, _unit_id in deployment['members'][:-1]
+                ))
+                entry['collapsed_payload_units'] = (
+                    collapsed_payload_units.get(entry['power'], 0)
+                )
     report['_runtime_rules'] = runtime_rule_sections
     report['_runtime_art'] = runtime_art_sections
     return rules, actions, report
