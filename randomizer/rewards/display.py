@@ -705,6 +705,15 @@ def buff_effect_comparison_lines(reward, current_count, *, buff_counts=None):
     reward = canonical_reward(reward)
     current_count = max(0, int(current_count))
     next_count = current_count + 1
+    if reward.get('power_buff_type') == 'payload':
+        unit_label = str(
+            reward.get('payload_unit_label') or 'unit'
+        ).strip()
+        qualifier = 'more ' if current_count else ''
+        return [
+            f'Add 1 {qualifier}{unit_label} '
+            f'({current_count} -> {next_count})'
+        ]
     options = dict(
         include_label=False,
         include_stack=False,

@@ -368,7 +368,12 @@ class ShopProgressionService:
         if not shop_eligible:
             price = 0
         elif entry.reward_type is ShopRewardType.POWER_BUFF:
-            price = permanent_power_buff_price(entry.target_id)
+            price = permanent_power_buff_price(
+                entry.target_id,
+                payload_shop_price_target_id=(
+                    entry.payload_shop_price_target_id
+                ),
+            )
         else:
             price = permanent_buff_price(entry.target_id)
         outcome = apply_permanent_buff_purchase(

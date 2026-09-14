@@ -66,6 +66,15 @@ def _unique_strings(value, field):
     return tuple(dict.fromkeys(value))
 
 
+def _canonical_reward_strings(value, field):
+    from .catalogue import canonical_reward_id
+
+    return tuple(dict.fromkeys(
+        canonical_reward_id(reward_id) or reward_id
+        for reward_id in _unique_strings(value, field)
+    ))
+
+
 def _strings(value, field):
     if value is None:
         return ()
@@ -155,7 +164,7 @@ def normalize_shop_profile(document=None, *, config=SHOP_CONFIG):
     unlocks = _unique_strings(
         document.get('permanent_unit_unlocks'), 'permanent_unit_unlocks'
     )
-    power_unlocks = _unique_strings(
+    power_unlocks = _canonical_reward_strings(
         document.get('permanent_power_unlocks'), 'permanent_power_unlocks'
     )
     raw_upgrades = document.get('permanent_upgrades')
@@ -227,6 +236,8 @@ def migrate_shop_run(document):
 
 
 def _purchase_records(value, field, quantity_field, record_type):
+    from .catalogue import canonical_reward_id
+
     if value is None:
         return ()
     if not isinstance(value, list):
@@ -237,6 +248,7 @@ def _purchase_records(value, field, quantity_field, record_type):
         reward_id = _string(
             record.get('reward_id'), f'{field}[{index}].reward_id', required=True
         )
+        reward_id = canonical_reward_id(reward_id) or reward_id
         quantity = _positive_int(
             record.get(quantity_field),
             f'{field}[{index}].{quantity_field}',
@@ -362,6 +374,12 @@ def normalize_shop_run(document, *, config=SHOP_CONFIG):
     stock_lock_reward_id = _string(
         document.get('stock_lock_reward_id'), 'stock_lock_reward_id'
     )
+    if stock_lock_reward_id:
+        from .catalogue import canonical_reward_id
+        stock_lock_reward_id = (
+            canonical_reward_id(stock_lock_reward_id)
+            or stock_lock_reward_id
+        )
     stock_lock_stage = document.get('stock_lock_stage')
     if stock_lock_stage is not None:
         stock_lock_stage = _positive_int(
@@ -418,7 +436,7 @@ def normalize_shop_run(document, *, config=SHOP_CONFIG):
             document.get('random_starting_unit_unlocks'),
             'random_starting_unit_unlocks',
         ),
-        permanent_power_unlocks_snapshot=_unique_strings(
+        permanent_power_unlocks_snapshot=_canonical_reward_strings(
             document.get('permanent_power_unlocks_snapshot'),
             'permanent_power_unlocks_snapshot',
         ),

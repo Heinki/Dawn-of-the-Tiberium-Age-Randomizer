@@ -8228,6 +8228,118 @@
       "id": 81065060
     },
     {
+      "name": "Paradrop Chem Warrior Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066364
+    },
+    {
+      "name": "Paradrop Expanded Deployment I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066365
+    },
+    {
+      "name": "Paradrop Flame Tank Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066366
+    },
+    {
+      "name": "Paradrop Grenade Launcher Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066367
+    },
+    {
+      "name": "Paradrop Machine-Gunner Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066368
+    },
+    {
+      "name": "Paradrop Medic Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066369
+    },
+    {
+      "name": "Paradrop Nod Artillery Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066370
+    },
+    {
+      "name": "Paradrop Nod Buggy Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066371
+    },
+    {
+      "name": "Paradrop Nod Light Tank Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066372
+    },
+    {
+      "name": "Paradrop Rapid Charging I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066373
+    },
+    {
+      "name": "Paradrop Recon Bike Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066374
+    },
+    {
+      "name": "Paradrop SSM Launcher Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066375
+    },
+    {
+      "name": "Paradrop Shock Trooper Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066376
+    },
+    {
+      "name": "Paradrop Soviet Flamethrower Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066377
+    },
+    {
+      "name": "Paradrop Soviet Rocket Soldier Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066378
+    },
+    {
+      "name": "Paradrop Stealth Tank Reinforcements I",
+      "classification": "useful",
+      "category": "power_buffs",
+      "repeatable": true,
+      "id": 81066379
+    },
+    {
       "name": "Phase Tank (PTNK) Amphibious Drive I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -10321,69 +10433,6 @@
       "id": 81066030
     },
     {
-      "name": "Soviet Paratroopers Chem Warrior Reinforcements I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81066031
-    },
-    {
-      "name": "Soviet Paratroopers Expanded Deployment I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81065933
-    },
-    {
-      "name": "Soviet Paratroopers Grenade Launcher Reinforcements I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81066355
-    },
-    {
-      "name": "Soviet Paratroopers Machine-Gunner Reinforcements I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81066356
-    },
-    {
-      "name": "Soviet Paratroopers Medic Reinforcements I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81066258
-    },
-    {
-      "name": "Soviet Paratroopers Rapid Charging I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81065549
-    },
-    {
-      "name": "Soviet Paratroopers Shock Trooper Reinforcements I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81066032
-    },
-    {
-      "name": "Soviet Paratroopers Soviet Flamethrower Reinforcements I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81066033
-    },
-    {
-      "name": "Soviet Paratroopers Soviet Rocket Soldier Reinforcements I",
-      "classification": "useful",
-      "category": "power_buffs",
-      "repeatable": true,
-      "id": 81066034
-    },
-    {
       "name": "Soviet Shore Artillery (RAPARTY) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -12316,6 +12365,13 @@
       "id": 81065341
     },
     {
+      "name": "Unlock Paradrop",
+      "classification": "progression",
+      "category": "power_unlocks",
+      "repeatable": false,
+      "id": 81066380
+    },
+    {
       "name": "Unlock Phase Tank (PTNK)",
       "classification": "progression",
       "category": "special_unlocks",
@@ -12482,13 +12538,6 @@
       "category": "power_unlocks",
       "repeatable": false,
       "id": 81066022
-    },
-    {
-      "name": "Unlock Soviet Paratroopers",
-      "classification": "progression",
-      "category": "power_unlocks",
-      "repeatable": false,
-      "id": 81065438
     },
     {
       "name": "Unlock Soviet Shore Artillery (RAPARTY)",
@@ -14313,7 +14362,7 @@
       ]
     }
   ],
-  "catalogue_checksum": "d6047d1d6fa9190d1378a9fe0d9c3e9ba397929c0d3cb8651208b9fc16e3641b",
+  "catalogue_checksum": "768d1443b758678bb2caa0cee9b8268581a18ba7cd3603e5107ee70b3e11a7d3",
   "locations": [
     {
       "name": "Tutorial Mission 1 - Mission Complete - Reward 1",

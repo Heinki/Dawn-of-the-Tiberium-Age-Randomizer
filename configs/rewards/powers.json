@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "description": "DTA player powers. Missile and vortex powers use buildable player-only provider clones; Ion Cannon and Paratroopers use direct player grants.",
+  "description": "DTA player powers. Missile and vortex powers use buildable player-only provider clones; Ion Cannon and Paradrop use direct player grants.",
   "sections": {
     "settings": {
       "area_cells_per_stack": 1.0,
@@ -190,12 +190,12 @@
       },
       {
         "id": "DropPodSpecial",
-        "label": "Soviet Paratroopers",
-        "description": "Grants the repeating Soviet Paratroopers support power.",
-        "factions": ["Soviet"],
+        "label": "Paradrop",
+        "description": "Grants the repeating Paradrop support power with selectable infantry and light-vehicle reinforcements.",
+        "factions": ["Neutral"],
         "category": "aid",
         "values": {
-          "Name": "Soviet Paratroopers",
+          "Name": "Paradrop",
           "Type": "DropPod",
           "IsPowered": "false",
           "RechargeVoice": "",
@@ -214,6 +214,7 @@
           "aircraft_id": "BADGER",
           "capacity_field": "Passengers",
           "baseline_capacity": 5,
+          "baseline_shop_price_target_id": "E1A",
           "units_per_buff": 1,
           "unit_options": [
             {
@@ -232,6 +233,7 @@
               "id": "E3S",
               "label": "Soviet Rocket Soldier",
               "plural": "Soviet Rocket Soldiers",
+              "shop_price_target_id": "E3A",
               "maximum_stacks": 5
             },
             {
@@ -256,6 +258,48 @@
               "id": "GRENL",
               "label": "Grenade Launcher",
               "plural": "Grenade Launchers",
+              "maximum_stacks": 5
+            },
+            {
+              "id": "BGGY",
+              "label": "Nod Buggy",
+              "plural": "Nod Buggies",
+              "maximum_stacks": 5
+            },
+            {
+              "id": "BIKE",
+              "label": "Recon Bike",
+              "plural": "Recon Bikes",
+              "maximum_stacks": 5
+            },
+            {
+              "id": "LTNK",
+              "label": "Nod Light Tank",
+              "plural": "Nod Light Tanks",
+              "maximum_stacks": 5
+            },
+            {
+              "id": "FTNK",
+              "label": "Flame Tank",
+              "plural": "Flame Tanks",
+              "maximum_stacks": 5
+            },
+            {
+              "id": "ARTY",
+              "label": "Nod Artillery",
+              "plural": "Nod Artillery",
+              "maximum_stacks": 5
+            },
+            {
+              "id": "MLRS",
+              "label": "SSM Launcher",
+              "plural": "SSM Launchers",
+              "maximum_stacks": 5
+            },
+            {
+              "id": "STNK",
+              "label": "Stealth Tank",
+              "plural": "Stealth Tanks",
               "maximum_stacks": 5
             }
           ]

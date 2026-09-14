@@ -309,6 +309,7 @@ class ShopCatalogueEntry:
     tier: str | None
     stack_limit: int | None
     factions: tuple[str, ...]
+    payload_shop_price_target_id: str = ''
 
 
 @dataclass(frozen=True)

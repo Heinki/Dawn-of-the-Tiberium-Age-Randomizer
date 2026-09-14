@@ -191,10 +191,73 @@ def validate_shop_domain():
         == 'payload'
     }
     _require(
+        next(
+            entry for entry in power_access
+            if entry.target_id == 'DROPPODSPECIAL'
+        ).factions == ('Neutral',),
+        'DTA Paradrop is not available from Neutral faction pool',
+    )
+    _require(
         paradrop_payload_choices == {
             '', 'E4S', 'E5', 'E3S', 'SHOK', 'MEDIC', 'MGI', 'GRENL',
+            'BGGY', 'BIKE', 'LTNK', 'FTNK', 'ARTY', 'MLRS', 'STNK',
         },
-        'DTA Shop selectable Paratroopers payload catalogue is incomplete',
+        'DTA Shop selectable Paradrop payload catalogue is incomplete',
+    )
+    paradrop_payload_prices = {
+        str(canonical_reward_for_id(entry.reward_id).get(
+            'payload_unit_id'
+        ) or ''): run_reward_price(entry)
+        for entry in power_buffs
+        if entry.target_id == 'DROPPODSPECIAL'
+        and canonical_reward_for_id(entry.reward_id).get('power_buff_type')
+        == 'payload'
+    }
+    _require(
+        paradrop_payload_prices == {
+            '': 2,
+            'E4S': 3, 'E5': 5, 'E3S': 3, 'SHOK': 8,
+            'MEDIC': 6, 'MGI': 5, 'GRENL': 5,
+            'BGGY': 3, 'BIKE': 4, 'LTNK': 5, 'FTNK': 6,
+            'ARTY': 4, 'MLRS': 5, 'STNK': 6,
+        },
+        'DTA Shop Paradrop payload prices are not strength-specific',
+    )
+    paradrop_permanent_payload_prices = {
+        str(canonical_reward_for_id(entry.reward_id).get(
+            'payload_unit_id'
+        ) or ''): permanent_power_buff_price(
+            entry.target_id,
+            payload_shop_price_target_id=(
+                entry.payload_shop_price_target_id
+            ),
+        )
+        for entry in power_buffs
+        if entry.target_id == 'DROPPODSPECIAL'
+        and canonical_reward_for_id(entry.reward_id).get('power_buff_type')
+        == 'payload'
+    }
+    _require(
+        paradrop_permanent_payload_prices == {
+            '': 8,
+            'E4S': 10, 'E5': 18, 'E3S': 10, 'SHOK': 32,
+            'MEDIC': 22, 'MGI': 18, 'GRENL': 18,
+            'BGGY': 10, 'BIKE': 14, 'LTNK': 18, 'FTNK': 22,
+            'ARTY': 14, 'MLRS': 18, 'STNK': 22,
+        },
+        'DTA permanent Shop Paradrop payload prices are not strength-specific',
+    )
+    _require(
+        canonical_reward_for_id('Unlock Nod Tank Paradrop').get(
+            'superweapon'
+        ) == 'DropPodSpecial'
+        and canonical_reward_for_id(
+            'Nod Tank Paradrop Expanded Deployment I'
+        ).get('payload_unit_id') == 'LTNK'
+        and canonical_reward_for_id(
+            'Nod Tank Paradrop Stealth Tank Reinforcements I'
+        ).get('payload_unit_id') == 'STNK',
+        'DTA retired Tank Paradrop rewards do not migrate to shared Paradrop',
     )
     _require(
         not any(

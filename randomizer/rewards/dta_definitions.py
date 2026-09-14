@@ -473,6 +473,10 @@ def _power_buff_reward(spec, buff_id, payload_option=None):
             'payload_unit_id': payload_option['id'],
             'payload_unit_label': label,
             'payload_unit_plural': plural,
+            'payload_shop_price_target_id': (
+                payload_option.get('shop_price_target_id')
+                or payload_option['id']
+            ),
             'maximum_stacks': int(payload_option.get('maximum_stacks', 5)),
         })
     elif buff_id == 'payload':
@@ -490,6 +494,9 @@ def _power_buff_reward(spec, buff_id, payload_option=None):
             ),
             'payload_unit_label': label,
             'payload_unit_plural': plural,
+            'payload_shop_price_target_id': payload.get(
+                'baseline_shop_price_target_id', ''
+            ),
         })
     return reward
 
@@ -543,7 +550,45 @@ ACCESS_REWARD_ALIASES = {
     for reward in REWARD_POOL
     if reward.get('unit') == 'TTNKMSL'
 }
-REWARD_ALIASES = dict(ACCESS_REWARD_ALIASES)
+PARADROP_REWARD_ALIASES = {
+    'Unlock Soviet Paratroopers': 'Unlock Paradrop',
+    'Soviet Paratroopers Rapid Charging I': 'Paradrop Rapid Charging I',
+    'Soviet Paratroopers Expanded Deployment I': (
+        'Paradrop Expanded Deployment I'
+    ),
+    **{
+        f'Soviet Paratroopers {label} Reinforcements I': (
+            f'Paradrop {label} Reinforcements I'
+        )
+        for label in (
+            'Soviet Flamethrower', 'Chem Warrior',
+            'Soviet Rocket Soldier', 'Shock Trooper', 'Medic',
+            'Machine-Gunner', 'Grenade Launcher', 'Nod Buggy',
+            'Recon Bike', 'Nod Light Tank', 'Flame Tank', 'Nod Artillery',
+            'SSM Launcher', 'Stealth Tank',
+        )
+    },
+    'Unlock Nod Tank Paradrop': 'Unlock Paradrop',
+    'Nod Tank Paradrop Rapid Charging I': (
+        'Paradrop Rapid Charging I'
+    ),
+    'Nod Tank Paradrop Expanded Deployment I': (
+        'Paradrop Nod Light Tank Reinforcements I'
+    ),
+    **{
+        f'Nod Tank Paradrop {label} Reinforcements I': (
+            f'Paradrop {label} Reinforcements I'
+        )
+        for label in (
+            'Nod Buggy', 'Recon Bike', 'Flame Tank', 'Nod Artillery',
+            'SSM Launcher', 'Stealth Tank',
+        )
+    },
+}
+REWARD_ALIASES = {
+    **ACCESS_REWARD_ALIASES,
+    **PARADROP_REWARD_ALIASES,
+}
 AID_POWER_MAP_CONFIGS = []
 AID_POWER_MAP_CONFIG_BY_SUPERWEAPON = {}
 SPECIAL_BUILDING_DEFINITIONS = ()

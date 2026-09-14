@@ -106,6 +106,7 @@ def catalogue_entry(reward):
             None,
             buff_stack_limit(canonical),
             factions,
+            str(canonical.get('payload_shop_price_target_id') or '').upper(),
         )
     if kind == 'buff':
         target_id = str(canonical.get('unit') or '').upper()
@@ -208,15 +209,33 @@ def _validate_power_target_prices(entries):
         if (definition.permanent_buff is not None)
         != (target_id in buff_targets)
     )
+    invalid_payload_prices = sorted({
+        entry.payload_shop_price_target_id
+        for entry in entries
+        if entry.reward_type is ShopRewardType.POWER_BUFF
+        and entry.payload_shop_price_target_id
+        and (
+            entry.payload_shop_price_target_id
+            not in SHOP_CONFIG.unit_target_prices
+            or SHOP_CONFIG.unit_target_prices[
+                entry.payload_shop_price_target_id
+            ].run_access is None
+            or SHOP_CONFIG.unit_target_prices[
+                entry.payload_shop_price_target_id
+            ].permanent_access is None
+        )
+    })
     if (
         invalid_access or invalid_buffs
         or invalid_permanent_access or invalid_permanent_buffs
+        or invalid_payload_prices
     ):
         raise StaticConfigError(
             'Shop Mode power_target_prices availability does not match shop '
             f'catalogue; access={invalid_access}, buffs={invalid_buffs}, '
             f'permanent_access={invalid_permanent_access}, '
             f'permanent_buffs={invalid_permanent_buffs} '
+            f'payload_prices={invalid_payload_prices} '
             'in shop_mode.json'
         )
 

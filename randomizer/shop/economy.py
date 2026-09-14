@@ -234,8 +234,13 @@ def permanent_power_price(target_id, *, config: ShopModeConfig = SHOP_CONFIG):
 
 
 def permanent_power_buff_price(
-    target_id, *, config: ShopModeConfig = SHOP_CONFIG
+    target_id, *, payload_shop_price_target_id='',
+    config: ShopModeConfig = SHOP_CONFIG
 ):
+    if payload_shop_price_target_id:
+        return _unit_target_price(
+            config, payload_shop_price_target_id, 'permanent_access'
+        )
     return _power_target_price(config, target_id, 'permanent_buff')
 
 
@@ -316,9 +321,14 @@ def run_reward_price(
             config, entry.target_id, 'run_access'
         )
     elif entry.reward_type is ShopRewardType.POWER_BUFF:
-        base_price = _power_target_price(
-            config, entry.target_id, 'run_buff'
-        )
+        if entry.payload_shop_price_target_id:
+            base_price = _unit_target_price(
+                config, entry.payload_shop_price_target_id, 'run_access'
+            )
+        else:
+            base_price = _power_target_price(
+                config, entry.target_id, 'run_buff'
+            )
         stack_surcharge = current_stacks
     else:
         raise ValueError(

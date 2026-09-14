@@ -71,6 +71,21 @@ class InlineEffectChecks(unittest.TestCase):
         self.assertIn('(MAX)', maxed)
         self.assertNotIn('Next stack:', maxed)
 
+    def test_paradrop_payload_upgrade_is_compact(self):
+        entry = next(
+            entry for entry in self.entries
+            if entry.reward_type is ShopRewardType.POWER_BUFF
+            and canonical_reward_for_id(entry.reward_id).get(
+                'payload_unit_id'
+            ) == 'GRENL'
+        )
+        self.assertEqual(
+            ShopPolishController._shop_catalogue_display_name(
+                entry, 'Stacks 2', 2
+            ),
+            'Add 1 more Grenade Launcher (2 -> 3)',
+        )
+
     def test_armor_shop_effect_shows_armor_and_durability_change(self):
         armor_entry = next(
             entry for entry in self.entries

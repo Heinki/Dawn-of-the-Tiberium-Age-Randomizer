@@ -13,7 +13,7 @@ The active static configuration targets Dawn of the Tiberium Age.
   permanent upgrades, run modifiers, player boons, and hostile-house
   challenges.
 - `rewards/tuning.json` and `rewards/enemy_scaling.json` contain active DTA reward tuning.
-- `rewards/powers.json` defines six supported player powers. Ion Cannon and Paratroopers use mission-local startup grants. Airstrike, both Nuclear Strikes, and Chrono Vortex use buildable provider clones whose inherited prerequisites are removed; the physical Construction Yard remains required.
+- `rewards/powers.json` defines six supported player powers. Ion Cannon and the neutral Paradrop use mission-local startup grants. Airstrike, both Nuclear Strikes, and Chrono Vortex use buildable provider clones whose inherited prerequisites are removed; the physical Construction Yard remains required.
 
 DTA unit and defense catalogues are derived from installed game data at runtime. Firestorm and obsolete power aliases remain disabled.
 
@@ -41,21 +41,26 @@ up. Permanent buffs use the 5, 6, 8, 10, and 12 Gem curve. Explicit target
 entries retain utility discounts and high-impact premiums. TechLevel controls
 displayed tier only and never determines Shop price.
 
-Power prices are also target-specific: Paratroopers are cheapest, Airstrike is
+Power prices are also target-specific: Paradrop is cheapest, Airstrike is
 mid-range, Ion Cannon and Chrono Vortex are high-range, and both Nuclear
-Strikes use the maximum power price.
+Strikes use the maximum power price. Paradrop payload upgrades use their
+delivered unit's access-price band, so stronger infantry and vehicles cost more.
 
 Generated unit and building clones receive fixed `CameoPriority` bands in GDI, Nod, Allies, Soviet order. Defensive buildings use a separate lower set of faction bands, keeping every defense below normal buildings on the construction sidebar.
 
-The Ion Cannon clone starts from the native `IonCannonSpecial` definition, then applies player-only identity and buff adjustments. Because Ion damage and radius are engine-global, native providers and scripted grants are removed and the native power is recharge-locked while the reward clone is active. Only the player-granted clone can fire the buffed effect. Buildable Airstrike, Nuclear Strike, and Chrono Vortex providers support cost, construction-speed, and Additional Launch Site buffs. Their base limit is one building; every Additional Launch Site stack enables another one-use provider/power pair, up to five, so destroying a building removes its corresponding shot. Paratroopers support recharge, standard payload-size, and named infantry payload buffs, including Medics; each named payload is a separate Shop choice.
+The Ion Cannon clone starts from the native `IonCannonSpecial` definition, then applies player-only identity and buff adjustments. Because Ion damage and radius are engine-global, native providers and scripted grants are removed and the native power is recharge-locked while the reward clone is active. Only the player-granted clone can fire the buffed effect. Buildable Airstrike, Nuclear Strike, and Chrono Vortex providers support cost, construction-speed, and Additional Launch Site buffs. Their base limit is one building; every Additional Launch Site stack enables another one-use provider/power pair, up to five, so destroying a building removes its corresponding shot. Paradrop supports recharge, standard payload-size, and named infantry or light-vehicle payload buffs; each named payload is a separate Shop choice.
 
 Airstrike, Nuclear Strike, and Chrono Vortex damage/radius upgrades use unique player-only SuperWeaponType, weapon, warhead, and animation clones. Airstrike moves each bomb's damage onto its visible napalm explosion through Vinifera's `ExplosionDamage`, and its area upgrade expands a cloned `NapalmHE` warhead across cells. Their provider buildings use `Buildability=HumanOnly`; native buildings stay `AIOnly` for production and native AI effect chains remain unchanged.
 
 In a power `provider`, `source` names the installed BuildingType template. Optional `buildable` is a boolean and defaults to `false`; `true` produces a human-only `TechLevel=1` clone with inherited prerequisite fields removed instead of placing a hidden startup provider. Optional `values` supplies explicit provider overrides.
 
+In a paradrop `payload`, `baseline_shop_price_target_id` prices the standard
+payload. An option can override its own unit ID with `shop_price_target_id`.
+Both use the referenced unit's Shop access-price band.
+
 The global `Starting Credits +1,000` reward adds 10 House-credit units at launch because DTA stores campaign House balances in hundreds. Stacks cap at 20, for a maximum 20,000-credit bonus.
 
-DTA's paradrop hook first searches for a team named `PARADROPINF_<player house heap ID>`. The generated map supplies that player-only team with a cloned `BADGER` and the player's buffed Soviet infantry payload. This bypasses the hook's global hardcoded `E1` and native `BADGER` fallback without changing Vinifera or enemy paradrops. Tiberian Sun TaskForces can contain at most five member types, including the aircraft. When more than three special infantry variants are unlocked, the generator rotates three variants by mission and preserves the total earned unit count.
+DTA's paradrop hook first searches for a team named `PARADROPINF_<player house heap ID>`. The generated map supplies that player-only team with a cloned `BADGER` and the player's buffed infantry/vehicle payload. This bypasses the hook's global hardcoded `E1` and native `BADGER` fallback without changing Vinifera or enemy paradrops. Tiberian Sun TaskForces can contain at most five member types, including the aircraft. When more than three special variants are unlocked, the generator rotates three variants by mission and preserves the total earned unit count.
 
 Installed DTA techno identities and cameo mappings come from `INI/Rules.ini`, `INI/Art.ini`, and the native MIX archives at runtime. They are not copied from the source game's roster snapshots.
 

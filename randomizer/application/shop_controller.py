@@ -2741,7 +2741,12 @@ class ShopController(ShopPolishController):
             stacks = stacks_by_reward.get(entry.reward_id, 0)
             maximum = entry.stack_limit or 1
             maxed = stacks >= maximum
-            price = permanent_power_buff_price(entry.target_id)
+            price = permanent_power_buff_price(
+                entry.target_id,
+                payload_shop_price_target_id=(
+                    entry.payload_shop_price_target_id
+                ),
+            )
             effect_state = 'MAX' if maxed else f'Stacks {stacks} / {maximum}'
             if maxed:
                 state, row_tag, buyable = 'Maximum stacks', 'maxed', False

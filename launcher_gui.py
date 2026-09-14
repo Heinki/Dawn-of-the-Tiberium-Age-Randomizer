@@ -1647,6 +1647,10 @@ def run_self_check():
             entry for entry in dashboard_entries
             if entry.get('id') in {'E1', 'E1A'}
         ]
+        paradrop_dashboard_entries = [
+            entry for entry in dashboard_entries
+            if entry.get('id') == 'DropPodSpecial'
+        ]
         rifle_factory_tooltip = dashboard_controller.unlock_dashboard_tooltip(
             next(
                 entry for entry in dashboard_entries
@@ -2087,6 +2091,9 @@ def run_self_check():
                     'payload:E4S', 'payload:E5',
                     'payload:E3S', 'payload:SHOK', 'payload:MEDIC',
                     'payload:MGI', 'payload:GRENL',
+                    'payload:BGGY', 'payload:BIKE', 'payload:LTNK',
+                    'payload:FTNK', 'payload:ARTY', 'payload:MLRS',
+                    'payload:STNK',
                 }
             ),
             'unlock_dashboard_tooltips_render': (
@@ -2108,6 +2115,17 @@ def run_self_check():
                 and 'Each deployment adds 1 Machine-Gunner.'
                 in paradrop_tooltip
                 and 'Each deployment adds 1 Grenade Launcher.'
+                in paradrop_tooltip
+                and 'Each deployment adds 1 Nod Buggy.' in paradrop_tooltip
+                and 'Each deployment adds 1 Recon Bike.' in paradrop_tooltip
+                and 'Each deployment adds 1 Nod Light Tank.'
+                in paradrop_tooltip
+                and 'Each deployment adds 1 Flame Tank.' in paradrop_tooltip
+                and 'Each deployment adds 1 Nod Artillery.'
+                in paradrop_tooltip
+                and 'Each deployment adds 1 SSM Launcher.'
+                in paradrop_tooltip
+                and 'Each deployment adds 1 Stealth Tank.'
                 in paradrop_tooltip
                 and 'Provider limit 2 buildings; up to 2 independently '
                 'charging uses.' in nuke_tooltip
@@ -2143,6 +2161,16 @@ def run_self_check():
                     for entry in chaos_rifle_entries
                 )
             ),
+            'dta_neutral_paradrop_visible_in_grid_and_dashboard': (
+                len(paradrop_dashboard_entries) == 1
+                and paradrop_dashboard_entries[0].get('faction') == 'Neutral'
+                and paradrop_dashboard_entries[0].get('category')
+                == 'Superweapons'
+                and any(
+                    reward.get('superweapon') == 'DropPodSpecial'
+                    for reward in standard_access_pool
+                )
+            ),
             'dta_power_cameos_complete': (
                 {spec['id'].upper() for spec in POWER_SPECS}
                 == set(power_cameo_paths)
@@ -2170,24 +2198,36 @@ def run_self_check():
                 {
                     str(reward.get('payload_unit_id') or '')
                     for reward in grid_payload_plan
-                } == {
-                    '', 'E4S', 'E5', 'E3S', 'SHOK', 'MEDIC', 'MGI', 'GRENL',
-                }
+                }.issubset({
+                    str(reward.get('payload_unit_id') or '')
+                    for reward in paradrop_payload_pool
+                })
+                and {'', 'SHOK', 'GRENL', 'LTNK', 'STNK'}.issubset({
+                    str(reward.get('payload_unit_id') or '')
+                    for reward in grid_payload_plan
+                })
                 and {
                     reward_display_name(reward)
                     for reward in paradrop_payload_pool
                 } == {
-                    'Soviet Paratroopers: Each deployment adds 1 standard '
+                    'Paradrop: Each deployment adds 1 standard '
                     'infantry unit.',
-                    'Soviet Paratroopers: Each deployment adds 1 Soviet '
+                    'Paradrop: Each deployment adds 1 Soviet '
                     'Flamethrower.',
-                    'Soviet Paratroopers: Each deployment adds 1 Chem Warrior.',
-                    'Soviet Paratroopers: Each deployment adds 1 Soviet Rocket '
+                    'Paradrop: Each deployment adds 1 Chem Warrior.',
+                    'Paradrop: Each deployment adds 1 Soviet Rocket '
                     'Soldier.',
-                    'Soviet Paratroopers: Each deployment adds 1 Shock Trooper.',
-                    'Soviet Paratroopers: Each deployment adds 1 Medic.',
-                    'Soviet Paratroopers: Each deployment adds 1 Machine-Gunner.',
-                    'Soviet Paratroopers: Each deployment adds 1 Grenade Launcher.',
+                    'Paradrop: Each deployment adds 1 Shock Trooper.',
+                    'Paradrop: Each deployment adds 1 Medic.',
+                    'Paradrop: Each deployment adds 1 Machine-Gunner.',
+                    'Paradrop: Each deployment adds 1 Grenade Launcher.',
+                    'Paradrop: Each deployment adds 1 Nod Buggy.',
+                    'Paradrop: Each deployment adds 1 Recon Bike.',
+                    'Paradrop: Each deployment adds 1 Nod Light Tank.',
+                    'Paradrop: Each deployment adds 1 Flame Tank.',
+                    'Paradrop: Each deployment adds 1 Nod Artillery.',
+                    'Paradrop: Each deployment adds 1 SSM Launcher.',
+                    'Paradrop: Each deployment adds 1 Stealth Tank.',
                 }
                 and all(
                     str(reward.get('payload_unit_label') or '')
@@ -2476,13 +2516,13 @@ def run_self_check():
                 == paradrop_report['player_house']
                 and paradrop_team.get('Waypoint') == '100'
                 and paradrop_taskforce.get('0') == '6,E1S_PLAYER'
-                and paradrop_taskforce.get('1') == '3,SHOK_PLAYER'
-                and paradrop_taskforce.get('2') == '2,MEDIC_PLAYER'
-                and paradrop_taskforce.get('3') == '2,MGI'
+                and paradrop_taskforce.get('1') == '5,FTNK'
+                and paradrop_taskforce.get('2') == '5,ARTY'
+                and paradrop_taskforce.get('3') == '4,MLRS'
                 and paradrop_taskforce.get('4')
                 == f'1,{paradrop_report["paradrop_aircraft"]}'
                 and paradrop_report['paradrop_collapsed_payload_units']
-                == {'DropPodSpecial': 4}
+                == {'DropPodSpecial': 11}
                 and paradrop_report.get('paradrop_unit_routes') == {
                     'E5': 'E5_PLAYER',
                     'SHOK': 'SHOK_PLAYER',
@@ -2494,9 +2534,9 @@ def run_self_check():
                 and int(paradrop_shok.get('Strength', 0)) > 800
                 and paradrop_medic.get('TechLevel') == '-1'
                 and paradrop_medic.get('OmniHealer') == 'yes'
-                and paradrop_aircraft.get('Passengers') == '13'
-                and paradrop_report['applied'][0]['payload_buffs'] == 8
-                and paradrop_report['applied'][0]['payload_units'] == '13'
+                and paradrop_aircraft.get('Passengers') == '20'
+                and paradrop_report['applied'][0]['payload_buffs'] == 15
+                and paradrop_report['applied'][0]['payload_units'] == '20'
                 and paradrop_report['applied'][0]['payload_unit_counts'] == {
                     '': 1,
                     'E4S': 1,
@@ -2506,6 +2546,13 @@ def run_self_check():
                     'MEDIC': 1,
                     'MGI': 1,
                     'GRENL': 1,
+                    'BGGY': 1,
+                    'BIKE': 1,
+                    'LTNK': 1,
+                    'FTNK': 1,
+                    'ARTY': 1,
+                    'MLRS': 1,
+                    'STNK': 1,
                 }
                 and paradrop_report['applied'][0]['payload_aircraft']
                 == 'BADGER'
@@ -3564,6 +3611,7 @@ def run_self_check():
             'unlock_dashboard_factory_support_visible',
             'unlock_dashboard_global_buffs_visible',
             'unlock_dashboard_chaos_equivalents_collapsed',
+            'dta_neutral_paradrop_visible_in_grid_and_dashboard',
             'dta_power_cameos_complete',
             'dta_power_provider_cameos_used',
             'dta_grid_paradrop_payload_variants_visible',
