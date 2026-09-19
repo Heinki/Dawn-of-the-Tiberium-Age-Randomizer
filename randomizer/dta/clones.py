@@ -1160,6 +1160,60 @@ def _rewrite_building_references(rules, report, catalogue, combined):
     for source, outputs in clone_by_source.items():
         group_rules[group_by_source[source]] = ','.join([source, *outputs])
 
+
+    for group_name, value in combined.get('PrerequisiteGroups', {}).items():
+        items = comma_items(value)
+        additions = [
+            output
+            for item in items
+            for output in clone_by_source.get(item.upper(), ())
+        ]
+        if additions:
+            rules.setdefault('PrerequisiteGroups', {})[group_name] = ','.join(
+                dict.fromkeys([*items, *additions])
+            )
+
+
+    factory_clones = {}
+    for source, outputs in outputs_by_source.items():
+        factory_type = str(
+            effective_section(combined, source).get('Factory') or ''
+        ).casefold()
+        if factory_type:
+            factory_clones.setdefault(factory_type, []).extend(outputs)
+    category_factory_types = {
+        'infantry': 'infantrytype',
+        'vehicles': 'unittype',
+        'aircraft': 'aircrafttype',
+        'buildings': 'buildingtype',
+    }
+    for item in report['applied']:
+        output_ids = [item.get('output_type', '')]
+        output_ids.extend(
+            route.get('output_type', '')
+            for route in item.get('allied_helper_routes', ())
+        )
+        factory_type = category_factory_types.get(
+            catalogue.get(item.get('unit', '').upper(), {}).get('category')
+        )
+        if not factory_type:
+            continue
+        additions = factory_clones.get(factory_type, ())
+        if not additions:
+            continue
+        for output_id in output_ids:
+            values = rules.get(output_id, {})
+            built_at_key = next(
+                (key for key in values if key.casefold() == 'builtat'),
+                None,
+            )
+            if not built_at_key:
+                continue
+            values[built_at_key] = ','.join(dict.fromkeys([
+                *comma_items(values.get(built_at_key)),
+                *additions,
+            ]))
+
     # DTA's built-in POWER/BARRACKS/FACTORY/etc. groups live in [General].
     # Add cloned buildings without removing map-authored originals.
     general = combined.get('General', {})

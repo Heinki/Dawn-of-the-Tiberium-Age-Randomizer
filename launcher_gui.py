@@ -1536,10 +1536,16 @@ def run_self_check():
             )
             for selector in ('access', 'health', 'damage', 'build_limit')
         ]
+        enforcer_rewards.append(next(
+            reward for reward in REWARD_POOL
+            if reward.get('unit') == 'E1'
+            and reward.get('dta_production_access')
+        ))
         enforcer_rules, enforcer_report = unit_specific_buff_rules(
             allied_helper_mission,
             enforcer_rewards,
             access_randomized=True,
+            allow_foreign_factory_access=True,
         )
         unlimited_enforcer_rules, unlimited_enforcer_report = (
             unit_specific_buff_rules(
@@ -3270,8 +3276,20 @@ def run_self_check():
                 )) > int(effective_section(
                     installed_sections, 'DBFRT'
                 ).get('Strength', 0))
-                and enforcer_rules.get('DBFRT_PLAYER', {}).get('Primary')
-                != effective_section(installed_sections, 'DBFRT').get('Primary')
+                and (
+                    enforcer_rules.get('DBFRT_PLAYER', {}).get('Primary')
+                    != effective_section(
+                        installed_sections, 'DBFRT'
+                    ).get('Primary')
+                )
+                and 'DBFRT_PLAYER' in comma_items(
+                    enforcer_rules.get('PrerequisiteGroups', {}).get(
+                        'ALLIEDBARRACKS', ''
+                    )
+                )
+                and 'DBFRT_PLAYER' in comma_items(
+                    enforcer_rules.get('E1_PLAYER', {}).get('BuiltAt', '')
+                )
             ),
             'dta_unlimited_heroes_remove_build_limit': (
                 bool(unlimited_enforcer_report['applied'])
