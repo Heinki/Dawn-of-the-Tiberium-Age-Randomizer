@@ -173,6 +173,10 @@ class RewardGeneration:
     def configured_reward_pool(self):
         settings = self.active_reward_settings()
         reward_mode = self.active_reward_mode()
+        equivalent_identity_mode = (
+            reward_mode == 'Chaos'
+            or self.active_progression_mode() == 'Grid Mode'
+        )
         starting_access_ids = frozenset(
             self.active_starting_tier_one_access_ids()
         )
@@ -182,13 +186,15 @@ class RewardGeneration:
             and cached[0] is settings
             and cached[1] == reward_mode
             and cached[2] == starting_access_ids
+            and cached[3] == equivalent_identity_mode
         ):
-            return cached[3]
+            return cached[4]
         pool = self.filter_reward_pool(REWARD_POOL)
         self._configured_reward_pool_cache = (
             settings,
             reward_mode,
             starting_access_ids,
+            equivalent_identity_mode,
             pool,
         )
         return pool
@@ -196,7 +202,10 @@ class RewardGeneration:
     def configured_manual_starting_rewards(self):
         """Resolve exact selected rewards, omitting duplicate TechnoType access."""
         selected = set(self.active_starting_unlock_names())
-        collapse_equivalents = self.active_reward_mode() == 'Chaos'
+        collapse_equivalents = (
+            self.active_reward_mode() == 'Chaos'
+            or self.active_progression_mode() == 'Grid Mode'
+        )
 
         def access_identity_ids(tech_ids):
             if not collapse_equivalents:
@@ -255,6 +264,7 @@ class RewardGeneration:
         def allowed_pool(pool):
             return filter_starting_reward_pool(pool, allowed_types)
 
+        grid_role_identity = self.active_progression_mode() == 'Grid Mode'
         plan = plan_seed_rewards(
             [code],
             seed,
@@ -273,9 +283,11 @@ class RewardGeneration:
             ),
             initial_rewards=initial_rewards,
             require_access_for_unit_buffs=self.randomize_unit_access_enabled(),
-            share_role_buffs=self.share_chaos_role_buffs_enabled(),
+            share_role_buffs=(
+                grid_role_identity or self.share_chaos_role_buffs_enabled()
+            ),
             collapse_equivalent_access=(
-                self.active_reward_mode() == 'Chaos'
+                self.active_reward_mode() == 'Chaos' or grid_role_identity
             ),
             reward_weights=settings.get('reward_weights'),
             rng_namespace='starting-rewards',
@@ -363,12 +375,22 @@ class RewardGeneration:
             if isinstance(buff_types, (list, tuple, set))
         }
         chaos_mode = self.active_reward_mode() == 'Chaos'
-        if chaos_mode:
+        equivalent_identity_mode = (
+            chaos_mode or self.active_progression_mode() == 'Grid Mode'
+        )
+        if equivalent_identity_mode:
             excluded_access_ids = {
                 equivalent
                 for unit_id in excluded_access_ids
                 for equivalent in unit_role_equivalents(unit_id)
             }
+            shared_excluded_buff_types = {}
+            for unit_id, buff_types in excluded_unit_buff_types.items():
+                for equivalent in unit_role_equivalents(unit_id):
+                    shared_excluded_buff_types.setdefault(
+                        equivalent, set()
+                    ).update(buff_types)
+            excluded_unit_buff_types = shared_excluded_buff_types
             starting_access_ids = {
                 equivalent
                 for unit_id in starting_access_ids
@@ -793,6 +815,7 @@ class RewardGeneration:
                 arsenal = self.mission_arsenal(code)
                 arsenal_units.update(arsenal_unit_ids(arsenal))
                 arsenal_powers.update(arsenal_power_ids(arsenal))
+        grid_role_identity = progression_mode == 'Grid Mode'
         return plan_seed_rewards(
             mission_codes,
             seed,
@@ -816,9 +839,11 @@ class RewardGeneration:
             starting_unlocked_power_ids=arsenal_powers,
             initial_rewards=initial_rewards,
             require_access_for_unit_buffs=self.randomize_unit_access_enabled(),
-            share_role_buffs=self.share_chaos_role_buffs_enabled(),
+            share_role_buffs=(
+                grid_role_identity or self.share_chaos_role_buffs_enabled()
+            ),
             collapse_equivalent_access=(
-                self.active_reward_mode() == 'Chaos'
+                self.active_reward_mode() == 'Chaos' or grid_role_identity
             ),
             reward_weights=self.active_reward_settings().get(
                 'reward_weights'
@@ -828,4 +853,3 @@ class RewardGeneration:
             rng_namespace=rng_namespace,
             reserved_rewards=reserved_rewards,
         )
-

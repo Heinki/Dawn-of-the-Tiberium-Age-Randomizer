@@ -11,6 +11,7 @@ from randomizer.missions.tier_one import (
     TIER_ONE_ROLE_MARKERS,
     TIER_ONE_ROLE_UNITS,
 )
+from randomizer.rewards.catalogue import unit_role_equivalents
 from randomizer.rewards.rules import tech_ids_for_rewards
 
 from .catalogue import canonical_reward_for_id, catalogue_entry
@@ -201,6 +202,15 @@ def active_shop_tech_ids(run):
     ]
     tech_ids.update(tech_ids_for_rewards(rewards))
     return tuple(sorted(tech_ids))
+
+
+def active_shop_role_tech_ids(run):
+    """Return active Shop access with curated same-role identities expanded."""
+    return tuple(sorted({
+        peer_id
+        for unit_id in active_shop_tech_ids(run)
+        for peer_id in unit_role_equivalents(unit_id)
+    }))
 
 
 def active_shop_power_ids(run):

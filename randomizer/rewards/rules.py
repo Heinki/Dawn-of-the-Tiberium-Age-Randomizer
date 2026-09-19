@@ -98,3 +98,39 @@ def expand_equivalent_role_buffs(rewards, enabled=False, allowed_unit_ids=None):
             equivalent['_runtime_canonical'] = True
             expanded.append(equivalent)
     return expanded
+
+
+def expand_equivalent_role_access(rewards, access_pool, enabled=False):
+    """Add canonical access peers for mission-local role translation.
+
+    The added rewards are runtime-only.  Callers must collapse each group back
+    to one mission-appropriate identity before generating sidebar access.
+    """
+    rewards = list(rewards)
+    if not enabled:
+        return rewards
+
+    access_by_unit = {}
+    for reward in access_pool:
+        if reward.get('kind') in {'buff', 'superweapon', 'message', 'retired'}:
+            continue
+        tech_ids = tech_ids_for_rewards([reward])
+        if len(tech_ids) == 1:
+            access_by_unit.setdefault(next(iter(tech_ids)), reward)
+
+    seen_units = {
+        next(iter(tech_ids))
+        for reward in rewards
+        for tech_ids in [tech_ids_for_rewards([reward])]
+        if reward.get('kind') not in {'buff', 'superweapon'}
+        and len(tech_ids) == 1
+    }
+    expanded = list(rewards)
+    for unit_id in tuple(seen_units):
+        for peer_id in sorted(unit_role_equivalents(unit_id)):
+            peer_reward = access_by_unit.get(peer_id)
+            if peer_id in seen_units or peer_reward is None:
+                continue
+            expanded.append(dict(peer_reward))
+            seen_units.add(peer_id)
+    return expanded

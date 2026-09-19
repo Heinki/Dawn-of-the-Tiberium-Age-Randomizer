@@ -795,10 +795,10 @@
         "permanent_buff": 6
       },
       "SHOK": {
-        "run_access": 8,
-        "run_buff": 4,
-        "permanent_access": 32,
-        "permanent_buff": 8
+        "run_access": 5,
+        "run_buff": 3,
+        "permanent_access": 18,
+        "permanent_buff": 6
       },
       "SLST": {
         "run_access": null,

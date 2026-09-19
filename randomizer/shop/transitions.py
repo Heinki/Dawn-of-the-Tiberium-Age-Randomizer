@@ -4,6 +4,8 @@ from dataclasses import dataclass, replace
 from collections import Counter
 from hashlib import sha256
 
+from randomizer.rewards.catalogue import unit_role_equivalents
+
 from .archipelago import ap_automatic_reward_ids
 from .config import SHOP_CONFIG
 from .catalogue import (
@@ -94,7 +96,9 @@ def _random_starting_unit_unlocks(
     """Choose deterministic extra unit access without duplicate starters."""
     selected_reward_ids = {str(item) for item in selected_reward_ids}
     excluded_targets = {
-        str(item).upper() for item in starter_tech_ids if str(item)
+        peer_id
+        for item in starter_tech_ids if str(item)
+        for peer_id in unit_role_equivalents(str(item).upper())
     }
     excluded_targets.update(
         str(item).upper()
@@ -106,11 +110,11 @@ def _random_starting_unit_unlocks(
         entry = catalogue_entry(canonical_reward_for_id(reward_id))
         if entry is not None and entry.reward_type is ShopRewardType.UNIT_ACCESS:
             already_active.add(entry.reward_id)
-            excluded_targets.add(entry.target_id)
+            excluded_targets.update(unit_role_equivalents(entry.target_id))
     for reward_id in selected_reward_ids:
         entry = catalogue_entry(canonical_reward_for_id(reward_id))
         if entry is not None:
-            excluded_targets.add(entry.target_id)
+            excluded_targets.update(unit_role_equivalents(entry.target_id))
 
     selected = []
     for tier_number in (1, 2, 3):
@@ -151,7 +155,7 @@ def _random_starting_unit_unlocks(
         for entry in candidates[:count]:
             selected.append(entry.reward_id)
             already_active.add(entry.reward_id)
-            excluded_targets.add(entry.target_id)
+            excluded_targets.update(unit_role_equivalents(entry.target_id))
     return tuple(selected)
 
 

@@ -74,6 +74,9 @@ class ProgressionController:
         self.grid_canvas.yview_moveto(max(0.0, tile.winfo_y() / total_height))
 
     def active_progression_mode(self):
+        generation_context = self.__dict__.get('_seed_generation_context') or {}
+        if generation_context.get('progression_mode'):
+            return generation_context['progression_mode']
         archipelago_mode = getattr(
             self, 'archipelago_progression_mode', lambda: None
         )()

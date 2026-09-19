@@ -25,6 +25,7 @@ def validate_run_purchase(
     mission_committed=False,
     owned_reward_ids=(),
     active_tech_ids=(),
+    active_equivalent_tech_ids=(),
     active_power_ids=(),
     current_stacks=0,
     maximum_stacks=None,
@@ -58,7 +59,10 @@ def validate_run_purchase(
     } and reward_id in owned:
         return PurchaseValidation(PurchaseResult.ALREADY_OWNED, reward_id, price)
     if entry.reward_type is ShopRewardType.UNIT_ACCESS:
-        unlocked = {str(item).upper() for item in active_tech_ids}
+        unlocked = {
+            str(item).upper()
+            for item in (*active_tech_ids, *active_equivalent_tech_ids)
+        }
         if tech_ids_for_rewards([canonical]).intersection(unlocked):
             return PurchaseValidation(PurchaseResult.ALREADY_OWNED, reward_id, price)
     if entry.reward_type is ShopRewardType.UNIT_BUFF:
@@ -129,4 +133,3 @@ def apply_validated_run_purchase(
         run_coins=run.run_coins - validation.cost,
         run_purchases=run_purchases,
     )
-

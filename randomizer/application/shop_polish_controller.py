@@ -11,6 +11,7 @@ from randomizer.rewards.display import (
 from randomizer.shop.active import (
     active_shop_power_ids,
     active_shop_rewards,
+    active_shop_role_tech_ids,
     active_shop_tech_ids,
 )
 from randomizer.shop.catalogue import (
@@ -827,8 +828,11 @@ class ShopPolishController(ShopArchipelagoController):
         return mapping.get(current, '')
 
     def _shop_catalogue_entry_state(
-        self, entry, run, active_tech, active_powers
+        self, entry, run, active_tech, active_powers, active_role_tech=None
     ):
+        active_role_tech = (
+            active_tech if active_role_tech is None else active_role_tech
+        )
         stacks = sum(
             1 for reward in active_shop_rewards(run)
             if reward.get('name') == entry.reward_id
@@ -843,7 +847,7 @@ class ShopPolishController(ShopArchipelagoController):
         )
         access_active = (
             entry.reward_type is ShopRewardType.UNIT_ACCESS
-            and entry.target_id in active_tech
+            and entry.target_id in active_role_tech
         ) or (
             entry.reward_type is ShopRewardType.POWER_ACCESS
             and entry.target_id in active_powers
@@ -927,6 +931,7 @@ class ShopPolishController(ShopArchipelagoController):
             )
         display_rewards = active_shop_rewards(run)
         active_tech = set(active_shop_tech_ids(run))
+        active_role_tech = set(active_shop_role_tech_ids(run))
         active_powers = set(active_shop_power_ids(run))
         visible = []
         category = self.shop_category_var.get()
@@ -1033,7 +1038,7 @@ class ShopPolishController(ShopArchipelagoController):
                     offer_count=(
                         unit_offer_count
                     ),
-                    excluded_target_ids=active_tech,
+                    excluded_target_ids=active_role_tech,
                 ), *rotating_power_inventory(
                     power_candidates,
                     run_seed=run.seed,
@@ -1054,7 +1059,7 @@ class ShopPolishController(ShopArchipelagoController):
                     offer_count=(
                         unit_offer_count
                     ),
-                    excluded_target_ids=active_tech,
+                    excluded_target_ids=active_role_tech,
                 )
                 if run is not None else ()
             )
@@ -1090,7 +1095,7 @@ class ShopPolishController(ShopArchipelagoController):
                     canonical_reward_for_id(locked_entry.reward_id),
                     run.modifiers,
                 )
-                and locked_entry.target_id not in active_tech
+                and locked_entry.target_id not in active_role_tech
                 and locked_entry.target_id not in active_powers
             ):
                 candidates = preserve_locked_offer(candidates, locked_entry)
@@ -1102,7 +1107,7 @@ class ShopPolishController(ShopArchipelagoController):
             if self.shop_profile.upgrade_level('premium_supplier'):
                 eligible = tuple(
                     entry for entry in access_candidates
-                    if entry.target_id not in active_tech
+                    if entry.target_id not in active_role_tech
                     and entry.target_id not in active_powers
                 )
                 candidates = guarantee_premium_offer(
@@ -1119,7 +1124,7 @@ class ShopPolishController(ShopArchipelagoController):
             ).casefold():
                 continue
             detail = self._shop_catalogue_entry_state(
-                entry, run, active_tech, active_powers
+                entry, run, active_tech, active_powers, active_role_tech
             )
             if buff_category and detail[2]:
                 continue

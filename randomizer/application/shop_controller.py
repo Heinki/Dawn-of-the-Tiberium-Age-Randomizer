@@ -18,10 +18,17 @@ from ._dependencies import (
     custom_sidebar_preview,
     ensure_superweapon_cameos,
     ensure_unit_cameos,
+    expand_equivalent_role_access,
+    expand_equivalent_role_buffs,
     save_config,
 )
 
-from randomizer.rewards.catalogue import REWARD_POOL, canonical_reward, unit_display_label
+from randomizer.rewards.catalogue import (
+    REWARD_POOL,
+    canonical_reward,
+    unit_display_label,
+    unit_role_equivalents,
+)
 from randomizer.rewards.display import (
     buff_effect_lines, reward_display_name, unit_buff_counts, inherited_unit_buff_rewards,
 )
@@ -108,8 +115,8 @@ SHOP_FACTION_CAMPAIGNS = {
 SHOP_CAMPAIGN_FACTIONS = {
     campaign: label for label, campaign in SHOP_FACTION_CAMPAIGNS.items()
 }
-# Shop progression grants exact purchased identities. Reuse Chaos' isolated
-# access pipeline internally; Shop Mode still owns its separate economy/UI.
+# Shop progression stores one purchased identity per curated role. Reuse
+# Chaos' isolated access pipeline to select its mission-local faction form.
 SHOP_REWARD_MODE = SHOP_ACCESS_REWARD_MODE
 class ShopController(ShopPolishController):
     def initialize_shop_controller(self):
@@ -516,6 +523,7 @@ class ShopController(ShopPolishController):
             run = self._shop_launch_run
             effects = modifier_effects(run.modifiers)
             rewards = [dict(item) for item in active_shop_rewards(run)]
+            rewards = expand_equivalent_role_buffs(rewards, enabled=True)
             starting_credit_level = self.shop_profile.upgrade_level(
                 'mission_starting_credits'
             )
@@ -600,7 +608,12 @@ class ShopController(ShopPolishController):
 
     def launch_rewards_for_mission(self, code):
         if self.shop_launch_active():
-            return self.active_launch_rewards()
+            rewards = expand_equivalent_role_access(
+                self.active_launch_rewards(), REWARD_POOL, enabled=True
+            )
+            return self.chaos_equivalent_access_pool(
+                rewards, self.reward_factions_for_code(code)
+            )
         return super().launch_rewards_for_mission(code)
 
     def active_starting_rewards_for_report(self):
@@ -673,13 +686,9 @@ class ShopController(ShopPolishController):
     def share_chaos_role_buffs_enabled(self):
         run = self._shop_context_run()
         if run is not None:
-            return bool(
-                (
-                    run.reward_mode == 'Chaos'
-                    or run.campaign_filter == 'All Campaigns'
-                )
-                and run.reward_settings.get('share_chaos_role_buffs', False)
-            )
+            return True
+        if self._shop_mode_context_selected():
+            return True
         return super().share_chaos_role_buffs_enabled()
 
     def foehn_standard_bundles_enabled(self):
@@ -1719,7 +1728,7 @@ class ShopController(ShopPolishController):
             'include_special_buildings': True,
             'include_special_rewards': True,
             'unlimited_hero_units': False,
-            'share_chaos_role_buffs': False,
+            'share_chaos_role_buffs': True,
             'buff_allied_helpers': bool(self.buff_allied_helpers_var.get()),
             'failure_assistance': False,
             'include_buff_rewards': True,
@@ -2404,6 +2413,18 @@ class ShopController(ShopPolishController):
         self._shop_permanent_buyable = {}
         term = self.shop_permanent_search_var.get().strip().casefold()
         owned = set(self.shop_profile.permanent_unit_unlocks)
+        owned_targets = {
+            entry.target_id
+            for reward_id in owned
+            for entry in [self._shop_entry_by_reward_id.get(reward_id)]
+            if entry is not None
+            and entry.reward_type is ShopRewardType.UNIT_ACCESS
+        }
+        owned_role_targets = {
+            peer_id
+            for target_id in owned_targets
+            for peer_id in unit_role_equivalents(target_id)
+        }
         unit_filter = self.shop_permanent_unit_filter_var.get()
         entries = sorted(
             (
@@ -2416,7 +2437,7 @@ class ShopController(ShopPolishController):
                     )
                     or (
                         unit_filter == 'Not Owned'
-                        and entry.reward_id not in owned
+                        and entry.target_id not in owned_role_targets
                     )
                 )
                 and (
@@ -2435,6 +2456,10 @@ class ShopController(ShopPolishController):
             price = permanent_unit_price(entry.target_id)
             if entry.reward_id in owned:
                 state = 'Owned'
+                row_tag = 'owned'
+                buyable = False
+            elif entry.target_id in owned_role_targets:
+                state = 'Equivalent unit owned'
                 row_tag = 'owned'
                 buyable = False
             elif active_run:

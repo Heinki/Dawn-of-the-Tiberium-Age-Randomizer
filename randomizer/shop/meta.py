@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, replace
 
+from randomizer.rewards.catalogue import unit_role_equivalents
 from randomizer.rewards.rules import tech_ids_for_rewards
 
 from .catalogue import (
@@ -36,8 +37,19 @@ def purchase_permanent_unit(profile, reward, *, price, shop_eligible=True):
             PurchaseResult.NOT_SHOP_ELIGIBLE, reward_id, int(price)
         )
         return ProfilePurchaseOutcome(profile, validation)
-    owned = {canonical_reward_id(item) for item in profile.permanent_unit_unlocks}
-    if reward_id in owned:
+    owned_targets = {
+        owned_entry.target_id
+        for item in profile.permanent_unit_unlocks
+        for owned_entry in [catalogue_entry(canonical_reward_for_id(item))]
+        if owned_entry is not None
+        and owned_entry.reward_type is ShopRewardType.UNIT_ACCESS
+    }
+    owned_equivalents = {
+        peer_id
+        for target_id in owned_targets
+        for peer_id in unit_role_equivalents(target_id)
+    }
+    if entry.target_id in owned_equivalents:
         validation = PurchaseValidation(
             PurchaseResult.ALREADY_OWNED, reward_id, int(price)
         )
@@ -212,7 +224,11 @@ def validate_starting_loadout(
         reward_id = canonical_reward_id(item)
         if reward_id:
             entitled.add(reward_id)
-    active = {str(item).upper() for item in starter_tech_ids if str(item)}
+    active = {
+        peer_id
+        for item in starter_tech_ids if str(item)
+        for peer_id in unit_role_equivalents(str(item).upper())
+    }
     selected = []
     selected_ids = set()
     slots = 0
@@ -240,11 +256,21 @@ def validate_starting_loadout(
                 slots,
             )
         reward_tech_ids = tech_ids_for_rewards([reward])
+        effective_tech_ids = {
+            peer_id
+            for unit_id in reward_tech_ids
+            for peer_id in unit_role_equivalents(unit_id)
+        }
+        if (
+            entry.reward_type is ShopRewardType.UNIT_ACCESS
+            and effective_tech_ids.intersection(active)
+        ):
+            continue
         selected.append(reward_id)
         selected_ids.add(reward_id)
         if (
             entry.reward_type is ShopRewardType.POWER_ACCESS
-            or reward_tech_ids - active
+            or effective_tech_ids - active
         ):
             slots += 1
             if slots > maximum:
@@ -254,7 +280,7 @@ def validate_starting_loadout(
                     tuple(sorted(active)),
                     slots,
                 )
-            active.update(reward_tech_ids)
+            active.update(effective_tech_ids)
     return LoadoutValidation(
         PurchaseResult.OK,
         tuple(selected),

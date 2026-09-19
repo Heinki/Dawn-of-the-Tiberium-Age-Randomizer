@@ -7,6 +7,7 @@ from .active import (
     active_shop_power_ids,
     active_shop_reward_ids,
     active_shop_rewards,
+    active_shop_role_tech_ids,
     active_shop_tech_ids,
 )
 from .archipelago_purchases import (
@@ -290,6 +291,7 @@ class ShopProgressionService:
             mission_committed=run.mission_committed,
             owned_reward_ids=owned,
             active_tech_ids=active_shop_tech_ids(run),
+            active_equivalent_tech_ids=active_shop_role_tech_ids(run),
             active_power_ids=active_shop_power_ids(run),
             current_stacks=stacks,
             shop_eligible=shop_eligible,

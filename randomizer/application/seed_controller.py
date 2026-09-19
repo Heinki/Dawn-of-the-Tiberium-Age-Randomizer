@@ -189,6 +189,7 @@ class SeedController(SeedGeneration):
 
         generation_context = {
             'campaign_filter': self.campaign_var.get(),
+            'progression_mode': self.progression_mode_var.get(),
             'reward_mode': self.reward_mode_var.get(),
             'use_act_based_reward_multipliers': (
                 use_act_based_reward_multipliers

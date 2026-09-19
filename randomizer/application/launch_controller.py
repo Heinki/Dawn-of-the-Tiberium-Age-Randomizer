@@ -379,17 +379,19 @@ class LaunchController:
                 for section, values in chaos_rules.items():
                     rules.setdefault(section, {}).update(values)
             return rules
-        # Earned access is identity-exact. An unlocked peer must never expose
-        # another member of its role group merely because that faction's
-        # factory is present (for example Sniper -> Desolator in SHBD or
-        # Abrams -> Scavenger in EDIVER). Standard tier-one starters remain
-        # abstract role selections and are resolved separately below.
+        # Standard access stays identity-exact outside Grid Mode. Grid treats
+        # curated role peers as one reward and resolves one faction-appropriate
+        # identity per mission. Standard tier-one starters remain abstract role
+        # selections and are resolved separately below.
         translate_equivalents = False
-        earned_access_ids = (
-            self.active_unlocked_reward_tech_ids()
-            if self.randomize_unit_access_enabled()
-            else controlled_tech_ids()
-        )
+        if not self.randomize_unit_access_enabled():
+            earned_access_ids = controlled_tech_ids()
+        elif self.active_progression_mode() == 'Grid Mode':
+            earned_access_ids = set(tech_ids_for_rewards(
+                self.launch_rewards_for_mission(mission_code)
+            ))
+        else:
+            earned_access_ids = self.active_unlocked_reward_tech_ids()
         earned_access_ids.update(self.active_starting_tier_one_expanded_ids())
         rules = mission_basic_unit_rules(
             lines,

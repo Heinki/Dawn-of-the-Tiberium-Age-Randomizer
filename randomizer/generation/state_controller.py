@@ -391,6 +391,8 @@ class GenerationSettings:
         )
 
     def share_chaos_role_buffs_enabled(self):
+        if self.active_progression_mode() == 'Grid Mode':
+            return True
         generation_context = self.__dict__.get('_seed_generation_context') or {}
         selected_campaign = generation_context.get('campaign_filter')
         if selected_campaign is None:

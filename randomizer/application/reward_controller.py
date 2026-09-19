@@ -39,6 +39,7 @@ from ._dependencies import (
     unit_role_equivalents,
     unlocked_reward_tech_ids,
     configured_enemy_reward,
+    expand_equivalent_role_access,
     expand_equivalent_role_buffs,
     campaign_factions,
     normalize_faction,
@@ -104,7 +105,13 @@ class RewardController(RewardGeneration):
 
     def launch_rewards_for_mission(self, code):
         rewards = self.active_launch_rewards()
-        if self.active_reward_mode() == 'Chaos':
+        grid_role_identity = self.active_progression_mode() == 'Grid Mode'
+        rewards = expand_equivalent_role_access(
+            rewards,
+            REWARD_POOL,
+            enabled=grid_role_identity,
+        )
+        if self.active_reward_mode() == 'Chaos' or grid_role_identity:
             # Older saved seeds may contain both exact members of a curated
             # equivalent group. Collapse them at launch too, so legacy states
             # cannot show duplicate sidebar entries such as E4 and E4S.
@@ -114,7 +121,10 @@ class RewardController(RewardGeneration):
             )
         rewards = expand_equivalent_role_buffs(
             rewards,
-            enabled=self.share_chaos_role_buffs_enabled(),
+            enabled=(
+                grid_role_identity
+                or self.share_chaos_role_buffs_enabled()
+            ),
         )
         if self.active_reward_mode() == 'Standard':
             allowed_factions = self.reward_factions_for_code(code) | {'Neutral'}

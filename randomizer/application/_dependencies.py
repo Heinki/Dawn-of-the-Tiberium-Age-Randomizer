@@ -200,6 +200,7 @@ from randomizer.maps.rules import (
     map_house_records,
 )
 from randomizer.rewards.rules import (
+    expand_equivalent_role_access,
     expand_equivalent_role_buffs,
     tech_ids_for_rewards,
     unlocked_reward_tech_ids,

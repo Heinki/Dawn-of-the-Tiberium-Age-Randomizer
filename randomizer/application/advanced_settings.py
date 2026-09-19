@@ -1179,6 +1179,7 @@ class AdvancedSettingsController:
 
     def on_progression_mode_changed(self, _event=None):
         self.refresh_progression_setting_states()
+        self.refresh_setting_states()
         if not self.state:
             self.redraw_progression_views()
 
@@ -1194,6 +1195,7 @@ class AdvancedSettingsController:
         if not hasattr(self, 'randomize_unit_access_check'):
             return
         chaos_mode = self.reward_mode_var.get() == 'Chaos'
+        grid_mode = self.progression_mode_var.get() == 'Grid Mode'
         arsenal_mode = self.reward_mode_var.get() == ARSENAL_MODE
         buffs_enabled = bool(self.include_buff_rewards_var.get())
         unlimited_hero_units = bool(self.unlimited_hero_units_var.get())
@@ -1211,13 +1213,17 @@ class AdvancedSettingsController:
             self.randomize_unit_access_check.configure(state='disabled')
         else:
             self.randomize_unit_access_check.configure(state='normal')
-        if chaos_mode or (
+        if grid_mode:
+            self.share_chaos_role_buffs_var.set(True)
+        if grid_mode or chaos_mode or (
             not arsenal_mode and self.campaign_var.get() == 'All Campaigns'
         ):
             self.share_chaos_role_buffs_check.grid()
         else:
             self.share_chaos_role_buffs_check.grid_remove()
-        self.share_chaos_role_buffs_check.configure(state='normal' if buffs_enabled else 'disabled')
+        self.share_chaos_role_buffs_check.configure(
+            state='disabled' if grid_mode or not buffs_enabled else 'normal'
+        )
         self.buff_allied_helpers_check.configure(
             state='normal' if buffs_enabled else 'disabled'
         )

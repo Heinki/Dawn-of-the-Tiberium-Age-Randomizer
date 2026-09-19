@@ -8,6 +8,11 @@ from randomizer.core.paths import BATTLE_CLIENT_INI
 from randomizer.missions.catalogue import parse_missions
 from randomizer.rewards.catalogue import canonical_reward
 from randomizer.rewards.enemy_scaling import ENEMY_BUFF_DEFINITIONS
+from randomizer.rewards.rules import (
+    expand_equivalent_role_access,
+    expand_equivalent_role_buffs,
+    tech_ids_for_rewards,
+)
 from randomizer.rewards.weights import UNIT_BUFF_WEIGHT_TYPES
 
 from .active import (
@@ -39,6 +44,7 @@ from .economy import (
 from .meta import (
     purchase_permanent_buff,
     purchase_permanent_power,
+    purchase_permanent_unit,
     validate_starting_loadout,
 )
 from .mission_modifiers import (
@@ -284,6 +290,47 @@ def validate_shop_domain():
     _require(
         any(entry.target_id == 'E1' for entry in unit_access),
         'Minigunner access missing from DTA Shop',
+    )
+    minigunner = next(entry for entry in unit_access if entry.target_id == 'E1')
+    rifleman = next(entry for entry in unit_access if entry.target_id == 'E1A')
+    role_profile = ShopProfile(meta_coins=100)
+    minigunner_purchase = purchase_permanent_unit(
+        role_profile,
+        canonical_reward_for_id(minigunner.reward_id),
+        price=permanent_unit_price(minigunner.target_id),
+    )
+    rifleman_purchase = purchase_permanent_unit(
+        minigunner_purchase.profile,
+        canonical_reward_for_id(rifleman.reward_id),
+        price=permanent_unit_price(rifleman.target_id),
+    )
+    _require(
+        minigunner_purchase.validation.allowed
+        and rifleman_purchase.validation.result is PurchaseResult.ALREADY_OWNED,
+        'DTA Shop allows duplicate equivalent-role unit purchases',
+    )
+    access_pool = [
+        canonical_reward_for_id(entry.reward_id) for entry in unit_access
+    ]
+    expanded_access = expand_equivalent_role_access(
+        [canonical_reward_for_id(minigunner.reward_id)],
+        access_pool,
+        enabled=True,
+    )
+    minigunner_damage = next(
+        canonical_reward_for_id(entry.reward_id)
+        for entry in unit_buffs
+        if entry.target_id == 'E1'
+        and canonical_reward_for_id(entry.reward_id).get('buff_type') == 'damage'
+    )
+    expanded_buffs = expand_equivalent_role_buffs(
+        [minigunner_damage], enabled=True
+    )
+    _require(
+        {'E1', 'E1A'}.issubset(tech_ids_for_rewards(expanded_access))
+        and {reward.get('unit') for reward in expanded_buffs}
+        == {'E1', 'E1A'},
+        'DTA Shop equivalent-role access or buffs do not follow map identity',
     )
     unit_access_targets = {entry.target_id for entry in unit_access}
     unit_buff_targets = {entry.target_id for entry in unit_buffs}
