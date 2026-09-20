@@ -206,6 +206,8 @@ from randomizer.rewards.rules import (
     unlocked_reward_tech_ids,
 )
 from randomizer.missions.safety import (
+    always_available_air_transport_rules,
+    always_available_mcv_rules,
     always_available_miner_rules,
     always_available_transport_rules,
     chaos_earned_access_rules,

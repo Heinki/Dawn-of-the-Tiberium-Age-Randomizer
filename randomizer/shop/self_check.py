@@ -334,9 +334,11 @@ def validate_shop_domain():
     )
     unit_access_targets = {entry.target_id for entry in unit_access}
     unit_buff_targets = {entry.target_id for entry in unit_buffs}
+    core_mobile_ids = {'TRAN', 'GMCV', 'NMCV', 'AMCV', 'SMCV'}
     _require(
-        {'GMCV', 'NMCV', 'AMCV', 'SMCV'}.issubset(unit_access_targets),
-        'DTA Shop MCV access catalogue is incomplete',
+        core_mobile_ids.isdisjoint(unit_access_targets)
+        and core_mobile_ids.issubset(unit_buff_targets),
+        'DTA Shop core Chinook/MCV catalogue policy is incorrect',
     )
     _require(
         unit_access_targets.issubset(unit_buff_targets),
@@ -636,9 +638,9 @@ def validate_shop_domain():
         'Special/map-only DTA Shop unit tiers are incorrect',
     )
     _require(
-        run_unit_price('GMCV') == 12
-        and permanent_unit_price('GMCV') == 60,
-        'MCV Shop prices are incorrect',
+        run_buff_price('GMCV') == 6
+        and permanent_buff_price('GMCV') == 12,
+        'MCV Shop buff prices are incorrect',
     )
     _require(
         run_unit_price('SPY') == 3

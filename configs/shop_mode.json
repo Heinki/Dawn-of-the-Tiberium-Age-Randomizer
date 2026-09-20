@@ -147,9 +147,9 @@
         "permanent_buff": 6
       },
       "AMCV": {
-        "run_access": 12,
+        "run_access": null,
         "run_buff": 6,
-        "permanent_access": 60,
+        "permanent_access": null,
         "permanent_buff": 12
       },
       "APACHE": {
@@ -405,9 +405,9 @@
         "permanent_buff": 6
       },
       "GMCV": {
-        "run_access": 12,
+        "run_access": null,
         "run_buff": 6,
-        "permanent_access": 60,
+        "permanent_access": null,
         "permanent_buff": 12
       },
       "GRENL": {
@@ -615,9 +615,9 @@
         "permanent_buff": 6
       },
       "NMCV": {
-        "run_access": 12,
+        "run_access": null,
         "run_buff": 6,
-        "permanent_access": 60,
+        "permanent_access": null,
         "permanent_buff": 12
       },
       "O279": {
@@ -807,9 +807,9 @@
         "permanent_buff": 6
       },
       "SMCV": {
-        "run_access": 12,
+        "run_access": null,
         "run_buff": 6,
-        "permanent_access": 60,
+        "permanent_access": null,
         "permanent_buff": 12
       },
       "SPEEDBOAT": {
@@ -891,9 +891,9 @@
         "permanent_buff": 6
       },
       "TRAN": {
-        "run_access": 8,
+        "run_access": null,
         "run_buff": 4,
-        "permanent_access": 32,
+        "permanent_access": null,
         "permanent_buff": 8
       },
       "TTNK": {

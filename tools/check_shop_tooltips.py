@@ -251,13 +251,13 @@ class InlineEffectChecks(unittest.TestCase):
                 self.assertIn(f'Health: {target["strength"]} HP', text)
                 self.assertIn(f'Cost: {target["cost"]} credits', text)
 
-    def test_mcv_access_and_deployment_stats_are_visible(self):
+    def test_core_mcv_deployment_stats_are_visible(self):
         mcv_ids = {'GMCV', 'NMCV', 'AMCV', 'SMCV'}
         access_ids = {
             entry.target_id for entry in self.entries
             if entry.reward_type is ShopRewardType.UNIT_ACCESS
         }
-        self.assertTrue(mcv_ids.issubset(access_ids))
+        self.assertTrue(mcv_ids.isdisjoint(access_ids))
         for mcv_id in mcv_ids:
             text = ShopPolishController._shop_unit_base_stats(mcv_id)
             self.assertIn('Deploys into:', text)

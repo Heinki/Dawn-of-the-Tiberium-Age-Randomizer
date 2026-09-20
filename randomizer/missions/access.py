@@ -42,6 +42,9 @@ _TIER_ONE_CONFIG = load_static_config('tier_one.json')
 ENGINEER_BY_FAMILY = dict(_FACTION_CONFIG['engineer_by_family'])
 ENGINEER_INSTALLED_FORBIDDEN_HOUSES = dict(_FACTION_CONFIG['engineer_installed_forbidden_houses'])
 CONYARD_BY_MCV = dict(_FACTION_CONFIG['conyard_by_mcv'])
+DEFAULT_UNLOCK_BUILD_HOUSES = tuple(comma_items(
+    _FACTION_CONFIG['default_unlock_build_houses']
+))
 STALINS_FIST_FACTORY = str(_FACTION_CONFIG['stalins_fist_factory'])
 STALINS_FIST_PLACEMENT_IDS = set(_FACTION_CONFIG['stalins_fist_placement_ids'])
 STALINS_FIST_TASKFORCE_IDS = set(_FACTION_CONFIG['stalins_fist_taskforce_ids'])
@@ -906,6 +909,88 @@ def always_available_transport_rules(
         else:
             values.update(_standard_prerequisite_rules(prerequisite))
         rules[tech_id] = values
+    return rules
+
+
+def always_available_air_transport_rules(lines, additional_build_houses=()):
+    """Make the shared Chinook transport a tier-one core unit."""
+    sections = all_section_value_maps(lines)
+    records = map_house_records(lines, sections=sections)
+    player_countries = safe_build_countries(
+        lines, records, additional_build_houses
+    )
+    native_owners = DEFAULT_UNLOCK_BUILD_HOUSES
+    air_factories = _merged_items(*(
+        (production.get('air'),)
+        for production in CHAOS_PRIMARY_PRODUCTION.values()
+        if production.get('air')
+    ))
+    return {
+        'TRAN': {
+            'TechLevel': '1',
+            'Owner': ','.join(_merged_items(
+                native_owners,
+                production_owner_countries(
+                    lines, player_countries, sections=sections
+                ),
+            )),
+            'RequiredHouses': ','.join(_merged_items(
+                native_owners, player_countries
+            )),
+            'ForbiddenHouses': 'none',
+            'FactoryOwners': None,
+            'FactoryOwners.Forbidden': None,
+            'BuiltAt': ','.join(air_factories),
+            # BARRACKS is DTA's cross-faction prerequisite alias. Retaining it
+            # keeps the Chinook behind ordinary base production while removing
+            # its late-game TechLevel gate.
+            'Prerequisite': 'BARRACKS',
+            'PrerequisiteOverride': None,
+            'Prerequisite.Lists': None,
+            'Prerequisite.List0': None,
+        }
+    }
+
+
+def always_available_mcv_rules(lines, additional_build_houses=()):
+    """Expose each MCV through its matching War Factory/Airstrip.
+
+    The player's native MCV is available from the start of base production.
+    Foreign MCVs use exact factory prerequisites, so capturing an enemy War
+    Factory/Airstrip exposes only that faction's MCV.
+    """
+    sections = all_section_value_maps(lines)
+    records = map_house_records(lines, sections=sections)
+    player_countries = safe_build_countries(
+        lines, records, additional_build_houses
+    )
+    player_owners = production_owner_countries(
+        lines, player_countries, sections=sections
+    )
+    rules = {}
+    for mcv_id, conyard_id in CONYARD_BY_MCV.items():
+        production = PRODUCTION_LOOKUP.get(conyard_id)
+        if not production:
+            continue
+        family = production[0]
+        factory_id = CHAOS_PRIMARY_PRODUCTION.get(family, {}).get('vehicles')
+        if not factory_id:
+            continue
+        native_owners = tuple(
+            country for country in DEFAULT_UNLOCK_BUILD_HOUSES
+            if country.casefold() == family.casefold()
+        )
+        rules[mcv_id] = {
+            'TechLevel': '1',
+            'Owner': ','.join(_merged_items(native_owners, player_owners)),
+            'RequiredHouses': ','.join(_merged_items(
+                native_owners, player_countries
+            )),
+            'ForbiddenHouses': 'none',
+            'FactoryOwners': None,
+            'FactoryOwners.Forbidden': None,
+            **_standard_prerequisite_rules(factory_id),
+        }
     return rules
 
 

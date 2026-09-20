@@ -544,6 +544,26 @@ RETIRED_REWARD_BY_NAME = {
         'kind': 'retired',
         'retired_reward': True,
     },
+    **{
+        reward_name: {
+            'name': f'{reward_name} (retired: core unit)',
+            'description': (
+                'Disabled because this unit is now permanently available. '
+                'Existing saved rewards grant no additional effect.'
+            ),
+            'rules': {},
+            'factions': [],
+            'kind': 'retired',
+            'retired_reward': True,
+        }
+        for reward_name in (
+            'Unlock Allied Mobile Construction Vehicle (AMCV)',
+            'Unlock Chinook Transport (TRAN)',
+            'Unlock GDI Mobile Construction Vehicle (GMCV)',
+            'Unlock Nod Mobile Construction Vehicle (NMCV)',
+            'Unlock Soviet Mobile Construction Vehicle (SMCV)',
+        )
+    },
 }
 ACCESS_REWARD_ALIASES = {
     reward['name'].replace('TTNKMSL', '2TNKMSL'): reward['name']

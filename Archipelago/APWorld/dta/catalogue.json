@@ -11777,13 +11777,6 @@
       "id": 81065283
     },
     {
-      "name": "Unlock Allied Mobile Construction Vehicle (AMCV)",
-      "classification": "progression",
-      "category": "unit_unlocks",
-      "repeatable": false,
-      "id": 81066254
-    },
-    {
       "name": "Unlock Allied Repair Ship (ESCORTA)",
       "classification": "progression",
       "category": "unit_unlocks",
@@ -11866,13 +11859,6 @@
       "category": "special_unlocks",
       "repeatable": false,
       "id": 81065290
-    },
-    {
-      "name": "Unlock Chinook Transport (TRAN)",
-      "classification": "progression",
-      "category": "unit_unlocks",
-      "repeatable": false,
-      "id": 81065291
     },
     {
       "name": "Unlock Chrono Tank (CTNK)",
@@ -12020,13 +12006,6 @@
       "category": "unit_unlocks",
       "repeatable": false,
       "id": 81065307
-    },
-    {
-      "name": "Unlock GDI Mobile Construction Vehicle (GMCV)",
-      "classification": "progression",
-      "category": "unit_unlocks",
-      "repeatable": false,
-      "id": 81066255
     },
     {
       "name": "Unlock GDI Repair Ship (ESCORTG)",
@@ -12323,13 +12302,6 @@
       "id": 81065338
     },
     {
-      "name": "Unlock Nod Mobile Construction Vehicle (NMCV)",
-      "classification": "progression",
-      "category": "unit_unlocks",
-      "repeatable": false,
-      "id": 81066256
-    },
-    {
       "name": "Unlock Nod Nuclear Strike",
       "classification": "progression",
       "category": "power_unlocks",
@@ -12524,13 +12496,6 @@
       "category": "unit_unlocks",
       "repeatable": false,
       "id": 81065356
-    },
-    {
-      "name": "Unlock Soviet Mobile Construction Vehicle (SMCV)",
-      "classification": "progression",
-      "category": "unit_unlocks",
-      "repeatable": false,
-      "id": 81066257
     },
     {
       "name": "Unlock Soviet Nuclear Strike",
@@ -14362,7 +14327,7 @@
       ]
     }
   ],
-  "catalogue_checksum": "768d1443b758678bb2caa0cee9b8268581a18ba7cd3603e5107ee70b3e11a7d3",
+  "catalogue_checksum": "b86abc57a09a0ac353abf76d3268284204b208db1636b8f02b0ce81c9f2300b2",
   "locations": [
     {
       "name": "Tutorial Mission 1 - Mission Complete - Reward 1",

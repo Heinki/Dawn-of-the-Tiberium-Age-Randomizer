@@ -32,6 +32,8 @@ from ._dependencies import (
     STARTING_UNLOCKED_MISSIONS,
     VICTORY_CLOSE_DELAY_MS,
     YR_OPTIONS_INI,
+    always_available_air_transport_rules,
+    always_available_mcv_rules,
     always_available_miner_rules,
     always_available_transport_rules,
     claim_runtime_asset_lease,
@@ -202,6 +204,13 @@ class LaunchController:
         )
 
         def merge_required_rules(rules):
+            for essential_rules in (
+                always_available_air_transport_rules(lines),
+                always_available_mcv_rules(lines),
+            ):
+                for section, values in essential_rules.items():
+                    rules.setdefault(section, {}).update(values)
+
             miner_rules = always_available_miner_rules(
                 lines,
                 additional_build_houses=(),
@@ -1222,11 +1231,26 @@ throw "Map $name was not found in expandmo*.mix"
                     'Could not isolate randomized player production: '
                     + isolation_report['isolation_error']
                 )
-            dta_rules = {
+            source_lines = mission_source_lines(scenario)
+            essential_access_rules = {}
+            for essential_rules in (
+                always_available_air_transport_rules(source_lines),
+                always_available_mcv_rules(source_lines),
+            ):
+                for section, values in essential_rules.items():
+                    essential_access_rules.setdefault(section, {}).update(
+                        values
+                    )
+            clone_rule_overlays = {
                 section: dict(values)
                 for section, values in isolation_rules.items()
             }
-            source_lines = mission_source_lines(scenario)
+            for section, values in essential_access_rules.items():
+                clone_rule_overlays.setdefault(section, {}).update(values)
+            dta_rules = {
+                section: dict(values)
+                for section, values in clone_rule_overlays.items()
+            }
             native_mcv_ids = MISSION_ORIGINAL_MCV_ACCESS_IDS.get(
                 str(mission_code).upper(), ()
             )
@@ -1255,7 +1279,7 @@ throw "Map $name was not found in expandmo*.mix"
                     assistance_stacks,
                     access_randomized=self.randomize_unit_access_enabled(),
                     production_context=isolation_report,
-                    rule_overlays=isolation_rules,
+                    rule_overlays=clone_rule_overlays,
                 )
             )
             clone_rules, clone_report = unit_specific_buff_rules(
@@ -1273,7 +1297,7 @@ throw "Map $name was not found in expandmo*.mix"
                     'unlimited_hero_units', False
                 ),
                 production_context=isolation_report,
-                rule_overlays=isolation_rules,
+                rule_overlays=clone_rule_overlays,
                 production_owner_houses=configured_production_houses,
                 allow_foreign_factory_access=(
                     self.shop_launch_active()
@@ -1296,7 +1320,7 @@ throw "Map $name was not found in expandmo*.mix"
                     'include_defensive_buildings', False
                 ),
                 production_context=isolation_report,
-                rule_overlays=isolation_rules,
+                rule_overlays=clone_rule_overlays,
             )
             for section, values in access_rules.items():
                 dta_rules.setdefault(section, {}).update(values)

@@ -600,7 +600,7 @@ def _allied_helper_context(authored, player_context):
 
 
 def _derived_techno_ids(sections, unit_id):
-    """Return registered TechnoTypes inheriting from one canonical unit."""
+    """Return the canonical type and its explicit AI-only aliases."""
     unit_id = str(unit_id or '').upper()
     lookup = {
         str(name).casefold(): (str(name), values)
@@ -614,28 +614,29 @@ def _derived_techno_ids(sections, unit_id):
     }
     matches = {unit_id}
     for candidate in registered:
-        current = candidate
-        seen = set()
-        while current and current.casefold() not in seen:
-            seen.add(current.casefold())
-            item = lookup.get(current.casefold())
-            if item is None:
-                break
-            base = str(
-                item[1].get('BaseSection') or item[1].get('$Inherits') or ''
-            ).strip()
-            if not base:
-                break
-            if base.casefold() == unit_id.casefold():
-                matches.add(candidate.upper())
-                break
-            current = base
+        item = lookup.get(candidate.casefold())
+        if item is None:
+            continue
+        base = str(
+            item[1].get('BaseSection') or item[1].get('$Inherits') or ''
+        ).strip()
+        if base.casefold() != unit_id.casefold():
+            continue
+        candidate_values = effective_section(sections, candidate)
+        if str(
+            candidate_values.get('Buildability', '')
+        ).casefold() == 'aionly':
+            matches.add(candidate.upper())
     return matches
 
 
 def _helper_unit_references(authored, sections, unit_id, helper_context):
     """Find helper placements and helper-exclusive TaskForce entries."""
     unit_id = str(unit_id or '').upper()
+    # Gameplay subtypes remain distinct mission identities. Replacing surfaced
+    # submarines (SSS/SMSUB) or cinematic variants with their parent's clone
+    # destroys authored transitions and exact TaskForce composition. Only
+    # explicit AI-only aliases are safe to collapse onto the canonical clone.
     reference_ids = _derived_techno_ids(sections, unit_id)
     house_families = helper_context['houses']
     by_family = {
@@ -1116,12 +1117,28 @@ def _effective_buff_counts(values, target, counts, combined):
 
 def _rewrite_building_references(rules, report, catalogue, combined):
     """Make original and cloned structures equivalent for player tech checks."""
+    report['ai_trigger_routes'] = []
     outputs_by_source = {}
+    helper_outputs_by_source = {}
     for item in report['applied']:
         routes = [(item['unit'], item['output_type'])]
         linked = item.get('linked_deploy_route')
         if linked:
             routes.append((linked['source_type'], linked['output_type']))
+        for helper_route in item.get('allied_helper_routes', ()):
+            routes.append((item['unit'], helper_route['output_type']))
+            helper_outputs_by_source.setdefault(
+                item['unit'].upper(), []
+            ).append(helper_route['output_type'])
+            helper_linked = helper_route.get('linked_deploy_route')
+            if helper_linked:
+                routes.append((
+                    helper_linked['source_type'],
+                    helper_linked['output_type'],
+                ))
+                helper_outputs_by_source.setdefault(
+                    helper_linked['source_type'].upper(), []
+                ).append(helper_linked['output_type'])
         for source, output in routes:
             if source.upper() != output.upper():
                 outputs_by_source.setdefault(source.upper(), []).append(output)
@@ -1147,11 +1164,61 @@ def _rewrite_building_references(rules, report, catalogue, combined):
                 )
 
     clone_by_source = {
-        source: outputs for source, outputs in outputs_by_source.items()
+        source: list(dict.fromkeys(outputs))
+        for source, outputs in outputs_by_source.items()
         if catalogue.get(source, {}).get('category') in {'buildings', 'defenses'}
     }
     if not clone_by_source:
         return
+
+    # AITriggerTypes contains an exact TechnoType condition in field 6. DTA
+    # missions use this to notice a deployed allied reinforcement MCV and
+    # start its base-building teams. Keep the authored trigger and add an
+    # equivalent entry for each helper structure clone. Player-only clones do
+    # not need these triggers and must not duplicate unrelated AI attacks.
+    ai_trigger_clone_by_source = {
+        source: list(dict.fromkeys(outputs))
+        for source, outputs in helper_outputs_by_source.items()
+        if source in clone_by_source
+    }
+    ai_triggers = combined.get('AITriggerTypes', {})
+    occupied_trigger_keys = {
+        str(key)
+        for key in (
+            *ai_triggers.keys(),
+            *rules.get('AITriggerTypes', {}).keys(),
+        )
+    }
+    numeric_trigger_keys = [
+        int(key) for key in occupied_trigger_keys if key.isdigit()
+    ]
+    next_trigger_key = max([0, *numeric_trigger_keys]) + 1
+    trigger_key_width = max(
+        [8, *(len(key) for key in occupied_trigger_keys if key.isdigit())]
+    )
+    for source_key, value in ai_triggers.items():
+        fields = list(comma_items(value))
+        if len(fields) < 6:
+            continue
+        source_type = fields[5].upper()
+        for output_type in ai_trigger_clone_by_source.get(source_type, ()):
+            while True:
+                output_key = str(next_trigger_key).zfill(trigger_key_width)
+                next_trigger_key += 1
+                if output_key not in occupied_trigger_keys:
+                    occupied_trigger_keys.add(output_key)
+                    break
+            cloned_fields = list(fields)
+            cloned_fields[5] = output_type
+            rules.setdefault('AITriggerTypes', {})[output_key] = ','.join(
+                cloned_fields
+            )
+            report['ai_trigger_routes'].append({
+                'source_key': str(source_key),
+                'output_key': output_key,
+                'source_type': source_type,
+                'output_type': output_type,
+            })
     group_by_source = {
         source: f'DTAP{sha1(source.encode("ascii")).hexdigest()[:8].upper()}'
         for source in clone_by_source
@@ -1702,9 +1769,15 @@ def unit_specific_buff_rules(
                 'CameoPriority': str(_faction_cameo_priority(target)),
                 **unit_rules,
             }
-            if production_access and (
-                allow_foreign_factory_access
-                or target.get('category') == 'aircraft'
+            core_aircraft = (
+                target.get('category') == 'aircraft'
+                and unit_id in ALWAYS_AVAILABLE_MOBILE_IDS
+            )
+            if (
+                production_access and allow_foreign_factory_access
+            ) or (
+                target.get('category') == 'aircraft'
+                and (production_access or core_aircraft)
             ):
                 if target.get('category') == 'infantry':
                     production_type = 'infantry'
@@ -1716,11 +1789,12 @@ def unit_specific_buff_rules(
                     )
                 else:
                     production_type = ''
-                # Aircraft access must include a physical production route in
-                # every mode. All DTA faction air pads use AircraftType, so a
-                # Soviet runway can produce an unlocked Orca and a GDI helipad
-                # can produce an unlocked Yak. Include the original family
-                # when isolation moved the player to a different HouseType bit.
+                # Aircraft clones need an explicit physical production route.
+                # This includes permanent core aircraft such as TRAN: once a
+                # buff replaces the native type with a clone, Owner alone no
+                # longer makes that clone appear at map-local factory clones.
+                # Include the original family when isolation moved the player
+                # to a different HouseType bit.
                 factory_houses = tuple(dict.fromkeys((
                     *access_owner_houses,
                     production_context.get('original_production_house')

@@ -83,17 +83,40 @@ PARADROP_TASKFORCE_MEMBER_LIMIT = 5
 PARADROP_PAYLOAD_TYPE_LIMIT = PARADROP_TASKFORCE_MEMBER_LIMIT - 1
 
 
-def _paradrop_member_waves(members):
-    """Split complete payload types across full aircraft TaskForces."""
+def _bounded_paradrop_members(mission_code, power_id, members):
+    """Fit one paradrop into TS's five-member TaskForce representation."""
     payload_members = list(members[:-1])
     aircraft_member = members[-1]
-    return [
-        [*payload_members[offset:offset + PARADROP_PAYLOAD_TYPE_LIMIT],
-         aircraft_member]
-        for offset in range(
-            0, len(payload_members), PARADROP_PAYLOAD_TYPE_LIMIT
-        )
+    if len(payload_members) <= PARADROP_PAYLOAD_TYPE_LIMIT:
+        return [*payload_members, aircraft_member], 0
+
+    baseline = payload_members[0]
+    variants = payload_members[1:]
+    variant_slots = PARADROP_PAYLOAD_TYPE_LIMIT - 1
+    digest = sha1(
+        f'{mission_code}:{power_id}'.encode('utf-8')
+    ).digest()
+    offset = int.from_bytes(digest[:4], 'little') % len(variants)
+    selected = [
+        variants[(offset + index) % len(variants)]
+        for index in range(variant_slots)
     ]
+    selected_ids = {unit_id for _count, unit_id in selected}
+    selected_counts = {unit_id: count for count, unit_id in selected}
+    overflow = 0
+    destination = 0
+    for count, unit_id in variants:
+        if unit_id in selected_ids:
+            continue
+        overflow += count
+        selected_id = selected[destination % len(selected)][1]
+        selected_counts[selected_id] += count
+        destination += 1
+    return [
+        baseline,
+        *((selected_counts[unit_id], unit_id) for _count, unit_id in selected),
+        aircraft_member,
+    ], overflow
 
 
 def active_paradrop_unit_ids(rewards):
@@ -1114,6 +1137,11 @@ def player_power_rules(
                     )
                 )
                 taskforce_members.append((1, aircraft_clone))
+                taskforce_members, collapsed_payload_count = (
+                    _bounded_paradrop_members(
+                        mission.get('code', ''), source_id, taskforce_members
+                    )
+                )
                 rules[script_id] = {
                     '0': '1,100',
                     '1': '11,4',
@@ -1151,7 +1179,11 @@ def player_power_rules(
                     'TransportsReturnOnUnload': 'no',
                     'AreTeamMembersRecruitable': 'no',
                 }
-                member_waves = _paradrop_member_waves(taskforce_members)
+                # Only Vinifera's primary paradrop team receives the clicked
+                # target. Extra action-7 reinforcement teams would resolve the
+                # placeholder waypoint 100 themselves; many missions do not
+                # define it, causing AircraftClass::Unlimbo to crash.
+                member_waves = [taskforce_members]
                 wave_records = []
                 for wave_index, wave_members in enumerate(member_waves, 1):
                     wave_team_id = (
@@ -1196,35 +1228,6 @@ def player_power_rules(
                         'members': wave_members,
                     })
                 wave_trigger_ids = []
-                if len(wave_records) > 1:
-                    trigger_name = (
-                        'DTA Randomizer Player Paradrop Extra Planes'
-                    )
-                    wave_trigger_id = _clone_auxiliary_id(
-                        source_id, 'PARATR', occupied
-                    )
-                    wave_tag_id = _clone_auxiliary_id(
-                        source_id, 'PARATG', occupied
-                    )
-                    rules[team_id]['Tag'] = wave_tag_id
-                    rules.setdefault('Events', {})[wave_trigger_id] = (
-                        '1,34,0,100'
-                    )
-                    reinforcement_actions = [
-                        ['7', '1', wave['team'], '0', '0', '0', '0', 'A']
-                        for wave in wave_records[1:]
-                    ]
-                    rules.setdefault('Actions', {})[wave_trigger_id] = (
-                        f'{len(reinforcement_actions)},'
-                        f'{",".join(action_group_tokens(reinforcement_actions))}'
-                    )
-                    rules.setdefault('Triggers', {})[wave_trigger_id] = (
-                        f'{player_house},<none>,{trigger_name},0,1,1,1,0'
-                    )
-                    rules.setdefault('Tags', {})[wave_tag_id] = (
-                        f'0,{trigger_name} 1,{wave_trigger_id}'
-                    )
-                    wave_trigger_ids.append(wave_trigger_id)
                 report['paratrooper_unit'] = drop_unit
                 report['paratrooper_buff_source'] = requested_paratrooper
                 report['paratrooper_buff_fields'] = inherited_buffs
@@ -1259,7 +1262,7 @@ def player_power_rules(
                         if unit_id in paradrop_unit_routes
                     },
                     'is_infantry': baseline_unit_id == 'E1S',
-                    'collapsed_payload_count': 0,
+                    'collapsed_payload_count': collapsed_payload_count,
                 })
         rules.setdefault('SuperWeaponTypes', {})[str(next_key)] = clone_id
         runtime_types.append(clone_id)

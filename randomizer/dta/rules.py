@@ -23,6 +23,8 @@ DEFENSE_BUILDING_IDS = frozenset({
 ALWAYS_AVAILABLE_MOBILE_IDS = frozenset({
     'ENGINEER',
     'TDHARV', 'RAHARV',
+    'TRAN',
+    'GMCV', 'NMCV', 'AMCV', 'SMCV',
     'GLST', 'NLST', 'ALST', 'SLST',
 })
 # DTA's three classic commandos are unique hero units, but their installed

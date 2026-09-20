@@ -103,9 +103,12 @@ def run_self_check():
         unit_collision_report,
     )
     from randomizer.launch.options import spawn_ini_text
-    from randomizer.maps.ini import parse_action_groups
     from randomizer.maps.settings import mission_house_color_rules
-    from randomizer.missions.access import original_mcv_access_rules
+    from randomizer.missions.access import (
+        always_available_air_transport_rules,
+        always_available_mcv_rules,
+        original_mcv_access_rules,
+    )
     from randomizer.missions.overrides import MISSION_ORIGINAL_MCV_ACCESS_IDS
     from randomizer.application.unlock_data import UnlockDataController
     from randomizer.application.reward_controller import RewardController
@@ -297,6 +300,15 @@ def run_self_check():
             if (spec.get('provider') or {}).get('buildable')
         )
         expected_access_ids = mobile_ids - set(ALWAYS_AVAILABLE_MOBILE_IDS)
+        core_mobile_ids = {'TRAN', 'GMCV', 'NMCV', 'AMCV', 'SMCV'}
+        core_source_lines = (
+            source.read_text(encoding='cp1252', errors='ignore').splitlines()
+            if source else []
+        )
+        core_air_transport_rules = always_available_air_transport_rules(
+            core_source_lines
+        )
+        core_mcv_rules = always_available_mcv_rules(core_source_lines)
         arsenal_candidates = arsenal_unit_candidates(
             {
                 'include_special_rewards': True,
@@ -326,6 +338,52 @@ def run_self_check():
         clone_mission = next(
             mission for mission in missions if mission['code'] == 'M_PTTP6'
         )
+        clone_mission_lines = mission_source_lines(clone_mission['scenario'])
+        transport_isolation, transport_context = (
+            player_production_isolation_rules(clone_mission)
+        )
+        transport_overlays = {
+            section: dict(values)
+            for section, values in transport_isolation.items()
+        }
+        for section, values in always_available_air_transport_rules(
+            clone_mission_lines
+        ).items():
+            transport_overlays.setdefault(section, {}).update(values)
+        transport_speed_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('unit') == 'TRAN'
+            and reward.get('buff_type') == 'speed'
+        )
+        transport_global_production_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('unit') == 'DTA_PLAYER_ARMY'
+            and reward.get('buff_type') == 'production'
+        )
+        transport_clone_rules, transport_clone_report = (
+            unit_specific_buff_rules(
+                clone_mission,
+                [
+                    transport_speed_reward,
+                    transport_global_production_reward,
+                ],
+                access_randomized=True,
+                production_context=transport_context,
+                rule_overlays=transport_overlays,
+            )
+        )
+        transport_clone_entry = next((
+            item for item in transport_clone_report['applied']
+            if item['unit'] == 'TRAN'
+        ), {})
+        transport_clone = transport_clone_rules.get(
+            transport_clone_entry.get('output_type', ''), {}
+        )
+        transport_air_factory_outputs = {
+            item.get('output_type')
+            for item in transport_clone_report['applied']
+            if item.get('unit') == 'RAASTRP'
+        }
         clone_rules, clone_report = unit_specific_buff_rules(
             clone_mission,
             [{
@@ -786,11 +844,14 @@ def run_self_check():
             mcv_isolation, mcv_context = player_production_isolation_rules(
                 mcv_mission
             )
-            mcv_access_reward = next(
-                reward for reward in REWARD_POOL
-                if reward.get('unit') == mcv_id
-                and reward.get('dta_production_access')
-            )
+            mcv_source_lines = mission_source_lines(mcv_mission['scenario'])
+            mcv_core_rules = always_available_mcv_rules(mcv_source_lines)
+            mcv_overlays = {
+                section: dict(values)
+                for section, values in mcv_isolation.items()
+            }
+            for section, values in mcv_core_rules.items():
+                mcv_overlays.setdefault(section, {}).update(values)
             mcv_speed_reward = next(
                 reward for reward in REWARD_POOL
                 if reward.get('unit') == mcv_id
@@ -798,11 +859,11 @@ def run_self_check():
             )
             mcv_rules, mcv_report = unit_specific_buff_rules(
                 mcv_mission,
-                [mcv_access_reward, mcv_speed_reward],
+                [mcv_speed_reward],
                 access_randomized=True,
                 buff_allied_helpers=True,
                 production_context=mcv_context,
-                rule_overlays=mcv_isolation,
+                rule_overlays=mcv_overlays,
                 production_owner_houses=mission_player_production_houses(
                     mission_code
                 ),
@@ -828,12 +889,10 @@ def run_self_check():
                 and conyard_output in comma_items(
                     mcv_rules.get('AI', {}).get('BuildConst')
                 )
-                and mcv_entry.get('route') == 'production_access_clone'
+                and mcv_entry.get('route') == 'production_clone'
                 and mcv_output_rules.get('TechLevel') == '1'
-                and not any(
-                    str(key).casefold().startswith('prerequisite')
-                    for key in mcv_output_rules
-                )
+                and mcv_output_rules.get('Prerequisite')
+                == mcv_core_rules.get(mcv_id, {}).get('Prerequisite')
             )
             if mission_code == 'M_CRC10':
                 crc10_mcv_rules = mcv_rules
@@ -844,11 +903,15 @@ def run_self_check():
             se6_native_mcv_ids,
         )
         se6_isolation, se6_context = player_production_isolation_rules(se6)
-        se6_mcv_access_reward = next(
-            reward for reward in REWARD_POOL
-            if reward.get('unit') == 'NMCV'
-            and reward.get('dta_production_access')
+        se6_core_mcv_rules = always_available_mcv_rules(
+            mission_source_lines(se6['scenario'])
         )
+        se6_overlays = {
+            section: dict(values)
+            for section, values in se6_isolation.items()
+        }
+        for section, values in se6_core_mcv_rules.items():
+            se6_overlays.setdefault(section, {}).update(values)
         se6_mcv_speed_reward = next(
             reward for reward in REWARD_POOL
             if reward.get('unit') == 'NMCV'
@@ -856,10 +919,10 @@ def run_self_check():
         )
         se6_native_rules, se6_native_report = unit_specific_buff_rules(
             se6,
-            [se6_mcv_access_reward, se6_mcv_speed_reward],
+            [se6_mcv_speed_reward],
             access_randomized=True,
             production_context=se6_context,
-            rule_overlays=se6_isolation,
+            rule_overlays=se6_overlays,
             production_owner_houses=mission_player_production_houses('M_SE6'),
             allow_foreign_factory_access=True,
             native_direct_unit_ids=se6_native_mcv_ids,
@@ -870,12 +933,13 @@ def run_self_check():
         ), {})
         se6_access_locks, _se6_access_report = player_infantry_access_rules(
             se6,
-            [se6_mcv_access_reward],
+            [],
             True,
             production_context=se6_context,
-            rule_overlays=se6_isolation,
+            rule_overlays=se6_overlays,
         )
-        se6_final_mcv_rules = dict(se6_access_locks.get('NMCV', {}))
+        se6_final_mcv_rules = dict(se6_core_mcv_rules.get('NMCV', {}))
+        se6_final_mcv_rules.update(se6_access_locks.get('NMCV', {}))
         se6_final_mcv_rules.update(se6_native_rules.get('NMCV', {}))
         se6_final_mcv_rules.update(se6_native_mcv_access.get('NMCV', {}))
         crc10_event_companions = {
@@ -1859,22 +1923,6 @@ def run_self_check():
                     paradrop_wave_aircraft_entries.append(member)
                 else:
                     paradrop_wave_payload[unit_id] += int(count)
-        paradrop_expected_payload = Counter({
-            paradrop_report.get('paratrooper_unit'): 5 + int(
-                paradrop_report['applied'][0]['payload_unit_counts'].get(
-                    '', 0
-                )
-            )
-        })
-        paradrop_expected_payload.update({
-            paradrop_report.get('paradrop_unit_routes', {}).get(
-                unit_id, unit_id
-            ): count
-            for unit_id, count in paradrop_report['applied'][0][
-                'payload_unit_counts'
-            ].items()
-            if unit_id
-        })
         paradrop_generated_wave_trigger_ids = (
             set(paradrop_rules.get('Events', {}))
             & set(paradrop_rules.get('Actions', {}))
@@ -1883,14 +1931,6 @@ def run_self_check():
         paradrop_wave_trigger_ids = paradrop_report.get(
             'paradrop_wave_triggers', {}
         ).get('DropPodSpecial', [])
-        paradrop_wave_actions = [
-            parse_action_groups(
-                paradrop_rules.get('Actions', {}).get(
-                    trigger_id, ''
-                )
-            )
-            for trigger_id in paradrop_wave_trigger_ids
-        ]
         paradrop_e5 = paradrop_clone_rules.get(
             paradrop_unit_routes.get('E5', ''), {}
         )
@@ -2112,9 +2152,53 @@ def run_self_check():
             ) == len(expected_access_ids),
             'dta_essential_mobile_units_always_available': (
                 set(ALWAYS_AVAILABLE_TECH_IDS) == set(ALWAYS_AVAILABLE_MOBILE_IDS)
+                and core_mobile_ids.issubset(ALWAYS_AVAILABLE_MOBILE_IDS)
                 and not expected_access_ids.intersection(
                     ALWAYS_AVAILABLE_MOBILE_IDS
                 )
+                and core_mobile_ids.isdisjoint({
+                    str(reward.get('unit') or '').upper()
+                    for reward in REWARD_POOL
+                    if reward.get('dta_production_access')
+                })
+                and all(
+                    canonical_reward({'name': reward_name}).get(
+                        'retired_reward'
+                    )
+                    for reward_name in (
+                        'Unlock Allied Mobile Construction Vehicle (AMCV)',
+                        'Unlock Chinook Transport (TRAN)',
+                        'Unlock GDI Mobile Construction Vehicle (GMCV)',
+                        'Unlock Nod Mobile Construction Vehicle (NMCV)',
+                        'Unlock Soviet Mobile Construction Vehicle (SMCV)',
+                    )
+                )
+                and core_air_transport_rules.get('TRAN', {}).get('TechLevel')
+                == '1'
+                and core_air_transport_rules.get('TRAN', {}).get(
+                    'Prerequisite'
+                ) == 'BARRACKS'
+                and set(comma_items(
+                    core_air_transport_rules.get('TRAN', {}).get('BuiltAt')
+                )) == {'GHPAD', 'NHPAD', 'AHPAD', 'RAASTRP'}
+                and transport_clone_entry.get('route') == 'production_clone'
+                and transport_clone.get('TechLevel') == '1'
+                and transport_clone.get('Prerequisite') == 'BARRACKS'
+                and 'RAASTRP' in comma_items(
+                    transport_clone.get('BuiltAt')
+                )
+                and transport_air_factory_outputs.intersection(
+                    comma_items(transport_clone.get('BuiltAt'))
+                )
+                and {
+                    unit_id: values.get('Prerequisite')
+                    for unit_id, values in core_mcv_rules.items()
+                } == {
+                    'GMCV': 'WEAP',
+                    'NMCV': 'AFLD',
+                    'AMCV': 'AWEAP',
+                    'SMCV': 'SWEAP',
+                }
             ),
             'dta_obsolete_aliases_removed': all(
                 unit_id not in mobile_ids for unit_id in {'E1N', 'E3N', 'APCN'}
@@ -2627,9 +2711,8 @@ def run_self_check():
                 and paradrop_team.get('House')
                 == paradrop_report['player_house']
                 and paradrop_team.get('Waypoint') == '100'
-                and paradrop_report.get('paradrop_plane_count') == 4
-                and len(paradrop_wave_team_ids) == 4
-                and len(set(paradrop_wave_team_ids)) == 4
+                and paradrop_report.get('paradrop_plane_count') == 1
+                and len(paradrop_wave_team_ids) == 1
                 and all(
                     team.get('House') == paradrop_report['player_house']
                     and team.get('Waypoint') == '100'
@@ -2645,55 +2728,25 @@ def run_self_check():
                 )
                 and paradrop_wave_aircraft_entries == [
                     f'1,{paradrop_report["paradrop_aircraft"]}'
-                ] * 4
-                and paradrop_wave_payload == paradrop_expected_payload
-                and sum(paradrop_wave_payload.values()) == 20
-                and not paradrop_report[
-                    'paradrop_collapsed_payload_units'
                 ]
+                and paradrop_wave_payload == Counter({
+                    'E1S_PLAYER': 6,
+                    'FTNK': 5,
+                    'ARTY': 5,
+                    'MLRS': 4,
+                })
+                and sum(paradrop_wave_payload.values()) == 20
+                and paradrop_report['paradrop_collapsed_payload_units']
+                == {'DropPodSpecial': 11}
                 and paradrop_report['applied'][0][
                     'collapsed_payload_units'
-                ] == 0
+                ] == 11
                 and paradrop_report['applied'][0][
                     'paradrop_plane_count'
-                ] == 4
-                and len(paradrop_wave_trigger_ids) == 1
-                and paradrop_generated_wave_trigger_ids == set(
-                    paradrop_wave_trigger_ids
-                )
-                and all(
-                    paradrop_rules.get('Events', {}).get(trigger_id)
-                    == '1,34,0,100'
-                    for trigger_id in paradrop_wave_trigger_ids
-                )
-                and all(count == 3 and len(groups) == 3
-                        for count, groups in paradrop_wave_actions)
-                and [group[:3]
-                     for _count, groups in paradrop_wave_actions
-                     for group in groups] == [
-                    ['7', '1', team_id]
-                    for team_id in paradrop_wave_team_ids[1:]
-                ]
-                and all(
-                    group[3:] == ['0', '0', '0', '0', 'A']
-                    for _count, groups in paradrop_wave_actions
-                    for group in groups
-                )
-                and paradrop_wave_trigger_ids[0]
-                in paradrop_rules.get('Tags', {}).get(
-                    paradrop_wave_teams[0].get('Tag', ''), ''
-                )
-                and all(
-                    not team.get('Tag') for team in paradrop_wave_teams[1:]
-                )
-                and all(
-                    paradrop_rules.get('Triggers', {}).get(
-                        trigger_id, ''
-                    ).startswith(
-                        f'{paradrop_report["player_house"]},<none>,'
-                    )
-                    for trigger_id in paradrop_wave_trigger_ids
-                )
+                ] == 1
+                and not paradrop_wave_trigger_ids
+                and not paradrop_generated_wave_trigger_ids
+                and not paradrop_wave_teams[0].get('Tag')
                 and paradrop_report.get('paradrop_unit_routes') == {
                     'E5': 'E5_PLAYER',
                     'SHOK': 'SHOK_PLAYER',
