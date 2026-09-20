@@ -234,6 +234,7 @@ class ShopRun:
     free_buff_tokens_used_stage: int = 0
     emergency_revivals_used: int = 0
     mission_offers: tuple[MissionOffer, ...] = ()
+    precondition_unlocks: tuple[str, ...] = ()
     selected_mission_code: str | None = None
     mission_committed: bool = False
     completed_missions: tuple[str, ...] = ()
@@ -285,6 +286,7 @@ class ShopRun:
             'free_buff_tokens_used_stage': self.free_buff_tokens_used_stage,
             'emergency_revivals_used': self.emergency_revivals_used,
             'mission_offers': [item.to_dict() for item in self.mission_offers],
+            'precondition_unlocks': list(self.precondition_unlocks),
             'selected_mission_code': self.selected_mission_code,
             'mission_committed': self.mission_committed,
             'completed_missions': list(self.completed_missions),

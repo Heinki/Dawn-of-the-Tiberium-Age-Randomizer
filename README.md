@@ -92,12 +92,19 @@ states available regardless of campaign completion. Each condition retains its
 own choice; changing the first dropdown does not reset the others. Hover over
 either dropdown to read text that does not fit its width.
 
-Choices default to the disabled state and are saved per mission in the player
-configuration under `mission_preconditions`. The launcher snapshots them at
-launch and writes DTA's `[GlobalFlags]` / `GlobalFlagN` spawn settings. Internal
-difficulty globals remain controlled by the selected difficulty. Authored
-`GlobalSpecificINIValueN` map overrides are also applied when their condition
-is enabled.
+Outside Shop Mode, choices default to the disabled state and are saved per
+mission in the player configuration under `mission_preconditions`. In Shop
+Mode, every condition defaults to enabled and cannot be changed for free.
+Players can unlock a mission's condition choices with Run Ore before committing
+the mission. Cost is its number of conditions multiplied by current displayed
+game difficulty (Easy 1 through Impossible 7); easing first lowers this cost.
+Unlocks last for current mission offer and expire when that offer is rerolled or
+the stage ends.
+
+The launcher snapshots choices at launch and writes DTA's `[GlobalFlags]` /
+`GlobalFlagN` spawn settings. Internal difficulty globals remain controlled by
+selected difficulty. Authored `GlobalSpecificINIValueN` map overrides are also
+applied when their condition is enabled.
 
 To expose an additional condition, add its identifier to the mission's
 `UsedGlobalVariables` list in `INI/Battle.ini`. Its index in

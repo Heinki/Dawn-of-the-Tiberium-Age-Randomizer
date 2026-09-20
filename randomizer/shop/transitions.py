@@ -423,6 +423,10 @@ def reroll_missions(
         run,
         rerolls_used=run.rerolls_used + 1,
         mission_offers=offers,
+        precondition_unlocks=tuple(
+            code for code in run.precondition_unlocks
+            if code in {offer.mission_code for offer in offers}
+        ),
         selected_mission_code=(
             None
             if not replaced_mission_code
@@ -457,6 +461,37 @@ def apply_mission_difficulty_assist(
         run,
         difficulty_assists_used=run.difficulty_assists_used + 1,
         assisted_mission_code=mission_code,
+    )
+
+
+def unlock_precondition_choices(run, mission_code, cost):
+    """Spend current-run Ore to edit one offered mission's preconditions."""
+    mission_code = str(mission_code or '').upper()
+    cost = int(cost)
+    if run.status is not RunStatus.ACTIVE:
+        raise ShopTransitionError(
+            'Only an active Shop run can unlock precondition choices'
+        )
+    if run.mission_committed:
+        raise ShopTransitionError(
+            'Cannot unlock precondition choices after mission commitment'
+        )
+    if mission_code not in {
+        offer.mission_code for offer in run.mission_offers
+    }:
+        raise ShopTransitionError('Mission is not a current mission choice')
+    if mission_code in run.precondition_unlocks:
+        return run
+    if cost < 1:
+        raise ShopTransitionError('Precondition choice cost must be positive')
+    if run.run_coins < cost:
+        raise ShopTransitionError(
+            f'Need {cost - run.run_coins} more Ore to unlock choices'
+        )
+    return replace(
+        run,
+        run_coins=run.run_coins - cost,
+        precondition_unlocks=run.precondition_unlocks + (mission_code,),
     )
 
 
@@ -607,6 +642,7 @@ def apply_mission_victory(
         stage=run.stage if final_victory else run.stage + 1,
         run_coins=carried_ore + reward.run_coins,
         mission_offers=() if final_victory else next_offers,
+        precondition_unlocks=(),
         selected_mission_code=None,
         mission_committed=False,
         assisted_mission_code=None,
@@ -659,6 +695,7 @@ def apply_mission_failure(
             run,
             emergency_revivals_used=run.emergency_revivals_used + 1,
             mission_offers=revival_offers,
+            precondition_unlocks=(),
             selected_mission_code=None,
             mission_committed=False,
             assisted_mission_code=None,
@@ -691,6 +728,7 @@ def abandon_run(run):
         run,
         status=RunStatus.FAILED,
         mission_offers=(),
+        precondition_unlocks=(),
         selected_mission_code=None,
         mission_committed=False,
         failed_mission_code='GAVE_UP',

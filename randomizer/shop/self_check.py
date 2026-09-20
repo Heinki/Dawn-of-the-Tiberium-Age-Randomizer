@@ -36,6 +36,7 @@ from .economy import (
     permanent_power_buff_price,
     permanent_power_price,
     permanent_unit_price,
+    precondition_unlock_price,
     run_reward_price,
     run_buff_price,
     run_unit_price,
@@ -84,6 +85,7 @@ from .transitions import (
     apply_mission_victory,
     commit_selected_mission,
     start_new_run,
+    unlock_precondition_choices,
 )
 
 
@@ -605,6 +607,11 @@ def validate_shop_domain():
         'Victory Ore upgrade does not add one Ore per level',
     )
     _require(
+        precondition_unlock_price(1, 1) == 1
+        and precondition_unlock_price(3, 4) == 12,
+        'Shop precondition unlock price does not scale by count and difficulty',
+    )
+    _require(
         run_unit_price('E1') == 2
         and permanent_unit_price('E1') == 8,
         'Low-cost DTA infantry Shop prices are incorrect',
@@ -869,6 +876,31 @@ def validate_shop_domain():
         starting_defense_ids=starter_defenses,
         reward_mode='Chaos',
         reward_settings={'shop_faction_filter': 'GDI'},
+    )
+    precondition_code = first_offers[0].mission_code
+    precondition_run = unlock_precondition_choices(
+        transition.run, precondition_code, 3
+    )
+    _require(
+        precondition_run.run_coins == transition.run.run_coins - 3
+        and precondition_run.precondition_unlocks == (precondition_code,)
+        and normalize_shop_run(
+            precondition_run.to_dict()
+        ).precondition_unlocks == (precondition_code,),
+        'Shop precondition choice unlock did not spend or persist Ore',
+    )
+    try:
+        unlock_precondition_choices(
+            transition.run, first_offers[1].mission_code,
+            transition.run.run_coins + 1,
+        )
+    except ShopTransitionError:
+        insufficient_precondition_ore_rejected = True
+    else:
+        insufficient_precondition_ore_rejected = False
+    _require(
+        insufficient_precondition_ore_rejected,
+        'Shop precondition choice unlock accepted insufficient Ore',
     )
     base_build_mission = next(
         mission for mission in missions

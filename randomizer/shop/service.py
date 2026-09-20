@@ -54,6 +54,7 @@ from .transitions import (
     merge_archipelago_entitlements,
     select_mission,
     start_new_run,
+    unlock_precondition_choices,
 )
 
 
@@ -202,6 +203,15 @@ class ShopProgressionService:
             run, mission_code, maximum_assists=maximum
         )
         self.repository.save_run(updated)
+        return updated
+
+    def unlock_preconditions(self, mission_code, cost):
+        run = self.repository.load_run()
+        if run is None:
+            raise ShopTransitionError('No Shop run exists')
+        updated = unlock_precondition_choices(run, mission_code, cost)
+        if updated != run:
+            self.repository.save_run(updated)
         return updated
 
     def purchase_run_reward(self, reward_id):

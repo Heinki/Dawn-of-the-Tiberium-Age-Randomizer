@@ -20,6 +20,7 @@ from .economy import (
     permanent_power_price,
     permanent_unit_price,
     permanent_upgrade_price,
+    precondition_unlock_price,
     run_buff_price,
     run_unit_price,
     starting_run_coins,
@@ -47,6 +48,7 @@ from .transitions import (
     reroll_missions,
     select_mission,
     start_new_run,
+    unlock_precondition_choices,
     victory_key,
 )
 
@@ -88,6 +90,7 @@ __all__ = (
     'permanent_power_buff_price',
     'permanent_power_price',
     'permanent_upgrade_price',
+    'precondition_unlock_price',
     'random_ap_unit_entitlement_ids',
     'reroll_missions',
     'run_buff_price',
@@ -98,6 +101,6 @@ __all__ = (
     'select_mission',
     'start_new_run',
     'shop_reward_ids_from_ap_ledger',
+    'unlock_precondition_choices',
     'victory_key',
 )
-

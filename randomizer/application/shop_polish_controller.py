@@ -589,6 +589,35 @@ class ShopPolishController(ShopArchipelagoController):
                 enemy_buff_text += ' (no-build protection)'
             card['code'] = offer.mission_code
             card['preconditions'].set_mission(mission)
+            precondition_count = len(card['preconditions'].options)
+            preconditions_unlocked = (
+                offer.mission_code in run.precondition_unlocks
+            )
+            precondition_cost = self._shop_precondition_unlock_cost(
+                run, offer.mission_code
+            )
+            card['preconditions'].configure_access(
+                locked=bool(precondition_count and not preconditions_unlocked),
+                editable=bool(
+                    preconditions_unlocked
+                    and run.status is RunStatus.ACTIVE
+                    and not run.mission_committed
+                    and not self.shop_launch_active()
+                ),
+                unlock_cost=precondition_cost,
+                can_unlock=bool(
+                    precondition_count
+                    and not preconditions_unlocked
+                    and run.status is RunStatus.ACTIVE
+                    and not run.mission_committed
+                    and not self.shop_launch_active()
+                    and run.run_coins >= precondition_cost
+                ),
+                unlock_command=(
+                    lambda selected=index:
+                    self.unlock_shop_preconditions(selected)
+                ),
+            )
             card['name'].set(f'{title} ({offer.mission_code})')
             card['detail'].set(
                 f'Faction: {faction}\n'

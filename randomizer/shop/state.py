@@ -317,6 +317,13 @@ def normalize_shop_run(document, *, config=SHOP_CONFIG):
     )
     selected_mission = selected_mission.upper() if selected_mission else None
     offer_codes = {offer.mission_code for offer in offers}
+    precondition_unlocks = _unique_mission_codes(
+        document.get('precondition_unlocks'), 'precondition_unlocks'
+    )
+    if not set(precondition_unlocks).issubset(offer_codes):
+        raise ShopStateError(
+            'Shop precondition unlocks must belong to current mission choices'
+        )
     if selected_mission and selected_mission not in offer_codes:
         raise ShopStateError(
             f'Selected Shop mission {selected_mission!r} is not in current offer'
@@ -481,6 +488,7 @@ def normalize_shop_run(document, *, config=SHOP_CONFIG):
             'emergency_revivals_used',
         ),
         mission_offers=offers,
+        precondition_unlocks=precondition_unlocks,
         selected_mission_code=selected_mission,
         mission_committed=mission_committed,
         completed_missions=_unique_mission_codes(

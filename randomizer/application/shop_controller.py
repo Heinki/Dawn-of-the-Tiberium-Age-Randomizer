@@ -37,9 +37,11 @@ from randomizer.missions.tier_one import (
     TIER_ONE_ROLE_MARKERS,
 )
 from randomizer.dta.difficulty import (
+    DIFFICULTY_ORDER,
     mission_difficulty_labels,
     resolve_mission_difficulty,
 )
+from randomizer.dta.preconditions import mission_preconditions
 from randomizer.shop.active import (
     active_shop_rewards,
     active_shop_starter_defense_ids,
@@ -65,6 +67,7 @@ from randomizer.shop.economy import (
     permanent_power_price,
     permanent_unit_price,
     permanent_upgrade_price,
+    precondition_unlock_price,
 )
 from randomizer.shop.missions import (
     generate_mission_offers,
@@ -1305,6 +1308,10 @@ class ShopController(ShopPolishController):
         repaired = replace(
             run,
             mission_offers=offers,
+            precondition_unlocks=tuple(
+                code for code in run.precondition_unlocks
+                if code in {offer.mission_code for offer in offers}
+            ),
             selected_mission_code='',
         )
         self.shop_repository.save_run(repaired)
@@ -1373,6 +1380,61 @@ class ShopController(ShopPolishController):
                 f'{code} eased from {normal} to {eased}; reward unchanged.'
             )
         self.refresh_shop_mode()
+
+    def _shop_precondition_unlock_cost(self, run, mission_code):
+        count = len(mission_preconditions(self._shop_mission(mission_code)))
+        normal, eased = self.shop_eased_difficulty_labels(run, mission_code)
+        current = eased if run.assisted_mission_code == mission_code else normal
+        difficulty_rank = next((
+            index + 1
+            for index, label in enumerate(DIFFICULTY_ORDER)
+            if label.casefold() == current.casefold()
+        ), self.shop_mission_difficulty_value(run, mission_code) + 1)
+        return precondition_unlock_price(count, difficulty_rank)
+
+    def unlock_shop_preconditions(self, index):
+        self.shop_profile, run = self.shop_repository.load()
+        self.shop_run = run
+        try:
+            if run is None:
+                raise ShopTransitionError('No Shop run exists')
+            code = run.mission_offers[int(index)].mission_code
+            cost = self._shop_precondition_unlock_cost(run, code)
+            if cost < 1:
+                raise ShopTransitionError(
+                    'Mission has no precondition choices to unlock'
+                )
+            updated = self.shop_service.unlock_preconditions(code, cost)
+        except (IndexError, ShopTransitionError, ValueError) as exc:
+            self._set_shop_message(exc, error=True)
+        else:
+            mission_options = mission_preconditions(self._shop_mission(code))
+            if not isinstance(self.config.get('mission_preconditions'), dict):
+                self.config['mission_preconditions'] = {}
+            selections = self.config['mission_preconditions']
+            selections[code] = {
+                item['id']: True for item in mission_options
+            }
+            self.save_current_launcher_config()
+            self.shop_run = updated
+            self._set_shop_message(
+                f'Unlocked {len(mission_options)} precondition '
+                f'choice(s) for {code} for {cost} Ore.'
+            )
+        self.refresh_shop_mode()
+
+    def _apply_shop_precondition_defaults(self, run, mission):
+        code = str(mission.get('code') or '').upper()
+        if code in run.precondition_unlocks:
+            return
+        options = mission_preconditions(mission)
+        if not options:
+            return
+        if not isinstance(self.config.get('mission_preconditions'), dict):
+            self.config['mission_preconditions'] = {}
+        selections = self.config['mission_preconditions']
+        selections[code] = {item['id']: True for item in options}
+        self.save_current_launcher_config()
 
     def on_launch_selected(self):
         if self.shop_mode_selected():
@@ -1452,6 +1514,7 @@ class ShopController(ShopPolishController):
                 raise ShopTransitionError(
                     f'Shop mission data is missing for {code}'
                 )
+            self._apply_shop_precondition_defaults(run, mission)
             committed = self.shop_service.commit_mission(code)
         except ShopTransitionError as exc:
             self._set_shop_message(exc, error=True)
@@ -2133,7 +2196,7 @@ class ShopController(ShopPolishController):
                 visible.append(record)
         cameo_images = self._prepare_shop_unit_cameos(
             record['item'] for record in visible
-            if not record['is_power'] and not record['archipelago_item']
+            if not record['archipelago_item']
         )
         unit_buff_targets = {entry.target_id for entry in self._shop_buff_entries}
         power_buff_targets = {

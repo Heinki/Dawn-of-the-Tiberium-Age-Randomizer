@@ -126,6 +126,11 @@ def starting_run_coins(
     )
 
 
+def precondition_unlock_price(condition_count, difficulty_rank):
+    """Price editing all conditions for one offered mission."""
+    return max(0, int(condition_count)) * max(1, int(difficulty_rank))
+
+
 def discounted_shop_price(
     base_price,
     *,

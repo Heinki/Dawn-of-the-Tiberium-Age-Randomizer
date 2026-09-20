@@ -1,5 +1,3 @@
-- In the Current Loadout screen, the cameo of the Paradrop is not being loaded for some reason - Shop Mode after buying it and having it in the tab
-- Also, I think it would be interesting if the randomizer would decide the preconditions for you rather than let you set them, at least in Shop Mode. There's no reason otherwise why I wouldn't always set the preconditions in my favor. But you could then make it possible for players to "unlock" the choice for gems/ore. -> Adjust with unlocks in ore for shopmode
 - This isn't very clear if it unlocks Self Healing immediately for units that don't typically self-heal; I was wondering if it would only take effect once a MG would reach Elite. Might be nice to improve how clear it is. I went and checked the code and it seems to add SelfHealing=yes, so it unlocks self-healing in addition to making them heal faster.
 I wonder if those should be separate buffs though
 Gives self healing regardless of veterancy
