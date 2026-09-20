@@ -46,7 +46,7 @@ mid-range, Ion Cannon and Chrono Vortex are high-range, and both Nuclear
 Strikes use the maximum power price. Paradrop payload upgrades use their
 delivered unit's access-price band, so stronger infantry and vehicles cost more.
 
-Generated unit and building clones receive fixed `CameoPriority` bands in GDI, Nod, Allies, Soviet order. Defensive buildings use a separate lower set of faction bands, keeping every defense below normal buildings on the construction sidebar.
+Generated unit and building clones retain their source order from `InfantryTypes`, `VehicleTypes`, `AircraftTypes`, and `BuildingTypes`. Native `CameoPriority` values are preserved when present, so mission-authored ordering remains intact.
 
 The Ion Cannon clone starts from the native `IonCannonSpecial` definition, then applies player-only identity and buff adjustments. Because Ion damage and radius are engine-global, native providers and scripted grants are removed and the native power is recharge-locked while the reward clone is active. Only the player-granted clone can fire the buffed effect. Buildable Airstrike, Nuclear Strike, and Chrono Vortex providers support cost, construction-speed, and Additional Launch Site buffs. Their base limit is one building; every Additional Launch Site stack enables another one-use provider/power pair, up to five, so destroying a building removes its corresponding shot. Paradrop supports recharge, standard payload-size, and named infantry or light-vehicle payload buffs; each named payload is a separate Shop choice.
 

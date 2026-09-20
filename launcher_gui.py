@@ -976,35 +976,30 @@ def run_self_check():
                 starting_credit_bonus([starting_credit_reward] * 25),
             )
         )
-        faction_priority_sources = {
-            'MTNK': 400,
-            'BGGY': 300,
-            '1TNK': 200,
-            '3TNK': 100,
-            'TWR': -600,
-            'GUN': -700,
-            'RAPBOX': -800,
-            'RAFTUR': -900,
-        }
-        faction_priority_rewards = [
+        cameo_order_sources = (
+            'MTNK', 'BGGY', '1TNK', '3TNK',
+            'TWR', 'GUN', 'RAPBOX', 'RAFTUR',
+        )
+        cameo_order_rewards = [
             next(
                 reward for reward in REWARD_POOL
                 if reward.get('dta_production_access')
                 and str(reward.get('unit') or '').upper() == unit_id
             )
-            for unit_id in faction_priority_sources
+            for unit_id in cameo_order_sources
         ]
-        faction_priority_rules, faction_priority_report = (
+        cameo_order_rules, cameo_order_report = (
             unit_specific_buff_rules(
                 tutorial_two,
-                faction_priority_rewards,
+                cameo_order_rewards,
                 access_randomized=True,
             )
         )
-        faction_priority_outputs = {
+        cameo_order_outputs = {
             item['unit']: item['output_type']
-            for item in faction_priority_report['applied']
+            for item in cameo_order_report['applied']
         }
+        cameo_order_output_ids = set(cameo_order_outputs.values())
         installed_sections = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
         harvester_type_ids = {
             item.upper()
@@ -3115,22 +3110,35 @@ def run_self_check():
                 ).get('ActionTypes', {}))
                 and len(all_power_report['provider_buildings']) == 8
             ),
-            'dta_sidebar_factions_and_defenses_sorted': (
-                set(faction_priority_outputs) == set(faction_priority_sources)
+            'dta_sidebar_clone_order_preserved': (
+                set(cameo_order_outputs) == set(cameo_order_sources)
                 and all(
-                    faction_priority_rules.get(
-                        faction_priority_outputs[unit_id], {}
-                    ).get('CameoPriority') == str(priority)
-                    for unit_id, priority in faction_priority_sources.items()
+                    [
+                        output_id
+                        for output_id in cameo_order_rules.get(
+                            list_name, {}
+                        ).values()
+                        if output_id in cameo_order_output_ids
+                    ]
+                    == [
+                        cameo_order_outputs[str(source_id).upper()]
+                        for source_id in installed_sections.get(
+                            list_name, {}
+                        ).values()
+                        if str(source_id).upper() in cameo_order_outputs
+                    ]
+                    for list_name in (
+                        'InfantryTypes', 'VehicleTypes', 'AircraftTypes',
+                        'BuildingTypes',
+                    )
                 )
-                and max(
-                    priority for unit_id, priority
-                    in faction_priority_sources.items()
-                    if BUFF_TARGETS[unit_id]['category'] == 'defenses'
-                ) < min(
-                    priority for unit_id, priority
-                    in faction_priority_sources.items()
-                    if BUFF_TARGETS[unit_id]['category'] != 'defenses'
+                and all(
+                    cameo_order_rules.get(cameo_order_outputs[unit_id], {}).get(
+                        'CameoPriority'
+                    ) == effective_section(
+                        installed_sections, unit_id
+                    ).get('CameoPriority')
+                    for unit_id in cameo_order_sources
                 )
             ),
             'crashing_unit_weapons_registered': all(
@@ -3854,7 +3862,7 @@ def run_self_check():
             'dta_arsenal_all_mobile_access_present',
             'dta_power_rewards_present',
             'dta_building_gated_powers_enabled',
-            'dta_sidebar_factions_and_defenses_sorted',
+            'dta_sidebar_clone_order_preserved',
             'dta_power_buff_matrix_valid',
             'dta_power_stack_limits_valid',
             'unlock_dashboard_tooltips_render',

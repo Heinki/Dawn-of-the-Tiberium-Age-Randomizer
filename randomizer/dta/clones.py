@@ -52,13 +52,6 @@ HOUSE_MASK_FIELDS = {
     'sw.forbiddenhouses',
 }
 MAX_TYPE_ID_LENGTH = 23
-FACTION_CAMEO_PRIORITIES = {
-    'GDI': 400,
-    'Nod': 300,
-    'Allies': 200,
-    'Soviet': 100,
-}
-DEFENSE_CAMEO_PRIORITY_OFFSET = 1000
 MISSION_ASSISTANCE_BUFF_TYPES = (
     'production', 'cost', 'speed', 'armor', 'health', 'damage', 'reload',
     'range',
@@ -76,23 +69,6 @@ BASE_INFRASTRUCTURE = {
     'allies': ('RAPOWR', 'RAPROC'),
     'soviet': ('RAPOWR', 'RAPROC'),
 }
-
-
-def _faction_cameo_priority(target):
-    """Return a sidebar priority band that keeps one-faction tech together."""
-    factions = tuple(
-        target.get('playable_owners')
-        or target.get('owners')
-        or target.get('factions')
-        or ()
-    )
-    if len(factions) == 1:
-        priority = FACTION_CAMEO_PRIORITIES.get(str(factions[0]), 0)
-    else:
-        priority = 0
-    if target.get('category') == 'defenses':
-        priority -= DEFENSE_CAMEO_PRIORITY_OFFSET
-    return priority
 
 
 def _number(value):
@@ -145,6 +121,24 @@ def _next_list_key(installed, authored, list_name, offsets):
     value = offsets[list_name]
     offsets[list_name] += 1
     return str(value)
+
+
+def _techno_ids_in_registration_order(sections, unit_ids):
+    """Return candidates in native type-list order, with stable fallbacks."""
+    remaining = {
+        str(unit_id).upper(): str(unit_id)
+        for unit_id in unit_ids
+        if str(unit_id).strip()
+    }
+    ordered = []
+    for list_name in dict.fromkeys(TYPE_LIST_BY_CATEGORY.values()):
+        for registered_id in sections.get(list_name, {}).values():
+            unit_id = str(registered_id).upper()
+            candidate = remaining.pop(unit_id, None)
+            if candidate is not None:
+                ordered.append(candidate)
+    ordered.extend(remaining[unit_id] for unit_id in sorted(remaining))
+    return ordered
 
 
 def _player_house(authored):
@@ -1563,9 +1557,10 @@ def unit_specific_buff_rules(
             and building_values.get('Buildability', '').casefold() != 'aionly'
         ):
             free_unit_providers.add(building_id)
-    for unit_id in sorted(
+    candidate_ids = (
         set(counts_by_unit) | access_units | unlimited_units | free_unit_providers
-    ):
+    )
+    for unit_id in _techno_ids_in_registration_order(combined, candidate_ids):
         target = catalogue.get(unit_id)
         if (
             not target
@@ -1766,7 +1761,6 @@ def unit_specific_buff_rules(
                     if production_access else (production_house,)
                 ),
                 'RequiredHouses': production_house,
-                'CameoPriority': str(_faction_cameo_priority(target)),
                 **unit_rules,
             }
             core_aircraft = (
@@ -2039,9 +2033,6 @@ def unit_specific_buff_rules(
                     _unit_overrides(
                         linked_values, linked_counts, linked_target
                     )
-                )
-                linked_rules['CameoPriority'] = str(
-                    _faction_cameo_priority(linked_target)
                 )
                 # Flattening an inherited deployed form can retain the mobile
                 # source's forward link (for example DEPCRUIS inheriting

@@ -259,7 +259,7 @@ from randomizer.ui.tooltips import WidgetTooltip
 DEFAULT_MISSION_GOAL = int(DEFAULT_CONFIG['mission_goal'])
 from randomizer.generation.constants import CHECK_SCHEMA_VERSION
 HOOK_POLL_MS = 1500
-VICTORY_CLOSE_DELAY_MS = 2500
+VICTORY_CLOSE_DELAY_MS = 10000
 MAX_OPTION_INI_BYTES = 2 * 1024 * 1024
 
 
