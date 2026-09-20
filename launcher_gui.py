@@ -1371,6 +1371,13 @@ def run_self_check():
                 ini_sections(mission_source_path(mission['scenario']))
             )['shared_hostile_houses']
         ]
+        guillotine_mission = next(
+            mission for mission in missions
+            if mission['code'] == 'M_OP_GUIL'
+        )
+        guillotine_isolation_rules, guillotine_isolation_report = (
+            player_production_isolation_rules(guillotine_mission)
+        )
         installed_e1 = effective_section(installed_sections, 'E1')
         installed_e1_weapon = effective_section(
             installed_sections, installed_e1.get('Primary')
@@ -3089,6 +3096,24 @@ def run_self_check():
                     for result in shared_isolation_results
                 )
             ),
+            'operation_guillotine_enemy_ai_identity_preserved': (
+                guillotine_isolation_report['isolation_applied']
+                and not guillotine_isolation_report[
+                    'shared_hostile_houses'
+                ]
+                and not guillotine_isolation_report['isolation_error']
+                and guillotine_isolation_report['production_house'] == 'Nod1'
+                and guillotine_isolation_rules.get('GDI', {}).get(
+                    'ActsLike'
+                ) == '7'
+                and all(
+                    'ActsLike' not in guillotine_isolation_rules.get(house, {})
+                    for house in ('Allies', 'GDI1', 'GDI2', 'Allies1')
+                )
+                and 'Nod1' in comma_items(
+                    guillotine_isolation_rules.get('E1', {}).get('Owner')
+                )
+            ),
             'retry_assistance_uses_player_clones': (
                 'E2' in retry_unit_ids
                 and retry_entry.get('production_access') is True
@@ -3890,6 +3915,7 @@ def run_self_check():
             'cloned_building_tech_chains_work',
             'unit_buff_pool_has_no_noop_rewards',
             'shared_house_enemy_clone_isolation',
+            'operation_guillotine_enemy_ai_identity_preserved',
             'dta_powers_granted_to_player_only',
             'dta_e1_cameo_extracted', 'map_unit_preservation_policy_active',
             'dta_engineer_cameo_extracted',

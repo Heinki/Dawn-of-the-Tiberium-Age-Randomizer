@@ -944,6 +944,50 @@ class ShopController(ShopPolishController):
                     if run is not None else 'Mission Choices'
                 )
             )
+        if hasattr(self, 'shop_run_ended_frame'):
+            if run is not None and run.status is not RunStatus.ACTIVE:
+                self.shop_choices_frame.grid_remove()
+                self.shop_actions_frame.grid_remove()
+                self.shop_run_ended_frame.grid()
+                if run.status is RunStatus.FAILED:
+                    self.shop_run_ended_title_label.configure(
+                        style='Error.TLabel'
+                    )
+                    self.shop_run_ended_title_var.set('RUN ENDED')
+                    if run.failed_mission_code == 'GAVE_UP':
+                        detail = f'Run ended at stage {run.failed_stage}.'
+                    else:
+                        mission = self._shop_mission(
+                            run.failed_mission_code
+                        )
+                        mission_name = (
+                            mission.get('title') or run.failed_mission_code
+                        )
+                        detail = (
+                            f'Mission failed at stage {run.failed_stage}: '
+                            f'{mission_name}'
+                        )
+                    if self.shop_profile.salvaged_run_coins:
+                        detail += (
+                            f'\nRecovery Salvage banked: '
+                            f'{self.shop_profile.salvaged_run_coins} Ore.'
+                        )
+                    self.shop_run_ended_detail_var.set(
+                        f'{detail}\nStart a new run when ready.'
+                    )
+                else:
+                    self.shop_run_ended_title_label.configure(
+                        style='Shop.Gem.TLabel'
+                    )
+                    self.shop_run_ended_title_var.set('RUN COMPLETE')
+                    self.shop_run_ended_detail_var.set(
+                        f'All {run.run_length} stages completed.\n'
+                        'Start a new run when ready.'
+                    )
+            else:
+                self.shop_run_ended_frame.grid_remove()
+                self.shop_choices_frame.grid()
+                self.shop_actions_frame.grid()
         self._refresh_shop_missions()
         self.refresh_shop_catalogue()
         self._refresh_shop_loadout()

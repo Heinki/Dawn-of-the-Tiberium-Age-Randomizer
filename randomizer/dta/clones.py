@@ -28,6 +28,9 @@ from randomizer.dta.rules import (
     ini_sections,
     unit_collision_report,
 )
+from randomizer.missions.overrides import (
+    MISSION_PLAYER_PRODUCTION_ISOLATION_HOUSE_TYPES,
+)
 
 
 TYPE_LIST_BY_CATEGORY = {
@@ -445,11 +448,17 @@ def player_production_isolation_rules(mission):
         house: indices_by_house.get(house.casefold(), -1)
         for house in shared_houses
     }
+    forced_player_house_type = str(
+        MISSION_PLAYER_PRODUCTION_ISOLATION_HOUSE_TYPES.get(
+            str(mission.get('code') or '').upper(), ''
+        )
+    ).strip()
 
     # A canonical hostile HouseType cannot move to its own bit because it is
     # already using that bit. In custom-player missions, moving the one player
-    # house is both smaller and safer than moving every hostile house.
-    move_player = (
+    # house is both smaller and safer than moving every hostile house. Reviewed
+    # exceptions also keep AI houses on canonical bits required by their logic.
+    move_player = bool(forced_player_house_type) or (
         player_index >= 0
         and player_index != source_index
         and any(index == source_index for index in shared_indices.values())
@@ -471,6 +480,10 @@ def player_production_isolation_rules(mission):
             and _house_acts_like(authored, house) >= 0
         }
         candidate = target_index
+        if target == player_house and forced_player_house_type:
+            candidate = indices_by_house.get(
+                forced_player_house_type.casefold(), -1
+            )
         if (
             candidate < 0
             or candidate >= 31
@@ -478,7 +491,7 @@ def player_production_isolation_rules(mission):
             or candidate in other_active_indices
             or candidate in assigned_indices
         ):
-            candidate = next((
+            candidate = -1 if forced_player_house_type else next((
                 index
                 for index, house in sorted(houses_by_index.items())
                 if house.casefold() not in active_house_keys
@@ -490,6 +503,10 @@ def player_production_isolation_rules(mission):
         if candidate < 0:
             report['isolation_error'] = (
                 f'no unique HouseType bit is available for {target}'
+                + (
+                    f' through {forced_player_house_type}'
+                    if forced_player_house_type else ''
+                )
             )
             return {}, report
         assigned_indices.add(candidate)

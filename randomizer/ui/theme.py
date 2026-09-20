@@ -82,6 +82,12 @@ def apply_color_mode(self):
     style.configure('TRadiobutton', background=background, foreground=foreground)
     style.configure('TButton', background=panel, foreground=foreground, bordercolor=border)
     style.configure('Launch.TButton', background=panel, foreground=foreground, bordercolor=border)
+    style.configure(
+        'Shop.StartNewRun.TButton',
+        background=selected,
+        foreground=selected_foreground,
+        bordercolor=border,
+    )
     style.map(
         'TButton',
         background=[

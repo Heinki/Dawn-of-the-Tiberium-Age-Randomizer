@@ -5,10 +5,6 @@ Increases self healing cap from 50% to 100%
 Increases regeneration tick rate A buff that unlocks Self Healing on Veteran (can be done through the SELF_HEALING veteran ability, same as how they self-heal when elite), then on Rookie veterancy levels (with SelfHealing=yes)
 A buff that increases Self Healing cap by a step, from 50% to 100% (by tweaking SelfHealingCap)
 A buff that increases Self Healing rate by a step (by tweaking SelfHealingRate)
-- When you lose and the Shop Run ends, the mission selections should be hidden. I tried clicking on "Relaunch this mission" or "Launch this mission" a few times, scratching my head on why the button doesn't work. 
-Instead, just show clearly that the run ended with bold letters and a big, obvious button. 
-It shouldn't say "Give up Run" because that sounds like you have a choice. Should be something like "Start New Run" instead.
-- Operation Guillotine's enemy AI doesn't do anything. No building or attacking except for the scripted attacks. I know the Mental Omega randomizer had caused the AI to be asleep in the earlier releases so not sure if its the same for this mission here
 - T1 AA defenses are not given sometimes, people complained they either get one AA defense or not one at all. (Always get only normal defense against ground units)
 - Goverment forces are affected by unit upgardes on CRB9 (the mission with the spy, that should not be the case as they are enemys basically)
 - Change rotation of factions not always the same like gdi -> nod -> allied -> soviets, but determine the order randomly ONCE per run and then go for that until the run ends.

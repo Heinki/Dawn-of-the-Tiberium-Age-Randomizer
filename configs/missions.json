@@ -332,6 +332,9 @@
     "required_access_rules": {},
     "techno_base_rules": {},
     "map_section_rules": {},
+    "player_production_isolation_house_types": {
+      "M_OP_GUIL": "Nod1"
+    },
     "native_direct_buff_exclusions": {},
     "native_variant_buff_rules": {},
     "native_tech_unlock_ids": {},

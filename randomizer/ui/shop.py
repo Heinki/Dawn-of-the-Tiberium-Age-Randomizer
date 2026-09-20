@@ -167,6 +167,36 @@ def build_shop_tab(self, workspace_tabs):
         self.shop_header_labels.append(label)
     self.shop_status_label = self.shop_header_labels[1]
 
+    run_ended = ttk.Frame(content, padding=(18, 24))
+    self.shop_run_ended_frame = run_ended
+    run_ended.columnconfigure(0, weight=1)
+    self.shop_run_ended_title_var = tk.StringVar(value='RUN ENDED')
+    self.shop_run_ended_title_label = ttk.Label(
+        run_ended,
+        textvariable=self.shop_run_ended_title_var,
+        font=('Segoe UI', 18, 'bold'),
+        style='Error.TLabel',
+        anchor='center',
+    )
+    self.shop_run_ended_title_label.grid(row=0, column=0, sticky='ew')
+    self.shop_run_ended_detail_var = tk.StringVar(value='')
+    ttk.Label(
+        run_ended,
+        textvariable=self.shop_run_ended_detail_var,
+        font=('Segoe UI', 11, 'bold'),
+        justify='center',
+        anchor='center',
+    ).grid(row=1, column=0, sticky='ew', pady=(8, 16))
+    self.shop_start_new_run_button = ttk.Button(
+        run_ended,
+        text='Start New Run',
+        command=self.start_shop_run,
+        style='Shop.StartNewRun.TButton',
+    )
+    self.shop_start_new_run_button.grid(row=2, column=0)
+    run_ended.grid(row=1, column=0, sticky='ew')
+    run_ended.grid_remove()
+
     choices = ttk.LabelFrame(content, text='Mission Choices', padding=8)
     self.shop_choices_frame = choices
     choices.grid(row=1, column=0, sticky='ew')
@@ -272,6 +302,7 @@ def build_shop_tab(self, workspace_tabs):
         })
 
     actions = ttk.Frame(content)
+    self.shop_actions_frame = actions
     actions.grid(row=2, column=0, sticky='ew', pady=8)
     self.shop_give_up_button = ttk.Button(
         actions,

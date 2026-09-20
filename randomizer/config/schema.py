@@ -38,6 +38,7 @@ REQUIRED_SECTIONS = {
         'required_access_rules': dict,
         'techno_base_rules': dict,
         'map_section_rules': dict,
+        'player_production_isolation_house_types': dict,
         'native_direct_buff_exclusions': dict,
         'native_variant_buff_rules': dict,
         'native_tech_unlock_ids': dict,
@@ -222,6 +223,19 @@ def _validate_missions(sections, path):
         for code in operation_codes
     ):
         _invalid('Invalid operation mission codes', path)
+
+    for code, house_type in sections[
+        'player_production_isolation_house_types'
+    ].items():
+        if (
+            not _is_nonempty_string(code)
+            or code not in sections['build_classifications']
+            or not _is_nonempty_string(house_type)
+        ):
+            _invalid(
+                f'Invalid player production isolation HouseType for {code!r}',
+                path,
+            )
 
     for code, configured_rules in sections['native_variant_buff_rules'].items():
         rules = configured_rules if isinstance(configured_rules, list) else [configured_rules]

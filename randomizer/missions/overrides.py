@@ -111,6 +111,12 @@ MISSION_TECHNO_BASE_RULES = dict(_MISSION_CONFIG['techno_base_rules'])
 # patches resolved against the extracted mission map before bulk injection.
 MISSION_MAP_SECTION_RULES = dict(_MISSION_CONFIG['map_section_rules'])
 
+# Missions whose enemy AI must retain its authored ActsLike family. Move only
+# the player onto this otherwise inactive HouseType production mask.
+MISSION_PLAYER_PRODUCTION_ISOLATION_HOUSE_TYPES = dict(
+    _MISSION_CONFIG.get('player_production_isolation_house_types', {})
+)
+
 MISSION_NATIVE_DIRECT_BUFF_EXCLUSIONS = _frozenset_mapping('native_direct_buff_exclusions')
 
 MISSION_NATIVE_VARIANT_BUFF_RULES = {
