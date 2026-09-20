@@ -79,7 +79,10 @@ def run_self_check():
         unit_specific_buff_rules,
     )
     from randomizer.dta.cameos import TEXT_ONLY_CAMEO_IDS
-    from randomizer.dta.difficulty import resolve_mission_difficulty
+    from randomizer.dta.difficulty import (
+        mission_difficulty_labels,
+        resolve_mission_difficulty,
+    )
     from randomizer.dta.enemies import enemy_buff_rules
     from randomizer.dta.movement import (
         AMPHIBIOUS_DRIVE_OVERRIDES,
@@ -113,6 +116,7 @@ def run_self_check():
     from randomizer.application.unlock_data import UnlockDataController
     from randomizer.application.reward_controller import RewardController
     from randomizer.application.launch_controller import LaunchController
+    from randomizer.application.shop_controller import ShopController
     from randomizer.ui.config import (
         CAMPAIGN_TILE_COLORS,
         GAME_SPEEDS,
@@ -1499,6 +1503,17 @@ def run_self_check():
             paradrop_unit_routes=paradrop_unit_routes,
             reserved_rules=paradrop_reserved_rules,
         )
+        mission_paradrop_mission = next(
+            mission for mission in missions if mission['code'] == 'M_CRB16'
+        )
+        (
+            mission_paradrop_rules,
+            _mission_paradrop_actions,
+            mission_paradrop_report,
+        ) = player_power_rules(
+            mission_paradrop_mission,
+            [paradrop_reward, paradrop_payload_buff],
+        )
         crash_clone_rules = {}
         crash_clone_reports = {}
         crash_unit_missions = {
@@ -2045,6 +2060,20 @@ def run_self_check():
         )
         extended_fallback = resolve_mission_difficulty(
             extended_mission, 'Ultimate'
+        )
+        difficulty_harness = object.__new__(ShopController)
+        difficulty_harness._mission_by_code = {
+            allied_power_mission['code']: allied_power_mission,
+        }
+        shop_minimum_difficulty = (
+            difficulty_harness.shop_mission_difficulty_label(
+                None, allied_power_mission['code']
+            )
+        )
+        shop_minimum_eased = (
+            difficulty_harness.shop_eased_difficulty_labels(
+                None, allied_power_mission['code']
+            )
         )
         shop_domain = validate_shop_domain()
         checks = {
@@ -2775,6 +2804,16 @@ def run_self_check():
                 }
                 and paradrop_report['applied'][0]['payload_aircraft']
                 == 'BADGER'
+            ),
+            'dta_mission_paradrop_payload_preserved': (
+                mission_paradrop_report['mission_paradrop_taskforce']
+                == 'PARADROPINF_TASKFORCE'
+                and mission_paradrop_report['mission_paradrop_preserved']
+                and mission_paradrop_report['paradrop_team'] == ''
+                and not any(
+                    section.upper().startswith('PARADROPINF_')
+                    for section in mission_paradrop_rules
+                )
             ),
             'dta_demolition_truck_ammo_buff_removed': (
                 'ammo' not in BUFF_TARGETS['DTRK']['allowed_buff_types']
@@ -3667,6 +3706,16 @@ def run_self_check():
                 and extended_fallback.engine_value == 2
                 and extended_fallback.used_fallback
             ),
+            'mission_difficulty_labels_bound_shop_display': (
+                mission_difficulty_labels(allied_power_mission) == (
+                    'Hard', 'Brutal', 'Extreme', 'Ultimate'
+                )
+                and shop_minimum_difficulty == 'Hard'
+                and shop_minimum_eased == ('Hard', 'Hard')
+                and difficulty_harness.shop_mission_difficulty_value(
+                    None, allied_power_mission['code']
+                ) == 0
+            ),
             'dta_player_infantry_access_valid': (
                 access_report['enabled']
                 and access_report['player_house'] == 'Soviet'
@@ -3883,6 +3932,7 @@ def run_self_check():
             'dta_power_lists_preserve_war_factory_clones',
             'dta_exclusive_buffed_ion_cannon_works',
             'dta_paradrop_payload_uses_badger_capacity',
+            'dta_mission_paradrop_payload_preserved',
             'dta_demolition_truck_ammo_buff_removed',
             'dta_enemy_buffs_exclude_player_family',
             'dta_player_color_list_valid',
@@ -3918,6 +3968,7 @@ def run_self_check():
             'vinifera_clone_written_to_generated_map',
             'clone_source_map_unchanged',
             'difficulty_fallback_valid',
+            'mission_difficulty_labels_bound_shop_display',
             'dta_player_infantry_access_valid',
             'dta_infantry_access_written_to_generated_map',
             'dta_access_source_map_unchanged',

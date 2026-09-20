@@ -264,6 +264,7 @@ def build_shop_tab(self, workspace_tabs):
             'effect_label': effect_label,
             'launch_button': launch_button,
             'preconditions': preconditions,
+            'mission_actions': mission_actions,
             'reroll_button': reroll_button,
             'ease_button': ease_button,
             'tooltip': tooltip,

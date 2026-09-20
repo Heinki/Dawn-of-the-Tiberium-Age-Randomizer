@@ -782,30 +782,43 @@ class ShopController(ShopPolishController):
 
     def shop_mission_difficulty_label(self, run, mission_code):
         if run is None:
-            return DIFFICULTIES[0][0]
-        if modifier_forces_hardest_difficulty(run.modifiers):
-            return mission_difficulty_labels(
+            requested = DIFFICULTIES[0][0]
+        elif modifier_forces_hardest_difficulty(run.modifiers):
+            requested = mission_difficulty_labels(
                 self._shop_mission(mission_code)
             )[-1]
-        return mission_difficulty(
-            run.seed,
-            run.stage,
-            mission_code,
-            run_length=run.run_length,
-        )
+        else:
+            requested = mission_difficulty(
+                run.seed,
+                run.stage,
+                mission_code,
+                run_length=run.run_length,
+            )
+        return resolve_mission_difficulty(
+            self._shop_mission(mission_code), requested
+        ).label
 
     def shop_mission_difficulty_value(self, run, mission_code):
-        return dict(DIFFICULTIES).get(
-            self.shop_mission_difficulty_label(run, mission_code),
-            0,
-        )
+        mission = self._shop_mission(mission_code)
+        labels = list(mission_difficulty_labels(mission))
+        current = self.shop_mission_difficulty_label(run, mission_code)
+        return next((
+            index
+            for index, label in enumerate(labels)
+            if label.casefold() == current.casefold()
+        ), 0)
 
     def shop_eased_difficulty_labels(self, run, mission_code):
-        labels = [name for name, _value in DIFFICULTIES]
+        labels = list(mission_difficulty_labels(
+            self._shop_mission(mission_code)
+        ))
         current = self.shop_mission_difficulty_label(run, mission_code)
         try:
-            index = labels.index(current)
-        except ValueError:
+            index = next(
+                index for index, label in enumerate(labels)
+                if label.casefold() == current.casefold()
+            )
+        except StopIteration:
             index = 0
         return current, labels[max(0, index - 1)]
 

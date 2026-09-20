@@ -785,6 +785,11 @@ def player_power_rules(
     installed = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
     art = ini_sections(GAME_ROOT / 'INI' / 'Art.ini')
     authored = ini_sections(mission_source_path(mission.get('scenario')))
+    authored_paradrop_taskforce = next((
+        section
+        for section in authored
+        if str(section).casefold() == 'paradropinf_taskforce'
+    ), '')
     allocation_authored = {
         section: dict(values) for section, values in authored.items()
     }
@@ -840,6 +845,8 @@ def player_power_rules(
         'paradrop_plane_count': 0,
         'paradrop_team_waves': {},
         'paradrop_wave_triggers': {},
+        'mission_paradrop_taskforce': authored_paradrop_taskforce,
+        'mission_paradrop_preserved': False,
         'exclusive_native_provider_fields': [],
         'exclusive_native_grants_removed': 0,
     }
@@ -1026,7 +1033,10 @@ def player_power_rules(
         rules[clone_id] = clone_values
         payload = spec.get('payload')
         payload_units = ''
-        if payload:
+        # A house-specific team takes precedence over DTA's mission-local
+        # fallback task force. Preserve the fallback when the mission authors
+        # its own payload so both native and earned paradrops keep that roster.
+        if payload and not authored_paradrop_taskforce:
             payload_count = buff_counts.get('payload', 0)
             units_per_buff = int(payload['units_per_buff'])
             aircraft_id = payload['aircraft_id']
@@ -1492,7 +1502,12 @@ def player_power_rules(
             'payload_aircraft': (
                 payload['aircraft_id'] if payload else ''
             ),
+            'mission_paradrop_preserved': bool(
+                payload and authored_paradrop_taskforce
+            ),
         })
+        if payload and authored_paradrop_taskforce:
+            report['mission_paradrop_preserved'] = True
     if paradrop_deployments:
         power_order = {
             spec['id'].upper(): index for index, spec in enumerate(POWER_SPECS)

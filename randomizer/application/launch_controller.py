@@ -1525,6 +1525,11 @@ throw "Map $name was not found in expandmo*.mix"
                     + ', '.join(item['power'] for item in power_report['applied'])
                     + f' to {power_report["player_house"]}. Enemy houses received none.'
                 )
+            if power_report.get('mission_paradrop_preserved'):
+                self.append_log(
+                    'Preserved mission-authored paradrop payload '
+                    f'[{power_report["mission_paradrop_taskforce"]}].'
+                )
             if power_report.get('paradrop_plane_count', 0) > 1:
                 paradrop_entry = next(
                     (

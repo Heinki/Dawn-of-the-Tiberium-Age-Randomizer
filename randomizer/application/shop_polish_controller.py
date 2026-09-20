@@ -718,7 +718,7 @@ class ShopPolishController(ShopArchipelagoController):
                     f'Eased: {normal_difficulty} -> {eased_difficulty}'
                 )
             elif base_difficulty <= 0:
-                assist_text = 'Already Easy'
+                assist_text = f'Already {normal_difficulty} (Lowest)'
             elif run.assisted_mission_code:
                 assist_text = f'Assist Used for Stage {run.stage}'
             elif assists_left:

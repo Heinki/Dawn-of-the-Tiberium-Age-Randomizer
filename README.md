@@ -12,7 +12,7 @@ see the [Archipelago player guide](Archipelago/README.md).
 - Reads all installed campaign entries from `INI/Battle.ini`, plus installed DTA bonus missions such as the 12th Shadow Exodus mission.
 - Groups missions by the installed DTA campaigns and its STAND-ALONE MISSIONS category.
 - Uses DTA-specific mission reward multipliers: stand-alone and non-finale CR Route A/B missions grant x2 rewards; finales, the CR bonus mission, and every CR Route C mission grant x3; all other missions grant x1.
-- Reads each mission's DTA difficulty labels from `INI/Battle.ini`, including Brutal, Extreme, Ultimate, and Impossible. An unavailable selection falls back to the closest lower label supported by that mission.
+- Reads each mission's DTA difficulty labels from `INI/Battle.ini`, including Brutal, Extreme, Ultimate, and Impossible. Mission cards and launch settings resolve unavailable selections to the closest lower label supported by that mission, or its lowest label when no lower option exists.
 - Generates `spawnmap.ini` from the selected loose DTA mission map without changing the source map.
 - Applies DTA's Easy, Medium, or Hard map-code overlay.
 - Writes DTA-compatible `spawn.ini` and launches DTA 16.0.2 through SyringeEx using `LaunchVinifera.dat game.exe --args="-SPAWN -CD."`.

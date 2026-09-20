@@ -674,11 +674,29 @@ class WindowController:
             )
         card_width = width - 36 if compact else (width - 52) // 3
         wraplength = max(180, card_width - 22)
+        stack_mission_actions = card_width < 430
         for card in self.shop_mission_cards:
             for key in (
                 'name_label', 'detail_label', 'reward_label', 'effect_label'
             ):
                 card[key].configure(wraplength=wraplength)
+            actions = card['mission_actions']
+            actions.columnconfigure(0, weight=1)
+            actions.columnconfigure(1, weight=0 if stack_mission_actions else 1)
+            if stack_mission_actions:
+                card['reroll_button'].grid_configure(
+                    row=0, column=0, padx=0, pady=0
+                )
+                card['ease_button'].grid_configure(
+                    row=1, column=0, padx=0, pady=(5, 0)
+                )
+            else:
+                card['reroll_button'].grid_configure(
+                    row=0, column=0, padx=(0, 3), pady=0
+                )
+                card['ease_button'].grid_configure(
+                    row=0, column=1, padx=(3, 0), pady=0
+                )
         self.shop_message_label.configure(wraplength=max(220, width - 140))
 
         header_columns = 3 if compact else 6
