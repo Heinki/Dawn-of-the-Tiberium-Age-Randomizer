@@ -154,6 +154,12 @@ MISSION_TIME_FREEZE_IMMUNE_TECHNO_IDS = {
 # Missions needing every earned defense exposed through any Construction Yard.
 MISSIONS_WITH_ALL_CONYARD_DEFENSE_ACCESS = frozenset(_MISSION_CONFIG['all_conyard_defense_access_missions'])
 
+# Engine-allied houses can still be narrative enemies. Their units must retain
+# native identities instead of receiving optional allied-helper player buffs.
+MISSIONS_WITHOUT_ALLIED_HELPER_BUFFS = frozenset(
+    _MISSION_CONFIG['allied_helper_buff_excluded_missions']
+)
+
 STANDARD_STARTER_FAMILIES_BY_CAMPAIGN = {
     campaign: tuple(families)
     for campaign, families in _MISSION_CONFIG['standard_starter_families_by_campaign'].items()

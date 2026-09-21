@@ -46,6 +46,7 @@ REQUIRED_SECTIONS = {
         'superweapon_techno_clone_overrides': dict,
         'time_freeze_immune_techno_ids': dict,
         'all_conyard_defense_access_missions': list,
+        'allied_helper_buff_excluded_missions': list,
         'standard_starter_families_by_campaign': dict,
     },
     'map_rules.json': {
@@ -801,6 +802,13 @@ def _validate_tier_one(sections, path):
             for unit_id in families.values()
         )
         or set(sections['defense_units']) != expected_families
+        or any(
+            len({
+                sections['defense_role_units'][role][family]
+                for role in sections['defense_roles']
+            }) != len(sections['defense_roles'])
+            for family in expected_families
+        )
         or not all(
             isinstance(unit_ids, list)
             and unit_ids

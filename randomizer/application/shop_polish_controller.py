@@ -955,9 +955,12 @@ class ShopPolishController(ShopArchipelagoController):
         modifier_values = modifier_effects(run.modifiers) if run else None
         rotation_note = ''
         if run is not None and modifier_values['rotate_shop_faction']:
-            rotation_note = (
-                f'Faction: {modifier_shop_faction(run.modifiers, run.stage)}. '
+            current_faction = modifier_shop_faction(
+                run.modifiers,
+                run.stage,
+                run_key=f'{run.seed}:{run.run_id}',
             )
+            rotation_note = f'Faction: {current_faction}. '
         display_rewards = active_shop_rewards(run)
         active_tech = set(active_shop_tech_ids(run))
         active_role_tech = set(active_shop_role_tech_ids(run))
@@ -1020,6 +1023,7 @@ class ShopPolishController(ShopArchipelagoController):
                 run.modifiers,
                 run.stage,
                 self.shop_run_faction_filter(run),
+                run_key=f'{run.seed}:{run.run_id}',
             )
             base_power_offer_count = min(
                 base_power_offer_count,

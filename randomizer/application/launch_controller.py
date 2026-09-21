@@ -17,6 +17,7 @@ from ._dependencies import (
     LOCKED_TECH_LEVEL,
     MAX_OPTION_INI_BYTES,
     MISSIONS_WITH_ALL_CONYARD_DEFENSE_ACCESS,
+    MISSIONS_WITHOUT_ALLIED_HELPER_BUFFS,
     MISSION_NATIVE_TECH_UNLOCK_IDS,
     MISSION_ORIGINAL_MCV_ACCESS_IDS,
     MISSION_REQUIRED_ACCESS_RULES,
@@ -1290,8 +1291,12 @@ throw "Map $name was not found in expandmo*.mix"
                     *assistance_rewards,
                 ],
                 access_randomized=self.randomize_unit_access_enabled(),
-                buff_allied_helpers=self.active_reward_settings().get(
-                    'buff_allied_helpers', False
+                buff_allied_helpers=(
+                    self.active_reward_settings().get(
+                        'buff_allied_helpers', False
+                    )
+                    and str(mission_code).upper()
+                    not in MISSIONS_WITHOUT_ALLIED_HELPER_BUFFS
                 ),
                 unlimited_hero_units=self.active_reward_settings().get(
                     'unlimited_hero_units', False

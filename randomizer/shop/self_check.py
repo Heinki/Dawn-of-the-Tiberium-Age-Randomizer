@@ -76,6 +76,7 @@ from .modifiers import (
     modifier_effects,
     modifier_forces_hardest_difficulty,
     modifier_shop_faction,
+    shop_faction_rotation,
 )
 from .persistence import ShopPersistencePaths, ShopRepository
 from .service import ShopProgressionService
@@ -506,14 +507,18 @@ def validate_shop_domain():
         and hardcore_effects['disable_assists'],
         'Hardcore effects are incomplete',
     )
+    roulette_key = 'DTA-SHOP-FACTION-ROULETTE:run-1'
+    roulette_rotation = shop_faction_rotation(roulette_key)
     _require(
-        tuple(
-            modifier_shop_faction(('faction_roulette',), stage)
+        set(roulette_rotation) == {'GDI', 'Nod', 'Allies', 'Soviet'}
+        and tuple(
+            modifier_shop_faction(
+                ('faction_roulette',), stage, run_key=roulette_key
+            )
             for stage in range(1, 9)
-        ) == (
-            'GDI', 'Nod', 'Allies', 'Soviet',
-            'GDI', 'Nod', 'Allies', 'Soviet',
-        )
+        ) == roulette_rotation * 2
+        and shop_faction_rotation(roulette_key) == roulette_rotation
+        and shop_faction_rotation(roulette_key + '-other') != roulette_rotation
         and modifier_effects(('faction_roulette',))['disable_rerolls'],
         'Faction Roulette rotation or reroll lock is incorrect',
     )

@@ -124,7 +124,7 @@
         "soviet": "RAFTUR"
       },
       "anti_air_defense": {
-        "gdi": "TWR",
+        "gdi": "ATWR",
         "nod": "SAM",
         "allies": "RAAGUN",
         "soviet": "RASAM"
@@ -136,7 +136,8 @@
     ],
     "defense_units": {
       "gdi": [
-        "TWR"
+        "TWR",
+        "ATWR"
       ],
       "nod": [
         "GUN",

@@ -868,7 +868,10 @@ class ShopController(ShopPolishController):
             effects = modifier_effects(run.modifiers)
             if stock:
                 campaign_filter = modifier_shop_faction(
-                    run.modifiers, run.stage, campaign_filter
+                    run.modifiers,
+                    run.stage,
+                    campaign_filter,
+                    run_key=f'{run.seed}:{run.run_id}',
                 )
                 if (
                     effects['cross_faction_power_offers']

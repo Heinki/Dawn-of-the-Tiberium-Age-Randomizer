@@ -275,7 +275,10 @@ class ShopProgressionService:
             ShopRewardType.POWER_ACCESS,
         }:
             stock_faction = modifier_shop_faction(
-                run.modifiers, run.stage, stock_faction
+                run.modifiers,
+                run.stage,
+                stock_faction,
+                run_key=f'{run.seed}:{run.run_id}',
             )
         elif effects['rotate_shop_faction']:
             stock_faction = 'All Campaigns'
