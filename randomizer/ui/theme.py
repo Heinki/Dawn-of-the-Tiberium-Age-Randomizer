@@ -83,6 +83,20 @@ def apply_color_mode(self):
     style.configure('TButton', background=panel, foreground=foreground, bordercolor=border)
     style.configure('Launch.TButton', background=panel, foreground=foreground, bordercolor=border)
     style.configure(
+        'Danger.TButton',
+        background='#5c2327' if self.dark_mode_var.get() else '#ffebe9',
+        foreground='#ffb3b8' if self.dark_mode_var.get() else '#cf222e',
+        bordercolor='#f85149' if self.dark_mode_var.get() else '#cf222e',
+    )
+    style.map(
+        'Danger.TButton',
+        background=[
+            ('disabled', panel),
+            ('active', '#8b3036' if self.dark_mode_var.get() else '#ffcecb'),
+        ],
+        foreground=[('disabled', palette['muted'])],
+    )
+    style.configure(
         'Shop.StartNewRun.TButton',
         background=selected,
         foreground=selected_foreground,

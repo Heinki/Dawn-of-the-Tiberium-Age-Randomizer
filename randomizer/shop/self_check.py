@@ -507,6 +507,12 @@ def validate_shop_domain():
         and hardcore_effects['disable_assists'],
         'Hardcore effects are incomplete',
     )
+    blockbuster_effects = modifier_effects(('blockbuster_special',))
+    _require(
+        blockbuster_effects['run_reward_flat'] == 10
+        and blockbuster_effects['reset_run_purchases_after_victory'],
+        'Blockbuster Special effects are incomplete',
+    )
     roulette_key = 'DTA-SHOP-FACTION-ROULETTE:run-1'
     roulette_rotation = shop_faction_rotation(roulette_key)
     _require(

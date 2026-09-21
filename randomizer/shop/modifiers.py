@@ -36,6 +36,7 @@ def modifier_effects(modifier_ids, config: ShopModeConfig = SHOP_CONFIG):
         'mission_starting_credits_flat': 0,
         'mission_offer_count_flat': 0,
         'liquidate_ore_after_victory': 0,
+        'reset_run_purchases_after_victory': 0,
         'challenge_meta_reward_percent': Fraction(1, 1),
         'normal_run_reward_percent': Fraction(1, 1),
         'normal_run_reward_flat': 0,

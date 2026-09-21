@@ -1790,16 +1790,10 @@ class ShopPolishController(ShopArchipelagoController):
             and self.shop_run.status is RunStatus.ACTIVE
         )
         unit_selection = self.shop_permanent_unit_tree.selection()
-        upgrade_selection = self.shop_upgrade_tree.selection()
         unit_allowed = bool(
             not active
             and unit_selection
             and self._shop_permanent_buyable.get(unit_selection[0], False)
-        )
-        upgrade_allowed = bool(
-            not active
-            and upgrade_selection
-            and self._shop_upgrade_buyable.get(upgrade_selection[0], False)
         )
         self.shop_permanent_unit_button.configure(
             state='normal' if unit_allowed else 'disabled'
@@ -1811,9 +1805,6 @@ class ShopPolishController(ShopArchipelagoController):
         )
         self.shop_permanent_unit_buffs_button.configure(
             state='normal' if owned_unit_selected else 'disabled'
-        )
-        self.shop_permanent_upgrade_button.configure(
-            state='normal' if upgrade_allowed else 'disabled'
         )
         if unit_selection:
             values = self.shop_permanent_unit_tree.item(
@@ -1835,36 +1826,6 @@ class ShopPolishController(ShopArchipelagoController):
                 'Select a unit to see its permanent price and availability.'
             )
             self.shop_permanent_unit_button.configure(text='Select a Unit')
-        if upgrade_selection:
-            values = self.shop_upgrade_tree.item(
-                upgrade_selection[0], 'values'
-            )
-            upgrade_id = self._shop_upgrade_rows.get(
-                upgrade_selection[0], ''
-            )
-            definition = self.shop_config.permanent_upgrades.get(upgrade_id)
-            effect = (
-                self._shop_upgrade_effect_text(upgrade_id, definition)
-                if definition is not None else ''
-            )
-            self.shop_permanent_upgrade_info_var.set(
-                f'{values[0]} • Level {values[1]} • {values[2]} • '
-                f'Next: {values[3]}. {effect}'
-            )
-            self.shop_permanent_upgrade_button.configure(
-                text=(
-                    f'Buy Next Level — {values[3]}'
-                    if upgrade_allowed else values[2]
-                )
-            )
-        else:
-            self.shop_permanent_upgrade_info_var.set(
-                'Select an upgrade to see its effect, level, and next price.'
-            )
-            self.shop_permanent_upgrade_button.configure(
-                text='Select an Upgrade'
-            )
-
     def shop_catalogue_tooltip(self, row_id):
         return getattr(self, '_shop_catalogue_details', {}).get(row_id, '')
 
