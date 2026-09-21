@@ -646,18 +646,24 @@ def _validate_tuning(sections, path):
         ):
             _invalid(f'Invalid stack limit for buff effect {effect!r}', path)
 
-    for key in (
-        'sensor_sight_bonus',
-        'defense_self_heal_fraction',
-        'maximum_self_heal_fraction',
-    ):
-        if not isinstance(effects.get(key), (int, float)) or effects[key] < 0:
-            _invalid(f'Invalid buff tuning {key!r}', path)
+    sensor_sight_bonus = effects.get('sensor_sight_bonus')
     if (
-        effects['defense_self_heal_fraction'] <= 0
-        or effects['maximum_self_heal_fraction']
-        < effects['defense_self_heal_fraction']
-        or effects['maximum_self_heal_fraction'] > 1
+        not isinstance(sensor_sight_bonus, (int, float))
+        or isinstance(sensor_sight_bonus, bool)
+        or sensor_sight_bonus < 0
+    ):
+        _invalid("Invalid buff tuning 'sensor_sight_bonus'", path)
+
+    self_heal_cap = effects.get('self_heal_cap')
+    if (
+        not isinstance(self_heal_cap, dict)
+        or not all(
+            isinstance(self_heal_cap.get(key), (int, float))
+            and not isinstance(self_heal_cap[key], bool)
+            for key in ('base_fraction', 'maximum_fraction')
+        )
+        or not 0 < self_heal_cap['base_fraction']
+        < self_heal_cap['maximum_fraction'] <= 1
     ):
         _invalid('Invalid self-healing buff cap', path)
 
@@ -670,8 +676,10 @@ def _validate_tuning(sections, path):
             and self_heal_rate[key] > 0
             for key in (
                 'minutes_at_15_fps', 'factor_per_stack', 'minimum_minutes',
+                'stack_limit',
             )
         )
+        or not isinstance(self_heal_rate['stack_limit'], int)
         or self_heal_rate['factor_per_stack'] > 1
         or self_heal_rate['minimum_minutes']
         > self_heal_rate['minutes_at_15_fps']

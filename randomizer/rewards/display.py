@@ -1,7 +1,6 @@
 """Reward canonicalization, stacking, and human-readable display."""
 
 import re
-from math import ceil
 
 from .dta_definitions import (
     BUFF_EFFECTS,
@@ -23,7 +22,6 @@ from .dta_definitions import (
 from randomizer.config.tuning import (
     REWARD_PLANNING,
     stacked_cost,
-    stacked_self_heal_amount,
     stacked_self_heal_rate,
     stacked_weapon_damage,
     stacked_weapon_rof,
@@ -204,7 +202,8 @@ HOUSE_WIDE_BUFF_TYPES = {'production'}
 WEAPON_STAT_BUFF_TYPES = {'damage', 'range', 'reload', 'area'}
 UNIT_STAT_BUFF_TYPES = {
     'health', 'sight', 'ammo', 'passenger_capacity', 'open_topped',
-    'self_healing', 'cloak', 'sensors', 'amphibious',
+    'self_healing', 'self_healing_cap', 'self_healing_rate', 'cloak',
+    'sensors', 'amphibious',
 }
 MAP_GUARDED_BUFF_TYPES = WEAPON_STAT_BUFF_TYPES | UNIT_STAT_BUFF_TYPES
 CLONE_REQUIRED_BUFF_TYPES = (
@@ -367,23 +366,21 @@ def _uncached_buff_stack_limit(reward):
                 return count
         return configured
     if buff_type == 'self_healing':
-        fraction_per_stack = float(
-            BUFF_EFFECTS['defense_self_heal_fraction']
-        )
-        maximum_fraction = float(
-            BUFF_EFFECTS['maximum_self_heal_fraction']
-        )
-        configured = max(1, int(ceil(
-            maximum_fraction / fraction_per_stack
-        )))
         target = BUFF_TARGETS.get(reward.get('unit'), {})
-        base_strength = float(target.get('strength', 1))
-        previous = stacked_self_heal_amount(base_strength, 1)
-        for count in range(2, configured + 1):
-            current = stacked_self_heal_amount(base_strength, count)
-            if current == previous:
-                return count - 1
-            previous = current
+        return max(1, int(target.get('self_healing_unlock_stacks', 2)))
+    if buff_type == 'self_healing_cap':
+        return 1
+    if buff_type == 'self_healing_rate':
+        target = BUFF_TARGETS.get(reward.get('unit'), {})
+        configured = max(
+            1, int(BUFF_EFFECTS['self_heal_rate']['stack_limit'])
+        )
+        base_rate = target.get('self_healing_rate') or None
+        for count in range(1, configured + 1):
+            if stacked_self_heal_rate(
+                count, base_rate
+            ) == stacked_self_heal_rate(count + 1, base_rate):
+                return count
         return configured
     if buff_type == 'building_limit':
         target = BUFF_TARGETS.get(reward.get('unit'), {})
@@ -682,12 +679,31 @@ def buff_effect_lines(
     if buff_type == 'open_topped':
         return [stacked(f'{prefix}Passengers can fire from transport')]
     if buff_type == 'self_healing':
-        _base, base_strength = durability()
-        heal_amount = stacked_self_heal_amount(base_strength, count)
-        tick_seconds = stacked_self_heal_rate(count) * 60
+        unlock_stacks = int(target.get('self_healing_unlock_stacks', 2))
+        rank = 'Rookie' if count >= unlock_stacks else 'Veteran'
+        return [stacked(f'{prefix}Self-healing enabled from {rank} rank')]
+    if buff_type == 'self_healing_cap':
+        values = BUFF_EFFECTS['self_heal_cap']
+        raw_base_cap = str(target.get('self_healing_cap') or '').strip()
+        try:
+            base_fraction = float(raw_base_cap.rstrip('%'))
+            if raw_base_cap.endswith('%'):
+                base_fraction /= 100.0
+        except ValueError:
+            base_fraction = float(values['base_fraction'])
+        base_cap = int(round(base_fraction * 100))
+        maximum_cap = int(round(float(values['maximum_fraction']) * 100))
+        base_text = f' [{base_cap}%]' if show_base_values else ''
         return [stacked(
-            f'{prefix}Full self-healing: {heal_amount} HP every {tick_seconds:.2f}s'
+            f'{prefix}Self-healing cap {maximum_cap}%{base_text}'
         )]
+    if buff_type == 'self_healing_rate':
+        base_rate = target.get('self_healing_rate') or None
+        base_seconds = stacked_self_heal_rate(0, base_rate) * 60
+        tick_seconds = stacked_self_heal_rate(count, base_rate) * 60
+        return value_text(
+            'Self-healing tick interval', tick_seconds, base_seconds, ' seconds'
+        )
     if buff_type == 'amphibious':
         return [stacked(f'{prefix}Amphibious movement enabled')]
     if buff_type == 'cloak':
@@ -723,6 +739,8 @@ def buff_effect_comparison_lines(reward, current_count, *, buff_counts=None):
     next_lines = buff_effect_lines(reward, count=next_count, **options)
     if not next_lines:
         return []
+    if reward.get('buff_type') == 'self_healing':
+        return next_lines
     if buff_stack_limit(reward) == 1:
         return next_lines
     current_lines = buff_effect_lines(reward, count=current_count, **options)

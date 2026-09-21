@@ -14,6 +14,7 @@ from ._shared import (
     buffs_with_unlocked_access,
     capped_movement_speed,
     capped_sight_range,
+    comma_items,
     expand_equivalent_role_buffs,
     linked_buff_variant_ids,
     map_house_records,
@@ -32,7 +33,6 @@ from .base import (
 )
 from randomizer.config.tuning import (
     stacked_cost,
-    stacked_self_heal_amount,
     stacked_self_heal_rate,
     stacked_weapon_damage,
     stacked_weapon_rof,
@@ -41,6 +41,21 @@ from randomizer.dta.movement import amphibious_drive_overrides
 
 
 MIN_SAFE_TECHNO_STRENGTH = 2
+
+
+def _add_self_heal_veteran_ability(values):
+    key = next(
+        (
+            existing
+            for existing in values
+            if str(existing).casefold() == 'veteranabilities'
+        ),
+        'VeteranAbilities',
+    )
+    abilities = list(comma_items(values.get(key)))
+    if 'self_heal' not in {ability.casefold() for ability in abilities}:
+        abilities.append('SELF_HEAL')
+    values[key] = ','.join(abilities)
 
 
 def parsed_safe_strength(value):
@@ -173,15 +188,26 @@ def apply_unit_buff_value(values, target, buff_type, count):
             return False
         values['OpenTopped'] = 'yes'
     elif buff_type == 'self_healing':
-        values['SelfHealing'] = 'yes'
+        _add_self_heal_veteran_ability(values)
+        if count >= int(target.get('self_healing_unlock_stacks', 2)):
+            values['SelfHealing'] = 'yes'
+    elif buff_type == 'self_healing_cap':
         values['SelfHealingCap'] = '100%'
-        values['SelfHealingRate'] = format_multiplier(
-            stacked_self_heal_rate(count)
+    elif buff_type == 'self_healing_rate':
+        rate_key = next(
+            (
+                key for key in values
+                if str(key).casefold() == 'selfhealingrate'
+            ),
+            'SelfHealingRate',
         )
-        current_strength = resolved_safe_strength(target, values)
-        values['SelfHealingStep'] = str(
-            stacked_self_heal_amount(current_strength, count)
+        base_rate = values.get(rate_key) or target.get('self_healing_rate')
+        values['SelfHealingRate'] = (
+            f'{stacked_self_heal_rate(count, base_rate):.6f}'
+            .rstrip('0').rstrip('.')
         )
+        if rate_key != 'SelfHealingRate':
+            values.pop(rate_key, None)
     elif buff_type == 'amphibious':
         overrides = amphibious_drive_overrides(values, target)
         if not overrides:

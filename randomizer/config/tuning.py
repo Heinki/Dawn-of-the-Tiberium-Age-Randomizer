@@ -108,27 +108,19 @@ def stacked_weapon_rof(base_rof, count):
     return rounded
 
 
-def stacked_self_heal_amount(base_strength, count):
-    """Return healing where every accepted stack adds at least one hitpoint."""
-    base_strength = max(1, int(round(float(base_strength))))
-    count = max(0, int(count))
-    maximum = max(1, int(round(
-        base_strength * float(BUFF_EFFECTS['maximum_self_heal_fraction'])
-    )))
-    fraction = min(
-        float(BUFF_EFFECTS['maximum_self_heal_fraction']),
-        float(BUFF_EFFECTS['defense_self_heal_fraction']) * count,
-    )
-    return min(maximum, max(1, int(round(base_strength * fraction))))
-
-
-def stacked_self_heal_rate(count):
-    """Return Vinifera minutes between self-healing ticks."""
+def stacked_self_heal_rate(count, base_rate=None):
+    """Return Vinifera minutes between ticks after rate-upgrade stacks."""
     values = BUFF_EFFECTS['self_heal_rate']
-    count = max(1, int(count))
+    count = max(0, min(int(values['stack_limit']), int(count)))
+    try:
+        base_rate = float(base_rate)
+    except (TypeError, ValueError):
+        base_rate = float(values['minutes_at_15_fps'])
+    if base_rate <= 0:
+        base_rate = float(values['minutes_at_15_fps'])
     rate = (
-        float(values['minutes_at_15_fps'])
-        * float(values['factor_per_stack']) ** (count - 1)
+        base_rate
+        * float(values['factor_per_stack']) ** count
     )
     return max(float(values['minimum_minutes']), rate)
 

@@ -110,7 +110,7 @@ class InlineEffectChecks(unittest.TestCase):
         text = ShopPolishController._shop_catalogue_display_name(entry, '', 0)
         self.assertNotIn(' -> ', text)
 
-    def test_self_healing_label_is_not_repeated(self):
+    def test_self_healing_unlock_stages_are_clear(self):
         entry = next(
             entry for entry in self.entries
             if entry.reward_type is ShopRewardType.UNIT_BUFF
@@ -119,7 +119,12 @@ class InlineEffectChecks(unittest.TestCase):
             and (entry.stack_limit or 1) > 1
         )
         text = ShopPolishController._shop_catalogue_display_name(entry, '', 0)
-        self.assertEqual(text.casefold().count('self-healing'), 1)
+        self.assertIn('Self-healing enabled from Veteran rank', text)
+        self.assertNotIn('Rookie', text)
+        second = ShopPolishController._shop_catalogue_display_name(
+            entry, 'Stacks 1', 1
+        )
+        self.assertIn('Self-healing enabled from Rookie rank', second)
 
     def test_loadout_upgrade_stays_in_loadout_tab(self):
         class Notebook:

@@ -317,6 +317,15 @@ def techno_catalogue():
                 'self_healing': values.get('SelfHealing', '').casefold() in {
                     'yes', 'true', '1',
                 },
+                'trainable': values.get(
+                    'Trainable', 'no' if category == 'buildings' else 'yes'
+                ).casefold() not in {'no', 'false', '0'},
+                'veteran_abilities': comma_items(
+                    values.get('VeteranAbilities')
+                ),
+                'elite_abilities': comma_items(values.get('EliteAbilities')),
+                'self_healing_cap': values.get('SelfHealingCap', ''),
+                'self_healing_rate': values.get('SelfHealingRate', ''),
                 'opportunity_fire': values.get(
                     'OpportunityFire', ''
                 ).casefold() in {'yes', 'true', '1'},

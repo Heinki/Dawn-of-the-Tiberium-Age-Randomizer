@@ -118,8 +118,23 @@ BUFF_TYPES = [
     {
         'id': 'self_healing',
         'name': 'Regeneration',
-        'setting_label': 'Self-healing',
-        'description': '{plural} regenerate to full health with faster, stronger ticks.',
+        'setting_label': 'Self-healing access',
+        'description': (
+            '{plural} first unlock self-healing at Veteran rank, then from '
+            'Rookie rank.'
+        ),
+    },
+    {
+        'id': 'self_healing_cap',
+        'name': 'Regeneration Capacity',
+        'setting_label': 'Self-healing cap',
+        'description': '{plural} can regenerate from 50% to full health.',
+    },
+    {
+        'id': 'self_healing_rate',
+        'name': 'Rapid Regeneration',
+        'setting_label': 'Self-healing rate',
+        'description': '{plural} regenerate more frequently.',
     },
     {
         'id': 'area',
@@ -273,8 +288,25 @@ def _allowed_buff_types(record):
         allowed.append('cloak')
     if not record.get('sensors'):
         allowed.append('sensors')
-    if strength > 0:
+    native_self_healing = bool(record.get('self_healing'))
+    if strength > 0 and not native_self_healing:
         allowed.append('self_healing')
+    if strength > 0:
+        raw_cap = str(record.get('self_healing_cap') or '50%').strip()
+        try:
+            cap = float(raw_cap.rstrip('%'))
+            if raw_cap.endswith('%'):
+                cap /= 100.0
+        except ValueError:
+            cap = 0.5
+        if cap < float(BUFF_EFFECTS['self_heal_cap']['maximum_fraction']):
+            allowed.append('self_healing_cap')
+        try:
+            rate = float(record.get('self_healing_rate') or '')
+        except ValueError:
+            rate = float(BUFF_EFFECTS['self_heal_rate']['minutes_at_15_fps'])
+        if rate > float(BUFF_EFFECTS['self_heal_rate']['minimum_minutes']):
+            allowed.append('self_healing_rate')
     if supports_amphibious_drive(record):
         allowed.append('amphibious')
     return allowed
@@ -293,6 +325,20 @@ for _record in _MOBILE_RECORDS:
         'sight': _record['sight'],
         'ammo': _record['ammo'],
         'passengers': _record['passengers'],
+        'trainable': _record['trainable'],
+        'self_healing': _record['self_healing'],
+        'veteran_abilities': _record['veteran_abilities'],
+        'elite_abilities': _record['elite_abilities'],
+        'self_healing_cap': _record['self_healing_cap'],
+        'self_healing_rate': _record['self_healing_rate'],
+        'self_healing_unlock_stacks': (
+            1
+            if any(
+                str(ability).casefold() == 'self_heal'
+                for ability in _record['veteran_abilities']
+            )
+            else 2
+        ),
         'build_limit': _record.get('build_limit', 0),
         'weapons': dict(_record.get('weapons', {})),
         'armor': _record.get('armor', ''),
@@ -318,6 +364,20 @@ for _record in _DEFENSE_RECORDS:
         'sight': _record['sight'],
         'ammo': _record['ammo'],
         'passengers': 0,
+        'trainable': _record['trainable'],
+        'self_healing': _record['self_healing'],
+        'veteran_abilities': _record['veteran_abilities'],
+        'elite_abilities': _record['elite_abilities'],
+        'self_healing_cap': _record['self_healing_cap'],
+        'self_healing_rate': _record['self_healing_rate'],
+        'self_healing_unlock_stacks': (
+            1
+            if any(
+                str(ability).casefold() == 'self_heal'
+                for ability in _record['veteran_abilities']
+            )
+            else 2
+        ),
         'weapons': dict(_record.get('weapons', {})),
         'armor': _record.get('armor', ''),
         'tech_level': _record.get('tech_level', -1),
@@ -605,9 +665,19 @@ PARADROP_REWARD_ALIASES = {
         )
     },
 }
+SELF_HEALING_REWARD_ALIASES = {
+    f'{target["label"]} ({unit_id}) Regeneration I': (
+        f'{target["label"]} ({unit_id}) Regeneration Capacity I'
+    )
+    for unit_id, target in BUFF_TARGETS.items()
+    if unit_id != PLAYER_ARMY_ID
+    and target.get('self_healing')
+    and 'self_healing_cap' in target.get('allowed_buff_types', ())
+}
 REWARD_ALIASES = {
     **ACCESS_REWARD_ALIASES,
     **PARADROP_REWARD_ALIASES,
+    **SELF_HEALING_REWARD_ALIASES,
 }
 AID_POWER_MAP_CONFIGS = []
 AID_POWER_MAP_CONFIG_BY_SUPERWEAPON = {}
@@ -667,7 +737,8 @@ CLONE_REQUIRED_BUFF_TYPES = frozenset(
     {
         'production', 'cost', 'speed', 'armor', 'health', 'damage', 'reload',
         'range', 'sight', 'ammo', 'passenger_capacity', 'cloak', 'sensors',
-        'self_healing', 'area', 'amphibious',
+        'self_healing', 'self_healing_cap', 'self_healing_rate', 'area',
+        'amphibious',
         'build_limit',
     }
 )

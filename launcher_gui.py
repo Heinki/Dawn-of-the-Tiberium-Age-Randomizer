@@ -543,7 +543,9 @@ def run_self_check():
                 if reward.get('unit') == 'HTNK'
                 and reward.get('buff_type') == buff_type
             )
-            for buff_type in ('reload', 'self_healing')
+            for buff_type in (
+                'reload', 'self_healing_cap', 'self_healing_rate'
+            )
         }
         mammoth_access_reward = next(
             reward for reward in REWARD_POOL
@@ -554,7 +556,8 @@ def run_self_check():
             clone_mission,
             [
                 mammoth_access_reward,
-                mammoth_rewards['self_healing'],
+                mammoth_rewards['self_healing_cap'],
+                mammoth_rewards['self_healing_rate'],
                 *(
                     [mammoth_rewards['reload']]
                     * buff_stack_limit(mammoth_rewards['reload'])
@@ -3803,7 +3806,7 @@ def run_self_check():
                 and mammoth_clone.get('SelfHealing') == 'yes'
                 and mammoth_clone.get('SelfHealingCap') == '100%'
                 and float(mammoth_clone.get('SelfHealingRate', 0)) > 0
-                and int(mammoth_clone.get('SelfHealingStep', 0)) > 0
+                and 'SelfHealingStep' not in mammoth_clone
             ),
             'dta_area_buff_clones_and_registers_warhead': (
                 a10_clone_entry.get('route') == 'production_access_clone'

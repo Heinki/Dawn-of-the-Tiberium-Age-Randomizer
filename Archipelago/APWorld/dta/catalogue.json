@@ -59,11 +59,25 @@
       "id": 81063946
     },
     {
+      "name": "A-10 Warthog (A10) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066445
+    },
+    {
+      "name": "A-10 Warthog (A10) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066446
+    },
+    {
       "name": "A-10 Warthog (A10) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065790
+      "id": 81066447
     },
     {
       "name": "A-10 Warthog (A10) Reinforcement I",
@@ -143,11 +157,25 @@
       "id": 81065443
     },
     {
+      "name": "Advanced Guard Tower (ATWR) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066448
+    },
+    {
+      "name": "Advanced Guard Tower (ATWR) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066449
+    },
+    {
       "name": "Advanced Guard Tower (ATWR) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065791
+      "id": 81066450
     },
     {
       "name": "Advanced Guard Tower (ATWR) Reinforcement I",
@@ -206,11 +234,25 @@
       "id": 81063976
     },
     {
+      "name": "Aircraft Carrier (CARRIER) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066451
+    },
+    {
+      "name": "Aircraft Carrier (CARRIER) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066452
+    },
+    {
       "name": "Aircraft Carrier (CARRIER) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065792
+      "id": 81066453
     },
     {
       "name": "Aircraft Carrier (CARRIER) Reinforcement I",
@@ -283,11 +325,25 @@
       "id": 81064484
     },
     {
+      "name": "Allied APC (RAAPC) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066454
+    },
+    {
+      "name": "Allied APC (RAAPC) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066455
+    },
+    {
       "name": "Allied APC (RAAPC) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065793
+      "id": 81066456
     },
     {
       "name": "Allied APC (RAAPC) Reinforcement I",
@@ -374,11 +430,25 @@
       "id": 81064495
     },
     {
+      "name": "Allied Artillery (RAARTY) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066457
+    },
+    {
+      "name": "Allied Artillery (RAARTY) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066458
+    },
+    {
       "name": "Allied Artillery (RAARTY) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065794
+      "id": 81066459
     },
     {
       "name": "Allied Artillery (RAARTY) Reinforcement I",
@@ -451,11 +521,25 @@
       "id": 81065942
     },
     {
+      "name": "Allied Artillery Emplacement (ART) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066460
+    },
+    {
+      "name": "Allied Artillery Emplacement (ART) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066461
+    },
+    {
       "name": "Allied Artillery Emplacement (ART) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065943
+      "id": 81066462
     },
     {
       "name": "Allied Artillery Emplacement (ART) Reinforcement I",
@@ -570,11 +654,25 @@
       "id": 81065454
     },
     {
+      "name": "Allied Gun Turret (RAGUN) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066463
+    },
+    {
+      "name": "Allied Gun Turret (RAGUN) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066464
+    },
+    {
       "name": "Allied Gun Turret (RAGUN) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065795
+      "id": 81066465
     },
     {
       "name": "Allied Gun Turret (RAGUN) Reinforcement I",
@@ -645,6 +743,20 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064506
+    },
+    {
+      "name": "Allied Hovercraft Transport (ALST) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066381
+    },
+    {
+      "name": "Allied Hovercraft Transport (ALST) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066382
     },
     {
       "name": "Allied Hovercraft Transport (ALST) Regeneration I",
@@ -724,11 +836,25 @@
       "id": 81064510
     },
     {
+      "name": "Allied Light Tank (1TNK) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066466
+    },
+    {
+      "name": "Allied Light Tank (1TNK) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066467
+    },
+    {
       "name": "Allied Light Tank (1TNK) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065797
+      "id": 81066468
     },
     {
       "name": "Allied Light Tank (1TNK) Reinforcement I",
@@ -815,11 +941,25 @@
       "id": 81064515
     },
     {
+      "name": "Allied Medium Tank (2TNK) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066469
+    },
+    {
+      "name": "Allied Medium Tank (2TNK) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066470
+    },
+    {
       "name": "Allied Medium Tank (2TNK) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065798
+      "id": 81066471
     },
     {
       "name": "Allied Medium Tank (2TNK) Reinforcement I",
@@ -899,11 +1039,25 @@
       "id": 81064520
     },
     {
+      "name": "Allied Mobile Construction Vehicle (AMCV) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066472
+    },
+    {
+      "name": "Allied Mobile Construction Vehicle (AMCV) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066473
+    },
+    {
       "name": "Allied Mobile Construction Vehicle (AMCV) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065799
+      "id": 81066474
     },
     {
       "name": "Allied Mobile Construction Vehicle (AMCV) Reinforcement I",
@@ -960,6 +1114,20 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064528
+    },
+    {
+      "name": "Allied Repair Ship (ESCORTA) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066383
+    },
+    {
+      "name": "Allied Repair Ship (ESCORTA) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066384
     },
     {
       "name": "Allied Repair Ship (ESCORTA) Regeneration I",
@@ -1053,11 +1221,25 @@
       "id": 81065622
     },
     {
+      "name": "Anti-Aircraft Truck (MFLAK) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066475
+    },
+    {
+      "name": "Anti-Aircraft Truck (MFLAK) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066476
+    },
+    {
       "name": "Anti-Aircraft Truck (MFLAK) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065803
+      "id": 81066477
     },
     {
       "name": "Anti-Aircraft Truck (MFLAK) Reinforcement I",
@@ -1130,11 +1312,25 @@
       "id": 81065463
     },
     {
+      "name": "Anti-aircraft Gun (RAAGUN) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066478
+    },
+    {
+      "name": "Anti-aircraft Gun (RAAGUN) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066479
+    },
+    {
       "name": "Anti-aircraft Gun (RAAGUN) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065804
+      "id": 81066480
     },
     {
       "name": "Anti-aircraft Gun (RAAGUN) Reinforcement I",
@@ -1214,11 +1410,25 @@
       "id": 81063998
     },
     {
+      "name": "Apache (APACHE) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066481
+    },
+    {
+      "name": "Apache (APACHE) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066482
+    },
+    {
       "name": "Apache (APACHE) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065805
+      "id": 81066483
     },
     {
       "name": "Apache (APACHE) Reinforcement I",
@@ -1291,11 +1501,25 @@
       "id": 81064561
     },
     {
+      "name": "Attack Dog (DOG) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066484
+    },
+    {
+      "name": "Attack Dog (DOG) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066485
+    },
+    {
       "name": "Attack Dog (DOG) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065806
+      "id": 81066486
     },
     {
       "name": "Attack Dog (DOG) Reinforcement I",
@@ -1396,11 +1620,25 @@
       "id": 81065586
     },
     {
+      "name": "Battle Rig (BRIG) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066487
+    },
+    {
+      "name": "Battle Rig (BRIG) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066488
+    },
+    {
       "name": "Battle Rig (BRIG) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065807
+      "id": 81066489
     },
     {
       "name": "Battle Rig (BRIG) Reinforcement I",
@@ -1480,11 +1718,25 @@
       "id": 81064566
     },
     {
+      "name": "Bazooka (E3) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066490
+    },
+    {
+      "name": "Bazooka (E3) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066491
+    },
+    {
       "name": "Bazooka (E3) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065808
+      "id": 81066492
     },
     {
       "name": "Bazooka (E3) Reinforcement I",
@@ -1585,11 +1837,18 @@
       "id": 81064576
     },
     {
-      "name": "Behemoth Tank (BEHEMOTH) Regeneration I",
+      "name": "Behemoth Tank (BEHEMOTH) Rapid Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81066067
+      "id": 81066385
+    },
+    {
+      "name": "Behemoth Tank (BEHEMOTH) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066386
     },
     {
       "name": "Behemoth Tank (BEHEMOTH) Reinforcement I",
@@ -1683,11 +1942,18 @@
       "id": 81064587
     },
     {
-      "name": "Beluminator (BEHEPLSM) Regeneration I",
+      "name": "Beluminator (BEHEPLSM) Rapid Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81066070
+      "id": 81066387
+    },
+    {
+      "name": "Beluminator (BEHEPLSM) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066388
     },
     {
       "name": "Beluminator (BEHEPLSM) Reinforcement I",
@@ -1760,11 +2026,25 @@
       "id": 81065472
     },
     {
+      "name": "Camouflaged Pill Box (RAHBOX) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066493
+    },
+    {
+      "name": "Camouflaged Pill Box (RAHBOX) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066494
+    },
+    {
       "name": "Camouflaged Pill Box (RAHBOX) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065809
+      "id": 81066495
     },
     {
       "name": "Camouflaged Pill Box (RAHBOX) Reinforcement I",
@@ -1844,11 +2124,25 @@
       "id": 81064593
     },
     {
+      "name": "Chem Warrior (E5) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066496
+    },
+    {
+      "name": "Chem Warrior (E5) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066497
+    },
+    {
       "name": "Chem Warrior (E5) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065810
+      "id": 81066498
     },
     {
       "name": "Chem Warrior (E5) Reinforcement I",
@@ -1935,11 +2229,25 @@
       "id": 81064603
     },
     {
+      "name": "Chemical Hovercraft (HVC) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066499
+    },
+    {
+      "name": "Chemical Hovercraft (HVC) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066500
+    },
+    {
       "name": "Chemical Hovercraft (HVC) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065811
+      "id": 81066501
     },
     {
       "name": "Chemical Hovercraft (HVC) Reinforcement I",
@@ -2010,6 +2318,20 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064027
+    },
+    {
+      "name": "Chinook Transport (TRAN) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066389
+    },
+    {
+      "name": "Chinook Transport (TRAN) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066390
     },
     {
       "name": "Chinook Transport (TRAN) Regeneration I",
@@ -2096,11 +2418,25 @@
       "id": 81064613
     },
     {
+      "name": "Chrono Tank (CTNK) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066502
+    },
+    {
+      "name": "Chrono Tank (CTNK) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066503
+    },
+    {
       "name": "Chrono Tank (CTNK) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065813
+      "id": 81066504
     },
     {
       "name": "Chrono Tank (CTNK) Reinforcement I",
@@ -2187,11 +2523,25 @@
       "id": 81064618
     },
     {
+      "name": "Commando (RMBO) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066505
+    },
+    {
+      "name": "Commando (RMBO) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066506
+    },
+    {
       "name": "Commando (RMBO) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065814
+      "id": 81066507
     },
     {
       "name": "Commando (RMBO) Reinforcement I",
@@ -2264,11 +2614,25 @@
       "id": 81064044
     },
     {
+      "name": "Corvette (DESTROYER) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066508
+    },
+    {
+      "name": "Corvette (DESTROYER) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066509
+    },
+    {
       "name": "Corvette (DESTROYER) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065815
+      "id": 81066510
     },
     {
       "name": "Corvette (DESTROYER) Reinforcement I",
@@ -2348,11 +2712,25 @@
       "id": 81064050
     },
     {
+      "name": "Cruiser (CRUISER) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066511
+    },
+    {
+      "name": "Cruiser (CRUISER) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066512
+    },
+    {
       "name": "Cruiser (CRUISER) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065816
+      "id": 81066513
     },
     {
       "name": "Cruiser (CRUISER) Reinforcement I",
@@ -2430,6 +2808,20 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065633
+    },
+    {
+      "name": "Cyborg (CYBORG) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066391
+    },
+    {
+      "name": "Cyborg (CYBORG) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066392
     },
     {
       "name": "Cyborg (CYBORG) Regeneration I",
@@ -2523,11 +2915,25 @@
       "id": 81065644
     },
     {
+      "name": "Cyborg Prototype (CYP) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066514
+    },
+    {
+      "name": "Cyborg Prototype (CYP) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066515
+    },
+    {
       "name": "Cyborg Prototype (CYP) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065818
+      "id": 81066516
     },
     {
       "name": "Cyborg Prototype (CYP) Reinforcement I",
@@ -2605,6 +3011,20 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064634
+    },
+    {
+      "name": "Demolition Truck (DTRK) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066393
+    },
+    {
+      "name": "Demolition Truck (DTRK) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066394
     },
     {
       "name": "Demolition Truck (DTRK) Regeneration I",
@@ -2691,11 +3111,18 @@
       "id": 81064650
     },
     {
-      "name": "Disc Launcher (DISCARTY) Regeneration I",
+      "name": "Disc Launcher (DISCARTY) Rapid Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81066087
+      "id": 81066395
+    },
+    {
+      "name": "Disc Launcher (DISCARTY) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066396
     },
     {
       "name": "Disc Launcher (DISCARTY) Reinforcement I",
@@ -2775,11 +3202,18 @@
       "id": 81064671
     },
     {
-      "name": "Drone Launcher (CARRTRUK) Regeneration I",
+      "name": "Drone Launcher (CARRTRUK) Rapid Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81066090
+      "id": 81066397
+    },
+    {
+      "name": "Drone Launcher (CARRTRUK) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066398
     },
     {
       "name": "Drone Launcher (CARRTRUK) Reinforcement I",
@@ -2838,11 +3272,18 @@
       "id": 81064068
     },
     {
-      "name": "Ekranoplan Aircraft Carrier (EKRACARR) Regeneration I",
+      "name": "Ekranoplan Aircraft Carrier (EKRACARR) Rapid Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81066091
+      "id": 81066399
+    },
+    {
+      "name": "Ekranoplan Aircraft Carrier (EKRACARR) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066400
     },
     {
       "name": "Ekranoplan Aircraft Carrier (EKRACARR) Reinforcement I",
@@ -3146,11 +3587,18 @@
       "id": 81064687
     },
     {
-      "name": "Enforcer (BFRT) Regeneration I",
+      "name": "Enforcer (BFRT) Rapid Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81066095
+      "id": 81066401
+    },
+    {
+      "name": "Enforcer (BFRT) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066402
     },
     {
       "name": "Enforcer (BFRT) Reinforcement I",
@@ -3223,11 +3671,25 @@
       "id": 81064693
     },
     {
+      "name": "Engineer (ENGINEER) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066517
+    },
+    {
+      "name": "Engineer (ENGINEER) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066518
+    },
+    {
       "name": "Engineer (ENGINEER) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065820
+      "id": 81066519
     },
     {
       "name": "Engineer (ENGINEER) Reinforcement I",
@@ -3286,11 +3748,25 @@
       "id": 81065654
     },
     {
+      "name": "Flak Corvette (FLAKCORV) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066520
+    },
+    {
+      "name": "Flak Corvette (FLAKCORV) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066521
+    },
+    {
       "name": "Flak Corvette (FLAKCORV) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065821
+      "id": 81066522
     },
     {
       "name": "Flak Corvette (FLAKCORV) Reinforcement I",
@@ -3370,11 +3846,25 @@
       "id": 81064702
     },
     {
+      "name": "Flak Hovercraft (HVCT) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066523
+    },
+    {
+      "name": "Flak Hovercraft (HVCT) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066524
+    },
+    {
       "name": "Flak Hovercraft (HVCT) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065822
+      "id": 81066525
     },
     {
       "name": "Flak Hovercraft (HVCT) Reinforcement I",
@@ -3468,11 +3958,25 @@
       "id": 81064708
     },
     {
+      "name": "Flame Tank (FTNK) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066526
+    },
+    {
+      "name": "Flame Tank (FTNK) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066527
+    },
+    {
       "name": "Flame Tank (FTNK) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065823
+      "id": 81066528
     },
     {
       "name": "Flame Tank (FTNK) Reinforcement I",
@@ -3552,11 +4056,25 @@
       "id": 81065483
     },
     {
+      "name": "Flame Tower (RAFTUR) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066529
+    },
+    {
+      "name": "Flame Tower (RAFTUR) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066530
+    },
+    {
       "name": "Flame Tower (RAFTUR) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065824
+      "id": 81066531
     },
     {
       "name": "Flame Tower (RAFTUR) Reinforcement I",
@@ -3629,11 +4147,25 @@
       "id": 81064086
     },
     {
+      "name": "Frigate (FRIGATE) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066532
+    },
+    {
+      "name": "Frigate (FRIGATE) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066533
+    },
+    {
       "name": "Frigate (FRIGATE) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065825
+      "id": 81066534
     },
     {
       "name": "Frigate (FRIGATE) Reinforcement I",
@@ -3755,11 +4287,25 @@
       "id": 81064723
     },
     {
+      "name": "GDI Grenadier (E2) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066535
+    },
+    {
+      "name": "GDI Grenadier (E2) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066536
+    },
+    {
       "name": "GDI Grenadier (E2) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065826
+      "id": 81066537
     },
     {
       "name": "GDI Grenadier (E2) Reinforcement I",
@@ -3837,6 +4383,20 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064734
+    },
+    {
+      "name": "GDI Hovercraft Transport (GLST) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066403
+    },
+    {
+      "name": "GDI Hovercraft Transport (GLST) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066404
     },
     {
       "name": "GDI Hovercraft Transport (GLST) Regeneration I",
@@ -3937,11 +4497,18 @@
       "id": 81064738
     },
     {
-      "name": "GDI Mammoth Tank (HTNK) Regeneration I",
+      "name": "GDI Mammoth Tank (HTNK) Rapid Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81066108
+      "id": 81066405
+    },
+    {
+      "name": "GDI Mammoth Tank (HTNK) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066406
     },
     {
       "name": "GDI Mammoth Tank (HTNK) Reinforcement I",
@@ -4028,11 +4595,25 @@
       "id": 81064743
     },
     {
+      "name": "GDI Medium Tank (MTNK) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066538
+    },
+    {
+      "name": "GDI Medium Tank (MTNK) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066539
+    },
+    {
       "name": "GDI Medium Tank (MTNK) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065828
+      "id": 81066540
     },
     {
       "name": "GDI Medium Tank (MTNK) Reinforcement I",
@@ -4112,11 +4693,25 @@
       "id": 81064748
     },
     {
+      "name": "GDI Mobile Construction Vehicle (GMCV) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066541
+    },
+    {
+      "name": "GDI Mobile Construction Vehicle (GMCV) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066542
+    },
+    {
       "name": "GDI Mobile Construction Vehicle (GMCV) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065829
+      "id": 81066543
     },
     {
       "name": "GDI Mobile Construction Vehicle (GMCV) Reinforcement I",
@@ -4173,6 +4768,20 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064756
+    },
+    {
+      "name": "GDI Repair Ship (ESCORTG) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066407
+    },
+    {
+      "name": "GDI Repair Ship (ESCORTG) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066408
     },
     {
       "name": "GDI Repair Ship (ESCORTG) Regeneration I",
@@ -4245,11 +4854,25 @@
       "id": 81065951
     },
     {
+      "name": "Gap Generator (RAGAP) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066544
+    },
+    {
+      "name": "Gap Generator (RAGAP) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066545
+    },
+    {
       "name": "Gap Generator (RAGAP) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065953
+      "id": 81066546
     },
     {
       "name": "Gap Generator (RAGAP) Reinforcement I",
@@ -4329,11 +4952,25 @@
       "id": 81064767
     },
     {
+      "name": "Gatling Tank (GTNK) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066547
+    },
+    {
+      "name": "Gatling Tank (GTNK) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066548
+    },
+    {
       "name": "Gatling Tank (GTNK) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065831
+      "id": 81066549
     },
     {
       "name": "Gatling Tank (GTNK) Reinforcement I",
@@ -4411,6 +5048,20 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065666
+    },
+    {
+      "name": "Grenade Launcher (GRENL) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066409
+    },
+    {
+      "name": "Grenade Launcher (GRENL) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066410
     },
     {
       "name": "Grenade Launcher (GRENL) Regeneration I",
@@ -4497,11 +5148,25 @@
       "id": 81065495
     },
     {
+      "name": "Guard Tower (TWR) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066550
+    },
+    {
+      "name": "Guard Tower (TWR) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066551
+    },
+    {
       "name": "Guard Tower (TWR) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065833
+      "id": 81066552
     },
     {
       "name": "Guard Tower (TWR) Reinforcement I",
@@ -4574,11 +5239,25 @@
       "id": 81064120
     },
     {
+      "name": "Gunboat (BOAT) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066553
+    },
+    {
+      "name": "Gunboat (BOAT) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066554
+    },
+    {
       "name": "Gunboat (BOAT) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065834
+      "id": 81066555
     },
     {
       "name": "Gunboat (BOAT) Reinforcement I",
@@ -4679,11 +5358,25 @@
       "id": 81064783
     },
     {
+      "name": "Harbinger (SCRINTNK) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066556
+    },
+    {
+      "name": "Harbinger (SCRINTNK) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066557
+    },
+    {
       "name": "Harbinger (SCRINTNK) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065835
+      "id": 81066558
     },
     {
       "name": "Harbinger (SCRINTNK) Reinforcement I",
@@ -4770,11 +5463,25 @@
       "id": 81064794
     },
     {
+      "name": "Heavy Artillery (LTNKCRUS) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066559
+    },
+    {
+      "name": "Heavy Artillery (LTNKCRUS) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066560
+    },
+    {
       "name": "Heavy Artillery (LTNKCRUS) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065836
+      "id": 81066561
     },
     {
       "name": "Heavy Artillery (LTNKCRUS) Reinforcement I",
@@ -4868,11 +5575,25 @@
       "id": 81065677
     },
     {
+      "name": "Heavy Raider (RAIDER) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066562
+    },
+    {
+      "name": "Heavy Raider (RAIDER) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066563
+    },
+    {
       "name": "Heavy Raider (RAIDER) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065837
+      "id": 81066564
     },
     {
       "name": "Heavy Raider (RAIDER) Reinforcement I",
@@ -4959,11 +5680,25 @@
       "id": 81064800
     },
     {
+      "name": "Heavy Tank (3TNK) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066565
+    },
+    {
+      "name": "Heavy Tank (3TNK) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066566
+    },
+    {
       "name": "Heavy Tank (3TNK) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065838
+      "id": 81066567
     },
     {
       "name": "Heavy Tank (3TNK) Reinforcement I",
@@ -5043,11 +5778,25 @@
       "id": 81065687
     },
     {
+      "name": "Hijacker (HIJACK) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066568
+    },
+    {
+      "name": "Hijacker (HIJACK) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066569
+    },
+    {
       "name": "Hijacker (HIJACK) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065839
+      "id": 81066570
     },
     {
       "name": "Hijacker (HIJACK) Reinforcement I",
@@ -5120,11 +5869,25 @@
       "id": 81064132
     },
     {
+      "name": "Hind (HIND) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066571
+    },
+    {
+      "name": "Hind (HIND) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066572
+    },
+    {
       "name": "Hind (HIND) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065840
+      "id": 81066573
     },
     {
       "name": "Hind (HIND) Reinforcement I",
@@ -5211,11 +5974,25 @@
       "id": 81064815
     },
     {
+      "name": "Hover MLRS (HVCSAM) (HVCSAM) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066574
+    },
+    {
+      "name": "Hover MLRS (HVCSAM) (HVCSAM) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066575
+    },
+    {
       "name": "Hover MLRS (HVCSAM) (HVCSAM) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065841
+      "id": 81066576
     },
     {
       "name": "Hover MLRS (HVCSAM) (HVCSAM) Reinforcement I",
@@ -5302,11 +6079,25 @@
       "id": 81064826
     },
     {
+      "name": "Hover MLRS (HVR) (HVR) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066577
+    },
+    {
+      "name": "Hover MLRS (HVR) (HVR) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066578
+    },
+    {
       "name": "Hover MLRS (HVR) (HVR) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065842
+      "id": 81066579
     },
     {
       "name": "Hover MLRS (HVR) (HVR) Reinforcement I",
@@ -5386,11 +6177,25 @@
       "id": 81064832
     },
     {
+      "name": "Hum-vee (JEEP) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066580
+    },
+    {
+      "name": "Hum-vee (JEEP) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066581
+    },
+    {
       "name": "Hum-vee (JEEP) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065843
+      "id": 81066582
     },
     {
       "name": "Hum-vee (JEEP) Reinforcement I",
@@ -5491,11 +6296,25 @@
       "id": 81064842
     },
     {
+      "name": "Ilhemoth (ILHEMOTH) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066583
+    },
+    {
+      "name": "Ilhemoth (ILHEMOTH) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066584
+    },
+    {
       "name": "Ilhemoth (ILHEMOTH) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065844
+      "id": 81066585
     },
     {
       "name": "Ilhemoth (ILHEMOTH) Reinforcement I",
@@ -5589,11 +6408,25 @@
       "id": 81064853
     },
     {
+      "name": "Illuminator (PLSM) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066586
+    },
+    {
+      "name": "Illuminator (PLSM) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066587
+    },
+    {
       "name": "Illuminator (PLSM) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065845
+      "id": 81066588
     },
     {
       "name": "Illuminator (PLSM) Reinforcement I",
@@ -5659,11 +6492,25 @@
       "id": 81065960
     },
     {
+      "name": "Land Mine (VMINE) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066589
+    },
+    {
+      "name": "Land Mine (VMINE) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066590
+    },
+    {
       "name": "Land Mine (VMINE) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065961
+      "id": 81066591
     },
     {
       "name": "Land Mine (VMINE) Reinforcement I",
@@ -5715,11 +6562,25 @@
       "id": 81064162
     },
     {
+      "name": "Laser Corvette (LASCOR) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066592
+    },
+    {
+      "name": "Laser Corvette (LASCOR) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066593
+    },
+    {
       "name": "Laser Corvette (LASCOR) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065847
+      "id": 81066594
     },
     {
       "name": "Laser Corvette (LASCOR) Reinforcement I",
@@ -5799,11 +6660,25 @@
       "id": 81064168
     },
     {
+      "name": "Longbow (HELI) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066595
+    },
+    {
+      "name": "Longbow (HELI) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066596
+    },
+    {
       "name": "Longbow (HELI) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065848
+      "id": 81066597
     },
     {
       "name": "Longbow (HELI) Reinforcement I",
@@ -5883,11 +6758,18 @@
       "id": 81064174
     },
     {
-      "name": "Lun Attack Ekranoplan (LUN) Regeneration I",
+      "name": "Lun Attack Ekranoplan (LUN) Rapid Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81066147
+      "id": 81066411
+    },
+    {
+      "name": "Lun Attack Ekranoplan (LUN) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066412
     },
     {
       "name": "Lun Attack Ekranoplan (LUN) Reinforcement I",
@@ -5974,11 +6856,25 @@
       "id": 81064874
     },
     {
+      "name": "M.A.D. Tank (QTNK) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066598
+    },
+    {
+      "name": "M.A.D. Tank (QTNK) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066599
+    },
+    {
       "name": "M.A.D. Tank (QTNK) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065849
+      "id": 81066600
     },
     {
       "name": "M.A.D. Tank (QTNK) Reinforcement I",
@@ -6044,11 +6940,25 @@
       "id": 81064184
     },
     {
+      "name": "MIG (MIG) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066601
+    },
+    {
+      "name": "MIG (MIG) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066602
+    },
+    {
       "name": "MIG (MIG) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065850
+      "id": 81066603
     },
     {
       "name": "MIG (MIG) Reinforcement I",
@@ -6135,6 +7045,20 @@
       "id": 81065597
     },
     {
+      "name": "Machine-Gunner (MGI) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066413
+    },
+    {
+      "name": "Machine-Gunner (MGI) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066414
+    },
+    {
       "name": "Machine-Gunner (MGI) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -6212,11 +7136,25 @@
       "id": 81064883
     },
     {
+      "name": "Magnetic Water Mine (SEAMINE) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066604
+    },
+    {
+      "name": "Magnetic Water Mine (SEAMINE) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066605
+    },
+    {
       "name": "Magnetic Water Mine (SEAMINE) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065852
+      "id": 81066606
     },
     {
       "name": "Magnetic Water Mine (SEAMINE) Reinforcement I",
@@ -6289,11 +7227,18 @@
       "id": 81064892
     },
     {
-      "name": "Mammoth Artillery (HTNKARTY) Regeneration I",
+      "name": "Mammoth Artillery (HTNKARTY) Rapid Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81066154
+      "id": 81066415
+    },
+    {
+      "name": "Mammoth Artillery (HTNKARTY) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066416
     },
     {
       "name": "Mammoth Artillery (HTNKARTY) Reinforcement I",
@@ -6364,6 +7309,20 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064898
+    },
+    {
+      "name": "Mechanic (MECH) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066417
+    },
+    {
+      "name": "Mechanic (MECH) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066418
     },
     {
       "name": "Mechanic (MECH) Regeneration I",
@@ -6441,6 +7400,20 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064903
+    },
+    {
+      "name": "Medic (MEDIC) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066419
+    },
+    {
+      "name": "Medic (MEDIC) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066420
     },
     {
       "name": "Medic (MEDIC) Regeneration I",
@@ -6534,11 +7507,25 @@
       "id": 81064913
     },
     {
+      "name": "Microwave Tank (MWAVE) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066607
+    },
+    {
+      "name": "Microwave Tank (MWAVE) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066608
+    },
+    {
       "name": "Microwave Tank (MWAVE) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065855
+      "id": 81066609
     },
     {
       "name": "Microwave Tank (MWAVE) Reinforcement I",
@@ -6611,11 +7598,25 @@
       "id": 81064918
     },
     {
+      "name": "Minigunner (E1) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066610
+    },
+    {
+      "name": "Minigunner (E1) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066611
+    },
+    {
       "name": "Minigunner (E1) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065856
+      "id": 81066612
     },
     {
       "name": "Minigunner (E1) Reinforcement I",
@@ -6695,11 +7696,25 @@
       "id": 81064220
     },
     {
+      "name": "Missile Cruiser (MCRUISE) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066613
+    },
+    {
+      "name": "Missile Cruiser (MCRUISE) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066614
+    },
+    {
       "name": "Missile Cruiser (MCRUISE) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065857
+      "id": 81066615
     },
     {
       "name": "Missile Cruiser (MCRUISE) Reinforcement I",
@@ -6772,11 +7787,25 @@
       "id": 81064226
     },
     {
+      "name": "Missile Submarine (MSUB) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066616
+    },
+    {
+      "name": "Missile Submarine (MSUB) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066617
+    },
+    {
       "name": "Missile Submarine (MSUB) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065858
+      "id": 81066618
     },
     {
       "name": "Missile Submarine (MSUB) Reinforcement I",
@@ -6856,11 +7885,25 @@
       "id": 81065608
     },
     {
+      "name": "Missile Tank (TTNKMSL) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066619
+    },
+    {
+      "name": "Missile Tank (TTNKMSL) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066620
+    },
+    {
       "name": "Missile Tank (TTNKMSL) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065859
+      "id": 81066621
     },
     {
       "name": "Missile Tank (TTNKMSL) Reinforcement I",
@@ -6938,6 +7981,20 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065706
+    },
+    {
+      "name": "Mobile Repair Vehicle (MRV) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066421
+    },
+    {
+      "name": "Mobile Repair Vehicle (MRV) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066422
     },
     {
       "name": "Mobile Repair Vehicle (MRV) Regeneration I",
@@ -7031,11 +8088,25 @@
       "id": 81064967
     },
     {
+      "name": "Mobile SAM-Site (MWAVEMSAM) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066622
+    },
+    {
+      "name": "Mobile SAM-Site (MWAVEMSAM) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066623
+    },
+    {
       "name": "Mobile SAM-Site (MWAVEMSAM) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065862
+      "id": 81066624
     },
     {
       "name": "Mobile SAM-Site (MWAVEMSAM) Reinforcement I",
@@ -7115,6 +8186,20 @@
       "id": 81064977
     },
     {
+      "name": "Mobile Sensor Array (MSA) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066423
+    },
+    {
+      "name": "Mobile Sensor Array (MSA) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066424
+    },
+    {
       "name": "Mobile Sensor Array (MSA) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -7178,11 +8263,25 @@
       "id": 81064985
     },
     {
+      "name": "Naval Artillery (COASTARTY) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066625
+    },
+    {
+      "name": "Naval Artillery (COASTARTY) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066626
+    },
+    {
       "name": "Naval Artillery (COASTARTY) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065864
+      "id": 81066627
     },
     {
       "name": "Naval Artillery (COASTARTY) Reinforcement I",
@@ -7269,11 +8368,25 @@
       "id": 81064997
     },
     {
+      "name": "Nod Artillery (ARTY) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066628
+    },
+    {
+      "name": "Nod Artillery (ARTY) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066629
+    },
+    {
       "name": "Nod Artillery (ARTY) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065865
+      "id": 81066630
     },
     {
       "name": "Nod Artillery (ARTY) Reinforcement I",
@@ -7353,11 +8466,25 @@
       "id": 81065003
     },
     {
+      "name": "Nod Buggy (BGGY) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066631
+    },
+    {
+      "name": "Nod Buggy (BGGY) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066632
+    },
+    {
       "name": "Nod Buggy (BGGY) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065866
+      "id": 81066633
     },
     {
       "name": "Nod Buggy (BGGY) Reinforcement I",
@@ -7444,11 +8571,25 @@
       "id": 81065008
     },
     {
+      "name": "Nod Flamethrower Infantry (E4) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066634
+    },
+    {
+      "name": "Nod Flamethrower Infantry (E4) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066635
+    },
+    {
       "name": "Nod Flamethrower Infantry (E4) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065867
+      "id": 81066636
     },
     {
       "name": "Nod Flamethrower Infantry (E4) Reinforcement I",
@@ -7528,11 +8669,25 @@
       "id": 81065504
     },
     {
+      "name": "Nod Gun Turret (GUN) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066637
+    },
+    {
+      "name": "Nod Gun Turret (GUN) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066638
+    },
+    {
       "name": "Nod Gun Turret (GUN) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065868
+      "id": 81066639
     },
     {
       "name": "Nod Gun Turret (GUN) Reinforcement I",
@@ -7603,6 +8758,20 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065018
+    },
+    {
+      "name": "Nod Hovercraft Transport (NLST) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066425
+    },
+    {
+      "name": "Nod Hovercraft Transport (NLST) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066426
     },
     {
       "name": "Nod Hovercraft Transport (NLST) Regeneration I",
@@ -7682,11 +8851,25 @@
       "id": 81065022
     },
     {
+      "name": "Nod Light Tank (LTNK) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066640
+    },
+    {
+      "name": "Nod Light Tank (LTNK) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066641
+    },
+    {
       "name": "Nod Light Tank (LTNK) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065870
+      "id": 81066642
     },
     {
       "name": "Nod Light Tank (LTNK) Reinforcement I",
@@ -7766,11 +8949,25 @@
       "id": 81065027
     },
     {
+      "name": "Nod Mobile Construction Vehicle (NMCV) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066643
+    },
+    {
+      "name": "Nod Mobile Construction Vehicle (NMCV) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066644
+    },
+    {
       "name": "Nod Mobile Construction Vehicle (NMCV) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065871
+      "id": 81066645
     },
     {
       "name": "Nod Mobile Construction Vehicle (NMCV) Reinforcement I",
@@ -7871,6 +9068,20 @@
       "id": 81065035
     },
     {
+      "name": "Nod Repair Ship (ESCORTN) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066427
+    },
+    {
+      "name": "Nod Repair Ship (ESCORTN) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066428
+    },
+    {
       "name": "Nod Repair Ship (ESCORTN) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -7948,11 +9159,25 @@
       "id": 81065514
     },
     {
+      "name": "Obelisk of Light (OBLI) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066646
+    },
+    {
+      "name": "Obelisk of Light (OBLI) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066647
+    },
+    {
       "name": "Obelisk of Light (OBLI) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065873
+      "id": 81066648
     },
     {
       "name": "Obelisk of Light (OBLI) Reinforcement I",
@@ -8032,11 +9257,25 @@
       "id": 81065046
     },
     {
+      "name": "Object 279 (O279) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066649
+    },
+    {
+      "name": "Object 279 (O279) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066650
+    },
+    {
       "name": "Object 279 (O279) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065874
+      "id": 81066651
     },
     {
       "name": "Object 279 (O279) Reinforcement I",
@@ -8116,11 +9355,25 @@
       "id": 81064284
     },
     {
+      "name": "Orca (ORCA) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066652
+    },
+    {
+      "name": "Orca (ORCA) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066653
+    },
+    {
       "name": "Orca (ORCA) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065875
+      "id": 81066654
     },
     {
       "name": "Orca (ORCA) Reinforcement I",
@@ -8200,11 +9453,18 @@
       "id": 81065057
     },
     {
-      "name": "Ore Truck (RAHARV) Regeneration I",
+      "name": "Ore Truck (RAHARV) Rapid Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81066185
+      "id": 81066429
+    },
+    {
+      "name": "Ore Truck (RAHARV) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066430
     },
     {
       "name": "Ore Truck (RAHARV) Reinforcement I",
@@ -8403,11 +9663,25 @@
       "id": 81065067
     },
     {
+      "name": "Phase Tank (PTNK) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066655
+    },
+    {
+      "name": "Phase Tank (PTNK) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066656
+    },
+    {
       "name": "Phase Tank (PTNK) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065876
+      "id": 81066657
     },
     {
       "name": "Phase Tank (PTNK) Reinforcement I",
@@ -8473,11 +9747,25 @@
       "id": 81065523
     },
     {
+      "name": "Pill Box (RAPBOX) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066658
+    },
+    {
+      "name": "Pill Box (RAPBOX) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066659
+    },
+    {
       "name": "Pill Box (RAPBOX) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065877
+      "id": 81066660
     },
     {
       "name": "Pill Box (RAPBOX) Reinforcement I",
@@ -8585,11 +9873,18 @@
       "id": 81064294
     },
     {
-      "name": "Project 941 (P941) Regeneration I",
+      "name": "Project 941 (P941) Rapid Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81066189
+      "id": 81066431
+    },
+    {
+      "name": "Project 941 (P941) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066432
     },
     {
       "name": "Project 941 (P941) Reinforcement I",
@@ -8676,11 +9971,25 @@
       "id": 81065081
     },
     {
+      "name": "Quad Tank (SHILKA) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066661
+    },
+    {
+      "name": "Quad Tank (SHILKA) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066662
+    },
+    {
       "name": "Quad Tank (SHILKA) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065878
+      "id": 81066663
     },
     {
       "name": "Quad Tank (SHILKA) Reinforcement I",
@@ -8774,11 +10083,25 @@
       "id": 81065092
     },
     {
+      "name": "Railgun Tank (TNKN) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066664
+    },
+    {
+      "name": "Railgun Tank (TNKN) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066665
+    },
+    {
       "name": "Railgun Tank (TNKN) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065879
+      "id": 81066666
     },
     {
       "name": "Railgun Tank (TNKN) Reinforcement I",
@@ -8858,11 +10181,25 @@
       "id": 81065098
     },
     {
+      "name": "Ranger (RANG) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066667
+    },
+    {
+      "name": "Ranger (RANG) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066668
+    },
+    {
       "name": "Ranger (RANG) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065880
+      "id": 81066669
     },
     {
       "name": "Ranger (RANG) Reinforcement I",
@@ -8942,11 +10279,25 @@
       "id": 81065103
     },
     {
+      "name": "Recon Bike (BIKE) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066670
+    },
+    {
+      "name": "Recon Bike (BIKE) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066671
+    },
+    {
       "name": "Recon Bike (BIKE) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065881
+      "id": 81066672
     },
     {
       "name": "Recon Bike (BIKE) Reinforcement I",
@@ -9017,6 +10368,20 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065108
+    },
+    {
+      "name": "Repair Ekranoplan (ESCORTS) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066433
+    },
+    {
+      "name": "Repair Ekranoplan (ESCORTS) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066434
     },
     {
       "name": "Repair Ekranoplan (ESCORTS) Regeneration I",
@@ -9103,11 +10468,25 @@
       "id": 81065983
     },
     {
+      "name": "Rifle Infantry (E1A) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066673
+    },
+    {
+      "name": "Rifle Infantry (E1A) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066674
+    },
+    {
       "name": "Rifle Infantry (E1A) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065984
+      "id": 81066675
     },
     {
       "name": "Rifle Infantry (E1A) Reinforcement I",
@@ -9187,11 +10566,25 @@
       "id": 81065118
     },
     {
+      "name": "Rocket Hum-vee (JEEPPTNK) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066676
+    },
+    {
+      "name": "Rocket Hum-vee (JEEPPTNK) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066677
+    },
+    {
       "name": "Rocket Hum-vee (JEEPPTNK) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065883
+      "id": 81066678
     },
     {
       "name": "Rocket Hum-vee (JEEPPTNK) Reinforcement I",
@@ -9285,11 +10678,25 @@
       "id": 81065124
     },
     {
+      "name": "Rocket Launcher (MSAM) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066679
+    },
+    {
+      "name": "Rocket Launcher (MSAM) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066680
+    },
+    {
       "name": "Rocket Launcher (MSAM) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065884
+      "id": 81066681
     },
     {
       "name": "Rocket Launcher (MSAM) Reinforcement I",
@@ -9369,11 +10776,25 @@
       "id": 81065995
     },
     {
+      "name": "Rocket Soldier (E3A) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066682
+    },
+    {
+      "name": "Rocket Soldier (E3A) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066683
+    },
+    {
       "name": "Rocket Soldier (E3A) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065996
+      "id": 81066684
     },
     {
       "name": "Rocket Soldier (E3A) Reinforcement I",
@@ -9446,11 +10867,25 @@
       "id": 81065532
     },
     {
+      "name": "SAM Site (RASAM) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066685
+    },
+    {
+      "name": "SAM Site (RASAM) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066686
+    },
+    {
       "name": "SAM Site (RASAM) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065885
+      "id": 81066687
     },
     {
       "name": "SAM Site (RASAM) Reinforcement I",
@@ -9523,11 +10958,25 @@
       "id": 81065542
     },
     {
+      "name": "SAM Site (SAM) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066688
+    },
+    {
+      "name": "SAM Site (SAM) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066689
+    },
+    {
       "name": "SAM Site (SAM) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065886
+      "id": 81066690
     },
     {
       "name": "SAM Site (SAM) Reinforcement I",
@@ -9621,11 +11070,25 @@
       "id": 81065129
     },
     {
+      "name": "SSM Launcher (MLRS) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066691
+    },
+    {
+      "name": "SSM Launcher (MLRS) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066692
+    },
+    {
       "name": "SSM Launcher (MLRS) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065887
+      "id": 81066693
     },
     {
       "name": "SSM Launcher (MLRS) Reinforcement I",
@@ -9705,11 +11168,25 @@
       "id": 81065716
     },
     {
+      "name": "Scarab (SCARAB) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066694
+    },
+    {
+      "name": "Scarab (SCARAB) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066695
+    },
+    {
       "name": "Scarab (SCARAB) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065888
+      "id": 81066696
     },
     {
       "name": "Scarab (SCARAB) Reinforcement I",
@@ -9782,11 +11259,25 @@
       "id": 81064353
     },
     {
+      "name": "Scarab Speedboat (SPEEDBOAT) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066697
+    },
+    {
+      "name": "Scarab Speedboat (SPEEDBOAT) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066698
+    },
+    {
       "name": "Scarab Speedboat (SPEEDBOAT) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065889
+      "id": 81066699
     },
     {
       "name": "Scarab Speedboat (SPEEDBOAT) Reinforcement I",
@@ -9852,11 +11343,25 @@
       "id": 81064360
     },
     {
+      "name": "Sea Shadow (SBOAT) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066700
+    },
+    {
+      "name": "Sea Shadow (SBOAT) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066701
+    },
+    {
       "name": "Sea Shadow (SBOAT) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065890
+      "id": 81066702
     },
     {
       "name": "Sea Shadow (SBOAT) Reinforcement I",
@@ -9922,11 +11427,25 @@
       "id": 81065144
     },
     {
+      "name": "Shock Trooper (SHOK) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066703
+    },
+    {
+      "name": "Shock Trooper (SHOK) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066704
+    },
+    {
       "name": "Shock Trooper (SHOK) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065891
+      "id": 81066705
     },
     {
       "name": "Shock Trooper (SHOK) Reinforcement I",
@@ -10013,11 +11532,25 @@
       "id": 81065161
     },
     {
+      "name": "Soviet Flamethrower Infantry (E4S) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066706
+    },
+    {
+      "name": "Soviet Flamethrower Infantry (E4S) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066707
+    },
+    {
       "name": "Soviet Flamethrower Infantry (E4S) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065893
+      "id": 81066708
     },
     {
       "name": "Soviet Flamethrower Infantry (E4S) Reinforcement I",
@@ -10097,11 +11630,25 @@
       "id": 81065171
     },
     {
+      "name": "Soviet Grenadier (E2S) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066709
+    },
+    {
+      "name": "Soviet Grenadier (E2S) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066710
+    },
+    {
       "name": "Soviet Grenadier (E2S) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065894
+      "id": 81066711
     },
     {
       "name": "Soviet Grenadier (E2S) Reinforcement I",
@@ -10186,6 +11733,20 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065183
+    },
+    {
+      "name": "Soviet Hovercraft Transport (SLST) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066435
+    },
+    {
+      "name": "Soviet Hovercraft Transport (SLST) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066436
     },
     {
       "name": "Soviet Hovercraft Transport (SLST) Regeneration I",
@@ -10279,11 +11840,18 @@
       "id": 81065189
     },
     {
-      "name": "Soviet Mammoth Tank (4TNK) Regeneration I",
+      "name": "Soviet Mammoth Tank (4TNK) Rapid Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81066222
+      "id": 81066437
+    },
+    {
+      "name": "Soviet Mammoth Tank (4TNK) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066438
     },
     {
       "name": "Soviet Mammoth Tank (4TNK) Reinforcement I",
@@ -10363,11 +11931,25 @@
       "id": 81065194
     },
     {
+      "name": "Soviet Mobile Construction Vehicle (SMCV) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066712
+    },
+    {
+      "name": "Soviet Mobile Construction Vehicle (SMCV) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066713
+    },
+    {
       "name": "Soviet Mobile Construction Vehicle (SMCV) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065896
+      "id": 81066714
     },
     {
       "name": "Soviet Mobile Construction Vehicle (SMCV) Reinforcement I",
@@ -10468,11 +12050,25 @@
       "id": 81065968
     },
     {
+      "name": "Soviet Shore Artillery (RAPARTY) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066715
+    },
+    {
+      "name": "Soviet Shore Artillery (RAPARTY) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066716
+    },
+    {
       "name": "Soviet Shore Artillery (RAPARTY) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065969
+      "id": 81066717
     },
     {
       "name": "Soviet Shore Artillery (RAPARTY) Reinforcement I",
@@ -10538,11 +12134,25 @@
       "id": 81065220
     },
     {
+      "name": "Spy (SPY) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066718
+    },
+    {
+      "name": "Spy (SPY) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066719
+    },
+    {
       "name": "Spy (SPY) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065899
+      "id": 81066720
     },
     {
       "name": "Spy (SPY) Reinforcement I",
@@ -10629,11 +12239,25 @@
       "id": 81065729
     },
     {
+      "name": "Stealth APC (STAPC) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066721
+    },
+    {
+      "name": "Stealth APC (STAPC) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066722
+    },
+    {
       "name": "Stealth APC (STAPC) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065900
+      "id": 81066723
     },
     {
       "name": "Stealth APC (STAPC) Reinforcement I",
@@ -10713,11 +12337,25 @@
       "id": 81065224
     },
     {
+      "name": "Stealth Tank (STNK) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066724
+    },
+    {
+      "name": "Stealth Tank (STNK) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066725
+    },
+    {
       "name": "Stealth Tank (STNK) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065901
+      "id": 81066726
     },
     {
       "name": "Stealth Tank (STNK) Reinforcement I",
@@ -10783,11 +12421,25 @@
       "id": 81064400
     },
     {
+      "name": "Submarine (SS) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066727
+    },
+    {
+      "name": "Submarine (SS) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066728
+    },
+    {
       "name": "Submarine (SS) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065902
+      "id": 81066729
     },
     {
       "name": "Submarine (SS) Reinforcement I",
@@ -10867,6 +12519,20 @@
       "id": 81065233
     },
     {
+      "name": "Subterranean APC (SAPC) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066439
+    },
+    {
+      "name": "Subterranean APC (SAPC) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066440
+    },
+    {
       "name": "Subterranean APC (SAPC) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -10944,11 +12610,25 @@
       "id": 81065243
     },
     {
+      "name": "TD APC (APC) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066730
+    },
+    {
+      "name": "TD APC (APC) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066731
+    },
+    {
       "name": "TD APC (APC) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065904
+      "id": 81066732
     },
     {
       "name": "TD APC (APC) Reinforcement I",
@@ -11035,11 +12715,25 @@
       "id": 81065739
     },
     {
+      "name": "Tank Destroyer (TNKD) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066733
+    },
+    {
+      "name": "Tank Destroyer (TNKD) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066734
+    },
+    {
       "name": "Tank Destroyer (TNKD) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065905
+      "id": 81066735
     },
     {
       "name": "Tank Destroyer (TNKD) Reinforcement I",
@@ -11126,11 +12820,25 @@
       "id": 81065249
     },
     {
+      "name": "Tanya (TANYA) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066736
+    },
+    {
+      "name": "Tanya (TANYA) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066737
+    },
+    {
       "name": "Tanya (TANYA) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065906
+      "id": 81066738
     },
     {
       "name": "Tanya (TANYA) Reinforcement I",
@@ -11217,11 +12925,25 @@
       "id": 81065259
     },
     {
+      "name": "Termite (TERMITE) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066739
+    },
+    {
+      "name": "Termite (TERMITE) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066740
+    },
+    {
       "name": "Termite (TERMITE) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065907
+      "id": 81066741
     },
     {
       "name": "Termite (TERMITE) Reinforcement I",
@@ -11294,11 +13016,25 @@
       "id": 81065555
     },
     {
+      "name": "Tesla Coil (RATSLA) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066742
+    },
+    {
+      "name": "Tesla Coil (RATSLA) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066743
+    },
+    {
       "name": "Tesla Coil (RATSLA) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065908
+      "id": 81066744
     },
     {
       "name": "Tesla Coil (RATSLA) Reinforcement I",
@@ -11378,11 +13114,25 @@
       "id": 81065264
     },
     {
+      "name": "Tesla Tank (TTNK) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066745
+    },
+    {
+      "name": "Tesla Tank (TTNK) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066746
+    },
+    {
       "name": "Tesla Tank (TTNK) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065909
+      "id": 81066747
     },
     {
       "name": "Tesla Tank (TTNK) Reinforcement I",
@@ -11455,11 +13205,25 @@
       "id": 81065749
     },
     {
+      "name": "Thief (THIEF) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066748
+    },
+    {
+      "name": "Thief (THIEF) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066749
+    },
+    {
       "name": "Thief (THIEF) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065910
+      "id": 81066750
     },
     {
       "name": "Thief (THIEF) Reinforcement I",
@@ -11525,11 +13289,18 @@
       "id": 81065269
     },
     {
-      "name": "Tiberium Harvester (TDHARV) Regeneration I",
+      "name": "Tiberium Harvester (TDHARV) Rapid Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81066243
+      "id": 81066441
+    },
+    {
+      "name": "Tiberium Harvester (TDHARV) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066442
     },
     {
       "name": "Tiberium Harvester (TDHARV) Reinforcement I",
@@ -11588,11 +13359,25 @@
       "id": 81065757
     },
     {
+      "name": "Torpedo Boat (TORPBOAT) (TORPBOAT) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066751
+    },
+    {
+      "name": "Torpedo Boat (TORPBOAT) (TORPBOAT) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066752
+    },
+    {
       "name": "Torpedo Boat (TORPBOAT) (TORPBOAT) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065911
+      "id": 81066753
     },
     {
       "name": "Torpedo Boat (TORPBOAT) (TORPBOAT) Reinforcement I",
@@ -11665,11 +13450,25 @@
       "id": 81065768
     },
     {
+      "name": "Torpedo Boat (TORPCAT) (TORPCAT) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066754
+    },
+    {
+      "name": "Torpedo Boat (TORPCAT) (TORPCAT) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066755
+    },
+    {
       "name": "Torpedo Boat (TORPCAT) (TORPCAT) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065912
+      "id": 81066756
     },
     {
       "name": "Torpedo Boat (TORPCAT) (TORPCAT) Reinforcement I",
@@ -12694,11 +14493,25 @@
       "id": 81065370
     },
     {
+      "name": "V2 Launcher (V2RL) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066757
+    },
+    {
+      "name": "V2 Launcher (V2RL) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066758
+    },
+    {
       "name": "V2 Launcher (V2RL) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065913
+      "id": 81066759
     },
     {
       "name": "V2 Launcher (V2RL) Reinforcement I",
@@ -12785,11 +14598,18 @@
       "id": 81065375
     },
     {
-      "name": "Volkov (VOLKOV) Regeneration I",
+      "name": "Volkov (VOLKOV) Rapid Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81066249
+      "id": 81066443
+    },
+    {
+      "name": "Volkov (VOLKOV) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066444
     },
     {
       "name": "Volkov (VOLKOV) Reinforcement I",
@@ -12883,11 +14703,25 @@
       "id": 81065396
     },
     {
+      "name": "X-O Power Suit (XO) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066760
+    },
+    {
+      "name": "X-O Power Suit (XO) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066761
+    },
+    {
       "name": "X-O Power Suit (XO) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065914
+      "id": 81066762
     },
     {
       "name": "X-O Power Suit (XO) Reinforcement I",
@@ -12981,11 +14815,25 @@
       "id": 81065403
     },
     {
+      "name": "Yak (YAK) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066763
+    },
+    {
+      "name": "Yak (YAK) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066764
+    },
+    {
       "name": "Yak (YAK) Regeneration I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
-      "id": 81065915
+      "id": 81066765
     },
     {
       "name": "Yak (YAK) Reinforcement I",
@@ -14327,7 +16175,7 @@
       ]
     }
   ],
-  "catalogue_checksum": "b86abc57a09a0ac353abf76d3268284204b208db1636b8f02b0ce81c9f2300b2",
+  "catalogue_checksum": "7d5f7e68830c275df701bf0592667e2625fb6296209f9089442396035834c7ce",
   "locations": [
     {
       "name": "Tutorial Mission 1 - Mission Complete - Reward 1",

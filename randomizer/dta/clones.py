@@ -10,7 +10,6 @@ from randomizer.config.tuning import (
     capped_sight_range,
     mission_assistance_stack_count,
     stacked_cost,
-    stacked_self_heal_amount,
     stacked_self_heal_rate,
     stacked_weapon_damage,
     stacked_weapon_rof,
@@ -1053,16 +1052,29 @@ def _unit_overrides(values, counts, target):
     ):
         overrides['Sensors'] = 'yes'
     if counts['self_healing']:
-        overrides['SelfHealing'] = 'yes'
-        overrides['SelfHealingCap'] = '100%'
-        overrides['SelfHealingRate'] = _number(stacked_self_heal_rate(
-            counts['self_healing']
-        ))
-        overrides['SelfHealingStep'] = str(stacked_self_heal_amount(
-            overrides.get(
-                'Strength', values.get('Strength', target.get('strength', 1))
+        veteran_key = next(
+            (
+                key for key in values
+                if str(key).casefold() == 'veteranabilities'
             ),
-            counts['self_healing'],
+            'VeteranAbilities',
+        )
+        abilities = list(comma_items(values.get(veteran_key)))
+        if 'self_heal' not in {
+            str(ability).casefold() for ability in abilities
+        }:
+            abilities.append('SELF_HEAL')
+            overrides[veteran_key] = ','.join(abilities)
+        if counts['self_healing'] >= int(
+            target.get('self_healing_unlock_stacks', 2)
+        ):
+            overrides['SelfHealing'] = 'yes'
+    if counts['self_healing_cap']:
+        overrides['SelfHealingCap'] = '100%'
+    if counts['self_healing_rate']:
+        overrides['SelfHealingRate'] = _number(stacked_self_heal_rate(
+            counts['self_healing_rate'],
+            values.get('SelfHealingRate') or target.get('self_healing_rate'),
         ))
     if counts['amphibious']:
         overrides.update(amphibious_drive_overrides(values, target))
@@ -1580,7 +1592,7 @@ def unit_specific_buff_rules(
                 'production', 'cost', 'speed', 'armor', 'health', 'damage',
                 'reload', 'range', 'sight', 'ammo', 'passenger_capacity',
                 'build_limit', 'cloak', 'sensors', 'self_healing',
-                'area', 'amphibious',
+                'self_healing_cap', 'self_healing_rate', 'area', 'amphibious',
             }
         ):
             continue

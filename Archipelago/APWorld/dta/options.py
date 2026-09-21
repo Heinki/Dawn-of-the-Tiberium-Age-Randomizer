@@ -338,12 +338,14 @@ class EnabledBuffTypes(OptionSet):
     valid_keys = frozenset({
         "production", "cost", "speed", "armor", "health", "damage", "reload",
         "range", "sight", "ammo", "passenger_capacity", "open_topped",
-        "build_limit", "cloak", "sensors", "self_healing", "area", "veteran",
+        "build_limit", "cloak", "sensors", "self_healing",
+        "self_healing_cap", "self_healing_rate", "area", "veteran",
     })
     default = frozenset({
         "production", "cost", "speed", "armor", "health", "damage", "reload",
         "range", "sight", "ammo", "passenger_capacity", "build_limit", "cloak",
-        "sensors", "self_healing", "area",
+        "sensors", "self_healing", "self_healing_cap", "self_healing_rate",
+        "area",
     })
 
 
@@ -379,7 +381,8 @@ class UnitBuffWeights(OptionCounter):
     display_name = "Unit Buff Weights"
     valid_keys = frozenset({
         "speed", "health", "damage", "range", "reload", "armor", "cost",
-        "production", "self_healing", "area", "sight", "ammo",
+        "production", "self_healing", "self_healing_cap",
+        "self_healing_rate", "area", "sight", "ammo",
         "passenger_capacity", "open_topped", "cloak", "sensors", "veteran",
         "build_limit", "building_limit", "other",
     })
