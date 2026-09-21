@@ -77,7 +77,13 @@ clones in `[General] BaseUnit`. The engine uses those lists for player base
 checks as well as AI behavior. Building prerequisites must accept both native
 and cloned identities. During randomized access, always provide basic power
 and refining; earned unit categories also provide buildable replacement
-factories even when the mission starts with one.
+factories even when the mission starts with one. Naval factories are the
+exception: grant one only when its effective authored TechLevel, ownership,
+and Factory type make it naturally buildable in that mission.
+
+Toxic Diversion is forced onto Covert Revolt's enhanced runtime contract:
+`Firestorm=True`, enhanced map-code inheritance, and clone sources merged from
+`Rules.ini`, `Enhance.ini`, then map-local overrides in that order.
 
 Shop Mode persists its selected offer before launch. Victory atomically awards
 Ore/Gems and creates the next offer; mission process exit without victory ends

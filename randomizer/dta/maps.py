@@ -3,7 +3,11 @@
 from pathlib import Path
 
 from randomizer.core.paths import GAME_ROOT, SPAWN_MAP_INI
-from randomizer.dta.rules import effective_section, ini_sections
+from randomizer.dta.rules import (
+    effective_section,
+    ini_sections,
+    installed_effective_sections,
+)
 from randomizer.maps.hooks import unique_section_key
 from randomizer.maps.ini import (
     IniLines,
@@ -103,14 +107,18 @@ def mission_normal_modifiers(mission):
     return mission_difficulty_modifiers(mission, 'Normal')
 
 
-def preserve_collateral_damage_coefficients(lines):
+def preserve_collateral_damage_coefficients(lines, installed=None):
     """Repeat installed death-damage scaling in map-local Techno sections.
 
     The engine resets CollateralDamageCoefficient to 1.0 whenever a TechnoType
     is mentioned by a map, even if the map only overrides an unrelated field.
     """
     map_sections = _ini_sections('\n'.join(lines))
-    installed = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
+    installed = (
+        installed
+        if installed is not None
+        else ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
+    )
     safeguards = {}
     for section, local_values in map_sections.items():
         installed_values = effective_section(installed, section)
@@ -204,6 +212,20 @@ def prepare_spawn_map(
     source = mission_source_path(mission.get('scenario'))
     lines = mission_source_lines(mission.get('scenario'))
 
+    # Toxic Diversion ships as a Classic-mode campaign. Randomizer runs it
+    # with the same enhanced ruleset preferred by Covert Revolt. The generated
+    # map lives in the game root, so its inherited map-code path must also be
+    # root-relative instead of retaining the source map's ../../ prefix.
+    if mission.get('force_enhanced_mode'):
+        merge_ini_section_values(lines, {
+            'INISystem': {
+                'BasedOn': 'INI/Map Code/AI Discounts Enhanced.ini',
+            },
+            'Basic': {
+                'RequiredAddOn': '1',
+            },
+        })
+
     difficulty_value = int(getattr(difficulty, 'engine_value', difficulty))
     difficulty_name = DIFFICULTY_FILE_BY_VALUE.get(difficulty_value, 'Difficulty Medium.ini')
     difficulty_path = GAME_ROOT / 'INI' / 'Map Code' / difficulty_name
@@ -234,7 +256,12 @@ def prepare_spawn_map(
     ))
     if extra_rules:
         merge_ini_section_values(lines, extra_rules)
-    collateral_safeguards = preserve_collateral_damage_coefficients(lines)
+    installed_runtime = installed_effective_sections(
+        enhanced=bool(mission.get('required_addon'))
+    )
+    collateral_safeguards = preserve_collateral_damage_coefficients(
+        lines, installed_runtime
+    )
     power_actions = [list(action) for action in power_actions or ()]
     power_grant_triggers = []
     if power_actions and power_house:

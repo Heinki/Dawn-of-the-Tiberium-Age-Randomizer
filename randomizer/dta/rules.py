@@ -153,10 +153,27 @@ def effective_section(sections, section_id, _seen=None):
     return merged
 
 
-@lru_cache(maxsize=1)
-def installed_effective_sections():
-    """Return flattened installed Rules.ini sections for map-local cloning."""
+def _merge_sections(base, overlay):
+    merged = {name: dict(values) for name, values in base.items()}
+    lookup = {name.casefold(): name for name in merged}
+    for name, values in overlay.items():
+        actual_name = lookup.get(name.casefold(), name)
+        merged.setdefault(actual_name, {}).update(values)
+        lookup[name.casefold()] = actual_name
+    return merged
+
+
+@lru_cache(maxsize=2)
+def installed_effective_sections(enhanced=False):
+    """Return flattened installed runtime rules for map-local cloning."""
     sections = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
+    if enhanced:
+        enhance_path = GAME_ROOT / 'INI' / 'Enhance.ini'
+        if not enhance_path.is_file():
+            raise FileNotFoundError(
+                f'DTA enhanced rules are missing: {enhance_path}'
+            )
+        sections = _merge_sections(sections, ini_sections(enhance_path))
     return {
         name: effective_section(sections, name)
         for name in sections

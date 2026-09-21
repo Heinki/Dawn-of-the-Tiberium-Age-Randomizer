@@ -271,12 +271,14 @@ def production_infrastructure_rewards(
     *,
     enabled,
     production_context,
+    mission=None,
 ):
     """Provide base essentials and factories needed by earned unit access.
 
     Power and refining never require rewards. Factories become buildable when
-    their unit category is earned, including replacements for starting factories.
-    A construction yard remains the physical gate for building production.
+    their unit category is earned, including replacements for starting
+    factories. Naval yards remain limited to missions that naturally enable
+    them. A construction yard remains the physical gate for production.
     """
     if not enabled:
         return []
@@ -317,7 +319,16 @@ def production_infrastructure_rewards(
         building_id = str(primary_buildings.get(production_type) or '').upper()
         if building_id not in configured_ids:
             building_id = min(configured_ids, default='')
-        if building_id:
+        if (
+            building_id
+            and (
+                production_type != 'naval'
+                or mission is None
+                or _naval_factory_naturally_available(
+                    mission, building_id, production_context
+                )
+            )
+        ):
             selected_buildings.append((production_type, building_id))
     return [
         {
@@ -338,6 +349,43 @@ def production_infrastructure_rewards(
         }
         for production_type, building_id in selected_buildings
     ]
+
+
+def _naval_factory_naturally_available(
+    mission,
+    building_id,
+    production_context,
+):
+    """Return whether the authored mission enables this player's naval yard."""
+    source = mission_source_path(mission.get('scenario'))
+    installed = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
+    if mission.get('required_addon'):
+        enhance_path = GAME_ROOT / 'INI' / 'Enhance.ini'
+        if enhance_path.is_file():
+            installed = _merged_sections(installed, ini_sections(enhance_path))
+    authored = ini_sections(source)
+    combined = _merged_sections(installed, authored)
+    values = effective_section(combined, building_id)
+    if str(values.get('Factory') or '').casefold() != 'unittype':
+        return False
+
+    player_house = str(production_context.get('player_house') or '')
+    production_house = str(
+        production_context.get('original_production_house')
+        or production_context.get('production_house')
+        or ''
+    )
+    try:
+        player_tech_level = int(float(
+            authored.get(player_house, {}).get('TechLevel', -1)
+        ))
+        factory_tech_level = int(float(values.get('TechLevel', -1)))
+    except (TypeError, ValueError):
+        return False
+    return (
+        _can_player_produce(values, production_house)
+        and factory_tech_level <= player_tech_level
+    )
 
 
 def _active_house_names(authored):
@@ -1021,6 +1069,45 @@ def _unit_overrides(values, counts, target):
     return overrides
 
 
+def _target_with_effective_rules(target, values):
+    """Overlay clone-relevant catalogue metadata with active runtime rules."""
+    effective = dict(target or {})
+    for output_key, rule_key in (
+        ('speed', 'Speed'),
+        ('strength', 'Strength'),
+        ('sight', 'Sight'),
+        ('ammo', 'Ammo'),
+        ('passengers', 'Passengers'),
+    ):
+        try:
+            effective[output_key] = int(float(values.get(rule_key)))
+        except (TypeError, ValueError):
+            pass
+    try:
+        effective['build_limit'] = max(
+            int(effective.get('build_limit', 0)),
+            int(float(values.get('BuildLimit', 0))),
+        )
+    except (TypeError, ValueError):
+        pass
+    for output_key, rule_key in (
+        ('armor', 'Armor'),
+        ('movement_zone', 'MovementZone'),
+        ('speed_type', 'SpeedType'),
+        ('primary_weapon', 'Primary'),
+        ('secondary_weapon', 'Secondary'),
+        ('deploys_into', 'DeploysInto'),
+        ('undeploys_into', 'UndeploysInto'),
+    ):
+        if rule_key in values:
+            effective[output_key] = values[rule_key]
+    if 'Naval' in values:
+        effective['naval'] = str(values['Naval']).casefold() in {
+            'yes', 'true', '1',
+        }
+    return effective
+
+
 def _weapon_overrides(values, counts):
     overrides = {}
     if values.get('Spawner', '').casefold() in {'yes', 'true', '1'}:
@@ -1388,11 +1475,9 @@ def unit_specific_buff_rules(
         combined = _merged_sections(combined, rule_overlays)
     enhanced_combined = None
     if mission.get('required_addon'):
-        # Enhanced DTA replaces both Mammoth art identities and adjusts their
-        # weapons.  The enhanced art supplies Vinifera's FiringSyncFrame
-        # values, which let the primary cannons fire during the shared missile
-        # rearm cycle.  Build Mammoth clones from the same effective runtime
-        # stack instead of flattening their Classic definitions into the map.
+        # Map-local clones do not inherit same-ID overrides from Enhance.ini.
+        # Flatten every cloned unit/building from the actual enhanced runtime
+        # stack so its changed stats, art, weapons, and prerequisites survive.
         enhanced = ini_sections(GAME_ROOT / 'INI' / 'Enhance.ini')
         enhanced_combined = _merged_sections(installed, enhanced)
         enhanced_combined = _merged_sections(enhanced_combined, authored)
@@ -1586,16 +1671,12 @@ def unit_specific_buff_rules(
         ):
             report['skipped'].append({'unit': unit_id, 'reason': 'unsupported_type'})
             continue
-        source_sections = (
-            enhanced_combined
-            if enhanced_combined is not None
-            and unit_id in MAMMOTH_DUAL_WEAPON_IDS
-            else combined
-        )
+        source_sections = enhanced_combined or combined
         values = effective_section(source_sections, unit_id)
         if not values:
             report['skipped'].append({'unit': unit_id, 'reason': 'missing_rules'})
             continue
+        target = _target_with_effective_rules(target, values)
 
         # SE5 disarms native Flame Towers used as props. Restore weapons only
         # for earned production, leaving the mission's placed props untouched.
@@ -2021,6 +2102,9 @@ def unit_specific_buff_rules(
                     linked_target = target
                 if not linked_values or not linked_target:
                     continue
+                linked_target = _target_with_effective_rules(
+                    linked_target, linked_values
+                )
                 linked_output = _clone_id(linked_source, 'PLAYER', occupied)
                 linked_rules = dict(linked_values)
                 linked_rules.pop('BaseSection', None)

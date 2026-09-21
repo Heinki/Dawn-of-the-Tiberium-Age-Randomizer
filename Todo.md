@@ -5,9 +5,6 @@ Increases self healing cap from 50% to 100%
 Increases regeneration tick rate A buff that unlocks Self Healing on Veteran (can be done through the SELF_HEALING veteran ability, same as how they self-heal when elite), then on Rookie veterancy levels (with SelfHealing=yes)
 A buff that increases Self Healing cap by a step, from 50% to 100% (by tweaking SelfHealingCap)
 A buff that increases Self Healing rate by a step (by tweaking SelfHealingRate)
-- Check if any of the Naval Yard are something the player can build naturally on the map or not. If they cannot, then don't give them a Naval Yard -> see if that even works
-- So what that means, probably, is that your randomizer only writes the Rules.ini into the map, but not Enhanced.ini - There seems o be more information regarding the maps TD and normal DTA maps are different and change incosts and how units work e.g.
-
 
 Archipelago Issues and Shopmode UI for ALL Randomizers:
 - Issue with Archipelago: every mission where alstar had the final reward is now completed
@@ -16,3 +13,6 @@ it wasnt even found i got them just now
 - Remove the Right side with details/unlocks/neutral in Shopmode, people are confused what it is doing and all the essential information is in the shopmode tab
 - In Shop Mode, keep the currencies always visible at the top. I find myself going up and down constantly to check how much Ore I have, compared to how much I need for buying buffs -> Ensure currency is always on top in the Tab!
 - Multiworld Traps not working for enemy buffs.
+- Modifier proposal: Blockbuster special - Shop purchases apply only to the current stage. Gain +5 ore per victory.
+- Faction Roulette needs to be adapted in MO and Reloaded
+- Shop ending and that the run is over need to be adapted to MO and Reloaded (Only in DTA right now)

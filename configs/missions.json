@@ -86,6 +86,15 @@
         "M_A_BRIDGE_TOO_FEW",
         "M_CHAINBREAKER"
       ],
+      "force_enhanced_mode_mission_codes": [
+        "M_TTD_LOST_POSITION",
+        "M_TTD_THE_BREAKTHROUGH",
+        "M_TTD_THE_FRONTAL_DUEL",
+        "M_TTD_THE_TOXIC_TIME_TRIAL",
+        "M_TTD_THE_RECTIFICATION",
+        "M_TTD_THE_RAIN_OF_DEATH",
+        "M_TTD_THE_CONVERSION"
+      ],
       "late_foehn_mission_codes": []
     },
     "mission_reward_multipliers": {

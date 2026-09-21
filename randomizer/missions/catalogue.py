@@ -26,6 +26,9 @@ FALLBACK_STAGE_SCORE = int(_MISSION_CATALOGUE['fallback_stage_score'])
 FINALE_STAGE_SCORE = int(_MISSION_CATALOGUE['finale_stage_score'])
 FINALE_MISSION_CODES = frozenset(_MISSION_CATALOGUE['finale_mission_codes'])
 OPERATION_MISSION_CODES = frozenset(_MISSION_CATALOGUE['operation_mission_codes'])
+FORCED_ENHANCED_MODE_MISSION_CODES = frozenset(
+    _MISSION_CATALOGUE['force_enhanced_mode_mission_codes']
+)
 EXTRA_MISSIONS = tuple(_MISSION_CATALOGUE.get('extra_missions', ()))
 
 MISSION_REWARD_CLASS_MULTIPLIERS = {
@@ -194,6 +197,7 @@ def parse_missions(path, fallback_objective_count=FALLBACK_OBJECTIVE_COUNT):
         # Victory is the only reliably observable completion event, so do not
         # generate objective checks that the launcher cannot report.
         objectives = []
+        force_enhanced_mode = code in FORCED_ENHANCED_MODE_MISSION_CODES
         missions.append({
             'index': len(missions) + 1,
             'code': code,
@@ -210,7 +214,12 @@ def parse_missions(path, fallback_objective_count=FALLBACK_OBJECTIVE_COUNT):
             'operation': code in OPERATION_MISSION_CODES,
             'reward_class': mission_reward_class(code),
             'reward_multiplier': mission_reward_multiplier(code),
-            'required_addon': section.get('RequiredAddon', '0').strip().lower() in {'1', 'yes', 'true'},
+            'required_addon': (
+                force_enhanced_mode
+                or section.get('RequiredAddon', '0').strip().lower()
+                in {'1', 'yes', 'true'}
+            ),
+            'force_enhanced_mode': force_enhanced_mode,
             'player_always_normal': section.get('PlayerAlwaysOnNormalDifficulty', '').strip().lower() in {'1', 'yes', 'true'},
             'has_extended_difficulty': section.get('HasExtendedDifficulty', '').strip().lower() in {'1', 'yes', 'true'},
             'difficulty_labels': [
@@ -252,6 +261,7 @@ def parse_missions(path, fallback_objective_count=FALLBACK_OBJECTIVE_COUNT):
                 reward_class, DEFAULT_MISSION_REWARD_MULTIPLIER
             ),
             'required_addon': bool(extra.get('required_addon', False)),
+            'force_enhanced_mode': False,
             'player_always_normal': bool(extra.get('player_always_normal', False)),
             'has_extended_difficulty': False,
             'difficulty_labels': [],

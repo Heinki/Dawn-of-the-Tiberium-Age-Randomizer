@@ -225,6 +225,15 @@ def _validate_missions(sections, path):
     ):
         _invalid('Invalid operation mission codes', path)
 
+    enhanced_codes = sections['catalogue'].get(
+        'force_enhanced_mode_mission_codes'
+    )
+    if not isinstance(enhanced_codes, list) or not all(
+        _is_nonempty_string(code) and code in sections['build_classifications']
+        for code in enhanced_codes
+    ):
+        _invalid('Invalid forced enhanced-mode mission codes', path)
+
     for code, house_type in sections[
         'player_production_isolation_house_types'
     ].items():

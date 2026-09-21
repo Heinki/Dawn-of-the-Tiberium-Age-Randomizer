@@ -1267,6 +1267,7 @@ throw "Map $name was not found in expandmo*.mix"
                 active_rewards,
                 enabled=self.randomize_unit_access_enabled(),
                 production_context=isolation_report,
+                mission=mission,
             )
             assistance_stacks = (
                 self.mission_failure_stack(mission_code)
@@ -1398,7 +1399,9 @@ throw "Map $name was not found in expandmo*.mix"
                     source_lines,
                     enemy_report['hostile_houses'],
                     launch_enemy_rewards,
-                    installed_effective_sections(),
+                    installed_effective_sections(
+                        enhanced=bool(mission.get('required_addon'))
+                    ),
                     all_section_value_maps(source_lines),
                 )
             )

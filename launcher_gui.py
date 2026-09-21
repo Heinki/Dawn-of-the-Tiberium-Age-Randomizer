@@ -102,6 +102,7 @@ def run_self_check():
         comma_items,
         effective_section,
         ini_sections,
+        installed_effective_sections,
         techno_catalogue,
         unit_collision_report,
     )
@@ -740,7 +741,64 @@ def run_self_check():
             }
             for family in ('GDI', 'Nod', 'Allies', 'Soviet')
         }
+        natural_naval_mission = next(
+            mission for mission in missions if mission['code'] == 'M_CR5'
+        )
+        _natural_naval_isolation, natural_naval_context = (
+            player_production_isolation_rules(natural_naval_mission)
+        )
+        dry_naval_mission = next(
+            mission for mission in missions
+            if mission['code'] == 'M_TTD_THE_FRONTAL_DUEL'
+        )
+        _dry_naval_isolation, dry_naval_context = (
+            player_production_isolation_rules(dry_naval_mission)
+        )
+        toxic_generated = APP_DIR / '.self_check_toxic_enhanced.ini'
+        try:
+            prepare_spawn_map(
+                dry_naval_mission,
+                resolve_mission_difficulty(dry_naval_mission, 'Normal'),
+                output_path=toxic_generated,
+            )
+            toxic_generated_text = toxic_generated.read_text(
+                encoding='cp1252'
+            )
+        finally:
+            toxic_generated.unlink(missing_ok=True)
+        toxic_spawn_text = spawn_ini_text(
+            'spawnmap.ini',
+            1,
+            3,
+            {
+                'Firestorm': (
+                    'True'
+                    if dry_naval_mission.get('required_addon')
+                    else 'False'
+                ),
+            },
+        )
+        jeep_access_reward = next(
+            reward for reward in REWARD_POOL
+            if reward.get('dta_production_access')
+            and reward.get('unit') == 'JEEP'
+        )
+        toxic_jeep_rules, toxic_jeep_report = unit_specific_buff_rules(
+            dry_naval_mission,
+            [jeep_access_reward],
+            access_randomized=True,
+            production_context=dry_naval_context,
+        )
+        toxic_jeep_output = next(
+            (
+                item.get('output_type')
+                for item in toxic_jeep_report['applied']
+                if item.get('unit') == 'JEEP'
+            ),
+            '',
+        )
         naval_factory_access = {}
+        dry_naval_factory_access = {}
         for naval_unit_id in (
             'ESCORTG', 'ESCORTN', 'ESCORTA', 'ESCORTS', 'MSUB'
         ):
@@ -754,10 +812,17 @@ def run_self_check():
                 for reward in production_infrastructure_rewards(
                     [naval_access_reward],
                     enabled=True,
-                    production_context={
-                        'original_production_house': 'Soviet',
-                        'production_house': 'Soviet',
-                    },
+                    production_context=natural_naval_context,
+                    mission=natural_naval_mission,
+                )
+            }
+            dry_naval_factory_access[naval_unit_id] = {
+                reward['unit']
+                for reward in production_infrastructure_rewards(
+                    [naval_access_reward],
+                    enabled=True,
+                    production_context=dry_naval_context,
+                    mission=dry_naval_mission,
                 )
             }
         false_eagle = next(
@@ -1005,6 +1070,9 @@ def run_self_check():
         }
         cameo_order_output_ids = set(cameo_order_outputs.values())
         installed_sections = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
+        clone_runtime_sections = installed_effective_sections(
+            enhanced=bool(clone_mission.get('required_addon'))
+        )
         harvester_type_ids = {
             item.upper()
             for item in comma_items(
@@ -1020,7 +1088,7 @@ def run_self_check():
                 or unit_id in harvester_type_ids
             ):
                 continue
-            source_values = effective_section(installed_sections, unit_id)
+            source_values = effective_section(clone_runtime_sections, unit_id)
             links = {
                 key: str(source_values.get(key) or '').strip().upper()
                 for key in TYPE_TRANSITION_KEYS
@@ -1061,7 +1129,7 @@ def run_self_check():
             root_clone = transition_rules.get(root_output, {})
             linked_clone = transition_rules.get(linked_output, {})
             linked_native = effective_section(
-                installed_sections, linked_source
+                clone_runtime_sections, linked_source
             )
             native_family = {unit_id, *links.values()}
             leaked_transitions = {
@@ -1100,7 +1168,7 @@ def run_self_check():
                     linked_native.get(weapon_key) or ''
                 ).strip()
                 native_weapon = effective_section(
-                    installed_sections, native_weapon_id
+                    clone_runtime_sections, native_weapon_id
                 )
                 try:
                     native_damage = int(float(native_weapon.get('Damage', 0)))
@@ -1137,9 +1205,12 @@ def run_self_check():
                 speed_kept,
                 damage_kept,
             ))
-        installed_e2 = effective_section(installed_sections, 'E2')
+        tutorial_runtime_sections = installed_effective_sections(
+            enhanced=bool(tutorial_two.get('required_addon'))
+        )
+        installed_e2 = effective_section(tutorial_runtime_sections, 'E2')
         installed_e2_weapon = effective_section(
-            installed_sections, installed_e2.get('Primary')
+            tutorial_runtime_sections, installed_e2.get('Primary')
         )
         _orphan_rules, orphan_buff_report = unit_specific_buff_rules(
             tutorial_two, [e2_damage_reward], access_randomized=True
@@ -1378,9 +1449,9 @@ def run_self_check():
         guillotine_isolation_rules, guillotine_isolation_report = (
             player_production_isolation_rules(guillotine_mission)
         )
-        installed_e1 = effective_section(installed_sections, 'E1')
+        installed_e1 = effective_section(tutorial_runtime_sections, 'E1')
         installed_e1_weapon = effective_section(
-            installed_sections, installed_e1.get('Primary')
+            tutorial_runtime_sections, installed_e1.get('Primary')
         )
         ion_reward = next(
             reward for reward in REWARD_POOL
@@ -2708,10 +2779,14 @@ def run_self_check():
             'dta_map_local_exploders_keep_death_damage_scale': (
                 collateral_generated_sections.get('E2', {}).get(
                     'CollateralDamageCoefficient'
-                ) == '0.0165'
+                ) == installed_effective_sections(True).get('E2', {}).get(
+                    'CollateralDamageCoefficient'
+                )
                 and collateral_generated_sections.get('E4', {}).get(
                     'CollateralDamageCoefficient'
-                ) == '0.007'
+                ) == installed_effective_sections(True).get('E4', {}).get(
+                    'CollateralDamageCoefficient'
+                )
                 and set(collateral_hook['collateral_damage_safeguards'])
                 >= {'E2', 'E4'}
             ),
@@ -3605,11 +3680,32 @@ def run_self_check():
             ),
             'dta_repair_ships_unlock_naval_factory': (
                 naval_factory_access == {
-                    unit_id: {'RAPOWR', 'RAPROC', 'RASPEN'}
+                    unit_id: {'RAPOWR', 'RAPROC', 'ASYRD'}
                     for unit_id in (
                         'ESCORTG', 'ESCORTN', 'ESCORTA', 'ESCORTS', 'MSUB'
                     )
                 }
+                and dry_naval_factory_access == {
+                    unit_id: {'NUKE', 'TDPROC'}
+                    for unit_id in (
+                        'ESCORTG', 'ESCORTN', 'ESCORTA', 'ESCORTS', 'MSUB'
+                    )
+                }
+            ),
+            'toxic_diversion_uses_complete_enhanced_rules': (
+                dry_naval_mission.get('force_enhanced_mode') is True
+                and dry_naval_mission.get('required_addon') is True
+                and 'Firestorm=True' in toxic_spawn_text
+                and (
+                    'BasedOn=INI/Map Code/AI Discounts Enhanced.ini'
+                    in toxic_generated_text
+                )
+                and 'RequiredAddOn=1' in toxic_generated_text
+                and toxic_jeep_output
+                and toxic_jeep_rules.get(toxic_jeep_output, {}).get('Speed')
+                == '11'
+                and toxic_jeep_rules.get(toxic_jeep_output, {}).get('Armor')
+                == 'light'
             ),
             'dta_player_transport_reinforcements_use_buffed_clones': all(
                 reinforcement_routes.values()
@@ -3980,6 +4076,7 @@ def run_self_check():
             'access_clone_receives_unit_specific_buffs',
             'dta_access_unlocks_required_player_factories',
             'dta_repair_ships_unlock_naval_factory',
+            'toxic_diversion_uses_complete_enhanced_rules',
             'dta_player_transport_reinforcements_use_buffed_clones',
             'false_eagle_captured_gdi_base_exposes_unlocks',
             'reported_captured_factories_expose_unlocks',
