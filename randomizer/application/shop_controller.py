@@ -25,6 +25,10 @@ from ._dependencies import (
 
 from randomizer.rewards.catalogue import (
     REWARD_POOL,
+    SHOP_ALWAYS_AVAILABLE_REPRESENTATIVE_BY_ID,
+    SHOP_ALWAYS_AVAILABLE_UNIT_GROUPS,
+    SHOP_ALWAYS_AVAILABLE_UNIT_IDS,
+    SHOP_ALWAYS_AVAILABLE_UNIT_LABELS,
     canonical_reward,
     unit_display_label,
     unit_role_equivalents,
@@ -528,7 +532,13 @@ class ShopController(ShopPolishController):
             run = self._shop_launch_run
             effects = modifier_effects(run.modifiers)
             rewards = [dict(item) for item in active_shop_rewards(run)]
-            rewards = expand_equivalent_role_buffs(rewards, enabled=True)
+            rewards = expand_equivalent_role_buffs(
+                rewards,
+                enabled=True,
+                additional_equivalent_groups=(
+                    SHOP_ALWAYS_AVAILABLE_UNIT_GROUPS
+                ),
+            )
             starting_credit_level = self.shop_profile.upgrade_level(
                 'mission_starting_credits'
             )
@@ -1973,6 +1983,7 @@ class ShopController(ShopPolishController):
             if entry is not None and self._shop_entry_available(entry)
         )
         permanent_buff_targets = set(starter_tech_ids)
+        permanent_buff_targets.update(SHOP_ALWAYS_AVAILABLE_UNIT_IDS)
         permanent_buff_targets.update(
             entry.target_id
             for reward_id in (
@@ -2117,6 +2128,11 @@ class ShopController(ShopPolishController):
             )
             if not target_id:
                 return
+            target_id = SHOP_ALWAYS_AVAILABLE_REPRESENTATIVE_BY_ID.get(
+                target_id, target_id
+            )
+            if target_id in SHOP_ALWAYS_AVAILABLE_UNIT_LABELS:
+                item = target_id
             key = (is_power, target_id)
             record = records.setdefault(key, {
                 'sources': [],
@@ -2125,6 +2141,9 @@ class ShopController(ShopPolishController):
                 'is_power': is_power,
                 'buffs': [],
                 'archipelago_item': False,
+                'display_label': SHOP_ALWAYS_AVAILABLE_UNIT_LABELS.get(
+                    target_id, ''
+                ),
             })
             if source not in record['sources']:
                 record['sources'].append(source)
@@ -2134,6 +2153,8 @@ class ShopController(ShopPolishController):
             add_access('Tier 1 Starter', unit_id, raw_unit=True)
         for unit_id in active_shop_starter_defense_ids(run):
             add_access('Tier 1 Defense', unit_id, raw_unit=True)
+        for group in SHOP_ALWAYS_AVAILABLE_UNIT_GROUPS:
+            add_access('Always Available', group[0], raw_unit=True)
         ap_units = set(ap_unit_entitlement_ids(run.ap_entitlements_snapshot))
         local_units = set(self.shop_profile.permanent_unit_unlocks)
         for reward_id in run.selected_permanent_units:
@@ -2184,22 +2205,31 @@ class ShopController(ShopPolishController):
             if entry is None:
                 continue
             is_power = entry.reward_type is ShopRewardType.POWER_BUFF
-            key = (is_power, entry.target_id)
+            target_id = SHOP_ALWAYS_AVAILABLE_REPRESENTATIVE_BY_ID.get(
+                entry.target_id, entry.target_id
+            )
+            key = (is_power, target_id)
             record = records.get(key)
             if record is None:
                 record = records.setdefault(key, {
                     'sources': ['Buff entitlement'],
-                    'item': entry.target_id,
-                    'target_id': entry.target_id,
+                    'item': target_id,
+                    'target_id': target_id,
                     'is_power': is_power,
                     'buffs': [],
                     'archipelago_item': False,
+                    'display_label': SHOP_ALWAYS_AVAILABLE_UNIT_LABELS.get(
+                        target_id, ''
+                    ),
                 })
             record['buffs'].append((source, reward_id, int(stacks)))
             if source == 'AP Received':
                 record['archipelago_item'] = True
 
-        display_rewards = active_shop_rewards(run)
+        display_rewards = expand_equivalent_role_buffs(
+            active_shop_rewards(run),
+            additional_equivalent_groups=SHOP_ALWAYS_AVAILABLE_UNIT_GROUPS,
+        )
         for record in records.values():
             if record['is_power']:
                 continue
@@ -2229,7 +2259,7 @@ class ShopController(ShopPolishController):
                 item = combined.setdefault(reward_id, {'stacks': 0, 'sources': []})
                 item['stacks'] += stacks
                 item['sources'].append(f'{source} ×{stacks}')
-            counts = unit_buff_counts(active_shop_rewards(run), record['target_id'])
+            counts = unit_buff_counts(display_rewards, record['target_id'])
             for reward_id, item in combined.items():
                 reward = canonical_reward_for_id(reward_id)
                 effects = buff_effect_lines(
@@ -2242,6 +2272,7 @@ class ShopController(ShopPolishController):
                 *record['sources'],
                 str(record['item']),
                 record['target_id'],
+                record.get('display_label', ''),
                 *buff_lines,
             )).casefold()
             if not term or term in haystack:
@@ -2266,7 +2297,7 @@ class ShopController(ShopPolishController):
                     target_id, is_power
                 )
             item = record['item']
-            item_label = (
+            item_label = record.get('display_label') or (
                 str(item)
                 if is_power or item in self._shop_entry_by_reward_id
                 else f'{unit_display_label(target_id)} [{target_id}]'
@@ -2767,6 +2798,11 @@ class ShopController(ShopPolishController):
         self._shop_permanent_buff_target_ids = {
             entry.reward_id: entry.target_id for entry in owned_entries
         }
+        for group in SHOP_ALWAYS_AVAILABLE_UNIT_GROUPS:
+            target_id = group[0]
+            label = SHOP_ALWAYS_AVAILABLE_UNIT_LABELS[target_id]
+            labels.append(label)
+            self._shop_permanent_buff_target_ids[label] = target_id
         selected_label = self.shop_permanent_buff_target_var.get()
         if selected_label not in self._shop_permanent_buff_target_ids:
             selected_label = labels[0] if labels else ''

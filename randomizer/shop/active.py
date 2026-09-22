@@ -11,7 +11,10 @@ from randomizer.missions.tier_one import (
     TIER_ONE_ROLE_MARKERS,
     TIER_ONE_ROLE_UNITS,
 )
-from randomizer.rewards.catalogue import unit_role_equivalents
+from randomizer.rewards.catalogue import (
+    SHOP_ALWAYS_AVAILABLE_UNIT_IDS,
+    unit_role_equivalents,
+)
 from randomizer.rewards.rules import tech_ids_for_rewards
 
 from .catalogue import canonical_reward_for_id, catalogue_entry
@@ -196,6 +199,7 @@ def active_shop_tech_ids(run):
         return ()
     tech_ids = set(active_shop_starter_unit_ids(run))
     tech_ids.update(active_shop_starter_defense_ids(run))
+    tech_ids.update(SHOP_ALWAYS_AVAILABLE_UNIT_IDS)
     rewards = [
         canonical_reward_for_id(reward_id)
         for reward_id in active_shop_reward_ids(run)

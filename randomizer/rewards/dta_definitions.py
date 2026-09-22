@@ -216,6 +216,25 @@ _MOBILE_ALIAS_RECORDS = tuple(
     and record.get('duplicate_of')
 )
 
+SHOP_ALWAYS_AVAILABLE_UNIT_GROUPS = (
+    ('TDHARV', 'RAHARV'),
+    ('GMCV', 'NMCV', 'AMCV', 'SMCV'),
+)
+SHOP_ALWAYS_AVAILABLE_UNIT_IDS = frozenset(
+    unit_id
+    for group in SHOP_ALWAYS_AVAILABLE_UNIT_GROUPS
+    for unit_id in group
+)
+SHOP_ALWAYS_AVAILABLE_REPRESENTATIVE_BY_ID = {
+    unit_id: group[0]
+    for group in SHOP_ALWAYS_AVAILABLE_UNIT_GROUPS
+    for unit_id in group
+}
+SHOP_ALWAYS_AVAILABLE_UNIT_LABELS = {
+    'TDHARV': 'Harvesters (both factions)',
+    'GMCV': 'MCVs (all factions)',
+}
+
 _MOBILE_ACCESS_RECORDS = tuple(
     record for record in _MOBILE_RECORDS
     if record['id'] not in ALWAYS_AVAILABLE_MOBILE_IDS
@@ -370,14 +389,9 @@ for _record in _DEFENSE_RECORDS:
         'elite_abilities': _record['elite_abilities'],
         'self_healing_cap': _record['self_healing_cap'],
         'self_healing_rate': _record['self_healing_rate'],
-        'self_healing_unlock_stacks': (
-            1
-            if any(
-                str(ability).casefold() == 'self_heal'
-                for ability in _record['veteran_abilities']
-            )
-            else 2
-        ),
+        # Buildings cannot rank up. Their healing reward enables native
+        # SelfHealing directly instead of adding a VeteranAbility.
+        'self_healing_unlock_stacks': 1,
         'weapons': dict(_record.get('weapons', {})),
         'armor': _record.get('armor', ''),
         'tech_level': _record.get('tech_level', -1),
@@ -459,7 +473,11 @@ UNIT_UNLOCK_REWARDS = [
             'house restrictions. Authored mission identities remain unchanged.'
         ),
         'rules': {
-            record['id']: {'TechLevel': str(max(1, record['tech_level']))}
+            record['id']: {
+                'TechLevel': str(max(1, record['tech_level'])),
+                'Prerequisite': ','.join(record.get('prerequisites', ())),
+                'Owner': ','.join(record.get('owners', ())),
+            }
         },
         'factions': list(record['playable_owners']),
         'kind': 'unit_access',
@@ -477,7 +495,11 @@ DEFENSE_UNLOCK_REWARDS = [
         'name': f'Unlock {record["label"]} ({record["id"]})',
         'description': 'Unlocks this defensive building for player production.',
         'rules': {
-            record['id']: {'TechLevel': str(max(1, record['tech_level']))}
+            record['id']: {
+                'TechLevel': str(max(1, record['tech_level'])),
+                'Prerequisite': ','.join(record.get('prerequisites', ())),
+                'Owner': ','.join(record.get('owners', ())),
+            }
         },
         'factions': list(record['playable_owners']),
         'kind': 'unit_access',

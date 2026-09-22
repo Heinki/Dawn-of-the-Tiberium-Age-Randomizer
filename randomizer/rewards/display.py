@@ -679,6 +679,8 @@ def buff_effect_lines(
     if buff_type == 'open_topped':
         return [stacked(f'{prefix}Passengers can fire from transport')]
     if buff_type == 'self_healing':
+        if target.get('category') == 'defenses':
+            return [stacked(f'{prefix}Self-healing enabled')]
         unlock_stacks = int(target.get('self_healing_unlock_stacks', 2))
         rank = 'Rookie' if count >= unlock_stacks else 'Veteran'
         return [stacked(f'{prefix}Self-healing enabled from {rank} rank')]

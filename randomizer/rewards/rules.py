@@ -64,14 +64,28 @@ def buffs_with_unlocked_access(
     return filtered
 
 
-def expand_equivalent_role_buffs(rewards, enabled=False, allowed_unit_ids=None):
-    """Apply each active unit buff to allowed cross-faction role peers.
+def expand_equivalent_role_buffs(
+    rewards,
+    enabled=False,
+    allowed_unit_ids=None,
+    additional_equivalent_groups=(),
+):
+    """Apply each active unit buff to configured role peers.
 
     Expanded copies are launch-only canonical rewards. Keeping that marker is
     important: later canonicalization by serialized reward name would otherwise
     turn every peer back into the original unit and lose the access boundary.
+    Additional groups let a progression mode share buffs without changing the
+    global Chaos equivalence policy.
     """
-    if not enabled:
+    additional_by_id = {}
+    for configured_group in additional_equivalent_groups:
+        group = frozenset(
+            str(unit_id).upper() for unit_id in configured_group
+        )
+        for unit_id in group:
+            additional_by_id[unit_id] = group
+    if not enabled and not additional_by_id:
         return list(rewards)
     allowed = (
         None
@@ -83,8 +97,14 @@ def expand_equivalent_role_buffs(rewards, enabled=False, allowed_unit_ids=None):
         expanded.append(reward)
         if reward.get('kind') != 'buff' or reward.get('mission_assistance'):
             continue
-        for unit_id in sorted(unit_role_equivalents(reward.get('unit'))):
-            if unit_id == reward.get('unit'):
+        source_id = str(reward.get('unit') or '').upper()
+        equivalents = (
+            set(unit_role_equivalents(source_id))
+            if enabled else {source_id}
+        )
+        equivalents.update(additional_by_id.get(source_id, ()))
+        for unit_id in sorted(equivalents):
+            if unit_id == source_id:
                 continue
             if allowed is not None and unit_id.upper() not in allowed:
                 continue

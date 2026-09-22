@@ -6,7 +6,14 @@ from tempfile import TemporaryDirectory
 
 from randomizer.core.paths import BATTLE_CLIENT_INI
 from randomizer.missions.catalogue import parse_missions
-from randomizer.rewards.catalogue import canonical_reward
+from randomizer.rewards.catalogue import (
+    BUFF_TARGETS,
+    SHOP_ALWAYS_AVAILABLE_REPRESENTATIVE_BY_ID,
+    SHOP_ALWAYS_AVAILABLE_UNIT_GROUPS,
+    SHOP_ALWAYS_AVAILABLE_UNIT_IDS,
+    buff_effect_lines,
+    canonical_reward,
+)
 from randomizer.rewards.enemy_scaling import ENEMY_BUFF_DEFINITIONS
 from randomizer.rewards.rules import (
     expand_equivalent_role_access,
@@ -337,11 +344,59 @@ def validate_shop_domain():
     )
     unit_access_targets = {entry.target_id for entry in unit_access}
     unit_buff_targets = {entry.target_id for entry in unit_buffs}
-    core_mobile_ids = {'TRAN', 'GMCV', 'NMCV', 'AMCV', 'SMCV'}
     _require(
-        core_mobile_ids.isdisjoint(unit_access_targets)
-        and core_mobile_ids.issubset(unit_buff_targets),
-        'DTA Shop core Chinook/MCV catalogue policy is incorrect',
+        SHOP_ALWAYS_AVAILABLE_UNIT_IDS.isdisjoint(unit_access_targets)
+        and SHOP_ALWAYS_AVAILABLE_UNIT_IDS.issubset(unit_buff_targets)
+        and 'TRAN' not in unit_access_targets
+        and 'TRAN' in unit_buff_targets,
+        'DTA Shop Harvester/MCV loadout or buff policy is incorrect',
+    )
+    _require(
+        set(SHOP_ALWAYS_AVAILABLE_REPRESENTATIVE_BY_ID)
+        == SHOP_ALWAYS_AVAILABLE_UNIT_IDS
+        and {
+            SHOP_ALWAYS_AVAILABLE_REPRESENTATIVE_BY_ID[unit_id]
+            for unit_id in SHOP_ALWAYS_AVAILABLE_UNIT_IDS
+        } == {'TDHARV', 'GMCV'},
+        'DTA Shop Harvester/MCV grouped loadout policy is incorrect',
+    )
+    for group in SHOP_ALWAYS_AVAILABLE_UNIT_GROUPS:
+        representative = group[0]
+        representative_buff = next(
+            canonical_reward_for_id(entry.reward_id)
+            for entry in unit_buffs
+            if entry.target_id == representative
+        )
+        shared_buffs = expand_equivalent_role_buffs(
+            [representative_buff],
+            additional_equivalent_groups=SHOP_ALWAYS_AVAILABLE_UNIT_GROUPS,
+        )
+        _require(
+            {reward.get('unit') for reward in shared_buffs} == set(group),
+            f'DTA Shop {representative} buffs do not reach every grouped unit',
+        )
+    defense_targets = {
+        target_id for target_id, target in BUFF_TARGETS.items()
+        if target.get('category') == 'defenses'
+    }
+    _require(
+        all(
+            any(
+                entry.target_id == target_id
+                and canonical_reward_for_id(entry.reward_id).get('buff_type')
+                == 'self_healing'
+                and all(
+                    'rank' not in line.casefold()
+                    for line in buff_effect_lines(
+                        canonical_reward_for_id(entry.reward_id)
+                    )
+                )
+                for entry in unit_buffs
+            )
+            and not BUFF_TARGETS[target_id].get('trainable')
+            for target_id in defense_targets
+        ),
+        'DTA Shop defense healing incorrectly requires veterancy',
     )
     _require(
         unit_access_targets.issubset(unit_buff_targets),

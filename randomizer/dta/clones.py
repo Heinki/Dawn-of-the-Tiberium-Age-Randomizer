@@ -1052,23 +1052,26 @@ def _unit_overrides(values, counts, target):
     ):
         overrides['Sensors'] = 'yes'
     if counts['self_healing']:
-        veteran_key = next(
-            (
-                key for key in values
-                if str(key).casefold() == 'veteranabilities'
-            ),
-            'VeteranAbilities',
-        )
-        abilities = list(comma_items(values.get(veteran_key)))
-        if 'self_heal' not in {
-            str(ability).casefold() for ability in abilities
-        }:
-            abilities.append('SELF_HEAL')
-            overrides[veteran_key] = ','.join(abilities)
-        if counts['self_healing'] >= int(
-            target.get('self_healing_unlock_stacks', 2)
-        ):
+        if target.get('category') == 'defenses':
             overrides['SelfHealing'] = 'yes'
+        else:
+            veteran_key = next(
+                (
+                    key for key in values
+                    if str(key).casefold() == 'veteranabilities'
+                ),
+                'VeteranAbilities',
+            )
+            abilities = list(comma_items(values.get(veteran_key)))
+            if 'self_heal' not in {
+                str(ability).casefold() for ability in abilities
+            }:
+                abilities.append('SELF_HEAL')
+                overrides[veteran_key] = ','.join(abilities)
+            if counts['self_healing'] >= int(
+                target.get('self_healing_unlock_stacks', 2)
+            ):
+                overrides['SelfHealing'] = 'yes'
     if counts['self_healing_cap']:
         overrides['SelfHealingCap'] = '100%'
     if counts['self_healing_rate']:

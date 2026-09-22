@@ -185,18 +185,36 @@ def _access_catalog():
                     if item.strip().upper() not in {'NONE', '<NONE>'}
                 )
             prerequisites = list(dict.fromkeys(prerequisites))
-            if not tech_level or not prerequisites:
+            if not tech_level:
                 continue
             ACCESS_PREREQUISITES[tech_id] = tuple(prerequisites)
             owner = next(
                 (str(value) for key, value in values.items() if key.lower() == 'owner'),
                 '',
             )
-            for prerequisite in prerequisites:
-                production = PRODUCTION_LOOKUP.get(prerequisite)
-                if not production:
+            target = BUFF_TARGETS.get(tech_id, {})
+            target_category = str(target.get('category') or '')
+            category = {
+                'infantry': 'infantry',
+                'aircraft': 'air',
+                'defenses': 'base',
+            }.get(
+                target_category,
+                'naval' if target.get('naval') else 'vehicles',
+            )
+            native_prerequisite = next((
+                prerequisite for prerequisite in prerequisites
+                if PRODUCTION_LOOKUP.get(prerequisite, ('', ''))[1] == category
+            ), '')
+            factions = tuple(reward.get('factions') or target.get('factions') or ())
+            for faction in factions:
+                family = str(faction).casefold()
+                fallback = CHAOS_PRIMARY_PRODUCTION.get(family, {}).get(
+                    category, ''
+                )
+                prerequisite = native_prerequisite or fallback
+                if not prerequisite:
                     continue
-                family, category = production
                 key = (tech_id, family, category)
                 if key in seen:
                     continue

@@ -188,9 +188,12 @@ def apply_unit_buff_value(values, target, buff_type, count):
             return False
         values['OpenTopped'] = 'yes'
     elif buff_type == 'self_healing':
-        _add_self_heal_veteran_ability(values)
-        if count >= int(target.get('self_healing_unlock_stacks', 2)):
+        if target.get('category') == 'defenses':
             values['SelfHealing'] = 'yes'
+        else:
+            _add_self_heal_veteran_ability(values)
+            if count >= int(target.get('self_healing_unlock_stacks', 2)):
+                values['SelfHealing'] = 'yes'
     elif buff_type == 'self_healing_cap':
         values['SelfHealingCap'] = '100%'
     elif buff_type == 'self_healing_rate':

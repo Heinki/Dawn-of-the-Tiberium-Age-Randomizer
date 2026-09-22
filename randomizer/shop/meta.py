@@ -2,7 +2,10 @@
 
 from dataclasses import dataclass, replace
 
-from randomizer.rewards.catalogue import unit_role_equivalents
+from randomizer.rewards.catalogue import (
+    SHOP_ALWAYS_AVAILABLE_UNIT_IDS,
+    unit_role_equivalents,
+)
 from randomizer.rewards.rules import tech_ids_for_rewards
 
 from .catalogue import (
@@ -129,7 +132,10 @@ def purchase_permanent_buff(profile, reward, *, price, shop_eligible=True):
         for owned_entry in [catalogue_entry(canonical_reward_for_id(owned_id))]
         if owned_entry is not None and owned_entry.reward_type is access_type
     }
-    if entry.target_id not in owned_targets:
+    if (
+        entry.target_id not in owned_targets
+        and entry.target_id not in SHOP_ALWAYS_AVAILABLE_UNIT_IDS
+    ):
         result = (
             PurchaseResult.REQUIRES_UNIT_ACCESS
             if entry.reward_type is ShopRewardType.UNIT_BUFF

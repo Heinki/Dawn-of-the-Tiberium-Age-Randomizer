@@ -128,6 +128,7 @@ def run_self_check():
         ALWAYS_AVAILABLE_TECH_IDS,
         BUFF_TARGETS,
         REWARD_POOL,
+        SHOP_ALWAYS_AVAILABLE_UNIT_IDS,
         buff_stack_limit,
         buff_group_key,
         canonical_reward,
@@ -2261,7 +2262,10 @@ def run_self_check():
                 and not expected_access_ids.intersection(
                     ALWAYS_AVAILABLE_MOBILE_IDS
                 )
-                and core_mobile_ids.isdisjoint({
+                and SHOP_ALWAYS_AVAILABLE_UNIT_IDS.issubset(
+                    ALWAYS_AVAILABLE_MOBILE_IDS
+                )
+                and SHOP_ALWAYS_AVAILABLE_UNIT_IDS.isdisjoint({
                     str(reward.get('unit') or '').upper()
                     for reward in REWARD_POOL
                     if reward.get('dta_production_access')
