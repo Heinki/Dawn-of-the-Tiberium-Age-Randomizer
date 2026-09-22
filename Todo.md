@@ -1,6 +1,3 @@
-- Enforcer still not working and only giving out engineers -> Checked and only works for allied units and NOT all units!
-- ION cannon of the enemy got buffed again
-- Chinook, MCV and Harvester not available in shop to buy upgrades from - These units are always given!
 - SUB Apc check if it works.
 
 ALL:

@@ -349,7 +349,7 @@ def validate_shop_domain():
         and SHOP_ALWAYS_AVAILABLE_UNIT_IDS.issubset(unit_buff_targets)
         and 'TRAN' not in unit_access_targets
         and 'TRAN' in unit_buff_targets,
-        'DTA Shop Harvester/MCV loadout or buff policy is incorrect',
+        'DTA Shop always-available loadout or buff policy is incorrect',
     )
     _require(
         set(SHOP_ALWAYS_AVAILABLE_REPRESENTATIVE_BY_ID)
@@ -357,8 +357,8 @@ def validate_shop_domain():
         and {
             SHOP_ALWAYS_AVAILABLE_REPRESENTATIVE_BY_ID[unit_id]
             for unit_id in SHOP_ALWAYS_AVAILABLE_UNIT_IDS
-        } == {'TDHARV', 'GMCV'},
-        'DTA Shop Harvester/MCV grouped loadout policy is incorrect',
+        } == {'TDHARV', 'GMCV', 'TRAN'},
+        'DTA Shop always-available grouped loadout policy is incorrect',
     )
     for group in SHOP_ALWAYS_AVAILABLE_UNIT_GROUPS:
         representative = group[0]

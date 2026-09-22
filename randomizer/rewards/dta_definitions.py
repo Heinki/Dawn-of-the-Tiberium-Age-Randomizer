@@ -219,6 +219,7 @@ _MOBILE_ALIAS_RECORDS = tuple(
 SHOP_ALWAYS_AVAILABLE_UNIT_GROUPS = (
     ('TDHARV', 'RAHARV'),
     ('GMCV', 'NMCV', 'AMCV', 'SMCV'),
+    ('TRAN',),
 )
 SHOP_ALWAYS_AVAILABLE_UNIT_IDS = frozenset(
     unit_id
@@ -233,6 +234,7 @@ SHOP_ALWAYS_AVAILABLE_REPRESENTATIVE_BY_ID = {
 SHOP_ALWAYS_AVAILABLE_UNIT_LABELS = {
     'TDHARV': 'Harvesters (both factions)',
     'GMCV': 'MCVs (all factions)',
+    'TRAN': 'Chinook Transport',
 }
 
 _MOBILE_ACCESS_RECORDS = tuple(

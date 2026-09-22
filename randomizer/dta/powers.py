@@ -686,6 +686,7 @@ def _exclusive_native_power_rules(
             provider_fields_cleared.append(f'{section}.{field}')
 
     native_grants_removed = 0
+    native_strikes_removed = 0
     for action_id, value in authored.get('Actions', {}).items():
         count, groups = parse_action_groups(str(value))
         if count <= 0 or not groups:
@@ -701,16 +702,30 @@ def _exclusive_native_power_rules(
                 )
             except (TypeError, ValueError, IndexError):
                 grants_native = False
-            if grants_native:
+            # Action 94 fires the engine-global Ion Cannon effect directly.
+            # Leaving authored strikes active would apply the player's global
+            # damage/warhead buffs to enemy or scripted mission strikes.
+            fires_native_strike = bool(
+                replacement and replacement[0] == '94'
+            )
+            if grants_native or fires_native_strike:
                 replacement = ['0', '0', '0', '0', '0', '0', '0', 'A']
-                native_grants_removed += 1
+                if grants_native:
+                    native_grants_removed += 1
+                if fires_native_strike:
+                    native_strikes_removed += 1
                 changed = True
             rewritten.append(replacement)
         if changed:
             output.setdefault('Actions', {})[action_id] = (
                 f'{len(rewritten)},{",".join(action_group_tokens(rewritten))}'
             )
-    return output, provider_fields_cleared, native_grants_removed
+    return (
+        output,
+        provider_fields_cleared,
+        native_grants_removed,
+        native_strikes_removed,
+    )
 
 
 def _provider_coordinates(authored, reserved):
@@ -849,6 +864,7 @@ def player_power_rules(
         'mission_paradrop_preserved': False,
         'exclusive_native_provider_fields': [],
         'exclusive_native_grants_removed': 0,
+        'exclusive_native_strikes_removed': 0,
     }
     if not player_house:
         report['skipped'].append({'power': '*', 'reason': 'missing_player_house'})
@@ -1008,7 +1024,12 @@ def player_power_rules(
                 ),
                 -1,
             )
-            exclusive_rules, cleared_fields, removed_grants = (
+            (
+                exclusive_rules,
+                cleared_fields,
+                removed_grants,
+                removed_strikes,
+            ) = (
                 _exclusive_native_power_rules(
                     source_id,
                     native_index,
@@ -1020,6 +1041,7 @@ def player_power_rules(
                 rules.setdefault(section, {}).update(values)
             report['exclusive_native_provider_fields'].extend(cleared_fields)
             report['exclusive_native_grants_removed'] += removed_grants
+            report['exclusive_native_strikes_removed'] += removed_strikes
         if source_id.upper() == 'IONCANNONSPECIAL':
             ion_rules = _clone_ion_cannon_effect(
                 buff_counts,

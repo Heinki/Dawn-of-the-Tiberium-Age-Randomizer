@@ -1501,6 +1501,15 @@ def run_self_check():
                 [ion_reward, ion_damage_buff, ion_area_buff],
             )
         )
+        scripted_ion_mission = next(
+            mission for mission in missions if mission['code'] == 'M_CRC13'
+        )
+        scripted_ion_rules, _scripted_ion_actions, scripted_ion_report = (
+            player_power_rules(
+                scripted_ion_mission,
+                [ion_reward, ion_damage_buff, ion_area_buff],
+            )
+        )
         distinct_sam_rewards = [
             reward for reward in REWARD_POOL
             if reward.get('dta_production_access')
@@ -2782,6 +2791,13 @@ def run_self_check():
                     ',0,0,0,0,0,0,0,A' in value
                     for value in enemy_ion_rules.get('Actions', {}).values()
                 )
+                and scripted_ion_report[
+                    'exclusive_native_strikes_removed'
+                ] >= 1
+                and any(
+                    ',0,0,0,0,0,0,0,A' in value
+                    for value in scripted_ion_rules.get('Actions', {}).values()
+                )
             ),
             'dta_map_local_exploders_keep_death_damage_scale': (
                 collateral_generated_sections.get('E2', {}).get(
@@ -3495,6 +3511,9 @@ def run_self_check():
                     )
                 )
                 and 'DBFRT_PLAYER' in comma_items(
+                    enforcer_rules.get('E1_PLAYER', {}).get('BuiltAt', '')
+                )
+                and 'DBFRT' in comma_items(
                     enforcer_rules.get('E1_PLAYER', {}).get('BuiltAt', '')
                 )
             ),

@@ -1914,6 +1914,15 @@ def unit_specific_buff_rules(
                         house.casefold(), {}
                     ).get(production_type, ())
                 ]
+                if target.get('category') == 'infantry':
+                    # A mission-granted native Enforcer deploys into DBFRT,
+                    # while a rewarded/buffed Enforcer deploys into its clone.
+                    # Keep the native factory as a route; reference rewriting
+                    # below adds the cloned deployed Enforcer too.
+                    if str(effective_section(
+                        combined, 'DBFRT'
+                    ).get('Factory') or '').casefold() == 'infantrytype':
+                        built_at.append('DBFRT')
                 if target.get('category') == 'aircraft':
                     # Keep native runways/carrier pads usable as well as the
                     # current faction factory. Existing mission airfields can
