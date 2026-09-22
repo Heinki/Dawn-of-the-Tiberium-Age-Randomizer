@@ -41,6 +41,7 @@ class AdvancedSettingsController:
         'powers',
         'unit_buffs',
         'power_buffs',
+        'negative_buffs',
         'starting_unlocks',
     )
 
@@ -67,6 +68,8 @@ class AdvancedSettingsController:
         key = self.active_advanced_view_key()
         if key == 'starting_unlocks':
             self.refresh_starting_unlocks_view()
+        elif key == 'negative_buffs':
+            self.refresh_advanced_enemy_buff_controls()
         elif key:
             self.refresh_advanced_pool_views(key)
 
@@ -1325,6 +1328,12 @@ class AdvancedSettingsController:
             check.configure(state=(
                 'normal' if self.enemy_reward_pool_var.get() else 'disabled'
             ))
+        for check, cap in getattr(
+            self, 'advanced_enemy_buff_controls', []
+        ):
+            state = 'normal' if self.enemy_reward_pool_var.get() else 'disabled'
+            check.configure(state=state)
+            cap.configure(state=state)
         if hasattr(self, 'enemy_mission_rewards_spinbox'):
             self.enemy_mission_rewards_spinbox.configure(state=(
                 'normal' if self.enemy_reward_pool_var.get() else 'disabled'

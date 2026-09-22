@@ -163,6 +163,7 @@ class ProgressionController:
                 background, foreground = '#3f454b', '#d4d8dc'
                 for widget in widgets.values():
                     widget.configure(cursor='arrow')
+                    widget.mission_tooltip.text = ''
                 widgets['tile'].configure(
                     background=background,
                     highlightthickness=6 if code in search_codes else 3,
@@ -184,6 +185,9 @@ class ProgressionController:
             widgets['tile'].grid()
             for widget in widgets.values():
                 widget.configure(cursor='hand2')
+                widget.mission_tooltip.text = self.mission_description_tooltip(
+                    mission
+                )
             faction = normalize_faction(mission.get('side', ''))
             faction_color = CAMPAIGN_TILE_COLORS.get(
                 mission.get('campaign'),
@@ -418,6 +422,34 @@ class ProgressionController:
             for reward in rewards:
                 reward_name = self.mission_check_reward_name(check, reward)
                 lines.append(f'    • {reward_name}')
+        return '\n'.join(lines)
+
+    def mission_description_tooltip(self, mission):
+        """Return player-facing mission context for Grid and Shop hover."""
+        if not mission:
+            return ''
+        lines = [
+            f'{mission.get("title") or mission.get("code", "Mission")}'
+        ]
+        briefing = str(mission.get('briefing') or '').strip()
+        if briefing:
+            lines.extend(('', 'Briefing:', briefing))
+        objectives = [
+            str(objective).strip()
+            for objective in (
+                mission.get('briefing_objectives')
+                or mission.get('objectives', ())
+            )
+            if str(objective).strip()
+        ]
+        if objectives:
+            lines.extend(('', 'Objectives:'))
+            lines.extend(
+                f'{index}. {objective}'
+                for index, objective in enumerate(objectives, 1)
+            )
+        if len(lines) == 1:
+            lines.extend(('', 'No briefing available.'))
         return '\n'.join(lines)
 
     def mission_check_reward_name(self, check, reward):

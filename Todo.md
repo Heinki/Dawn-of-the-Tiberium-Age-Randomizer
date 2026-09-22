@@ -1,10 +1,5 @@
 - SUB Apc check if it works.
 
-ALL:
-- Add Negative buffs and which are active in the Advance tab
-- Description of the Mission on hover for shopmode and also on gridmode as people do not always remember the name of the mission (Just show the briefing and objectives in hover e.g.)
-- When having a permanent unit unlocked and you double chlick it should get you to the buff menu, right now you need to press on the button on the bottom left to get into their upgrade list
-
 Suggestion for DTA:
 Some enemy/negative modifiers that should be technically possible to do:
 

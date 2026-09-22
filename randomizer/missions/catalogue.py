@@ -141,15 +141,32 @@ def parse_long_description_objectives(text):
     if not text:
         return []
     objectives = []
-    for part in text.split('@'):
-        match = re.match(r'\s*Objective\s+(\d+)\s*:\s*(.+?)\s*$', part, flags=re.IGNORECASE)
+    for part in re.split(r'@+|\n+', text):
+        match = re.match(
+            r'\s*-?\s*Objective(?:\s+\d+)?\s*:\s*(.+?)\s*$',
+            part,
+            flags=re.IGNORECASE,
+        )
         if match:
-            objectives.append(match.group(2).strip())
+            objectives.append(match.group(1).strip())
             continue
         numbered = re.match(r'\s*\d+[.)]\s*(.+?)\s*$', part)
         if numbered:
             objectives.append(numbered.group(1).strip())
     return objectives
+
+
+def normalize_long_description(text):
+    """Turn client INI paragraph markers into readable tooltip text."""
+    if not text:
+        return ''
+    paragraphs = []
+    for paragraph in re.split(r'@{2,}|\n\s*\n', str(text)):
+        value = re.sub(r'\s*@\s*', ' ', paragraph)
+        value = re.sub(r'[ \t]+', ' ', value).strip()
+        if value:
+            paragraphs.append(value)
+    return '\n\n'.join(paragraphs)
 
 
 def parse_missions(path, fallback_objective_count=FALLBACK_OBJECTIVE_COUNT):
@@ -164,8 +181,21 @@ def parse_missions(path, fallback_objective_count=FALLBACK_OBJECTIVE_COUNT):
     current_section = None
     in_battles = False
     current_campaign = ''
+    text_block_key = None
+    text_block_lines = []
 
     for line in lines:
+        stripped = line.strip()
+        if text_block_key is not None:
+            if stripped == '$$$TextBlockEnd$$$':
+                sections.setdefault(current_section, {})[text_block_key] = (
+                    '\n'.join(text_block_lines).strip()
+                )
+                text_block_key = None
+                text_block_lines = []
+            else:
+                text_block_lines.append(line.strip())
+            continue
         no_comment = line.split(';', 1)[0].strip()
         if not no_comment:
             continue
@@ -185,7 +215,13 @@ def parse_missions(path, fallback_objective_count=FALLBACK_OBJECTIVE_COUNT):
             continue
         if current_section and '=' in no_comment:
             key, value = no_comment.split('=', 1)
-            sections.setdefault(current_section, {})[key.strip()] = value.strip()
+            key = key.strip()
+            value = value.strip()
+            if value == '$$$TextBlockBegin$$$':
+                text_block_key = key
+                text_block_lines = []
+            else:
+                sections.setdefault(current_section, {})[key] = value
 
     missions = []
     for code, campaign in mission_entries:
@@ -196,7 +232,11 @@ def parse_missions(path, fallback_objective_count=FALLBACK_OBJECTIVE_COUNT):
         # DTA has no uniform runtime signal for completed sub-objectives.
         # Victory is the only reliably observable completion event, so do not
         # generate objective checks that the launcher cannot report.
+        long_description = section.get('LongDescription', '')
         objectives = []
+        briefing_objectives = parse_long_description_objectives(
+            long_description
+        )
         force_enhanced_mode = code in FORCED_ENHANCED_MODE_MISSION_CODES
         missions.append({
             'index': len(missions) + 1,
@@ -205,6 +245,8 @@ def parse_missions(path, fallback_objective_count=FALLBACK_OBJECTIVE_COUNT):
             'title': section.get('UIName') or section.get('Description') or section.get('description') or code,
             'side': section.get('SideName') or section.get('Side') or '',
             'campaign': campaign or 'Stand-Alone Missions',
+            'briefing': normalize_long_description(long_description),
+            'briefing_objectives': briefing_objectives,
             'objectives': objectives,
             'objective_count': len(objectives) or fallback_objective_count,
             'build_classification': MISSION_BUILD_CLASSIFICATIONS.get(code, BASE_BUILD),
@@ -249,6 +291,10 @@ def parse_missions(path, fallback_objective_count=FALLBACK_OBJECTIVE_COUNT):
             'title': str(extra.get('title') or code),
             'side': str(extra.get('side') or ''),
             'campaign': str(extra.get('campaign') or 'Stand-Alone Missions'),
+            'briefing': normalize_long_description(
+                extra.get('long_description') or extra.get('description') or ''
+            ),
+            'briefing_objectives': [],
             'objectives': [],
             'objective_count': fallback_objective_count,
             'build_classification': classification,
