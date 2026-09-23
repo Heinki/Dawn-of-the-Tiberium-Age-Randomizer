@@ -1,4 +1,4 @@
-"""Enemy-buff controls inside the normal reward settings."""
+"""Compact AI-reward controls inside Reward Pool."""
 
 from ._builder_dependencies import (
     ENEMY_BUFF_GROUP_DEFINITIONS,
@@ -12,27 +12,35 @@ def build_enemy_scaling_settings(self, reward_frame):
     ttk.Separator(reward_frame, orient='horizontal').grid(
         row=15, column=0, sticky='ew', pady=(8, 6)
     )
+    ttk.Label(
+        reward_frame,
+        text='AI Enemy Rewards',
+        style='Muted.TLabel',
+    ).grid(row=16, column=0, sticky='w', pady=(0, 3))
+
     self.enemy_reward_pool_check = ttk.Checkbutton(
         reward_frame,
-        text='Include enemy buff rewards',
+        text='Include AI rewards in normal reward pool',
         variable=self.enemy_reward_pool_var,
         command=self.refresh_setting_states,
     )
-    self.enemy_reward_pool_check.grid(row=16, column=0, sticky='w')
+    self.enemy_reward_pool_check.grid(row=17, column=0, sticky='w')
     WidgetTooltip(
         self.enemy_reward_pool_check,
-        'Adds hostile-AI-only buffs to the reward pool. Archipelago exports '
-        'them as Trap items. Unit-stat buffs skip no-build missions; reviewed '
-        'AI team and trigger buffs can still apply.',
+        'AI rewards occupy normal reward slots and apply only to verified '
+        'hostile AI Houses. Archipelago exports them as Trap items. Unit-stat '
+        'buffs skip no-build missions; reviewed AI team and trigger buffs can '
+        'still apply.',
     )
 
-    rate_row = ttk.Frame(reward_frame)
-    rate_row.grid(row=17, column=0, sticky='ew', pady=(4, 0))
-    ttk.Label(rate_row, text='Extra enemy buffs per mission victory').grid(
+    rates = ttk.Frame(reward_frame)
+    rates.grid(row=18, column=0, sticky='ew', pady=(4, 0))
+    rates.columnconfigure(1, weight=1)
+    ttk.Label(rates, text='AI bonus stacks per completed mission').grid(
         row=0, column=0, sticky='w', padx=(0, 8)
     )
     self.enemy_mission_rewards_spinbox = ttk.Spinbox(
-        rate_row,
+        rates,
         from_=0,
         to=MAX_AI_REWARDS_PER_COMPLETION,
         width=5,
@@ -40,8 +48,21 @@ def build_enemy_scaling_settings(self, reward_frame):
         command=self.refresh_setting_states,
     )
     self.enemy_mission_rewards_spinbox.grid(row=0, column=1, sticky='w')
+    for event in ('<FocusOut>', '<Return>'):
+        self.enemy_mission_rewards_spinbox.bind(
+            event,
+            lambda _event: self.refresh_setting_states(),
+        )
     self.enemy_mission_rewards_spinbox.bind(
-        '<MouseWheel>', self.on_settings_control_mousewheel, add='+'
+        '<MouseWheel>',
+        self.on_settings_control_mousewheel,
+        add='+',
+    )
+    WidgetTooltip(
+        self.enemy_mission_rewards_spinbox,
+        'Attempts to grant this many valid AI bonus stacks after each mission '
+        'victory. All AI reward sources share per-bonus caps, so fewer or zero '
+        'remain after every enabled bonus is capped.',
     )
 
     self.enemy_reward_capacity_label = ttk.Label(
@@ -52,11 +73,16 @@ def build_enemy_scaling_settings(self, reward_frame):
         wraplength=590,
     )
     self.enemy_reward_capacity_label.grid(
-        row=18, column=0, sticky='w', pady=(3, 5)
+        row=19, column=0, sticky='w', pady=(3, 5)
     )
 
+    ttk.Label(
+        reward_frame,
+        text='Allowed AI rewards',
+        style='Muted.TLabel',
+    ).grid(row=20, column=0, sticky='w', pady=(0, 2))
     groups_frame = ttk.Frame(reward_frame)
-    groups_frame.grid(row=19, column=0, sticky='ew')
+    groups_frame.grid(row=21, column=0, sticky='ew')
     groups_frame.columnconfigure(0, weight=1)
     groups_frame.columnconfigure(1, weight=1)
     self.enemy_buff_group_controls = []
@@ -78,7 +104,9 @@ def build_enemy_scaling_settings(self, reward_frame):
             pady=(0, 2),
         )
         self.enemy_buff_group_controls.append((group, check))
-        self.enemy_buff_group_tooltips[group['id']] = WidgetTooltip(
-            check, self.enemy_buff_group_help_text(group)
+        tooltip = WidgetTooltip(
+            check,
+            self.enemy_buff_group_help_text(group),
         )
+        self.enemy_buff_group_tooltips[group['id']] = tooltip
     self.refresh_enemy_reward_setting_help()
