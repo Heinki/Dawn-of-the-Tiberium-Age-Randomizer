@@ -158,12 +158,16 @@ class ShopController(ShopPolishController):
         self.shop_search_var = tk.StringVar(value='')
         self.shop_loadout_search_var = tk.StringVar(value='')
         self.shop_setup_search_var = tk.StringVar(value='')
+        self.shop_permanent_units_without_buffs_var = tk.BooleanVar(
+            value=bool(self.config.get('shop_permanent_units_without_buffs', False))
+        )
         self.shop_permanent_search_var = tk.StringVar(value='')
         self.shop_sort_var = tk.StringVar(value='Name')
         self.shop_summary_var = tk.StringVar(value='No Shop run exists.')
         self.shop_modifier_vars = {
             modifier_id: tk.BooleanVar(value=False)
             for modifier_id in self.shop_config.modifiers
+            if modifier_id != 'black_market'
         }
         for variable in self.shop_modifier_vars.values():
             variable.trace_add('write', self._refresh_shop_modifier_difficulty)
@@ -201,6 +205,7 @@ class ShopController(ShopPolishController):
         self._shop_upgrade_buyable = {}
         self._shop_permanent_buff_rows = {}
         self._shop_permanent_buff_buyable = {}
+        self._shop_permanent_buff_refundable = {}
         self._shop_permanent_buff_target_ids = {}
         self._shop_permanent_power_buff_rows = {}
         self._shop_permanent_power_buff_buyable = {}
@@ -1961,6 +1966,12 @@ class ShopController(ShopPolishController):
             )
             return
         settings['shop_faction_filter'] = faction_filter
+        settings['disable_permanent_unit_buffs'] = (
+            self.shop_permanent_units_without_buffs_var.get()
+        )
+        self.config['shop_permanent_units_without_buffs'] = (
+            self.shop_permanent_units_without_buffs_var.get()
+        )
         starting_unit_markers = tuple(TIER_ONE_ROLE_MARKERS.values())
         starting_defense_markers = (TIER_ONE_DEFENSE_MARKER,)
         starting_units = shop_starter_unit_ids(
@@ -2013,6 +2024,12 @@ class ShopController(ShopPolishController):
                 and entry.target_id in permanent_buff_targets
             )
         )
+        if settings['disable_permanent_unit_buffs']:
+            permanent_buffs = tuple(
+                item for item in permanent_buffs
+                if self._shop_entry_by_reward_id[item.reward_id].reward_type
+                is not ShopRewardType.UNIT_BUFF
+            )
         try:
             mission_pool = self._shop_run_mission_pool()
             if len(mission_pool) < self.shop_config.run_length:
@@ -2503,6 +2520,13 @@ class ShopController(ShopPolishController):
                 options['image'] = cameo
             tree.insert('', 'end', **options)
             self._shop_loadout_rows[iid] = entry.reward_id
+        if active_run:
+            self.shop_permanent_units_without_buffs_var.set(bool(
+                self.shop_run.reward_settings.get('disable_permanent_unit_buffs')
+            ))
+        self.shop_permanent_units_without_buffs_check.configure(
+            state='disabled' if active_run else 'normal'
+        )
         modifiers_locked = bool(
             self.shop_run is not None
             and self.shop_run.status is RunStatus.ACTIVE
@@ -2797,6 +2821,7 @@ class ShopController(ShopPolishController):
         tree.delete(*tree.get_children())
         self._shop_permanent_buff_rows = {}
         self._shop_permanent_buff_buyable = {}
+        self._shop_permanent_buff_refundable = {}
         owned = set(self.shop_profile.permanent_unit_unlocks)
         owned_entries = sorted(
             (
@@ -2878,7 +2903,9 @@ class ShopController(ShopPolishController):
                             entry.target_id,
                         ),
                     ),
+                    '◀' if stacks and not active_run else '',
                     f'{stacks} / {maximum}',
+                    '▶' if buyable else '',
                     state,
                     'Max' if maxed else gem_text(price),
                 ),
@@ -2889,6 +2916,9 @@ class ShopController(ShopPolishController):
             tree.insert('', 'end', **options)
             self._shop_permanent_buff_rows[iid] = entry.reward_id
             self._shop_permanent_buff_buyable[iid] = buyable
+            self._shop_permanent_buff_refundable[iid] = bool(
+                stacks and not active_run
+            )
             if entry.reward_id == selected_reward_id:
                 restore_iid = iid
         if restore_iid:
@@ -3022,12 +3052,12 @@ class ShopController(ShopPolishController):
             return
         values = self.shop_permanent_buff_tree.item(selected[0], 'values')
         self.shop_permanent_buff_info_var.set(
-            f'{values[0]} • {values[1]} • {values[2]} • Next: {values[3]}.'
+            f'{values[0]} • {values[2]} • {values[4]} • Next: {values[5]}.'
         )
         self.shop_permanent_buff_button.configure(
             text=(
-                f'Buy Permanent Stack — {values[3]}'
-                if allowed else values[2]
+                f'Buy Permanent Stack — {values[5]}'
+                if allowed else values[4]
             )
         )
         self.refresh_permanent_purchase_buttons()
@@ -3201,6 +3231,50 @@ class ShopController(ShopPolishController):
             else:
                 self._set_shop_message(
                     'Upgrade adjustment failed: '
+                    f'{outcome.validation.result.value.replace("_", " ")}.',
+                    error=True,
+                )
+        self.refresh_shop_mode()
+
+    def on_shop_permanent_buff_tree_click(self, event):
+        tree = self.shop_permanent_buff_tree
+        row_id = tree.identify_row(event.y)
+        column = tree.identify_column(event.x)
+        if not row_id or column not in {'#2', '#4'}:
+            return None
+        tree.selection_set(row_id)
+        tree.focus(row_id)
+        if column == '#2' and self._shop_permanent_buff_refundable.get(
+            row_id, False
+        ):
+            self.refund_selected_permanent_buff()
+        elif column == '#4' and self._shop_permanent_buff_buyable.get(
+            row_id, False
+        ):
+            self.buy_selected_permanent_buff()
+        return 'break'
+
+    def refund_selected_permanent_buff(self):
+        selected = self.shop_permanent_buff_tree.selection()
+        if not selected:
+            return
+        reward_id = self._shop_permanent_buff_rows.get(selected[0])
+        if not reward_id:
+            return
+        self._shop_permanent_buff_focus_reward_id = reward_id
+        try:
+            outcome = self.shop_service.refund_permanent_unit_buff(reward_id)
+        except ShopTransitionError as exc:
+            self._set_shop_message(exc, error=True)
+        else:
+            if outcome.validation.allowed:
+                self._set_shop_message(
+                    f'Removed one {reward_id} stack. Refunded '
+                    f'{gem_text(outcome.validation.cost)}.'
+                )
+            else:
+                self._set_shop_message(
+                    'Buff adjustment failed: '
                     f'{outcome.validation.result.value.replace("_", " ")}.',
                     error=True,
                 )
