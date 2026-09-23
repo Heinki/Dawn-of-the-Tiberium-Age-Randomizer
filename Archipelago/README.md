@@ -7,7 +7,7 @@ YAML, connect to a room, and continue an existing multiworld game.
 
 - Dawn of the Tiberium Age 16.0.0 with Vinifera in a separate, unmodified game
   installation
-- DTA Randomizer Launcher 1.9
+- DTA Randomizer Launcher 2.0
 - The same `BattleE.ini`, `Tutorial.ini`, and fan mission maps as the APWorld catalogue when using fan missions. Put the INI files in DTA's `INI` folder and maps in their listed `Maps/Missions` or `Maps/Custom` locations.
 - Archipelago 0.6.7
 - `dta.apworld` from the same Randomizer release as the launcher
