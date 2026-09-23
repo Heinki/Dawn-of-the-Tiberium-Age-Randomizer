@@ -89,7 +89,7 @@ def stacked_weapon_damage(base_damage, count):
     multiplied = int(round(
         base_damage * stacking_multiplier('damage', count)
     ))
-    return min(maximum, max(base_damage + 1, multiplied))
+    return min(maximum, max(base_damage + count, multiplied))
 
 
 def stacked_weapon_rof(base_rof, count):

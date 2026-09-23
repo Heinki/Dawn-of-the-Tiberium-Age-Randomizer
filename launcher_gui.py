@@ -2004,6 +2004,7 @@ def run_self_check():
         )
         paradrop_wave_payload = Counter()
         paradrop_wave_aircraft_entries = []
+        paradrop_wave_first_members = []
         paradrop_wave_member_counts = []
         paradrop_wave_passenger_counts = []
         for taskforce in paradrop_wave_taskforces:
@@ -2011,6 +2012,9 @@ def run_self_check():
                 value for key, value in taskforce.items()
                 if str(key).isdigit()
             ]
+            paradrop_wave_first_members.append(
+                members[0] if members else ''
+            )
             paradrop_wave_member_counts.append(len(members))
             paradrop_wave_passenger_counts.append(sum(
                 int(member.split(',', 1)[0])
@@ -2909,6 +2913,11 @@ def run_self_check():
                 }
                 and paradrop_report['applied'][0]['payload_aircraft']
                 == 'BADGER'
+            ),
+            'dta_paradrop_taskforce_aircraft_first': (
+                paradrop_wave_first_members == [
+                    f'1,{paradrop_report["paradrop_aircraft"]}'
+                ]
             ),
             'dta_mission_paradrop_payload_preserved': (
                 mission_paradrop_report['mission_paradrop_taskforce']
@@ -4080,6 +4089,7 @@ def run_self_check():
             'dta_power_lists_preserve_war_factory_clones',
             'dta_exclusive_buffed_ion_cannon_works',
             'dta_paradrop_payload_uses_badger_capacity',
+            'dta_paradrop_taskforce_aircraft_first',
             'dta_mission_paradrop_payload_preserved',
             'dta_demolition_truck_ammo_buff_removed',
             'dta_enemy_buffs_exclude_player_family',

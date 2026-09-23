@@ -14,15 +14,53 @@ from randomizer.dta.movement import (
     AMPHIBIOUS_DRIVE_OVERRIDES,
     has_water_movement,
 )
-from randomizer.dta.rules import installed_effective_sections
+from randomizer.dta.rules import installed_effective_sections, techno_catalogue
 from randomizer.maps.buff_values import apply_unit_buff_value
 from randomizer.missions.catalogue import parse_missions
-from randomizer.rewards.catalogue import BUFF_TARGETS, BUFF_TYPES, REWARD_POOL
+from randomizer.rewards.catalogue import (
+    BUFF_TARGETS,
+    BUFF_TYPES,
+    FACTION_UNIT_ROSTERS,
+    REWARD_POOL,
+)
 from randomizer.rewards.display import buff_effect_lines, canonical_reward
 from randomizer.shop.catalogue import shop_catalogue
 
 
 class RetiredBuffChecks(unittest.TestCase):
+    def test_subterranean_apc_is_excluded_from_randomizer_rosters(self):
+        sapc = next(
+            record for record in techno_catalogue()
+            if record['id'] == 'SAPC'
+        )
+        self.assertFalse(sapc['rewardable'])
+        self.assertNotIn('SAPC', BUFF_TARGETS)
+        self.assertTrue(all(
+            'SAPC' not in faction_roster['units']
+            for faction_roster in FACTION_UNIT_ROSTERS.values()
+        ))
+        self.assertFalse(any(
+            reward.get('unit') == 'SAPC' for reward in REWARD_POOL
+        ))
+        self.assertFalse(any(
+            entry.target_id == 'SAPC' for entry in shop_catalogue()
+        ))
+        for old_reward in (
+            {
+                'name': 'Unlock Subterranean APC (SAPC)',
+                'kind': 'unit_access',
+                'unit': 'SAPC',
+                'dta_production_access': True,
+            },
+            {
+                'name': 'Subterranean APC (SAPC) Mobility I',
+                'kind': 'buff',
+                'unit': 'SAPC',
+                'buff_type': 'speed',
+            },
+        ):
+            self.assertTrue(canonical_reward(old_reward).get('retired_reward'))
+
     def test_not_offered_in_catalogues(self):
         retired = {'opportunity_fire'}
         self.assertTrue(retired.isdisjoint(item['id'] for item in BUFF_TYPES))

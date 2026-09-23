@@ -16,6 +16,7 @@ from randomizer.rewards.catalogue import (
     SHOP_ALWAYS_AVAILABLE_REPRESENTATIVE_BY_ID,
     SHOP_ALWAYS_AVAILABLE_UNIT_GROUPS,
     SHOP_ALWAYS_AVAILABLE_UNIT_IDS,
+    buff_effect_comparison_lines,
     buff_effect_lines,
     canonical_reward,
 )
@@ -288,6 +289,17 @@ def validate_shop_domain():
             for entry in unit_buffs
         ),
         'DTA Shop still exposes the ineffective Demolition Truck ammo upgrade',
+    )
+    microwave_damage = next(
+        canonical_reward_for_id(entry.reward_id)
+        for entry in unit_buffs
+        if entry.target_id == 'MWAVE'
+        and canonical_reward_for_id(entry.reward_id).get('buff_type') == 'damage'
+    )
+    _require(
+        buff_effect_comparison_lines(microwave_damage, 1)
+        == ['Damage 3 -> 4'],
+        'DTA Shop Microwave Tank repeat damage upgrade has no effect',
     )
     provider_capacity_targets = {
         entry.target_id

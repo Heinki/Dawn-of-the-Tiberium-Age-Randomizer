@@ -83,12 +83,16 @@ PARADROP_TASKFORCE_MEMBER_LIMIT = 5
 PARADROP_PAYLOAD_TYPE_LIMIT = PARADROP_TASKFORCE_MEMBER_LIMIT - 1
 
 
-def _bounded_paradrop_members(mission_code, power_id, members):
-    """Fit one paradrop into TS's five-member TaskForce representation."""
-    payload_members = list(members[:-1])
-    aircraft_member = members[-1]
+def _bounded_paradrop_members(
+    mission_code,
+    power_id,
+    payload_members,
+    aircraft_member,
+):
+    """Fit one paradrop into TS's aircraft-first TaskForce representation."""
+    payload_members = list(payload_members)
     if len(payload_members) <= PARADROP_PAYLOAD_TYPE_LIMIT:
-        return [*payload_members, aircraft_member], 0
+        return [aircraft_member, *payload_members], 0
 
     baseline = payload_members[0]
     variants = payload_members[1:]
@@ -113,9 +117,9 @@ def _bounded_paradrop_members(mission_code, power_id, members):
         selected_counts[selected_id] += count
         destination += 1
     return [
+        aircraft_member,
         baseline,
         *((selected_counts[unit_id], unit_id) for _count, unit_id in selected),
-        aircraft_member,
     ], overflow
 
 
@@ -1168,10 +1172,12 @@ def player_power_rules(
                         and configured_payload_counts.get(unit_id, 0) > 0
                     )
                 )
-                taskforce_members.append((1, aircraft_clone))
                 taskforce_members, collapsed_payload_count = (
                     _bounded_paradrop_members(
-                        mission.get('code', ''), source_id, taskforce_members
+                        mission.get('code', ''),
+                        source_id,
+                        taskforce_members,
+                        (1, aircraft_clone),
                     )
                 )
                 rules[script_id] = {
@@ -1547,7 +1553,7 @@ def player_power_rules(
             sum(
                 count
                 for wave in deployment['waves']
-                for count, _unit_id in wave['members'][:-1]
+                for count, _unit_id in wave['members'][1:]
             )
             for deployment in paradrop_deployments
         )
@@ -1609,7 +1615,7 @@ def player_power_rules(
                 entry['combined_payload_units'] = str(sum(
                     count
                     for wave in deployment['waves']
-                    for count, _unit_id in wave['members'][:-1]
+                    for count, _unit_id in wave['members'][1:]
                 ))
                 entry['collapsed_payload_units'] = (
                     collapsed_payload_units.get(entry['power'], 0)

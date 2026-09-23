@@ -70,6 +70,9 @@ EXCLUDED_MOBILE_IDS = frozenset({
     '2TNKMSL',
     # Campaign prop without useful player behavior.
     'MHQ',
+    # Vinifera production clones cannot retain this unit's native drilling
+    # behavior, leaving rewarded copies unable to move normally.
+    'SAPC',
 })
 SPECIAL_MOBILE_FACTION_OVERRIDES = {
     # Campaign-only units use broad Rules.ini owners so any mission can place

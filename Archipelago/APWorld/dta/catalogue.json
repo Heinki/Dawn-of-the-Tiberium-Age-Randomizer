@@ -12505,97 +12505,6 @@
       "id": 81064401
     },
     {
-      "name": "Subterranean APC (SAPC) Amphibious Drive I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81066347
-    },
-    {
-      "name": "Subterranean APC (SAPC) Armor Plating I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064402
-    },
-    {
-      "name": "Subterranean APC (SAPC) Drill I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064403
-    },
-    {
-      "name": "Subterranean APC (SAPC) Expanded Transport I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065232
-    },
-    {
-      "name": "Subterranean APC (SAPC) Logistics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064404
-    },
-    {
-      "name": "Subterranean APC (SAPC) Mobility I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064405
-    },
-    {
-      "name": "Subterranean APC (SAPC) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065233
-    },
-    {
-      "name": "Subterranean APC (SAPC) Rapid Regeneration I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81066439
-    },
-    {
-      "name": "Subterranean APC (SAPC) Regeneration Capacity I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81066440
-    },
-    {
-      "name": "Subterranean APC (SAPC) Regeneration I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065903
-    },
-    {
-      "name": "Subterranean APC (SAPC) Reinforcement I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065234
-    },
-    {
-      "name": "Subterranean APC (SAPC) Sensor Array I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065235
-    },
-    {
-      "name": "Subterranean APC (SAPC) Stealth Field I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065236
-    },
-    {
       "name": "TD APC (APC) Amphibious Drive I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -14372,13 +14281,6 @@
       "category": "unit_unlocks",
       "repeatable": false,
       "id": 81065360
-    },
-    {
-      "name": "Unlock Subterranean APC (SAPC)",
-      "classification": "progression",
-      "category": "special_unlocks",
-      "repeatable": false,
-      "id": 81065361
     },
     {
       "name": "Unlock TD APC (APC)",
@@ -16210,7 +16112,7 @@
       ]
     }
   ],
-  "catalogue_checksum": "689cb715cedd6824ce560bebd61e1bac9a9f1af214e9e5d7d5604051f8d882cf",
+  "catalogue_checksum": "378a439124aeaee295c3a90d84ada139c14a7a2514c88dc814d1ccd2c7c31df2",
   "locations": [
     {
       "name": "Tutorial Mission 1 - Mission Complete - Reward 1",
