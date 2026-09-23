@@ -860,15 +860,16 @@ class ShopController(ShopPolishController):
         run = self.__dict__.get('_shop_launch_run')
         if run is None or not run.selected_mission_code:
             return super().resolve_selected_mission_difficulty(mission)
+        if modifier_forces_hardest_difficulty(run.modifiers):
+            return resolve_mission_difficulty(
+                mission, mission_difficulty_labels(mission)[-1]
+            )
         normal, eased = self.shop_eased_difficulty_labels(
             run, run.selected_mission_code
         )
         selected = (
             eased
-            if (
-                not modifier_forces_hardest_difficulty(run.modifiers)
-                and run.assisted_mission_code == run.selected_mission_code
-            )
+            if run.assisted_mission_code == run.selected_mission_code
             else normal
         )
         return resolve_mission_difficulty(mission, selected)
@@ -1449,7 +1450,13 @@ class ShopController(ShopPolishController):
     def _shop_precondition_unlock_cost(self, run, mission_code):
         count = len(mission_preconditions(self._shop_mission(mission_code)))
         normal, eased = self.shop_eased_difficulty_labels(run, mission_code)
-        current = eased if run.assisted_mission_code == mission_code else normal
+        current = (
+            eased
+            if (
+                not modifier_forces_hardest_difficulty(run.modifiers)
+                and run.assisted_mission_code == mission_code
+            ) else normal
+        )
         difficulty_rank = next((
             index + 1
             for index, label in enumerate(DIFFICULTY_ORDER)
@@ -1662,7 +1669,8 @@ class ShopController(ShopPolishController):
                     offer_count=modifier_mission_offer_count(run.modifiers),
                 )
             transition = self.shop_service.record_victory(
-                code, next_offers=next_offers
+                code, next_offers=next_offers,
+                mission=self._shop_mission(code),
             )
         except (ShopTransitionError, ValueError) as exc:
             self._set_shop_message(exc, error=True)

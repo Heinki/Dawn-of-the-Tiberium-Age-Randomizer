@@ -1122,6 +1122,39 @@ def validate_shop_domain():
         ),
         'Hardcore does not assign an enemy challenge to every mission choice',
     )
+    mission_by_code = {mission['code']: mission for mission in missions}
+    for offer in hardcore_run.mission_offers:
+        mission = mission_by_code[offer.mission_code]
+        hardcore_entries = shop_enemy_scaling_entries(
+            hardcore_run, offer, mission
+        )
+        _require(
+            any(entry['source'] == 'Shop Hardcore'
+                for entry in hardcore_entries),
+            f'Hardcore extra enemy buff missing for {offer.mission_code}',
+        )
+        base_reward = mission_reward(
+            offer.economy_class,
+            modifiers=hardcore_run.modifiers,
+            mission_modifier=mission_modifier_for_run_offer(
+                hardcore_run, offer
+            ),
+        )
+        buff_reward = mission_reward(
+            offer.economy_class,
+            modifiers=hardcore_run.modifiers,
+            mission_modifier=mission_modifier_for_run_offer(
+                hardcore_run, offer
+            ),
+            enemy_buff_count=len(hardcore_entries),
+        )
+        _require(
+            buff_reward.run_coins - base_reward.run_coins
+            == len(hardcore_entries)
+            and buff_reward.meta_coins - base_reward.meta_coins
+            == len(hardcore_entries),
+            'Enemy challenge rewards do not scale with applied buffs',
+        )
     completion_modifiers = tuple(SHOP_CONFIG.modifiers)[:8]
     completion_run = commit_selected_mission(
         replace(

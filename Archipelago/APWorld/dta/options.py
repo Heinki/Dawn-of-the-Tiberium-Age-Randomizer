@@ -22,7 +22,9 @@ from .data import MISSION_DATA
 CAMPAIGNS = (
     "All Campaigns", "Tutorial", "Shadow Exodus", "PTTP", "CR",
     "Toxic Diversion", "It Came From Red Alert!", "Creeping Destruction",
-    "Stand-Alone Missions",
+    "Stand-Alone Missions", "Red Alert Soviet Remake",
+    "Severe Desert Anomalies", "Jungle Corruption", "American Gambit",
+    "Custom Missions",
 )
 PROGRESSION_MODES = ("Classic", "Mission List", "Grid Mode", "Shop Mode")
 REWARD_MODES = ("Standard", "Chaos", "Randomizer Arsenal")
@@ -76,6 +78,11 @@ class Campaign(Choice):
     option_it_came_from_red_alert = 6
     option_creeping_destruction = 7
     option_stand_alone_missions = 8
+    option_red_alert_soviet_remake = 9
+    option_severe_desert_anomalies = 10
+    option_jungle_corruption = 11
+    option_american_gambit = 12
+    option_custom_missions = 13
     default = 0
 
 

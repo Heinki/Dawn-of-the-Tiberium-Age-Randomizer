@@ -36,6 +36,7 @@ from .meta import (
     purchase_permanent_upgrade as apply_permanent_upgrade_purchase,
     refund_permanent_upgrade as apply_permanent_upgrade_refund,
 )
+from .mission_modifiers import shop_enemy_scaling_entries
 from .model import RunStatus, ShopProfile, ShopRewardType
 from .modifiers import (
     modifier_allows_shop_offer,
@@ -441,12 +442,26 @@ class ShopProgressionService:
             self.repository.save_profile(outcome.profile)
         return outcome
 
-    def record_victory(self, mission_code, *, next_offers=()):
+    def record_victory(self, mission_code, *, next_offers=(), mission=None):
         profile, run = self.repository.load()
         if run is None:
             raise ShopTransitionError('No Shop run exists')
+        offer = next((
+            item for item in run.mission_offers
+            if item.mission_code == str(mission_code).upper()
+        ), None)
+        enemy_buff_count = (
+            len(shop_enemy_scaling_entries(
+                run, offer, mission,
+                challenge_slots=profile.upgrade_level(
+                    'permanent_challenge_slots'
+                ),
+            ))
+            if mission is not None else 0
+        )
         transition = apply_mission_victory(
-            profile, run, mission_code, next_offers=next_offers
+            profile, run, mission_code, next_offers=next_offers,
+            enemy_buff_count=enemy_buff_count,
         )
         if transition.changed:
             self.repository.commit(

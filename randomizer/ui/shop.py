@@ -208,47 +208,118 @@ def build_shop_tab(self, workspace_tabs):
     for index in range(3):
         card = ttk.LabelFrame(choices, text=f'Choice {index + 1}', padding=8)
         card.grid(row=0, column=index, sticky='nsew', padx=(0 if index == 0 else 4, 0))
+        details_canvas = tk.Canvas(
+            card,
+            width=220,
+            height=245,
+            borderwidth=0,
+            highlightthickness=0,
+            background=self.style.lookup('TFrame', 'background') or '#f0f0f0',
+        )
+        details_scrollbar = ttk.Scrollbar(
+            card, orient='vertical', command=details_canvas.yview
+        )
+        details_canvas.configure(yscrollcommand=details_scrollbar.set)
+        details_canvas.grid(row=0, column=0, sticky='nsew')
+        details_scrollbar.grid(row=0, column=1, sticky='ns')
+        details = ttk.Frame(details_canvas)
+        details.columnconfigure(0, weight=1)
+        details_window = details_canvas.create_window(
+            (0, 0), window=details, anchor='nw'
+        )
+        details.bind(
+            '<Configure>',
+            lambda _event, canvas=details_canvas:
+            canvas.configure(scrollregion=canvas.bbox('all')),
+        )
+        details_canvas.bind(
+            '<Configure>',
+            lambda event, canvas=details_canvas, item=details_window:
+            canvas.itemconfigure(item, width=event.width),
+        )
+
+        def scroll_details(event, canvas=details_canvas):
+            if event.state & 0x0001 or canvas.yview() == (0.0, 1.0):
+                return None
+            direction = -1 if (
+                getattr(event, 'num', 0) == 4
+                or getattr(event, 'delta', 0) > 0
+            ) else 1
+            canvas.yview_scroll(direction, 'units')
+            return 'break'
+
         name_var = tk.StringVar(value='No mission')
         detail_var = tk.StringVar(value='')
         difficulty_var = tk.StringVar(value='')
+        base_reward_var = tk.StringVar(value='')
         reward_var = tk.StringVar(value='')
+        modifier_rewards_var = tk.StringVar(value='')
         effect_var = tk.StringVar(value='')
+        buffs_var = tk.StringVar(value='')
         name_label = ttk.Label(
-            card,
+            details,
             textvariable=name_var,
             font=('Segoe UI', 10, 'bold'),
             justify='left',
         )
         name_label.grid(row=0, column=0, sticky='ew')
         detail_label = ttk.Label(
-            card,
+            details,
             textvariable=detail_var,
             style='Muted.TLabel',
             justify='left',
         )
         detail_label.grid(row=1, column=0, sticky='ew', pady=(4, 0))
         difficulty_label = ttk.Label(
-            card,
+            details,
             textvariable=difficulty_var,
             style='Shop.Difficulty.Easy.TLabel',
             font=('Segoe UI', 10, 'bold'),
         )
         difficulty_label.grid(row=2, column=0, sticky='w', pady=(5, 2))
+        base_reward_label = ttk.Label(
+            details,
+            textvariable=base_reward_var,
+            style='Shop.BaseReward.TLabel',
+            justify='left',
+        )
+        base_reward_label.grid(row=3, column=0, sticky='ew', pady=(3, 0))
         reward_label = ttk.Label(
-            card,
+            details,
             textvariable=reward_var,
             style='Shop.Reward.TLabel',
             justify='left',
         )
-        reward_label.grid(row=3, column=0, sticky='ew', pady=(3, 7))
+        reward_label.grid(row=4, column=0, sticky='ew', pady=(2, 7))
+        modifier_rewards_label = ttk.Label(
+            details,
+            textvariable=modifier_rewards_var,
+            style='Shop.ModifierReward.TLabel',
+            justify='left',
+        )
+        modifier_rewards_label.grid(row=5, column=0, sticky='ew', pady=(0, 7))
         effect_label = ttk.Label(
-            card,
+            details,
             textvariable=effect_var,
             style='Shop.Help.TLabel',
             wraplength=330,
             justify='left',
         )
-        effect_label.grid(row=4, column=0, sticky='ew', pady=(0, 7))
+        effect_label.grid(row=6, column=0, sticky='ew', pady=(0, 7))
+        buffs_label = ttk.Label(
+            details,
+            textvariable=buffs_var,
+            style='Shop.EnemyBuff.TLabel',
+            justify='left',
+        )
+        buffs_label.grid(row=7, column=0, sticky='ew', pady=(0, 7))
+        for widget in (
+            details_canvas, details, name_label, detail_label,
+            difficulty_label, base_reward_label, reward_label,
+            modifier_rewards_label, effect_label, buffs_label,
+        ):
+            for sequence in ('<MouseWheel>', '<Button-4>', '<Button-5>'):
+                widget.bind(sequence, scroll_details, add='+')
         launch_button = ttk.Button(
             card,
             text='Launch This Mission',
@@ -258,11 +329,11 @@ def build_shop_tab(self, workspace_tabs):
         )
         from .preconditions import PreconditionPicker
         preconditions = PreconditionPicker(card, self)
-        preconditions.grid(row=5, column=0, sticky='ew', pady=(0, 5))
+        preconditions.grid(row=1, column=0, sticky='ew', pady=(5, 5))
         preconditions.grid_remove()
-        launch_button.grid(row=6, column=0, sticky='ew')
+        launch_button.grid(row=2, column=0, sticky='ew')
         mission_actions = ttk.Frame(card)
-        mission_actions.grid(row=7, column=0, sticky='ew', pady=(5, 0))
+        mission_actions.grid(row=3, column=0, sticky='ew', pady=(5, 0))
         mission_actions.columnconfigure(0, weight=1)
         mission_actions.columnconfigure(1, weight=1)
         reroll_button = ttk.Button(
@@ -280,20 +351,27 @@ def build_shop_tab(self, workspace_tabs):
         )
         ease_button.grid(row=0, column=1, sticky='ew', padx=(3, 0))
         card.columnconfigure(0, weight=1)
-        card.rowconfigure(4, weight=1)
+        card.rowconfigure(0, weight=1)
         tooltip = WidgetTooltip(card, '')
         self.shop_mission_cards.append({
             'frame': card,
+            'details_canvas': details_canvas,
             'name': name_var,
             'name_label': name_label,
             'detail': detail_var,
             'detail_label': detail_label,
             'difficulty': difficulty_var,
             'difficulty_label': difficulty_label,
+            'base_reward': base_reward_var,
+            'base_reward_label': base_reward_label,
             'reward': reward_var,
             'reward_label': reward_label,
+            'modifier_rewards': modifier_rewards_var,
+            'modifier_rewards_label': modifier_rewards_label,
             'effect': effect_var,
             'effect_label': effect_label,
+            'buffs': buffs_var,
+            'buffs_label': buffs_label,
             'launch_button': launch_button,
             'preconditions': preconditions,
             'mission_actions': mission_actions,

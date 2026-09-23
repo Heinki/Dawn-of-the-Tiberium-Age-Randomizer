@@ -17,7 +17,12 @@
         "Toxic Diversion",
         "It Came From Red Alert!",
         "Creeping Destruction",
-        "Stand-Alone Missions"
+        "Red Alert Soviet Remake",
+        "Severe Desert Anomalies",
+        "Jungle Corruption",
+        "American Gambit",
+        "Stand-Alone Missions",
+        "Custom Missions"
       ],
       "campaign_by_header": {
         "HEADER_TUTORIAL": "Tutorial",
@@ -31,7 +36,13 @@
         "HEADER_CLASSIC_CAMPAIGNS": "Toxic Diversion",
         "HEADER_ICFRA": "It Came From Red Alert!",
         "HEADER_CD": "Creeping Destruction",
-        "HEADER_STAND_ALONE_MISSIONS": "Stand-Alone Missions"
+        "HEADER_STAND_ALONE_MISSIONS": "Stand-Alone Missions",
+        "HEADER_CUSTOM_C": "Custom Missions",
+        "HEADER_CUSTOM_M": "Custom Missions",
+        "HEADER_RED_ALERT_SOVIETS_CAMPAIGN": "Red Alert Soviet Remake",
+        "HEADER_SDA": "Severe Desert Anomalies",
+        "HEADER_JC": "Jungle Corruption",
+        "HEADER_AG": "American Gambit"
       },
       "extra_missions": [
         {
@@ -147,7 +158,28 @@
           "M_CD4",
           "M_CD5",
           "M_CD6",
-          "M_CD7"
+          "M_CD7",
+          "M_RAS01",
+          "M_RAS02",
+          "M_RAS03",
+          "M_RAS04",
+          "M_RAS05",
+          "M_RAS06",
+          "M_RAS07",
+          "M_RAS08",
+          "M_RAS09",
+          "M_RAS10",
+          "M_RAS11",
+          "M_RAS12",
+          "M_SDA1",
+          "M_SDA2",
+          "M_SDA3",
+          "M_SDA4",
+          "M_SDA5",
+          "M_SDA6",
+          "M_SDA7",
+          "M_JC1",
+          "M_American Gambit"
         ],
         "standalone": [
           "M_UNDER_SIEGE_2",
@@ -170,7 +202,13 @@
           "M_STOMP",
           "M_A_BRIDGE_TOO_FEW",
           "M_CHAINBREAKER",
-          "M_SEEXT"
+          "M_SEEXT",
+          "M_FRENZY",
+          "M_HUE",
+          "M_FUE",
+          "KITEMAP",
+          "M_PEACE",
+          "M_DARK_NIGHT"
         ],
         "late_route": [
           "M_CRA9",
@@ -198,7 +236,8 @@
           "M_TTD_THE_RAIN_OF_DEATH",
           "M_TTD_THE_CONVERSION",
           "M_ICFRA4",
-          "M_CD8"
+          "M_CD8",
+          "M_CREXT2"
         ],
         "route_c": [
           "M_CRC9",
@@ -306,7 +345,35 @@
       "M_RED_PARADISE": "true_no_build",
       "M_STOMP": "true_no_build",
       "M_A_BRIDGE_TOO_FEW": "base_build",
-      "M_CHAINBREAKER": "true_no_build"
+      "M_CHAINBREAKER": "true_no_build",
+      "M_HUE": "true_no_build",
+      "M_FUE": "true_no_build",
+      "M_CREXT2": "base_build",
+      "M_RAS01": "base_build",
+      "M_RAS02": "base_build",
+      "M_RAS03": "base_build",
+      "M_RAS04": "base_build",
+      "M_RAS05": "base_build",
+      "M_RAS06": "base_build",
+      "M_RAS07": "base_build",
+      "M_RAS08": "base_build",
+      "M_RAS09": "base_build",
+      "M_RAS10": "base_build",
+      "M_RAS11": "base_build",
+      "M_RAS12": "base_build",
+      "M_SDA1": "base_build",
+      "M_SDA2": "base_build",
+      "M_SDA3": "base_build",
+      "M_SDA4": "base_build",
+      "M_SDA5": "base_build",
+      "M_SDA6": "base_build",
+      "M_SDA7": "base_build",
+      "M_JC1": "base_build",
+      "M_American Gambit": "base_build",
+      "M_FRENZY": "base_build",
+      "KITEMAP": "base_build",
+      "M_PEACE": "base_build",
+      "M_DARK_NIGHT": "base_build"
     },
     "house_config": {},
     "player_production_houses": {
@@ -380,6 +447,24 @@
         "allies"
       ],
       "Creeping Destruction": [
+        "soviet"
+      ],
+      "Red Alert Soviet Remake": [
+        "soviet"
+      ],
+      "Severe Desert Anomalies": [
+        "allies"
+      ],
+      "Jungle Corruption": [
+        "nod"
+      ],
+      "American Gambit": [
+        "nod"
+      ],
+      "Custom Missions": [
+        "gdi",
+        "nod",
+        "allies",
         "soviet"
       ],
       "Stand-Alone Missions": [

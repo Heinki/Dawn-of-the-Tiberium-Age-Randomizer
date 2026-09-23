@@ -1,10 +1,41 @@
 """Pure player-facing Shop reward and run summaries."""
 
+from collections import Counter
+
+from randomizer.rewards.enemy_scaling import enemy_effect_text
+
 from .config import SHOP_CONFIG
 from .economy import mission_reward
 from .model import RunStatus
 from .modifiers import modifier_difficulty
 from .text import gem_text
+
+
+def enemy_buff_breakdown_lines(entries):
+    """Show total awarded stacks and cumulative effect of each distinct buff."""
+    counts = Counter()
+    rewards = {}
+    for entry in entries:
+        reward = entry['reward']
+        effect_id = str(reward.get('enemy_effect_id') or reward.get('id') or '')
+        if not effect_id:
+            continue
+        counts[effect_id] += 1
+        rewards.setdefault(effect_id, reward)
+    total = sum(counts.values())
+    lines = [
+        f'Enemy AI: {total} total buff stack{"s" if total != 1 else ""} '
+        f'across {len(counts)} effect{"s" if len(counts) != 1 else ""}'
+    ]
+    if total:
+        lines[0] += f' (+{total} Ore / +{gem_text(total)} on victory)'
+        lines.extend(
+            f'• {rewards[effect_id]["name"]} '
+            f'({count} stack{"s" if count != 1 else ""}): '
+            f'{enemy_effect_text(rewards[effect_id], count)}'
+            for effect_id, count in counts.items()
+        )
+    return tuple(lines)
 
 
 def run_modifier_reward_delta(
@@ -14,6 +45,7 @@ def run_modifier_reward_delta(
     modifiers=(),
     mission_modifier=None,
     challenge_hunter_level=0,
+    enemy_buff_count=0,
     config=SHOP_CONFIG,
 ):
     """Return exact Ore/Gem change caused by selected run modifiers."""
@@ -24,6 +56,7 @@ def run_modifier_reward_delta(
         modifiers=modifiers,
         mission_modifier=mission_modifier,
         challenge_hunter_level=challenge_hunter_level,
+        enemy_buff_count=enemy_buff_count,
         config=config,
     )
     unmodified = mission_reward(
@@ -32,6 +65,7 @@ def run_modifier_reward_delta(
         modifiers=(),
         mission_modifier=mission_modifier,
         challenge_hunter_level=challenge_hunter_level,
+        enemy_buff_count=enemy_buff_count,
         config=config,
     )
     return (
@@ -48,6 +82,44 @@ def run_modifier_bonus_text(run_coins, meta_coins):
     )
 
 
+def run_modifier_reward_lines(
+    mission_class,
+    *,
+    victory_coin_bonus_level=0,
+    modifiers=(),
+    mission_modifier=None,
+    challenge_hunter_level=0,
+    enemy_buff_count=0,
+    config=SHOP_CONFIG,
+):
+    """Attribute exact reward deltas to run modifiers in selected order."""
+    common = dict(
+        victory_coin_bonus_level=victory_coin_bonus_level,
+        mission_modifier=mission_modifier,
+        challenge_hunter_level=challenge_hunter_level,
+        enemy_buff_count=enemy_buff_count,
+        config=config,
+    )
+    active = []
+    previous = mission_reward(mission_class, modifiers=(), **common)
+    lines = []
+    for modifier_id in dict.fromkeys(modifiers):
+        active.append(modifier_id)
+        current = mission_reward(
+            mission_class, modifiers=active, **common
+        )
+        ore = current.run_coins - previous.run_coins
+        gems = current.meta_coins - previous.meta_coins
+        if ore or gems:
+            lines.append(
+                f'• {config.modifiers[modifier_id].display_name}: '
+                f'{ore:+d} Ore / {gems:+d} '
+                f'{"Gem" if abs(gems) == 1 else "Gems"}'
+            )
+        previous = current
+    return tuple(lines)
+
+
 def reward_breakdown_lines(
     mission_class,
     *,
@@ -55,6 +127,7 @@ def reward_breakdown_lines(
     modifiers=(),
     mission_modifier=None,
     challenge_hunter_level=0,
+    enemy_buff_count=0,
     config=SHOP_CONFIG,
 ):
     definition = config.mission_rewards[mission_class]
@@ -64,6 +137,7 @@ def reward_breakdown_lines(
         modifiers=modifiers,
         mission_modifier=mission_modifier,
         challenge_hunter_level=challenge_hunter_level,
+        enemy_buff_count=enemy_buff_count,
         config=config,
     )
     lines = [
@@ -77,11 +151,13 @@ def reward_breakdown_lines(
             modifiers=modifiers,
             mission_modifier=mission_modifier,
             challenge_hunter_level=challenge_hunter_level,
+            enemy_buff_count=enemy_buff_count,
             config=config,
         )
-        lines.append(run_modifier_bonus_text(
-            modifier_run_coins, modifier_meta_coins
-        ))
+        if modifier_run_coins or modifier_meta_coins:
+            lines.append(run_modifier_bonus_text(
+                modifier_run_coins, modifier_meta_coins
+            ))
     if reward.victory_bonus_run_coins:
         lines.append(
             'Permanent Victory Bonus: '
@@ -98,6 +174,11 @@ def reward_breakdown_lines(
             'Challenge Hunter: '
             f'+{reward.challenge_hunter_run_coins} Ore, '
             f'+{gem_text(reward.challenge_hunter_meta_coins)}'
+        )
+    if enemy_buff_count:
+        lines.append(
+            f'Enemy AI buffs ({enemy_buff_count}): '
+            f'+{enemy_buff_count} Ore, +{gem_text(enemy_buff_count)}'
         )
     lines.append(
         f'Total: +{reward.run_coins} Ore, '
@@ -136,7 +217,7 @@ def run_summary_lines(profile, run, mission_titles=None, config=SHOP_CONFIG):
         f'{run.free_buff_tokens_used_stage} / {free_buff_token_capacity}',
         f'Free Buff Tokens used this run: {run.free_buff_tokens_used}',
         f'Emergency Revivals used: {run.emergency_revivals_used}',
-        f'Run difficulty: +{modifier_difficulty(run.modifiers)}',
+        f'Run challenge modifiers: {modifier_difficulty(run.modifiers)}',
         'Modifiers: ' + (
             ', '.join(
                 config.modifiers[item].display_name for item in run.modifiers

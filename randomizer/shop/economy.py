@@ -27,6 +27,7 @@ def mission_reward(
     successful=True,
     mission_modifier=None,
     challenge_hunter_level=0,
+    enemy_buff_count=0,
     config: ShopModeConfig = SHOP_CONFIG,
 ):
     """Return configured victory currency; failures always return zero."""
@@ -88,10 +89,11 @@ def mission_reward(
     return CurrencyReward(
         run_coins=(
             base_run_coins + victory_bonus + mission_bonus_run
-            + challenge_hunter_run
+            + challenge_hunter_run + max(0, int(enemy_buff_count))
         ),
         meta_coins=(
             meta_coins + mission_bonus_meta + challenge_hunter_meta
+            + max(0, int(enemy_buff_count))
         ),
         base_run_coins=base_run_coins,
         victory_bonus_run_coins=victory_bonus,

@@ -685,11 +685,13 @@ class WindowController:
                 pady=(0 if row == 0 else 4, 0),
             )
         card_width = width - 36 if compact else (width - 52) // 3
-        wraplength = max(180, card_width - 22)
+        wraplength = max(150, card_width - 50)
         stack_mission_actions = card_width < 430
         for card in self.shop_mission_cards:
             for key in (
-                'name_label', 'detail_label', 'reward_label', 'effect_label'
+                'name_label', 'detail_label', 'difficulty_label',
+                'base_reward_label', 'reward_label',
+                'modifier_rewards_label', 'effect_label', 'buffs_label'
             ):
                 card[key].configure(wraplength=wraplength)
             actions = card['mission_actions']

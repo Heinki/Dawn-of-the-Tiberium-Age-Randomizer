@@ -292,14 +292,57 @@ def shop_enemy_scaling_entries(
             'Enemy T3 Fire Rate I',
         ))
     reward_ids = tuple(reward_ids)
+    if effects['force_enemy_challenge']:
+        # Hardcore adds one separate, mission-safe AI buff on every offer.
+        stream = (
+            f'shop_hardcore_enemy_buff\0{run.seed}\0{int(run.stage)}\0'
+            f'{offer.mission_code}'
+        ).encode('utf-8')
+        first_hardcore = int.from_bytes(sha256(stream).digest()[:2], 'big')
+        for offset in range(len(reward_ids)):
+            reward_id = reward_ids[(first_hardcore + offset) % len(reward_ids)]
+            reward = canonical_reward_for_id(reward_id)
+            if (
+                reward_id not in {candidate[0] for candidate in candidates}
+                and _enemy_reward_allowed_for_mission(reward, mission)
+            ):
+                candidates.append((
+                    reward_id, 'Shop Hardcore', 'Hardcore',
+                ))
+                break
+    eligible_reward_ids = tuple(
+        reward_id for reward_id in reward_ids
+        if _enemy_reward_allowed_for_mission(
+            canonical_reward_for_id(reward_id), mission
+        )
+    )
     stream = (
         f'shop_enemy_scaling\0{run.seed}\0{int(run.stage)}\0'
         f'{offer.mission_code}'
     ).encode('utf-8')
-    first = sha256(stream).digest()[0] % len(reward_ids)
-    for index in range(progress_buffs):
+    first = (
+        sha256(stream).digest()[0] % len(eligible_reward_ids)
+        if eligible_reward_ids else 0
+    )
+    for _index in range(progress_buffs):
+        rotated = (
+            eligible_reward_ids[(first + offset) % len(eligible_reward_ids)]
+            for offset in range(len(eligible_reward_ids))
+        )
+        assigned = Counter(candidate[0] for candidate in candidates)
+        choices = [
+            reward_id for reward_id in rotated
+            if assigned[reward_id] < int(
+                canonical_reward_for_id(reward_id).get('enemy_maximum', 0)
+            )
+        ]
+        if not choices:
+            break
+        reward_id = next(
+            (item for item in choices if not assigned[item]), choices[0]
+        )
         candidates.append((
-            reward_ids[(first + index) % len(reward_ids)],
+            reward_id,
             'Shop stage scaling',
             f'Stage {run.stage}/{run.run_length}',
         ))

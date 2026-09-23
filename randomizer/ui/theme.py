@@ -29,7 +29,9 @@ def apply_color_mode(self):
         'Ore': '#f2cc60' if self.dark_mode_var.get() else '#9a6700',
         'Gem': '#d2a8ff' if self.dark_mode_var.get() else '#8250df',
         'Reroll': '#ffa657' if self.dark_mode_var.get() else '#bc4c00',
+        'BaseReward': '#f2cc60' if self.dark_mode_var.get() else '#9a6700',
         'Reward': '#7ee787' if self.dark_mode_var.get() else '#1a7f37',
+        'ModifierReward': '#f2cc60' if self.dark_mode_var.get() else '#9a6700',
         'Help': '#79c0ff' if self.dark_mode_var.get() else '#0550ae',
         'PlayerBuff': '#7ee787' if self.dark_mode_var.get() else '#1a7f37',
         'EnemyBuff': '#ff7b72' if self.dark_mode_var.get() else '#cf222e',
@@ -255,6 +257,8 @@ def apply_color_mode(self):
         canvas = getattr(self, canvas_name, None)
         if canvas is not None:
             canvas.configure(background=palette['canvas'])
+    for card in getattr(self, 'shop_mission_cards', ()):
+        card['details_canvas'].configure(background=background)
     for canvas in getattr(self, 'advanced_pool_canvases', {}).values():
         canvas.configure(background=palette['canvas'])
     for slider in getattr(self, 'reward_weight_slider_controls', ()):

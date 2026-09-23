@@ -959,10 +959,8 @@ def always_available_air_transport_rules(lines, additional_build_houses=()):
             'FactoryOwners': None,
             'FactoryOwners.Forbidden': None,
             'BuiltAt': ','.join(air_factories),
-            # BARRACKS is DTA's cross-faction prerequisite alias. Retaining it
-            # keeps the Chinook behind ordinary base production while removing
-            # its late-game TechLevel gate.
-            'Prerequisite': 'BARRACKS',
+            # BuiltAt limits production to airfields; no barracks is needed.
+            'Prerequisite': 'none',
             'PrerequisiteOverride': None,
             'Prerequisite.Lists': None,
             'Prerequisite.List0': None,

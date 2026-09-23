@@ -528,6 +528,7 @@ def apply_mission_victory(
     mission_code,
     *,
     next_offers=(),
+    enemy_buff_count=0,
     config: ShopModeConfig = SHOP_CONFIG,
 ):
     mission_code = str(mission_code or '').upper()
@@ -589,6 +590,7 @@ def apply_mission_victory(
             ),
         ),
         challenge_hunter_level=profile.upgrade_level('challenge_hunter'),
+        enemy_buff_count=enemy_buff_count,
         config=config,
     )
     if final_victory:

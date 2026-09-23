@@ -170,11 +170,17 @@ def normalize_long_description(text):
 
 
 def parse_missions(path, fallback_objective_count=FALLBACK_OBJECTIVE_COUNT):
-    """Read the ordered DTA campaign catalogue from ``Battle.ini``."""
+    """Read installed DTA missions from Battle.ini and its BattleE.ini add-on."""
     if not path.exists():
         return []
 
     lines = path.read_text(encoding='utf-8', errors='ignore').splitlines()
+    base_line_count = len(lines)
+    addon_path = path.with_name('BattleE.ini')
+    if path.name.casefold() == 'battle.ini' and addon_path.is_file():
+        lines.extend(
+            addon_path.read_text(encoding='utf-8', errors='ignore').splitlines()
+        )
     mission_entries = []
     seen_codes = set()
     sections = {}
@@ -184,7 +190,11 @@ def parse_missions(path, fallback_objective_count=FALLBACK_OBJECTIVE_COUNT):
     text_block_key = None
     text_block_lines = []
 
-    for line in lines:
+    for line_number, line in enumerate(lines):
+        from_addon = (
+            path.name.casefold() == 'battlee.ini'
+            or line_number >= base_line_count
+        )
         stripped = line.strip()
         if text_block_key is not None:
             if stripped == '$$$TextBlockEnd$$$':
@@ -209,8 +219,12 @@ def parse_missions(path, fallback_objective_count=FALLBACK_OBJECTIVE_COUNT):
             code = value.strip()
             if code in CAMPAIGN_BY_HEADER:
                 current_campaign = CAMPAIGN_BY_HEADER[code]
+            elif from_addon and code.startswith('HEADER_'):
+                current_campaign = 'Custom Missions'
             elif code and code not in {'.', ',', '-'} and code not in seen_codes:
-                mission_entries.append((code, current_campaign))
+                mission_entries.append((
+                    code, current_campaign, from_addon,
+                ))
                 seen_codes.add(code)
             continue
         if current_section and '=' in no_comment:
@@ -224,11 +238,20 @@ def parse_missions(path, fallback_objective_count=FALLBACK_OBJECTIVE_COUNT):
                 sections.setdefault(current_section, {})[key] = value
 
     missions = []
-    for code, campaign in mission_entries:
+    for code, campaign, from_addon in mission_entries:
         section = sections.get(code, {})
         scenario = section.get('Scenario') or section.get('SCENARIO')
         if not scenario:
             continue
+        if from_addon:
+            # Fan missions may be listed before their maps are installed.
+            try:
+                from randomizer.dta.maps import mission_source_path
+                mission_source_path(scenario)
+            except FileNotFoundError:
+                continue
+        if section.get('BonusCampaignID', '').upper() == 'CR':
+            campaign = 'CR'
         # DTA has no uniform runtime signal for completed sub-objectives.
         # Victory is the only reliably observable completion event, so do not
         # generate objective checks that the launcher cannot report.

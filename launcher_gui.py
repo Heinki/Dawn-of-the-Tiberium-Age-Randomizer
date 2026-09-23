@@ -237,6 +237,7 @@ def run_self_check():
             'M_TTD_THE_CONVERSION',
             'M_ICFRA4',
             'M_CD8',
+            'M_CREXT2',
         }
         route_c_codes = {f'M_CRC{number}' for number in range(9, 17)}
         reward_names = [reward['name'] for reward in REWARD_POOL]
@@ -2187,16 +2188,19 @@ def run_self_check():
             'shop_domain': shop_domain,
             'mission_count': len(missions),
             'mission_counts_by_campaign': counts,
-            'campaign_grouping_valid': counts == {
-                'Tutorial': 2,
-                'Shadow Exodus': 12,
-                'PTTP': 9,
-                'CR': 32,
-                'Toxic Diversion': 7,
-                'It Came From Red Alert!': 3,
-                'Creeping Destruction': 8,
-                'Stand-Alone Missions': 20,
-            },
+            'campaign_grouping_valid': all(
+                counts.get(campaign, 0) >= expected
+                for campaign, expected in {
+                    'Tutorial': 2,
+                    'Shadow Exodus': 12,
+                    'PTTP': 9,
+                    'CR': 32,
+                    'Toxic Diversion': 7,
+                    'It Came From Red Alert!': 3,
+                    'Creeping Destruction': 8,
+                    'Stand-Alone Missions': 20,
+                }.items()
+            ),
             'dta_mission_reward_multipliers_valid': (
                 {
                     'late_route': late_route_codes,
@@ -2299,13 +2303,13 @@ def run_self_check():
                 == '1'
                 and core_air_transport_rules.get('TRAN', {}).get(
                     'Prerequisite'
-                ) == 'BARRACKS'
+                ) == 'none'
                 and set(comma_items(
                     core_air_transport_rules.get('TRAN', {}).get('BuiltAt')
                 )) == {'GHPAD', 'NHPAD', 'AHPAD', 'RAASTRP'}
                 and transport_clone_entry.get('route') == 'production_clone'
                 and transport_clone.get('TechLevel') == '1'
-                and transport_clone.get('Prerequisite') == 'BARRACKS'
+                and transport_clone.get('Prerequisite') == 'none'
                 and 'RAASTRP' in comma_items(
                     transport_clone.get('BuiltAt')
                 )

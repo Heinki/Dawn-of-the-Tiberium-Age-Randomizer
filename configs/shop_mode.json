@@ -21,25 +21,25 @@
     },
     "mission_rewards": {
       "act_1": {
-        "display_name": "Act 1",
+        "display_name": "Early campaign mission",
         "difficulty": 1,
         "run_coins": 3,
         "meta_coins": 1
       },
       "act_2": {
-        "display_name": "Act 2",
+        "display_name": "Later campaign mission",
         "difficulty": 2,
         "run_coins": 5,
         "meta_coins": 2
       },
       "operation": {
-        "display_name": "Operation",
+        "display_name": "Special operation",
         "difficulty": 3,
         "run_coins": 7,
         "meta_coins": 3
       },
       "finale": {
-        "display_name": "Finale",
+        "display_name": "Campaign finale",
         "difficulty": 4,
         "run_coins": 10,
         "meta_coins": 4
@@ -1498,7 +1498,7 @@
       },
       "hardcore": {
         "display_name": "Hardcore",
-        "description": "Every mission uses its hardest available difficulty and an enemy bonus modifier. Difficulty assists are disabled.",
+        "description": "Every mission uses its hardest available difficulty, an enemy challenge, and one extra enemy AI buff. Each applied enemy buff adds 1 Ore and 1 Gem to victory rewards. Difficulty assists are disabled.",
         "effects": {
           "force_hardest_difficulty": 1,
           "force_enemy_challenge": 1,

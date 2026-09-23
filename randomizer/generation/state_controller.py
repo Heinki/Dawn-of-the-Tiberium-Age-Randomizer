@@ -270,7 +270,12 @@ class GenerationSettings:
             'Toxic Diversion': ('gdi',),
             'It Came From Red Alert!': ('allies',),
             'Creeping Destruction': ('soviet',),
+            'Red Alert Soviet Remake': ('soviet',),
+            'Severe Desert Anomalies': ('allies',),
+            'Jungle Corruption': ('nod',),
+            'American Gambit': ('nod',),
             'Stand-Alone Missions': ('gdi', 'nod', 'allies', 'soviet'),
+            'Custom Missions': ('gdi', 'nod', 'allies', 'soviet'),
             'All Campaigns': ('gdi', 'nod', 'allies', 'soviet'),
         }.get(selected, ('gdi', 'nod', 'allies', 'soviet'))
         return [

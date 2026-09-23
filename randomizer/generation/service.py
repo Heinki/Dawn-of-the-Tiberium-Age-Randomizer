@@ -20,6 +20,9 @@ class RunGenerator(SeedGeneration, RewardGeneration, GenerationSettings, Startin
 
     current_reward_settings = GenerationSettings.config_reward_settings
 
+    def active_progression_mode(self):
+        return self.config['progression_mode']
+
     def __init__(self, settings, missions):
         if not isinstance(settings, dict):
             raise ValueError('launcher_settings must be a mapping.')
