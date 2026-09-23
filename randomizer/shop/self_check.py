@@ -5,6 +5,11 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from randomizer.core.paths import BATTLE_CLIENT_INI
+from randomizer.dta.enemies import enemy_buff_rules
+from randomizer.dta.maps import mission_source_lines
+from randomizer.dta.rules import installed_effective_sections
+from randomizer.maps.enemy_scripting import enemy_script_buff_rules
+from randomizer.maps.shop_modifiers import apply_shop_global_modifiers
 from randomizer.missions.catalogue import parse_missions
 from randomizer.rewards.catalogue import (
     BUFF_TARGETS,
@@ -592,6 +597,22 @@ def validate_shop_domain():
         ),
         'Faction Roulette accepts a single-faction Shop pool',
     )
+    chaos_effects = modifier_effects((
+        'demolition_charges', 'melee_fighters', 'one_shot_one_kill',
+    ))
+    _require(
+        chaos_effects['demolition_charges']
+        and chaos_effects['melee_fighters']
+        and chaos_effects['one_shot_one_kill'],
+        'Global Shop chaos modifiers are incomplete',
+    )
+    _require(
+        {
+            'ion_thunderbolt', 'logistics_ingenuity', 'regional_presence',
+            'industrial_readiness', 'powerhouse',
+        }.issubset({item['id'] for item in ENEMY_BUFF_DEFINITIONS}),
+        'Strategic enemy buffs are missing from the negative-buff list',
+    )
     try:
         start_new_run(
             ShopProfile(),
@@ -975,6 +996,66 @@ def validate_shop_domain():
     base_build_offer = MissionOffer(
         base_build_mission['code'], classify_mission(base_build_mission)
     )
+    script_test_mission = next(
+        mission for mission in missions if mission['code'] == 'M_SE1'
+    )
+    base_build_lines = mission_source_lines(script_test_mission['scenario'])
+    strategic_rewards = [
+        canonical_reward_for_id(reward_id)
+        for reward_id in (
+            'Ion Thunderbolt I', 'Logistics Ingenuity I',
+            'Regional Presence I', 'Industrial Readiness I', 'Powerhouse',
+        )
+    ]
+    _enemy_rules, enemy_report = enemy_buff_rules(
+        script_test_mission, strategic_rewards
+    )
+    installed_sections = installed_effective_sections(
+        enhanced=bool(script_test_mission.get('required_addon'))
+    )
+    script_rules, script_report = enemy_script_buff_rules(
+        script_test_mission,
+        base_build_lines,
+        enemy_report['hostile_houses'],
+        strategic_rewards,
+        installed_sections,
+    )
+    _require(
+        set(script_report['applied']) == {
+            'ion_thunderbolt', 'logistics_ingenuity', 'regional_presence',
+            'industrial_readiness', 'powerhouse',
+        }
+        and 'General' in script_rules
+        and 'TaskForces' in script_rules
+        and 'Triggers' in script_rules,
+        'Strategic enemy script buffs did not generate mission rules',
+    )
+    chaos_rules = {}
+    chaos_report = apply_shop_global_modifiers(
+        chaos_rules,
+        base_build_lines,
+        installed_sections,
+        {
+            'shop_demolition_charges': 1,
+            'shop_melee_fighters': 1,
+            'shop_one_shot_one_kill': 1,
+        },
+    )
+    _require(
+        chaos_report['technos'] > 0
+        and chaos_report['weapons'] > 0
+        and any(
+            values.get('Explodes') == 'yes'
+            and values.get('Strength') == '1'
+            for values in chaos_rules.values()
+        )
+        and any(
+            values.get('Range') == '2.35'
+            and values.get('MinimumRange') == '0'
+            for values in chaos_rules.values()
+        ),
+        'Global Shop chaos modifiers did not generate unit and weapon rules',
+    )
     progressive_stage_counts = []
     for stage in (1, 4, 5, transition.run.run_length):
         staged_run = replace(
@@ -999,20 +1080,26 @@ def validate_shop_domain():
     _require(
         protected_missions
         and all(
-            not shop_enemy_scaling_entries(
-                replace(
-                    transition.run,
-                    stage=transition.run.run_length,
-                    mission_offers=(MissionOffer(
-                        mission['code'], classify_mission(mission)
-                    ),),
-                ),
-                MissionOffer(mission['code'], classify_mission(mission)),
-                mission,
+            all(
+                entry['reward'].get('enemy_effect') in {
+                    'team_delays', 'reinforcement_size',
+                    'production_activation', 'powerhouse',
+                }
+                for entry in shop_enemy_scaling_entries(
+                    replace(
+                        transition.run,
+                        stage=transition.run.run_length,
+                        mission_offers=(MissionOffer(
+                            mission['code'], classify_mission(mission)
+                        ),),
+                    ),
+                    MissionOffer(mission['code'], classify_mission(mission)),
+                    mission,
+                )
             )
             for mission in protected_missions
         ),
-        'Shop no-build missions received enemy buffs',
+        'Shop no-build missions received unsafe enemy buffs',
     )
     hardcore_run = replace(transition.run, modifiers=('hardcore',))
     _require(

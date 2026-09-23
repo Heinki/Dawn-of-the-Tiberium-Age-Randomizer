@@ -38,7 +38,9 @@ SUPPORTED_AI_REWARD_IDS = frozenset(
     definition['id']
     for definition in ENEMY_BUFF_DEFINITIONS
     if definition.get('effect') in {
-        'armor', 'production', 'firepower', 'reload', 'speed', 'unit'
+        'armor', 'production', 'firepower', 'reload', 'speed', 'unit',
+        'ion_cannon', 'team_delays', 'reinforcement_size',
+        'production_activation', 'powerhouse',
     }
 )
 
@@ -86,12 +88,20 @@ ENEMY_BUFF_GROUP_DEFINITIONS = (
         'label': 'AI production-speed bonuses',
         'effect_ids': _enemy_group_ids(effects={'production'}),
     },
+    {
+        'id': 'strategic_pressure',
+        'label': 'AI strategic pressure',
+        'effect_ids': _enemy_group_ids(effects={
+            'ion_cannon', 'team_delays', 'reinforcement_size',
+            'production_activation', 'powerhouse',
+        }),
+    },
 )
 UNSUPPORTED_AI_REWARD_REASONS = (
     'AI unit unlocks skipped: generic production changes can replace '
     'story-critical unit identities or alter mission scripts.',
-    'AI support powers and superweapons skipped: DTA enemy rewards use only '
-    'verified stat, production, and native-unit buffs.',
+    'Generic AI support-power unlocks skipped: only the reviewed '
+    'Ion Thunderbolt mission trigger is supported.',
 )
 MAX_AI_REWARDS_PER_COMPLETION = 10
 MAX_ENEMY_BUFF_CAP = 100
@@ -289,7 +299,9 @@ def enemy_effect_values(reward, count=1, base_engine_value=1.0):
         armor_strength = 1.0 + (fraction * count)
         received_damage = 1.0 / max(0.001, armor_strength)
         relative_engine = 1.0 / received_damage
-    elif effect == 'production':
+    elif effect in {
+        'production', 'ion_cannon', 'team_delays', 'production_activation',
+    }:
         minimum = max(0.001, float(reward.get(
             'enemy_minimum_engine_multiplier',
             definition.get('minimum_engine_multiplier', 0.001),
@@ -336,7 +348,10 @@ def enemy_effect_values(reward, count=1, base_engine_value=1.0):
             in {'health', 'damage', 'speed', 'armor'}
         )
         else (1.0 - relative_applied) * 100.0
-        if effect in {'production', 'reload'}
+        if effect in {
+            'production', 'reload', 'ion_cannon', 'team_delays',
+            'production_activation',
+        }
         or (
             effect == 'unit'
             and definition.get('unit_buff_type') == 'reload'
@@ -375,6 +390,23 @@ def enemy_effect_text(reward, count=1, base_engine_value=1.0):
         return f'{category} Reload delay {values["displayed_percentage"]}% shorter'
     if effect == 'speed':
         return f'{category} Speed +{values["displayed_percentage"]}%'
+    if effect == 'ion_cannon':
+        cooldown = max(150, int(round(600 * values['relative_engine_value'])))
+        return f'{category} fires an Ion Cannon every {cooldown / 60:g} minutes'
+    if effect == 'team_delays':
+        return (
+            f'{category} creation delay '
+            f'{values["displayed_percentage"]}% shorter'
+        )
+    if effect == 'reinforcement_size':
+        return f'{category} gain +{int(count)} units per scripted team'
+    if effect == 'production_activation':
+        return (
+            f'{category} elapsed delays '
+            f'{values["displayed_percentage"]}% shorter'
+        )
+    if effect == 'powerhouse':
+        return f'{category} gain one faction-specific special unit'
     if effect == 'unit':
         buff_type = definition.get('unit_buff_type')
         value = definition.get('per_stack_value', 0) * int(count)

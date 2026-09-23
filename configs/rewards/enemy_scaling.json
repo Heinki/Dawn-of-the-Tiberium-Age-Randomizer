@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "description": "DTA enemy-only country bonuses, disabled by default.",
+  "description": "DTA enemy-only stat and mission-script bonuses, disabled by default.",
   "sections": {
     "defaults": {
       "stack_model_version": 2,
@@ -62,6 +62,54 @@
         "effect": "speed",
         "per_stack_percent": 8,
         "maximum_stacks": 5
+      },
+      {
+        "id": "ion_thunderbolt",
+        "name": "Ion Thunderbolt I",
+        "type": "Periodic Ion Cannon",
+        "category": "Enemy command",
+        "effect": "ion_cannon",
+        "per_stack_percent": 15,
+        "minimum_engine_multiplier": 0.25,
+        "maximum_stacks": 5
+      },
+      {
+        "id": "logistics_ingenuity",
+        "name": "Logistics Ingenuity I",
+        "type": "Team Delay",
+        "category": "AI teams",
+        "effect": "team_delays",
+        "per_stack_percent": 10,
+        "minimum_engine_multiplier": 0.5,
+        "maximum_stacks": 5
+      },
+      {
+        "id": "regional_presence",
+        "name": "Regional Presence I",
+        "type": "Reinforcement Size",
+        "category": "Enemy reinforcements",
+        "effect": "reinforcement_size",
+        "per_stack_percent": 1,
+        "maximum_stacks": 5
+      },
+      {
+        "id": "industrial_readiness",
+        "name": "Industrial Readiness I",
+        "type": "Production Activation",
+        "category": "Enemy production triggers",
+        "effect": "production_activation",
+        "per_stack_percent": 15,
+        "minimum_engine_multiplier": 0.25,
+        "maximum_stacks": 5
+      },
+      {
+        "id": "powerhouse",
+        "name": "Powerhouse",
+        "type": "Special Team Unit",
+        "category": "Enemy teams",
+        "effect": "powerhouse",
+        "per_stack_percent": 1,
+        "maximum_stacks": 1
       }
     ],
     "tier_unit_buff_templates": [

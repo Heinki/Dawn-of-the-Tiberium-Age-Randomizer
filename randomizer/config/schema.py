@@ -980,10 +980,15 @@ def _validate_enemy_scaling(sections, path):
             ):
                 _invalid(f'Invalid enemy AI power {effect_id!r}', path)
         elif definition['effect'] not in {
-            'armor', 'production', 'firepower', 'reload', 'speed'
+            'armor', 'production', 'firepower', 'reload', 'speed',
+            'ion_cannon', 'team_delays', 'reinforcement_size',
+            'production_activation', 'powerhouse',
         }:
             _invalid(f'Invalid AI-only house reward {effect_id!r}', path)
-        if definition['effect'] in {'production', 'reload'}:
+        if definition['effect'] in {
+            'production', 'reload', 'ion_cannon', 'team_delays',
+            'production_activation',
+        }:
             minimum = definition.get('minimum_engine_multiplier')
             if (
                 not isinstance(minimum, (int, float))

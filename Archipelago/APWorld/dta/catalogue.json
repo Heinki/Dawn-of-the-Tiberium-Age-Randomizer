@@ -6464,6 +6464,20 @@
       "id": 81064858
     },
     {
+      "name": "Industrial Readiness I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066766
+    },
+    {
+      "name": "Ion Thunderbolt I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066767
+    },
+    {
       "name": "Land Mine (VMINE) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -6616,6 +6630,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064163
+    },
+    {
+      "name": "Logistics Ingenuity I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066768
     },
     {
       "name": "Longbow (HELI) Armor Plating I",
@@ -9831,6 +9852,13 @@
       "id": 81063941
     },
     {
+      "name": "Powerhouse",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066769
+    },
+    {
       "name": "Project 941 (P941) Armor Plating I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -10333,6 +10361,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064307
+    },
+    {
+      "name": "Regional Presence I",
+      "classification": "trap",
+      "category": "enemy_buffs",
+      "repeatable": true,
+      "id": 81066770
     },
     {
       "name": "Repair Ekranoplan (ESCORTS) Armor Plating I",
@@ -16175,7 +16210,7 @@
       ]
     }
   ],
-  "catalogue_checksum": "7d5f7e68830c275df701bf0592667e2625fb6296209f9089442396035834c7ce",
+  "catalogue_checksum": "689cb715cedd6824ce560bebd61e1bac9a9f1af214e9e5d7d5604051f8d882cf",
   "locations": [
     {
       "name": "Tutorial Mission 1 - Mission Complete - Reward 1",

@@ -91,6 +91,10 @@ from randomizer.dta.clones import (
 from randomizer.dta.enemies import enemy_buff_rules
 from randomizer.dta.rules import installed_effective_sections
 from randomizer.maps.enemy_scaling import enemy_native_unit_buff_rules
+from randomizer.maps.enemy_scripting import (
+    SCRIPT_ENEMY_EFFECTS,
+    enemy_script_buff_rules,
+)
 from randomizer.maps.ini import all_section_value_maps
 from randomizer.dta.powers import (
     active_paradrop_unit_ids,
@@ -99,7 +103,10 @@ from randomizer.dta.powers import (
     player_power_rules,
 )
 from randomizer.maps.settings import mission_house_color_rules
-from randomizer.maps.shop_modifiers import apply_shop_clone_modifiers
+from randomizer.maps.shop_modifiers import (
+    apply_shop_clone_modifiers,
+    apply_shop_global_modifiers,
+)
 from randomizer.ui.config import (
     PLAYER_COLOR_ENGINE_VALUES,
     RAINBOWIZER_COLORS,
@@ -1385,8 +1392,17 @@ throw "Map $name was not found in expandmo*.mix"
                 reward for reward in [*active_rewards, *enemy_rewards]
                 if reward.get('enemy_reward')
             ]
-            if mission.get('no_build') or mission.get('true_no_build'):
-                launch_enemy_rewards = []
+            if (
+                mission.get('no_build')
+                or mission.get('true_no_build')
+                or mission.get('build_classification') in {
+                    'true_no_build', 'no_build_production',
+                }
+            ):
+                launch_enemy_rewards = [
+                    reward for reward in launch_enemy_rewards
+                    if reward.get('enemy_effect') in SCRIPT_ENEMY_EFFECTS
+                ]
             enemy_rules, enemy_report = enemy_buff_rules(
                 mission,
                 launch_enemy_rewards,
@@ -1430,6 +1446,19 @@ throw "Map $name was not found in expandmo*.mix"
                         next_key += 1
                     target_values[output_key] = value
                     registered.add(str(value).casefold())
+
+            enemy_script_rules, enemy_script_report = enemy_script_buff_rules(
+                mission,
+                source_lines,
+                enemy_report['hostile_houses'],
+                launch_enemy_rewards,
+                installed_effective_sections(
+                    enhanced=bool(mission.get('required_addon'))
+                ),
+                reserved_rules=dta_rules,
+            )
+            for section, values in enemy_script_rules.items():
+                dta_rules.setdefault(section, {}).update(values)
 
             credit_rules, credit_report = player_starting_credit_rules(
                 source_lines,
@@ -1476,6 +1505,15 @@ throw "Map $name was not found in expandmo*.mix"
             )
             for section, values in color_rules.items():
                 dta_rules.setdefault(section, {}).update(values)
+            if self.shop_launch_active():
+                apply_shop_global_modifiers(
+                    dta_rules,
+                    source_lines,
+                    installed_effective_sections(
+                        enhanced=bool(mission.get('required_addon'))
+                    ),
+                    self.active_reward_settings(),
+                )
             hook = prepare_spawn_map(
                 mission,
                 difficulty,
@@ -1485,7 +1523,11 @@ throw "Map $name was not found in expandmo*.mix"
             )
             self.record_enemy_reward_applications(
                 mission_code,
-                [*enemy_report['applications'], *enemy_applications],
+                [
+                    *enemy_report['applications'],
+                    *enemy_applications,
+                    *enemy_script_report['applications'],
+                ],
             )
             if isolation_report.get('isolation_applied'):
                 details = ', '.join(
@@ -1571,6 +1613,12 @@ throw "Map $name was not found in expandmo*.mix"
                     'Applied safe DTA enemy tier-unit buffs: '
                     + ', '.join(enemy_units)
                     + '. Shared player/allied units were excluded.'
+                )
+            if enemy_script_report['applied']:
+                self.append_log(
+                    'Applied DTA enemy script buffs: '
+                    + ', '.join(enemy_script_report['applied'])
+                    + '.'
                 )
             if enemy_unit_skips:
                 self.append_log(

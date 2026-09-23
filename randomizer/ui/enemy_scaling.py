@@ -22,7 +22,8 @@ def build_enemy_scaling_settings(self, reward_frame):
     WidgetTooltip(
         self.enemy_reward_pool_check,
         'Adds hostile-AI-only buffs to the reward pool. Archipelago exports '
-        'them as Trap items. No-build missions never apply enemy buffs.',
+        'them as Trap items. Unit-stat buffs skip no-build missions; reviewed '
+        'AI team and trigger buffs can still apply.',
     )
 
     rate_row = ttk.Frame(reward_frame)

@@ -214,11 +214,23 @@ def mission_blocks_shop_enemy_buffs(mission):
     )
 
 
+def _enemy_reward_allowed_for_mission(reward, mission):
+    effect = str(reward.get('enemy_effect') or '')
+    if effect == 'ion_cannon':
+        return mission.get('build_classification') == 'base_build'
+    if effect in {
+        'team_delays', 'reinforcement_size', 'production_activation',
+        'powerhouse',
+    }:
+        return True
+    return not mission_blocks_shop_enemy_buffs(mission)
+
+
 def shop_enemy_scaling_entries(
     run, offer, mission, *, challenge_slots=0
 ):
     """Build capped, deterministic Shop enemy buffs for one mission offer."""
-    if run is None or offer is None or mission_blocks_shop_enemy_buffs(mission):
+    if run is None or offer is None:
         return []
 
     candidates = []
@@ -259,6 +271,11 @@ def shop_enemy_scaling_entries(
         'Enemy T1 Firepower I',
         'Enemy T1 Fire Rate I',
         'Enemy T1 Mobility I',
+        'Ion Thunderbolt I',
+        'Logistics Ingenuity I',
+        'Regional Presence I',
+        'Industrial Readiness I',
+        'Powerhouse',
     ]
     if int(run.stage) >= 8:
         reward_ids.extend((
@@ -291,6 +308,8 @@ def shop_enemy_scaling_entries(
     counts = Counter()
     for reward_id, source, earned_from in candidates:
         reward = canonical_reward_for_id(reward_id)
+        if not _enemy_reward_allowed_for_mission(reward, mission):
+            continue
         effect_id = str(reward.get('enemy_effect_id') or '')
         maximum = max(0, int(reward.get('enemy_maximum', 0)))
         if not effect_id or counts[effect_id] >= maximum:
