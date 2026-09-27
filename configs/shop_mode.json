@@ -164,6 +164,12 @@
         "permanent_access": 18,
         "permanent_buff": 6
       },
+      "APC2": {
+        "run_access": 7,
+        "run_buff": 4,
+        "permanent_access": 27,
+        "permanent_buff": 8
+      },
       "ART": {
         "run_access": 5,
         "run_buff": 3,

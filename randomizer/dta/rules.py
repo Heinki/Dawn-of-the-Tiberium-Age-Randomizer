@@ -60,6 +60,9 @@ NORMAL_REWARD_MOBILE_IDS = frozenset({
     'SHILKA', 'MFLAK',
 })
 RANDOMIZER_UNIT_LABELS = {
+    # Enhance.ini turns the Soviet APC identity into the Heavy APC. Keep its
+    # separate reward even though base Rules.ini inherits the Allied APC.
+    'APC2': 'Heavy APC',
     'ART': 'Allied Artillery Emplacement',
     'RAPARTY': 'Soviet Shore Artillery',
 }

@@ -6,6 +6,7 @@ from randomizer.rewards.enemy_scaling import (
     enemy_effect_text,
     enemy_effect_values,
 )
+from randomizer.dta.rules import CURATED_HERO_BUILD_LIMITS
 
 from .ini import all_section_value_maps, parse_action_groups
 
@@ -26,6 +27,7 @@ _SPECIAL_UNIT_BY_ACTS_LIKE = {
     2: 'TTNKMSL',
     3: 'AI4TNK',
 }
+_MCV_IDS = frozenset({'BASEUNIT', 'GMCV', 'NMCV', 'AMCV', 'SMCV'})
 
 
 def _casefold_sections(sections):
@@ -111,8 +113,68 @@ def _house_acts_like(house, sections_by_lower):
         return -1
 
 
+def _reinforcement_unit_values(
+    unit_id, map_sections, installed_sections, seen=None,
+):
+    """Resolve installed properties plus mission overrides for a TaskForce unit."""
+    unit_id = str(unit_id).casefold()
+    installed = installed_sections.get(unit_id, ('', {}))[1]
+    mission = map_sections.get(unit_id, ('', {}))[1]
+    mission_values = _casefold_values(mission)
+    values = {**_casefold_values(installed), **mission_values}
+    parent = mission_values.get('$inherits') or mission_values.get('basesection')
+    if not installed:
+        parent = parent or values.get('$inherits') or values.get('basesection')
+    seen = set(seen or ())
+    seen.add(unit_id)
+    if parent and parent.casefold() not in seen:
+        parent_values = _reinforcement_unit_values(
+            parent, map_sections, installed_sections, seen
+        )
+        parent_values.update(values)
+        return parent_values
+    return values
+
+
+def _reinforcement_member_kind(unit_id, map_sections, installed_sections):
+    """Classify spawn terrain; reject units unsafe to duplicate."""
+    values = _reinforcement_unit_values(
+        unit_id, map_sections, installed_sections
+    )
+    if not values:
+        return 'unknown', False
+    if not any(
+        key in values for key in ('category', 'speedtype', 'movementzone', 'naval')
+    ):
+        return 'unknown', False
+    unit_id = str(unit_id).upper()
+    try:
+        passengers = int(values.get('passengers', 0))
+        build_limit = int(values.get('buildlimit', 0))
+    except (TypeError, ValueError):
+        return 'unknown', False
+    safe = not (
+        unit_id in _MCV_IDS
+        or unit_id.endswith('MCV')
+        or unit_id in CURATED_HERO_BUILD_LIMITS
+        or unit_id in _SPECIAL_UNIT_BY_ACTS_LIKE.values()
+        or values.get('category', '').casefold() == 'transport'
+        or passengers > 0
+        or build_limit > 0
+        or values.get('isvehicletransport', '').casefold() == 'yes'
+        or values.get('carryall', '').casefold() == 'yes'
+    )
+    naval = (
+        values.get('naval', '').casefold() == 'yes'
+        or values.get('speedtype', '').casefold() == 'float'
+        or values.get('movementzone', '').casefold() == 'water'
+    )
+    return ('naval' if naval else 'land'), safe
+
+
 def _team_taskforce_rules(
     sections,
+    installed_sections,
     hostile_houses,
     regional_count,
     powerhouse_count,
@@ -120,6 +182,7 @@ def _team_taskforce_rules(
     if regional_count <= 0 and powerhouse_count <= 0:
         return {}, []
     by_lower = _casefold_sections(sections)
+    installed_by_lower = _casefold_sections(installed_sections)
     hostile = {str(house).casefold() for house in hostile_houses}
     reinforcement_teams = _team_ids_created_by_actions(sections)
     occupied = set(by_lower)
@@ -163,10 +226,26 @@ def _team_taskforce_rules(
         )
         if not member_keys:
             continue
+        members = [
+            _reinforcement_member_kind(
+                str(clone_values[key]).split(',')[-1].strip(),
+                by_lower, installed_by_lower,
+            )
+            for key in member_keys
+        ]
+        land_team = all(kind == 'land' for kind, _safe in members)
         regional_applied = 0
         if apply_regional:
+            # TeamType spawn cells are authored. Extra ships can spill onto
+            # land, and mixed/unknown teams have no safe shared terrain.
+            eligible_keys = [
+                key for key, (_kind, safe) in zip(member_keys, members)
+                if safe
+            ] if land_team else []
             for offset in range(regional_count):
-                key = member_keys[offset % len(member_keys)]
+                if not eligible_keys:
+                    break
+                key = eligible_keys[offset % len(eligible_keys)]
                 fields = [item.strip() for item in str(clone_values[key]).split(',')]
                 if len(fields) < 2:
                     continue
@@ -180,7 +259,8 @@ def _team_taskforce_rules(
         special_id = _SPECIAL_UNIT_BY_ACTS_LIKE.get(
             _house_acts_like(house, by_lower)
         )
-        if apply_powerhouse and special_id:
+        # Powerhouse units are land units; do not place them in naval teams.
+        if apply_powerhouse and special_id and land_team:
             existing_key = next((
                 key for key in member_keys
                 if str(clone_values[key]).split(',')[-1].strip().casefold()
@@ -364,6 +444,7 @@ def enemy_script_buff_rules(
     powerhouse = by_effect.get('powerhouse')
     team_rules, team_results = _team_taskforce_rules(
         sections,
+        installed_sections,
         hostile_houses,
         regional[1] if regional else 0,
         powerhouse[1] if powerhouse else 0,
