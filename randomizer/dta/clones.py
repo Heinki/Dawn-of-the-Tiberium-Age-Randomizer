@@ -17,6 +17,10 @@ from randomizer.config.tuning import (
     stacking_multiplier,
 )
 from randomizer.core.paths import GAME_ROOT
+from randomizer.dta.demolition import (
+    PLAYER_BLAST_ANIMATION,
+    player_demolition_blast_art,
+)
 from randomizer.dta.maps import mission_source_path
 from randomizer.dta.movement import amphibious_drive_overrides
 from randomizer.dta.rules import (
@@ -1196,6 +1200,14 @@ def _effective_buff_counts(values, target, counts, combined):
     for buff_type, count in counts.items():
         if count <= 0:
             continue
+        if target.get('id') == 'DTRK' and buff_type in {'ammo', 'range'}:
+            # Saved rewards and mission assistance must never move the
+            # suicide trigger away from its target.
+            continue
+        if target.get('id') == 'DTRK' and buff_type in {'damage', 'area'}:
+            if str(values.get('Explosion') or '').casefold() == 'demonuke':
+                effective[buff_type] = count
+            continue
         single = Counter({buff_type: count})
         if _unit_overrides(values, single, target):
             effective[buff_type] = count
@@ -1722,6 +1734,9 @@ def unit_specific_buff_rules(
         helper_references = _helper_unit_references(
             authored, combined, unit_id, helper_context
         )
+        if unit_id == 'DTRK' and (counts['damage'] or counts['area']):
+            # Blast rewards belong to the human clone, never allied AI routes.
+            helper_references = {}
         is_harvester = unit_id in {
             item.upper()
             for item in comma_items(
@@ -1939,6 +1954,13 @@ def unit_specific_buff_rules(
                     )
                 if built_at:
                     unit_rules['BuiltAt'] = ','.join(dict.fromkeys(built_at))
+            if unit_id == 'DTRK' and (counts['damage'] or counts['area']):
+                unit_rules['Explosion'] = PLAYER_BLAST_ANIMATION
+                unit_rules['ScrapExplosion'] = PLAYER_BLAST_ANIMATION
+                unit_rules['Buildability'] = 'HumanOnly'
+                report['_runtime_art'] = player_demolition_blast_art(
+                    counts['damage'], counts['area']
+                )
             if unit_id == 'MEDIC':
                 # Vanilla recognizes only its fixed Medic type. Vinifera's
                 # generic healer flag preserves infantry healing when the

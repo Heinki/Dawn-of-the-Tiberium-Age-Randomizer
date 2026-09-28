@@ -50,7 +50,9 @@ from randomizer.shop.active import (
     active_shop_rewards,
     active_shop_starter_defense_ids,
     active_shop_starter_unit_ids,
+    active_shop_role_tech_ids,
     active_shop_tech_ids,
+    role_buff_stack_count,
     shop_starter_defense_ids,
     shop_starter_unit_ids,
 )
@@ -478,12 +480,16 @@ class ShopController(ShopPolishController):
                 str(reward.get('unit') or '').upper(),
                 str(reward.get('buff_type') or ''),
             )
-            for reward in active_shop_rewards(run)
+            for reward in expand_equivalent_role_buffs(
+                active_shop_rewards(run),
+                enabled=True,
+                additional_equivalent_groups=SHOP_ALWAYS_AVAILABLE_UNIT_GROUPS,
+            )
             if reward.get('kind') == 'buff'
         )
         armor = {}
         damage = {}
-        for target_id in active_shop_tech_ids(run):
+        for target_id in active_shop_role_tech_ids(run):
             target = BUFF_TARGETS.get(target_id, {})
             armor_reward = next((
                 canonical_reward(reward) for reward in REWARD_POOL
@@ -679,7 +685,9 @@ class ShopController(ShopPolishController):
     def active_starting_tier_one_unit_ids(self):
         run = self._shop_context_run()
         if run is not None:
-            return list(active_shop_starter_unit_ids(run))
+            return self._shop_mission_local_starters(
+                active_shop_starter_unit_ids(run), run
+            )
         if self._shop_mode_context_selected():
             return []
         return super().active_starting_tier_one_unit_ids()
@@ -687,10 +695,30 @@ class ShopController(ShopPolishController):
     def active_starting_tier_one_defense_ids(self):
         run = self._shop_context_run()
         if run is not None:
-            return list(active_shop_starter_defense_ids(run))
+            return self._shop_mission_local_starters(
+                active_shop_starter_defense_ids(run), run
+            )
         if self._shop_mode_context_selected():
             return []
         return super().active_starting_tier_one_defense_ids()
+
+    def _shop_mission_local_starters(self, unit_ids, run):
+        if not self.shop_launch_active() or not run.selected_mission_code:
+            return list(unit_ids)
+        factions = self.reward_factions_for_code(run.selected_mission_code)
+        resolved = []
+        for unit_id in unit_ids:
+            peers = unit_role_equivalents(unit_id)
+            matches = sorted(
+                peer_id for peer_id in peers
+                if factions.intersection(
+                    BUFF_TARGETS.get(peer_id, {}).get('factions', ())
+                )
+            )
+            resolved.append(
+                unit_id if unit_id in matches or not matches else matches[0]
+            )
+        return list(dict.fromkeys(resolved))
 
     def randomize_unit_access_enabled(self):
         if self._shop_mode_context_selected():
@@ -915,6 +943,14 @@ class ShopController(ShopPolishController):
             campaign_filter=campaign_filter,
             reward_mode=reward_mode,
             strict_faction=True,
+        )
+
+    def _shop_unit_role_available(self, entry, run=None):
+        peers = unit_role_equivalents(entry.target_id)
+        return any(
+            candidate.target_id in peers
+            and self._shop_entry_available(candidate, run)
+            for candidate in self._shop_unit_entries
         )
 
     def _set_shop_message(self, message, *, error=False):
@@ -1286,7 +1322,13 @@ class ShopController(ShopPolishController):
         if not selected:
             return
         reward_id = self._shop_permanent_rows.get(selected[0], '')
-        if reward_id not in self.shop_profile.permanent_unit_unlocks:
+        entry = self._shop_entry_by_reward_id.get(reward_id)
+        if entry is None or not any(
+            entry.target_id in unit_role_equivalents(owned_entry.target_id)
+            for owned_id in self.shop_profile.permanent_unit_unlocks
+            for owned_entry in [self._shop_entry_by_reward_id.get(owned_id)]
+            if owned_entry is not None
+        ):
             return
         self.shop_permanent_search_var.set('')
         self.shop_permanent_buff_target_var.set(reward_id)
@@ -1996,7 +2038,7 @@ class ShopController(ShopPolishController):
             reward_id for reward_id in self._selected_loadout_reward_ids()
             if reward_id in unit_entitlements
             for entry in [self._shop_entry_by_reward_id.get(reward_id)]
-            if entry is not None and self._shop_entry_available(entry)
+            if entry is not None and self._shop_unit_role_available(entry)
         )
         permanent_powers = tuple(
             reward_id for reward_id in self._selected_loadout_reward_ids()
@@ -2004,10 +2046,14 @@ class ShopController(ShopPolishController):
             for entry in [self._shop_entry_by_reward_id.get(reward_id)]
             if entry is not None and self._shop_entry_available(entry)
         )
-        permanent_buff_targets = set(starter_tech_ids)
+        permanent_buff_targets = {
+            peer_id
+            for unit_id in starter_tech_ids
+            for peer_id in unit_role_equivalents(unit_id)
+        }
         permanent_buff_targets.update(SHOP_ALWAYS_AVAILABLE_UNIT_IDS)
         permanent_buff_targets.update(
-            entry.target_id
+            peer_id
             for reward_id in (
                 *selected_units,
                 *permanent_powers,
@@ -2015,6 +2061,7 @@ class ShopController(ShopPolishController):
             )
             for entry in [self._shop_entry_by_reward_id.get(reward_id)]
             if entry is not None and entry.target_id
+            for peer_id in unit_role_equivalents(entry.target_id)
         )
         permanent_buffs = tuple(
             item for item in self.shop_profile.permanent_buffs
@@ -2161,21 +2208,30 @@ class ShopController(ShopPolishController):
             )
             if target_id in SHOP_ALWAYS_AVAILABLE_UNIT_LABELS:
                 item = target_id
-            key = (is_power, target_id)
-            record = records.setdefault(key, {
-                'sources': [],
-                'item': item,
-                'target_id': target_id,
-                'is_power': is_power,
-                'buffs': [],
-                'archipelago_item': False,
-                'display_label': SHOP_ALWAYS_AVAILABLE_UNIT_LABELS.get(
-                    target_id, ''
-                ),
-            })
-            if source not in record['sources']:
-                record['sources'].append(source)
-            record['archipelago_item'] |= bool(archipelago)
+            peer_ids = (target_id,) if is_power else unit_role_equivalents(target_id)
+            for peer_id in sorted(peer_ids):
+                peer_item = item
+                if peer_id != target_id:
+                    peer_entry = next((
+                        candidate for candidate in self._shop_unit_entries
+                        if candidate.target_id == peer_id
+                    ), None)
+                    peer_item = peer_entry.reward_id if peer_entry else peer_id
+                key = (is_power, peer_id)
+                record = records.setdefault(key, {
+                    'sources': [],
+                    'item': peer_item,
+                    'target_id': peer_id,
+                    'is_power': is_power,
+                    'buffs': [],
+                    'archipelago_item': False,
+                    'display_label': SHOP_ALWAYS_AVAILABLE_UNIT_LABELS.get(
+                        peer_id, ''
+                    ),
+                })
+                if source not in record['sources']:
+                    record['sources'].append(source)
+                record['archipelago_item'] |= bool(archipelago)
 
         for unit_id in active_shop_starter_unit_ids(run):
             add_access('Tier 1 Starter', unit_id, raw_unit=True)
@@ -2236,10 +2292,8 @@ class ShopController(ShopPolishController):
             target_id = SHOP_ALWAYS_AVAILABLE_REPRESENTATIVE_BY_ID.get(
                 entry.target_id, entry.target_id
             )
-            key = (is_power, target_id)
-            record = records.get(key)
-            if record is None:
-                record = records.setdefault(key, {
+            if (is_power, target_id) not in records:
+                records[(is_power, target_id)] = {
                     'sources': ['Buff entitlement'],
                     'item': target_id,
                     'target_id': target_id,
@@ -2249,13 +2303,20 @@ class ShopController(ShopPolishController):
                     'display_label': SHOP_ALWAYS_AVAILABLE_UNIT_LABELS.get(
                         target_id, ''
                     ),
-                })
-            record['buffs'].append((source, reward_id, int(stacks)))
-            if source == 'AP Received':
-                record['archipelago_item'] = True
+                }
+            peer_ids = (target_id,) if is_power else unit_role_equivalents(target_id)
+            for peer_id in peer_ids:
+                key = (is_power, peer_id)
+                record = records.get(key)
+                if record is None:
+                    continue
+                record['buffs'].append((source, reward_id, int(stacks)))
+                if source == 'AP Received':
+                    record['archipelago_item'] = True
 
         display_rewards = expand_equivalent_role_buffs(
             active_shop_rewards(run),
+            enabled=True,
             additional_equivalent_groups=SHOP_ALWAYS_AVAILABLE_UNIT_GROUPS,
         )
         for record in records.values():
@@ -2289,7 +2350,10 @@ class ShopController(ShopPolishController):
                 item['sources'].append(f'{source} ×{stacks}')
             counts = unit_buff_counts(display_rewards, record['target_id'])
             for reward_id, item in combined.items():
-                reward = canonical_reward_for_id(reward_id)
+                reward = dict(canonical_reward_for_id(reward_id))
+                if reward.get('unit') and not record['is_power']:
+                    reward['unit'] = record['target_id']
+                    reward['_runtime_canonical'] = True
                 effects = buff_effect_lines(
                     reward, count=item['stacks'], buff_counts=counts,
                 )
@@ -2390,17 +2454,34 @@ class ShopController(ShopPolishController):
         local_units = set(self.shop_profile.permanent_unit_unlocks)
         local_powers = set(self.shop_profile.permanent_power_unlocks)
         local_owned = local_units | local_powers
+        owned_unit_source_by_target = {
+            peer_id: reward_id
+            for reward_id in local_units
+            for entry in [self._shop_entry_by_reward_id.get(reward_id)]
+            if entry is not None
+            for peer_id in unit_role_equivalents(entry.target_id)
+        }
         eligible_local_owned = {
             entry.reward_id
             for entry in (*self._shop_unit_entries, *self._shop_power_entries)
             if entry.reward_id in local_owned
-            and self._shop_entry_available(entry)
+            and (
+                self._shop_unit_role_available(entry)
+                if entry.reward_type is ShopRewardType.UNIT_ACCESS
+                else self._shop_entry_available(entry)
+            )
         }
         ap_owned = set(ap_unit_entitlement_ids(ap_reward_ids))
         active_run = bool(
             self.shop_run is not None
             and self.shop_run.status is RunStatus.ACTIVE
         )
+        if active_run:
+            for reward_id in ap_owned:
+                entry = self._shop_entry_by_reward_id.get(reward_id)
+                if entry is not None and entry.reward_type is ShopRewardType.UNIT_ACCESS:
+                    for peer_id in unit_role_equivalents(entry.target_id):
+                        owned_unit_source_by_target.setdefault(peer_id, reward_id)
         loadout_modifiers = (
             self.shop_run.modifiers
             if active_run
@@ -2464,7 +2545,11 @@ class ShopController(ShopPolishController):
                     *self._shop_unit_entries,
                     *self._shop_power_entries,
                 )
-                if entry.reward_id in owned
+                if (
+                    entry.reward_id in owned
+                    or entry.reward_type is ShopRewardType.UNIT_ACCESS
+                    and entry.target_id in owned_unit_source_by_target
+                )
                 and self._shop_entry_available(entry)
                 and (
                     not self.shop_setup_search_var.get().strip()
@@ -2480,18 +2565,24 @@ class ShopController(ShopPolishController):
         )
         for index, entry in enumerate(entries):
             iid = f'loadout-{index}'
+            source_reward_id = (
+                owned_unit_source_by_target.get(entry.target_id, entry.reward_id)
+                if entry.reward_type is ShopRewardType.UNIT_ACCESS
+                else entry.reward_id
+            )
+            equivalent = source_reward_id != entry.reward_id
             options = {
                 'iid': iid,
                 'tags': (
                     ('selected_loadout',)
-                    if entry.reward_id in selected else ()
+                    if source_reward_id in selected else ()
                 ),
                 'values': (
                     (
                         '✓ Active'
-                        if active_run and entry.reward_id in selected
+                        if active_run and source_reward_id in selected
                         else '✓ Selected'
-                        if entry.reward_id in selected else '—'
+                        if source_reward_id in selected else '—'
                     ),
                     entry.reward_id,
                     (
@@ -2507,6 +2598,8 @@ class ShopController(ShopPolishController):
                         if entry.reward_id in ap_owned
                         else 'Permanent Power'
                         if entry.reward_id in local_powers
+                        else 'Equivalent Unit'
+                        if equivalent
                         else 'Permanent Unit'
                     ),
                 ),
@@ -2519,7 +2612,7 @@ class ShopController(ShopPolishController):
             if cameo is not None:
                 options['image'] = cameo
             tree.insert('', 'end', **options)
-            self._shop_loadout_rows[iid] = entry.reward_id
+            self._shop_loadout_rows[iid] = source_reward_id
         if active_run:
             self.shop_permanent_units_without_buffs_var.set(bool(
                 self.shop_run.reward_settings.get('disable_permanent_unit_buffs')
@@ -2627,7 +2720,7 @@ class ShopController(ShopPolishController):
                     unit_filter == 'All'
                     or (
                         unit_filter == 'Owned'
-                        and entry.reward_id in owned
+                        and entry.target_id in owned_role_targets
                     )
                     or (
                         unit_filter == 'Not Owned'
@@ -2823,10 +2916,17 @@ class ShopController(ShopPolishController):
         self._shop_permanent_buff_buyable = {}
         self._shop_permanent_buff_refundable = {}
         owned = set(self.shop_profile.permanent_unit_unlocks)
+        owned_targets = {
+            peer_id
+            for reward_id in owned
+            for owned_entry in [self._shop_entry_by_reward_id.get(reward_id)]
+            if owned_entry is not None
+            for peer_id in unit_role_equivalents(owned_entry.target_id)
+        }
         owned_entries = sorted(
             (
                 entry for entry in self._shop_unit_entries
-                if entry.reward_id in owned
+                if entry.target_id in owned_targets
             ),
             key=lambda entry: entry.reward_id.casefold(),
         )
@@ -2865,12 +2965,23 @@ class ShopController(ShopPolishController):
             item.reward_id: item.stacks
             for item in self.shop_profile.permanent_buffs
         }
+        profile_buffs = [
+            canonical_reward_for_id(item.reward_id)
+            for item in self.shop_profile.permanent_buffs
+            for _ in range(item.stacks)
+        ]
+        expanded_profile_buffs = expand_equivalent_role_buffs(
+            profile_buffs, enabled=True
+        )
         cameo_images = self._prepare_shop_unit_cameos(
             entry.reward_id for entry in entries
         )
         restore_iid = ''
         for index, entry in enumerate(entries):
-            stacks = stacks_by_reward.get(entry.reward_id, 0)
+            owned_stacks = stacks_by_reward.get(entry.reward_id, 0)
+            stacks = role_buff_stack_count(
+                profile_buffs, canonical_reward_for_id(entry.reward_id)
+            )
             maximum = entry.stack_limit or 1
             maxed = stacks >= maximum
             price = permanent_buff_price(entry.target_id)
@@ -2895,15 +3006,11 @@ class ShopController(ShopPolishController):
                     self._shop_catalogue_display_name(
                         entry, effect_state, stacks,
                         buff_counts=unit_buff_counts(
-                            (
-                                canonical_reward_for_id(item.reward_id)
-                                for item in self.shop_profile.permanent_buffs
-                                for _ in range(item.stacks)
-                            ),
+                            expanded_profile_buffs,
                             entry.target_id,
                         ),
                     ),
-                    '◀' if stacks and not active_run else '',
+                    '◀' if owned_stacks and not active_run else '',
                     f'{stacks} / {maximum}',
                     '▶' if buyable else '',
                     state,
@@ -2917,7 +3024,7 @@ class ShopController(ShopPolishController):
             self._shop_permanent_buff_rows[iid] = entry.reward_id
             self._shop_permanent_buff_buyable[iid] = buyable
             self._shop_permanent_buff_refundable[iid] = bool(
-                stacks and not active_run
+                owned_stacks and not active_run
             )
             if entry.reward_id == selected_reward_id:
                 restore_iid = iid
@@ -3133,7 +3240,14 @@ class ShopController(ShopPolishController):
         reward_id = self._shop_permanent_rows.get(selected[0])
         if not reward_id:
             return
-        if reward_id in self.shop_profile.permanent_unit_unlocks:
+        entry = self._shop_entry_by_reward_id.get(reward_id)
+        equivalent_owned = entry is not None and any(
+            entry.target_id in unit_role_equivalents(owned_entry.target_id)
+            for owned_id in self.shop_profile.permanent_unit_unlocks
+            for owned_entry in [self._shop_entry_by_reward_id.get(owned_id)]
+            if owned_entry is not None
+        )
+        if equivalent_owned:
             self.open_selected_permanent_unit_buffs()
             return
         try:

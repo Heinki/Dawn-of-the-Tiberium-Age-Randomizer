@@ -66,7 +66,10 @@ def validate_run_purchase(
         if tech_ids_for_rewards([canonical]).intersection(unlocked):
             return PurchaseValidation(PurchaseResult.ALREADY_OWNED, reward_id, price)
     if entry.reward_type is ShopRewardType.UNIT_BUFF:
-        if entry.target_id not in {str(item).upper() for item in active_tech_ids}:
+        if entry.target_id not in {
+            str(item).upper()
+            for item in (*active_tech_ids, *active_equivalent_tech_ids)
+        }:
             return PurchaseValidation(
                 PurchaseResult.REQUIRES_UNIT_ACCESS, reward_id, price
             )

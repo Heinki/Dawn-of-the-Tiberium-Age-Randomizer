@@ -113,7 +113,7 @@ BUFF_TYPES = [
         'id': 'sensors',
         'name': 'Sensor Array',
         'setting_label': 'Sensors',
-        'description': '{plural} can detect cloaked units.',
+        'description': '{plural} can detect adjacent cloaked units.',
     },
     {
         'id': 'self_healing',
@@ -279,7 +279,11 @@ def _allowed_buff_types(record):
         for weapon in weapons if weapon.get('rof', 0) > 1
     ):
         allowed.append('reload')
-    if any(weapon.get('range', 0) > 0 for weapon in weapons):
+    # DTRK's attack detonates the truck. Extra targeting range makes it
+    # explode before reaching the target, often beside friendly units.
+    if record['id'] != 'DTRK' and any(
+        weapon.get('range', 0) > 0 for weapon in weapons
+    ):
         allowed.append('range')
     offensive_weapons = tuple(
         weapon for weapon in weapons if weapon.get('damage', 0) > 0
@@ -292,6 +296,10 @@ def _allowed_buff_types(record):
         for weapon in offensive_weapons
     ):
         allowed.append('area')
+    if record['id'] == 'DTRK':
+        # Its zero-damage Suicide weapon creates a damaging Art.ini animation.
+        # Player clones get private blast animations for these two rewards.
+        allowed.extend(('damage', 'area'))
     if (
         capped_sight_range(record, 1)
         > int(round(float(record.get('sight', 0))))
@@ -755,6 +763,7 @@ LIMITED_HERO_UNIT_IDS = frozenset(
 NONTRAINABLE_UNIT_IDS = frozenset()
 MANDATORY_EXCLUDED_BUFF_TYPE_IDS = {
     'ammo': frozenset({'DTRK'}),
+    'range': frozenset({'DTRK'}),
 }
 SPECIAL_REWARD_UNIT_IDS = frozenset()
 CLONE_REQUIRED_BUFF_TYPES = frozenset(

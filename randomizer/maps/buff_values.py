@@ -223,9 +223,6 @@ def apply_unit_buff_value(values, target, buff_type, count):
         values['CloakSound'] = 'none'
     elif buff_type == 'sensors':
         values['Sensors'] = 'yes'
-        values['SensorsSight'] = str(int(round(
-            target.get('sight', 5) + float(BUFF_EFFECTS['sensor_sight_bonus'])
-        )))
     elif buff_type == 'cost':
         values['Cost'] = str(stacked_cost(target['cost'], count))
     elif buff_type == 'production':

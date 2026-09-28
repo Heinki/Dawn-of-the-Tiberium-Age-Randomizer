@@ -43,7 +43,7 @@ CAMPAIGN_SPECIAL_MOBILE_IDS = frozenset({
     # Reviewed hidden DTA skirmish identities. These are registered in the
     # installed faction rosters and have native DTA art, but use TechLevel=-1
     # until a map or the randomizer explicitly unlocks them.
-    'GRENL', 'THIEF', 'HIJACK', 'CYBORG', 'CYP',
+    'GRENL', 'HIJACK', 'CYBORG', 'CYP',
     'RAIDER', 'MRV', 'STAPC', 'MFLAK', 'TNKD',
     'SCARAB', 'TORPCAT', 'FLAKCORV',
 })
@@ -67,6 +67,9 @@ RANDOMIZER_UNIT_LABELS = {
     'RAPARTY': 'Soviet Shore Artillery',
 }
 EXCLUDED_MOBILE_IDS = frozenset({
+    # Installed Rules.ini says Thief=yes does not work; this unarmed unit
+    # cannot perform its intended credit-stealing role.
+    'THIEF',
     # Registered TS leftovers without native DTA cameo assets or DTA roster use.
     'HTNKMSAM', 'SMECH', 'UTNK', 'JUMPJET',
     # Older Missile Tank identity. TTNKMSL is the canonical DTA reward unit.

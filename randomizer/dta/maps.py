@@ -79,6 +79,19 @@ def mission_source_lines(scenario):
     )
 
 
+def mission_runtime_fixes(mission):
+    """Repair mission rules that break a required player ability."""
+    if str(mission.get('code', '')).upper() == 'M_CR7':
+        # Snowhopper's authored SPY override removes disguise, while the
+        # installed AI globally sees through disguised spies. Both rules
+        # must change for its infiltration objective to work as a spy mission.
+        return {
+            'SPY': {'Disguised': 'yes'},
+            'AI': {'AIDetectDisguise': 'no'},
+        }
+    return {}
+
+
 def mission_difficulty_modifiers(mission, section_name='Normal'):
     """Read map-authored difficulty modifiers so rewards stack instead of erase."""
     source = mission_source_path(mission.get('scenario'))
@@ -256,6 +269,9 @@ def prepare_spawn_map(
     ))
     if extra_rules:
         merge_ini_section_values(lines, extra_rules)
+    fixes = mission_runtime_fixes(mission)
+    if fixes:
+        merge_ini_section_values(lines, fixes)
     installed_runtime = installed_effective_sections(
         enhanced=bool(mission.get('required_addon'))
     )

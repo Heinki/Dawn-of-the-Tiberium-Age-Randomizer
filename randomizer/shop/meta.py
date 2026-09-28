@@ -8,6 +8,7 @@ from randomizer.rewards.catalogue import (
 )
 from randomizer.rewards.rules import tech_ids_for_rewards
 
+from .active import role_buff_stack_count
 from .catalogue import (
     canonical_reward_for_id,
     canonical_reward_id,
@@ -132,8 +133,17 @@ def purchase_permanent_buff(profile, reward, *, price, shop_eligible=True):
         for owned_entry in [catalogue_entry(canonical_reward_for_id(owned_id))]
         if owned_entry is not None and owned_entry.reward_type is access_type
     }
+    owned_role_targets = (
+        {
+            peer_id
+            for target_id in owned_targets
+            for peer_id in unit_role_equivalents(target_id)
+        }
+        if access_type is ShopRewardType.UNIT_ACCESS
+        else owned_targets
+    )
     if (
-        entry.target_id not in owned_targets
+        entry.target_id not in owned_role_targets
         and entry.target_id not in SHOP_ALWAYS_AVAILABLE_UNIT_IDS
     ):
         result = (
@@ -151,7 +161,15 @@ def purchase_permanent_buff(profile, reward, *, price, shop_eligible=True):
         item.stacks for item in profile.permanent_buffs
         if item.reward_id == reward_id
     ), 0)
-    if entry.stack_limit is not None and current >= entry.stack_limit:
+    total_stacks = role_buff_stack_count(
+        (
+            canonical_reward_for_id(item.reward_id)
+            for item in profile.permanent_buffs
+            for _ in range(item.stacks)
+        ),
+        reward,
+    )
+    if entry.stack_limit is not None and total_stacks >= entry.stack_limit:
         return ProfilePurchaseOutcome(
             profile,
             PurchaseValidation(PurchaseResult.MAX_STACKS, reward_id, int(price)),

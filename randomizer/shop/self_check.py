@@ -285,10 +285,10 @@ def validate_shop_domain():
         not any(
             entry.target_id == 'DTRK'
             and canonical_reward_for_id(entry.reward_id).get('buff_type')
-            == 'ammo'
+            in {'ammo', 'range'}
             for entry in unit_buffs
         ),
-        'DTA Shop still exposes the ineffective Demolition Truck ammo upgrade',
+        'DTA Shop still exposes unsafe range or ineffective ammo upgrades for Demolition Truck',
     )
     microwave_damage = next(
         canonical_reward_for_id(entry.reward_id)
@@ -737,7 +737,7 @@ def validate_shop_domain():
         and tier_by_target.get('BFRT') == 'tier_3'
         and tier_by_target.get('MRV') == 'tier_3'
         and tier_by_target.get('GRENL') == 'tier_2'
-        and tier_by_target.get('THIEF') == 'tier_1'
+        and 'THIEF' not in tier_by_target
         and sum(
             entry.tier == 'tier_3' for entry in special_unit_entries
         ) > len(special_unit_entries) // 2,

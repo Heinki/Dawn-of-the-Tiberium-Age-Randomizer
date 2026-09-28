@@ -646,14 +646,6 @@ def _validate_tuning(sections, path):
         ):
             _invalid(f'Invalid stack limit for buff effect {effect!r}', path)
 
-    sensor_sight_bonus = effects.get('sensor_sight_bonus')
-    if (
-        not isinstance(sensor_sight_bonus, (int, float))
-        or isinstance(sensor_sight_bonus, bool)
-        or sensor_sight_bonus < 0
-    ):
-        _invalid("Invalid buff tuning 'sensor_sight_bonus'", path)
-
     self_heal_cap = effects.get('self_heal_cap')
     if (
         not isinstance(self_heal_cap, dict)

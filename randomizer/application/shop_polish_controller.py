@@ -9,11 +9,13 @@ from randomizer.rewards.display import (
     buff_effect_comparison_lines, buff_effect_lines, reward_display_name,
     unit_buff_counts,
 )
+from randomizer.rewards.rules import expand_equivalent_role_buffs
 from randomizer.shop.active import (
     active_shop_power_ids,
     active_shop_rewards,
     active_shop_role_tech_ids,
     active_shop_tech_ids,
+    role_buff_stack_count,
 )
 from randomizer.shop.catalogue import (
     canonical_reward_for_id,
@@ -906,9 +908,8 @@ class ShopPolishController(ShopArchipelagoController):
         active_role_tech = (
             active_tech if active_role_tech is None else active_role_tech
         )
-        stacks = sum(
-            1 for reward in active_shop_rewards(run)
-            if reward.get('name') == entry.reward_id
+        stacks = role_buff_stack_count(
+            active_shop_rewards(run), canonical_reward_for_id(entry.reward_id)
         )
         price = self._entry_price(entry, current_stacks=stacks)
         locked = (
@@ -1005,8 +1006,10 @@ class ShopPolishController(ShopArchipelagoController):
                 run_key=f'{run.seed}:{run.run_id}',
             )
             rotation_note = f'Faction: {current_faction}. '
-        display_rewards = active_shop_rewards(run)
-        active_tech = set(active_shop_tech_ids(run))
+        display_rewards = expand_equivalent_role_buffs(
+            active_shop_rewards(run), enabled=True
+        )
+        active_tech = set(active_shop_role_tech_ids(run))
         active_role_tech = set(active_shop_role_tech_ids(run))
         active_powers = set(active_shop_power_ids(run))
         visible = []
@@ -1541,7 +1544,7 @@ class ShopPolishController(ShopArchipelagoController):
             selected[0], ''
         ) if selected else ''
         entry = self._shop_entry_by_reward_id.get(reward_id)
-        active_tech = set(active_shop_tech_ids(self.shop_run))
+        active_tech = set(active_shop_role_tech_ids(self.shop_run))
         active_powers = set(active_shop_power_ids(self.shop_run))
         if (
             entry is not None
@@ -1615,7 +1618,7 @@ class ShopPolishController(ShopArchipelagoController):
             return
         owned = (
             set(active_shop_power_ids(run))
-            if power else set(active_shop_tech_ids(run))
+            if power else set(active_shop_role_tech_ids(run))
         )
         entries = (
             self._shop_power_buff_entries if power else self._shop_buff_entries

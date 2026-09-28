@@ -13,6 +13,7 @@ from .catalogue import (
     catalogue_entry,
     shop_catalogue,
     shop_entry_available,
+    shop_role_entry_available,
 )
 from .economy import mission_reward, starting_run_coins
 from .mission_modifiers import mission_modifier_for_run_offer
@@ -262,7 +263,7 @@ def start_new_run(
         )
     unavailable_loadout = [
         reward_id for reward_id in loadout.selected_reward_ids
-        if not shop_entry_available(
+        if not shop_role_entry_available(
             catalogue_entry(canonical_reward_for_id(reward_id)),
             campaign_filter=faction_filter,
             reward_mode=reward_mode,

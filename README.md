@@ -72,7 +72,10 @@ Permanent access and buff prices follow the same fine-grained value curve used
 by Mental Omega instead of broad TechLevel bands. All six supported powers and
 their valid buffs also have strength-specific prices. Buff purchases still
 require unit or power access and use the same player-only clone pipeline as
-normal randomizer rewards.
+normal randomizer rewards. One purchased unit unlocks its curated equivalent
+role units in matching mission factions. The owned loadout lists those
+variants; buffs bought for any variant apply to the whole role with one shared
+stack limit.
 
 DTA cannot safely apply arbitrary per-unit stat buffs to campaign enemies.
 Shop challenge cards therefore use DTA's isolated hostile-house Armor and

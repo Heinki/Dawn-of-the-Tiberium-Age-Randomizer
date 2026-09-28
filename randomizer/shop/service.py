@@ -9,6 +9,7 @@ from .active import (
     active_shop_rewards,
     active_shop_role_tech_ids,
     active_shop_tech_ids,
+    role_buff_stack_count,
 )
 from .archipelago_purchases import (
     commit_archipelago_purchase,
@@ -247,10 +248,7 @@ class ShopProgressionService:
             buff_purchase
             and run.free_buff_tokens_used_stage < token_capacity
         )
-        stacks = sum(
-            1 for active_reward in active_shop_rewards(run)
-            if active_reward.get('name') == entry.reward_id
-        )
+        stacks = role_buff_stack_count(active_shop_rewards(run), reward)
         coupon_definition = SHOP_CONFIG.permanent_upgrades['coupon_book']
         coupon_discount = (
             profile.upgrade_level('coupon_book')

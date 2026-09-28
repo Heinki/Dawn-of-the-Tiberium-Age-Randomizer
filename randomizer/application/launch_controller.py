@@ -73,6 +73,7 @@ from ._dependencies import (
     traceback,
 )
 from randomizer.dta.maps import (
+    mission_runtime_fixes,
     mission_source_lines,
     mission_source_path,
     newest_debug_log,
@@ -1255,6 +1256,8 @@ throw "Map $name was not found in expandmo*.mix"
             }
             for section, values in essential_access_rules.items():
                 clone_rule_overlays.setdefault(section, {}).update(values)
+            for section, values in mission_runtime_fixes(mission).items():
+                clone_rule_overlays.setdefault(section, {}).update(values)
             dta_rules = {
                 section: dict(values)
                 for section, values in clone_rule_overlays.items()
@@ -1376,6 +1379,17 @@ throw "Map $name was not found in expandmo*.mix"
             )
             runtime_power_rules = power_report.pop('_runtime_rules', {})
             runtime_power_art = power_report.pop('_runtime_art', {})
+            runtime_unit_art = clone_report.pop('_runtime_art', {})
+            if runtime_unit_art:
+                animation_ids = [
+                    *runtime_power_art.get('Animations', {}).values(),
+                    *runtime_unit_art.pop('Animations', {}).values(),
+                ]
+                runtime_power_art['Animations'] = {
+                    str(index): animation_id
+                    for index, animation_id in enumerate(animation_ids, 1)
+                }
+                runtime_power_art.update(runtime_unit_art)
             updated_power_runtime = ensure_power_runtime_types(
                 runtime_power_rules,
                 runtime_power_art,

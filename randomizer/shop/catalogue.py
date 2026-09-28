@@ -9,6 +9,7 @@ from randomizer.rewards.catalogue import (
     REWARD_POOL,
     buff_stack_limit,
     canonical_reward,
+    unit_role_equivalents,
 )
 from randomizer.rewards.rules import tech_ids_for_rewards
 
@@ -286,4 +287,29 @@ def shop_entry_available(
         allowed is None
         or not entry.factions
         or allowed.intersection(entry.factions)
+    )
+
+
+def shop_role_entry_available(
+    entry, *, campaign_filter, reward_mode, strict_faction=False
+):
+    """A purchased role can use any faction-local equivalent unit."""
+    if entry.reward_type is not ShopRewardType.UNIT_ACCESS:
+        return shop_entry_available(
+            entry,
+            campaign_filter=campaign_filter,
+            reward_mode=reward_mode,
+            strict_faction=strict_faction,
+        )
+    peers = unit_role_equivalents(entry.target_id)
+    return any(
+        candidate.reward_type is ShopRewardType.UNIT_ACCESS
+        and candidate.target_id in peers
+        and shop_entry_available(
+            candidate,
+            campaign_filter=campaign_filter,
+            reward_mode=reward_mode,
+            strict_faction=strict_faction,
+        )
+        for candidate in shop_catalogue()
     )

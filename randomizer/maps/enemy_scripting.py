@@ -194,6 +194,7 @@ def _team_taskforce_rules(
         for value in sections.get('TeamTypes', {}).values()
         if str(value).strip()
     ]
+    special_units_added = set()
     for team_id in team_ids:
         team_item = by_lower.get(team_id.casefold())
         if team_item is None:
@@ -255,12 +256,30 @@ def _team_taskforce_rules(
                     continue
                 clone_values[key] = ','.join(fields)
                 regional_applied += 1
+        normal_applied = False
+        if apply_powerhouse and land_team:
+            eligible_keys = [
+                key for key, (_kind, safe) in zip(member_keys, members)
+                if safe
+            ]
+            if eligible_keys:
+                key = eligible_keys[0]
+                fields = [item.strip() for item in str(clone_values[key]).split(',')]
+                if len(fields) >= 2:
+                    try:
+                        fields[0] = str(max(1, int(fields[0])) + powerhouse_count)
+                    except ValueError:
+                        pass
+                    else:
+                        clone_values[key] = ','.join(fields)
+                        normal_applied = True
         special_applied = False
         special_id = _SPECIAL_UNIT_BY_ACTS_LIKE.get(
             _house_acts_like(house, by_lower)
         )
-        # Powerhouse units are land units; do not place them in naval teams.
-        if apply_powerhouse and special_id and land_team:
+        # Several scenario houses can share a faction. Add only one special
+        # unit of each faction type across the entire mission.
+        if normal_applied and special_id and special_id not in special_units_added:
             existing_key = next((
                 key for key in member_keys
                 if str(clone_values[key]).split(',')[-1].strip().casefold()
@@ -277,7 +296,9 @@ def _team_taskforce_rules(
                 next_member = str(max(int(key) for key in member_keys) + 1)
                 clone_values[next_member] = f'1,{special_id}'
                 special_applied = True
-        if not regional_applied and not special_applied:
+            if special_applied:
+                special_units_added.add(special_id)
+        if not regional_applied and not normal_applied and not special_applied:
             continue
         clone_id = _taskforce_clone_id(team_id, occupied)
         taskforce_list[_next_list_key(taskforce_list)] = clone_id
@@ -291,6 +312,11 @@ def _team_taskforce_rules(
             applications.append((
                 'reinforcement_size', house, team_id, regional_applied,
                 'TaskForce unit counts',
+            ))
+        if normal_applied:
+            applications.append((
+                'powerhouse', house, team_id, powerhouse_count,
+                'TaskForce normal unit count',
             ))
         if special_applied:
             applications.append((

@@ -406,7 +406,10 @@ def enemy_effect_text(reward, count=1, base_engine_value=1.0):
             f'{values["displayed_percentage"]}% shorter'
         )
     if effect == 'powerhouse':
-        return f'{category} gain one faction-specific special unit'
+        return (
+            f'{category} gain normal units in land teams and one '
+            'special unit per enemy faction'
+        )
     if effect == 'unit':
         buff_type = definition.get('unit_buff_type')
         value = definition.get('per_stack_value', 0) * int(count)

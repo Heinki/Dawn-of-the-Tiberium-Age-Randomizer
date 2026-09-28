@@ -19,6 +19,10 @@ from .dta_definitions import (
     sight_stack_limit,
     unit_display_label,
 )
+from randomizer.dta.demolition import (
+    LEPTONS_PER_CELL,
+    demolition_blast_values,
+)
 from randomizer.config.tuning import (
     REWARD_PLANNING,
     stacked_cost,
@@ -29,6 +33,7 @@ from randomizer.config.tuning import (
     stacking_multiplier,
     stacking_stack_limit,
 )
+from randomizer.dta.rules import installed_effective_sections
 from randomizer.rewards.dta_power_buffs import (
     power_buff_effect_text,
     power_buff_stack_limit,
@@ -593,6 +598,21 @@ def buff_effect_lines(
         return [stacked(f'{prefix}{effect} {round((1 - multiplier) * 100)}% shorter')]
     if buff_type == 'cost':
         base = int(round(float(target.get('cost', 0))))
+        if reward.get('unit') in {'GMCV', 'NMCV', 'AMCV', 'SMCV'}:
+            enhanced = installed_effective_sections(enhanced=True)
+            enhanced_base = int(float(enhanced[reward['unit']]['Cost']))
+            if enhanced_base != base:
+                enhanced_cost = number(stacked_cost(enhanced_base, count))
+                classic_cost = number(stacked_cost(base, count))
+                if count and show_base_values:
+                    enhanced_cost += f' [{number(enhanced_base)}]'
+                    classic_cost += f' [{number(base)}]'
+                text = (
+                    f'{prefix}Cost {enhanced_cost} '
+                    f'credits (Enhanced); {classic_cost} '
+                    'credits (Classic)'
+                )
+                return [stacked(text)]
         return value_text('Cost', stacked_cost(base, count), base, ' credits')
 
     if buff_type == 'speed':
@@ -640,6 +660,17 @@ def buff_effect_lines(
             else 'Simultaneous unit limit'
         )
         return value_text(subject, base_limit + count, base_limit)
+    if reward.get('unit') == 'DTRK' and buff_type == 'damage':
+        base, _radius = demolition_blast_values()
+        current, _radius = demolition_blast_values(damage_stacks=count)
+        return value_text('Blast damage', current, base)
+    if reward.get('unit') == 'DTRK' and buff_type == 'area':
+        _damage, base = demolition_blast_values()
+        _damage, current = demolition_blast_values(area_stacks=count)
+        return value_text(
+            'Blast radius', round(current / LEPTONS_PER_CELL, 2),
+            round(base / LEPTONS_PER_CELL, 2), ' cells',
+        )
     if buff_type == 'damage':
         return weapon_text('Damage', 'damage', lambda base: stacked_weapon_damage(base, count))
 
@@ -711,10 +742,7 @@ def buff_effect_lines(
     if buff_type == 'cloak':
         return [stacked(f'{prefix}Cloaking enabled')]
     if buff_type == 'sensors':
-        sensor_range = int(round(
-            target.get('sight', 5) + float(BUFF_EFFECTS['sensor_sight_bonus'])
-        ))
-        return [stacked(f'{prefix}Sensors {sensor_range} cells')]
+        return [stacked(f'{prefix}Detects cloaked units in adjacent cells')]
     return []
 
 

@@ -12,6 +12,7 @@ from randomizer.missions.tier_one import (
     TIER_ONE_ROLE_UNITS,
 )
 from randomizer.rewards.catalogue import (
+    SHOP_ALWAYS_AVAILABLE_UNIT_GROUPS,
     SHOP_ALWAYS_AVAILABLE_UNIT_IDS,
     unit_role_equivalents,
 )
@@ -192,6 +193,25 @@ def active_shop_rewards(run):
     for buff in run.starting_draft_buffs:
         reward_ids.extend([buff.reward_id] * buff.stacks)
     return tuple(canonical_reward_for_id(reward_id) for reward_id in reward_ids)
+
+
+def role_buff_stack_count(rewards, reward):
+    """Count one buff type across every member of its shared Shop role."""
+    unit_id = str(reward.get('unit') or '').upper()
+    if reward.get('kind') != 'buff' or not unit_id:
+        return sum(item.get('name') == reward.get('name') for item in rewards)
+    peers = set(unit_role_equivalents(unit_id))
+    for group in SHOP_ALWAYS_AVAILABLE_UNIT_GROUPS:
+        if unit_id in group:
+            peers.update(group)
+            break
+    buff_type = reward.get('buff_type')
+    return sum(
+        item.get('kind') == 'buff'
+        and item.get('buff_type') == buff_type
+        and str(item.get('unit') or '').upper() in peers
+        for item in rewards
+    )
 
 
 def active_shop_tech_ids(run):

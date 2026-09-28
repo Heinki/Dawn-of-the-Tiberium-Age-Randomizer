@@ -100,12 +100,13 @@ def stacked_weapon_rof(base_rof, count):
         base_rof,
         max(1, int(BUFF_EFFECTS['reload'].get('minimum_value', 1))),
     )
-    rounded = max(minimum, int(round(
-        base_rof * stacking_multiplier('reload', count)
-    )))
-    if count > 0 and base_rof > 1:
-        return min(rounded, base_rof - 1)
-    return rounded
+    previous = base_rof
+    for stack in range(1, count + 1):
+        rounded = max(minimum, int(round(
+            base_rof * stacking_multiplier('reload', stack)
+        )))
+        previous = max(minimum, min(rounded, previous - 1))
+    return previous
 
 
 def stacked_self_heal_rate(count, base_rate=None):
