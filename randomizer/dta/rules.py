@@ -253,7 +253,10 @@ def techno_catalogue():
             )
             weapon_ids = tuple(dict.fromkeys(
                 weapon_id
-                for key in ('Primary', 'Secondary', 'ElitePrimary', 'EliteSecondary')
+                for key in (
+                    'Primary', 'Secondary', 'Elite', 'ElitePrimary',
+                    'EliteSecondary',
+                )
                 if (weapon_id := values.get(key, '')).casefold() not in {'', 'none'}
             ))
             weapons = {}
@@ -467,17 +470,13 @@ def unit_collision_report(map_path, unit_id):
 
     catalogue = catalogue_by_id()
     target = catalogue.get(unit_id, {})
-    weapons = {
-        target.get('primary_weapon', '').upper(),
-        target.get('secondary_weapon', '').upper(),
-    } - {''}
+    weapons = {weapon.upper() for weapon in target.get('weapons', {})}
     shared_weapon_users = sorted(
         record['id'] for record in catalogue.values()
         if record['id'] != unit_id
-        and weapons.intersection({
-            record.get('primary_weapon', '').upper(),
-            record.get('secondary_weapon', '').upper(),
-        })
+        and weapons.intersection(
+            weapon.upper() for weapon in record.get('weapons', {})
+        )
     )
     reasons = []
     if nonplayer_placements:

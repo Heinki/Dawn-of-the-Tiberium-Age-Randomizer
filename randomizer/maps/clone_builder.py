@@ -128,7 +128,8 @@ def _is_direct_weapon_reference_key(key: object) -> bool:
     lowered = str(key).lower()
     return (
         lowered in {
-            'primary', 'secondary', 'eliteprimary', 'elitesecondary',
+            'primary', 'secondary', 'elite', 'eliteprimary',
+            'elitesecondary',
         }
         or re.fullmatch(r'(?:elite)?weapon\d+', lowered) is not None
     )
@@ -895,48 +896,41 @@ def build_player_clone_sections(
             target, clone_source_values
         )
         weapon_targets = dict(target.get('weapons', {}))
-        if (
-            unit_id != target_unit_id
-            or target.get('category') == 'defenses'
-            or mission_player_override
-        ):
-            # Trainable defenses switch weapons after promotion, and mission
-            # heroes may replace or disable installed weapons. Pull every
-            # direct weapon from the effective clone so earned weapon buffs
-            # follow the actual mission identity rather than a stale roster
-            # weapon. Missing/disabled placeholders are ignored below.
-            for key, value in clone_source_values.items():
-                if not _is_direct_weapon_reference_key(key):
-                    continue
-                weapon = str(value or '').strip()
-                if (
-                    not weapon
-                    or weapon.lower() in {'none', '<none>'}
-                    or weapon.lower().startswith('nota')
-                    or weapon in weapon_targets
-                ):
-                    continue
-                installed_weapon = installed_name_by_lower.get(weapon.lower())
-                map_weapon = map_name_by_lower.get(weapon.lower())
-                weapon_values = _standalone_clone_values(
-                    lines,
-                    installed_sections,
-                    installed_weapon,
-                    map_weapon,
-                )
-                if not weapon_values:
-                    continue
-                weapon_targets[weapon] = {
-                    'damage': parse_float(
-                        _value_case_insensitive(weapon_values, 'Damage', 0), 0
-                    ),
-                    'range': parse_float(
-                        _value_case_insensitive(weapon_values, 'Range', 0), 0
-                    ),
-                    'rof': parse_float(
-                        _value_case_insensitive(weapon_values, 'ROF', 0), 0
-                    ),
-                }
+        # Enhanced rules and mission variants can replace rank-specific
+        # weapons. Discover every weapon on the effective clone so rewards
+        # follow the weapon actually used after promotion.
+        for key, value in clone_source_values.items():
+            if not _is_direct_weapon_reference_key(key):
+                continue
+            weapon = str(value or '').strip()
+            if (
+                not weapon
+                or weapon.lower() in {'none', '<none>'}
+                or weapon.lower().startswith('nota')
+                or weapon in weapon_targets
+            ):
+                continue
+            installed_weapon = installed_name_by_lower.get(weapon.lower())
+            map_weapon = map_name_by_lower.get(weapon.lower())
+            weapon_values = _standalone_clone_values(
+                lines,
+                installed_sections,
+                installed_weapon,
+                map_weapon,
+            )
+            if not weapon_values:
+                continue
+            weapon_targets[weapon] = {
+                'damage': parse_float(
+                    _value_case_insensitive(weapon_values, 'Damage', 0), 0
+                ),
+                'range': parse_float(
+                    _value_case_insensitive(weapon_values, 'Range', 0), 0
+                ),
+                'rof': parse_float(
+                    _value_case_insensitive(weapon_values, 'ROF', 0), 0
+                ),
+            }
         direct_weapon_keys = {
             weapon.upper(): [
                 key

@@ -374,7 +374,10 @@ def native_variant_unit_buff_rules(
                 applied_ids.append(native_unit_id)
 
         for key, weapon_id in base_values.items():
-            if str(key).lower() not in {'primary', 'eliteprimary'}:
+            if str(key).lower() not in {
+                'primary', 'secondary', 'elite', 'eliteprimary',
+                'elitesecondary',
+            }:
                 continue
             weapon_id = str(weapon_id or '').strip()
             if weapon_id and weapon_id.lower() not in {'none', '<none>'}:
