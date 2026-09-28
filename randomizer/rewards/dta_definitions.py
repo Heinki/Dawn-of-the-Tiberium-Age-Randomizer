@@ -151,7 +151,7 @@ BUFF_TYPES = [
 ]
 
 _GLOBAL_BUFF_TYPE_IDS = {
-    'production', 'cost', 'speed', 'damage', 'reload',
+    'production', 'cost', 'speed', 'armor', 'damage', 'reload',
 }
 
 _GLOBAL_BUFF_TARGET = {

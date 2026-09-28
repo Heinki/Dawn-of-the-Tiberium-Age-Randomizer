@@ -1289,6 +1289,44 @@
           "unlocks_per_level": 1,
           "tier": 3
         }
+      },
+      "global_production_speed": {
+        "display_name": "Faster Production (All)",
+        "max_level": 5,
+        "prices": [50, 75, 105, 140, 180],
+        "effects": {
+          "speed_percent_per_level": 10
+        }
+      },
+      "global_cost_reduction": {
+        "display_name": "Lower Cost (All)",
+        "max_level": 5,
+        "prices": [55, 80, 115, 150, 195],
+        "effects": {"percent_per_level": 10}
+      },
+      "global_movement_speed": {
+        "display_name": "Faster Movement (All)",
+        "max_level": 5,
+        "prices": [45, 70, 100, 135, 175],
+        "effects": {"percent_per_level": 10}
+      },
+      "global_armor": {
+        "display_name": "Stronger Armor (All)",
+        "max_level": 5,
+        "prices": [55, 85, 120, 160, 205],
+        "effects": {"percent_per_level": 10}
+      },
+      "global_firepower": {
+        "display_name": "More Damage (All)",
+        "max_level": 5,
+        "prices": [65, 95, 135, 180, 230],
+        "effects": {"percent_per_level": 10}
+      },
+      "global_reload": {
+        "display_name": "Faster Fire Rate (All)",
+        "max_level": 5,
+        "prices": [60, 90, 125, 170, 220],
+        "effects": {"percent_per_level": 10}
       }
     },
     "mission_effects": {
@@ -1503,6 +1541,14 @@
           "force_hardest_difficulty": 1,
           "force_enemy_challenge": 1,
           "disable_assists": 1
+        }
+      },
+      "you_shall_not_build": {
+        "display_name": "You Shall Not Build!",
+        "description": "Each stage forbids one production category: aircraft, vehicles, infantry, or naval. Hardcore forbids two. Each victory gives 2 extra Ore.",
+        "effects": {
+          "production_roulette": 1,
+          "run_reward_flat": 2
         }
       },
       "blockbuster_special": {

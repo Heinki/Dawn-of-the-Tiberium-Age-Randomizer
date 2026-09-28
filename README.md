@@ -82,6 +82,15 @@ Shop challenge cards therefore use DTA's isolated hostile-house Armor and
 Production modifiers. Player boon cards use Player Army clone buffs or
 starting credits. Native enemy/script identities remain unchanged.
 
+The Permanent Upgrades tab offers army-wide Shop upgrades for
+production speed, cost, movement, armor, damage, and fire rate. They are
+purchased with Gems between runs and apply automatically to future player
+production clones, including buildings where the stat applies. Each level
+adds 10% to its named effect, up to 50% at level 5. Movement and fire rate
+still obey engine limits and integer rounding. Mission Starting Credits
+remains a separate permanent upgrade. Mission boons can stack with these
+lasting upgrades for their selected mission.
+
 Permanent Gems and permanent unlocks live in `shop_profile.json`; Run Ore,
 purchases, mission choices, commitments, and victory receipts live in
 `shop_run.json`. Two-file transitions use `shop_transaction.json` for crash

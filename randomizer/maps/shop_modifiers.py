@@ -210,6 +210,66 @@ def _effective_values(section_id, installed_sections, map_sections, rule_section
     return values
 
 
+def apply_shop_production_restrictions(
+    rule_sections, source_lines, installed_sections, production_house,
+    restrictions,
+):
+    """Hide blocked production from the human sidebar without altering AI."""
+    from randomizer.maps.ini import all_section_value_maps
+
+    blocked = set(restrictions)
+    if not blocked or not production_house:
+        return ()
+    map_sections = all_section_value_maps(source_lines)
+    lists = {
+        'infantry': 'InfantryTypes',
+        'vehicles': 'VehicleTypes',
+        'aircraft': 'AircraftTypes',
+        'buildings': 'BuildingTypes',
+    }
+    touched = []
+    for family, list_name in lists.items():
+        for type_id in _registered_ids(
+            installed_sections, map_sections, rule_sections, list_name
+        ):
+            values = _effective_values(
+                type_id, installed_sections, map_sections, rule_sections
+            )
+            get = lambda key: str(values.get(_key(values, key), '')).strip().lower()
+            naval = (
+                get('Naval') == 'yes'
+                or get('WaterBound') == 'yes'
+                or get('SpeedType') == 'hover'
+                or get('MovementZone') in {'amphibious', 'amphibiousdestroyer'}
+            )
+            factory = get('Factory')
+            denied = (
+                family == 'infantry' and 'infantry' in blocked
+                or family == 'aircraft' and 'aircraft' in blocked
+                or family == 'vehicles' and (
+                    'naval' in blocked if naval else 'vehicles' in blocked
+                )
+                or family == 'buildings' and (
+                    factory == 'infantrytype' and 'infantry' in blocked
+                    or factory == 'aircrafttype' and 'aircraft' in blocked
+                    or factory in {'unittype', 'vesseltype'} and (
+                        'naval' in blocked if naval else 'vehicles' in blocked
+                    )
+                )
+            )
+            if not denied:
+                continue
+            current = str(values.get(_key(values, 'ForbiddenHouses'), ''))
+            houses = [item.strip() for item in current.split(',') if item.strip()]
+            if production_house.casefold() not in {
+                house.casefold() for house in houses
+            }:
+                houses.append(production_house)
+            rule_sections.setdefault(type_id, {})['ForbiddenHouses'] = ','.join(houses)
+            touched.append(type_id)
+    return tuple(touched)
+
+
 def apply_shop_global_modifiers(
     rule_sections,
     source_lines,

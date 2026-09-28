@@ -9,6 +9,7 @@ from randomizer.config.tuning import (
     capped_movement_speed,
     capped_sight_range,
     mission_assistance_stack_count,
+    movement_speed_ceiling,
     stacked_cost,
     stacked_self_heal_rate,
     stacked_weapon_damage,
@@ -984,26 +985,40 @@ def _unit_overrides(values, counts, target):
             overrides['BuildLimit'] = str(
                 base_limit + int(counts['build_limit'])
             )
-    if counts['production']:
+    if counts['production'] or counts['shop_production']:
         try:
             base = float(values.get('BuildTimeMultiplier', 1.0))
         except (TypeError, ValueError):
             base = 1.0
-        final = base * stacking_multiplier('production', counts['production'])
+        final = (
+            base * stacking_multiplier('production', counts['production'])
+            / (1 + counts['shop_production'] / 10)
+        )
         if final != base:
             overrides['BuildTimeMultiplier'] = _number(final)
-    if counts['cost']:
+    if counts['cost'] or counts['shop_cost']:
         try:
             base_cost = int(float(values.get('Cost')))
             final_cost = stacked_cost(values.get('Cost'), counts['cost'])
+            if final_cost > 0:
+                final_cost = max(1, int(round(
+                    final_cost * (1 - counts['shop_cost'] / 10)
+                )))
             if final_cost != base_cost:
                 overrides['Cost'] = str(final_cost)
         except (TypeError, ValueError):
             pass
-    if counts['speed']:
+    if counts['speed'] or counts['shop_speed']:
         try:
             base_speed = int(round(float(target.get('speed', 0))))
             final_speed = capped_movement_speed(target, counts['speed'])
+            if counts['shop_speed']:
+                ceiling = movement_speed_ceiling(target)
+                if ceiling is not None:
+                    final_speed = min(
+                        max(base_speed, ceiling),
+                        int(round(final_speed * (1 + counts['shop_speed'] / 10))),
+                    )
             if base_speed > 0 and final_speed > base_speed:
                 overrides['Speed'] = str(final_speed)
         except (TypeError, ValueError):
@@ -1013,6 +1028,8 @@ def _unit_overrides(values, counts, target):
         durability_multiplier /= stacking_multiplier('armor', counts['armor'])
     if counts['health']:
         durability_multiplier *= stacking_multiplier('health', counts['health'])
+    if counts['shop_armor']:
+        durability_multiplier *= 1 + counts['shop_armor'] / 10
     if durability_multiplier != 1.0:
         scaled = _scaled_integer(
             values.get('Strength'),
@@ -1131,23 +1148,33 @@ def _weapon_overrides(values, counts):
     overrides = {}
     if values.get('Spawner', '').casefold() in {'yes', 'true', '1'}:
         return overrides
-    if counts['damage']:
+    if counts['damage'] or counts['shop_damage']:
         try:
             base_damage = int(float(values.get('Damage')))
             if base_damage > 0:
                 final_damage = stacked_weapon_damage(
                     values.get('Damage'), counts['damage']
                 )
+                final_damage = max(1, int(round(
+                    final_damage * (1 + counts['shop_damage'] / 10)
+                )))
                 if final_damage != base_damage:
                     overrides['Damage'] = str(final_damage)
         except (TypeError, ValueError):
             pass
-    if counts['reload']:
+    if counts['reload'] or counts['shop_reload']:
         try:
             base_rof = int(float(values.get('ROF')))
             final_rof = stacked_weapon_rof(
                 values.get('ROF'), counts['reload']
             )
+            minimum = min(
+                base_rof,
+                max(1, int(BUFF_EFFECTS['reload'].get('minimum_value', 1))),
+            )
+            final_rof = max(minimum, int(round(
+                final_rof / (1 + counts['shop_reload'] / 10)
+            )))
             if final_rof != base_rof:
                 overrides['ROF'] = str(final_rof)
         except (TypeError, ValueError):
@@ -1212,7 +1239,9 @@ def _effective_buff_counts(values, target, counts, combined):
         if _unit_overrides(values, single, target):
             effective[buff_type] = count
             continue
-        if buff_type not in {'damage', 'range', 'reload', 'area'}:
+        if buff_type not in {
+            'damage', 'range', 'reload', 'area', 'shop_damage', 'shop_reload',
+        }:
             continue
         for weapon_key in WEAPON_KEYS:
             weapon_id = str(values.get(weapon_key) or '').strip()
@@ -1484,6 +1513,7 @@ def unit_specific_buff_rules(
     allow_foreign_factory_access=False,
     runtime_consumer_unit_ids=(),
     native_direct_unit_ids=(),
+    shop_global_buff_levels=None,
 ):
     """Build map-local original buffs or player production clones.
 
@@ -1594,7 +1624,7 @@ def unit_specific_buff_rules(
             reward.get('global_buff')
             and reward.get('dta_global_clone_buff')
             and buff_type in {
-                'production', 'cost', 'speed', 'damage', 'reload',
+                'production', 'cost', 'speed', 'armor', 'damage', 'reload',
             }
         ):
             global_counts[buff_type] += 1
@@ -1612,6 +1642,14 @@ def unit_specific_buff_rules(
         ):
             continue
         counts_by_unit.setdefault(unit_id, Counter())[buff_type] += 1
+    for buff_type, level in dict(shop_global_buff_levels or {}).items():
+        if buff_type in {
+            'shop_production', 'shop_cost', 'shop_speed', 'shop_armor',
+            'shop_damage', 'shop_reload',
+        }:
+            level = min(5, max(0, int(level)))
+            if level:
+                global_counts[buff_type] = level
     # Mission-required native identities are temporary access grants. Treat
     # their earned buffs as active even when this seed did not award the
     # corresponding permanent unlock.
@@ -1765,7 +1803,10 @@ def unit_specific_buff_rules(
             })
             continue
         weapon_collision = bool(
-            {'damage', 'range', 'reload', 'area'}.intersection(counts)
+            {
+                'damage', 'range', 'reload', 'area', 'shop_damage',
+                'shop_reload',
+            }.intersection(counts)
             and collision['shared_weapon_users']
         )
         identity_collision = bool(
@@ -2013,7 +2054,10 @@ def unit_specific_buff_rules(
 
         weapon_clones = {}
         warhead_clones = {}
-        if {'damage', 'range', 'reload', 'area'}.intersection(counts):
+        if {
+            'damage', 'range', 'reload', 'area', 'shop_damage',
+            'shop_reload',
+        }.intersection(counts):
             for weapon_key in WEAPON_KEYS:
                 weapon_id = str(values.get(weapon_key) or '').strip()
                 if not weapon_id:

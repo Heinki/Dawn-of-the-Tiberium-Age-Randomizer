@@ -1814,6 +1814,28 @@ class ShopPolishController(ShopArchipelagoController):
                 'received Archipelago units cannot be selected. Low-Tech War '
                 'blocks these Tier 3 unlocks.'
             ),
+            'global_production_speed': (
+                'Production speed: +10% per level, up to +50%. '
+                'Applies to player units and buildings in future Shop runs.'
+            ),
+            'global_cost_reduction': (
+                'Unit and building cost: 10% less per level, up to 50% less.'
+            ),
+            'global_movement_speed': (
+                'Movement speed: +10% per level, up to +50%. '
+                'Game speed limits and rounding still apply.'
+            ),
+            'global_armor': (
+                'Unit and building durability: +10% per level, up to +50%.'
+            ),
+            'global_firepower': (
+                'Player weapon damage: +10% per level, up to +50%. '
+                'Individual damage values are rounded.'
+            ),
+            'global_reload': (
+                'Player weapon fire rate: +10% per level, up to +50%. '
+                'Reload delay respects game limits and rounding.'
+            ),
         }
         return templates.get(
             upgrade_id,
@@ -1902,10 +1924,19 @@ class ShopPolishController(ShopArchipelagoController):
         if definition is None:
             return ''
         level = self.shop_profile.upgrade_level(upgrade_id)
+        effect = self._shop_upgrade_effect_text(upgrade_id, definition)
+        if upgrade_id.startswith('global_'):
+            direction = '-' if upgrade_id == 'global_cost_reduction' else '+'
+            current = f'{direction if level else ""}{level * 10}%'
+            next_value = (
+                f'{direction}{(level + 1) * 10}%'
+                if level < definition.max_level else 'MAX'
+            )
+            effect = f'Current: {current}. Next: {next_value}. {effect}'
         return (
             f'{definition.display_name}\n'
             f'Current level: {level} / {definition.max_level}\n'
-            f'{self._shop_upgrade_effect_text(upgrade_id, definition)}'
+            f'{effect}'
         )
 
     def _refresh_shop_history(self):

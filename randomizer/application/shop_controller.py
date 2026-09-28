@@ -93,6 +93,8 @@ from randomizer.shop.modifiers import (
     modifier_forces_hardest_difficulty,
     modifier_mission_offer_count,
     modifier_shop_faction,
+    stage_production_restrictions,
+    PRODUCTION_RESTRICTION_LABELS,
 )
 from randomizer.shop.model import (
     SHOP_ACCESS_REWARD_MODE,
@@ -127,6 +129,14 @@ SHOP_CAMPAIGN_FACTIONS = {
 # Shop progression stores one purchased identity per curated role. Reuse
 # Chaos' isolated access pipeline to select its mission-local faction form.
 SHOP_REWARD_MODE = SHOP_ACCESS_REWARD_MODE
+SHOP_GLOBAL_BUFF_LEVEL_KEYS = {
+    'global_production_speed': 'shop_production',
+    'global_cost_reduction': 'shop_cost',
+    'global_movement_speed': 'shop_speed',
+    'global_armor': 'shop_armor',
+    'global_firepower': 'shop_damage',
+    'global_reload': 'shop_reload',
+}
 class ShopController(ShopPolishController):
     def initialize_shop_controller(self):
         self.shop_config = SHOP_CONFIG
@@ -530,6 +540,10 @@ class ShopController(ShopPolishController):
                 settings[f'shop_{key}'] = (
                     float(value) if key.endswith('_percent') else int(value)
                 )
+            settings['shop_global_buff_levels'] = {
+                buff_type: self.shop_profile.upgrade_level(upgrade_id)
+                for upgrade_id, buff_type in SHOP_GLOBAL_BUFF_LEVEL_KEYS.items()
+            }
             armor_seeds, damage_seeds = self._shop_modifier_clone_seed_plan(run)
             settings['shop_modifier_armor_seed_stacks'] = armor_seeds
             settings['shop_modifier_damage_seed_stacks'] = damage_seeds
@@ -2726,6 +2740,20 @@ class ShopController(ShopPolishController):
         )
         score = modifier_difficulty(modifiers)
         self.shop_difficulty_var.set(f'Run Difficulty: +{score}')
+        if hasattr(self, 'shop_production_restriction_var'):
+            run = self.shop_run
+            restrictions = stage_production_restrictions(run) if (
+                run is not None and run.status is RunStatus.ACTIVE
+            ) else ()
+            self.shop_production_restriction_var.set(
+                ' | '.join(
+                    PRODUCTION_RESTRICTION_LABELS[item]
+                    for item in restrictions
+                ) if restrictions else (
+                    'Production roulette: revealed when run starts'
+                    if 'you_shall_not_build' in modifiers else ''
+                )
+            )
         if hasattr(self, 'shop_modifier_difficulty_var'):
             self.shop_modifier_difficulty_var.set(
                 f'Run difficulty +{score}'
@@ -2935,6 +2963,13 @@ class ShopController(ShopPolishController):
             else:
                 state, row_tag, buyable = 'Available', 'available', True
             next_price = 'Max' if maxed else gem_text(price)
+            level_text = f'{level} / {definition.max_level}'
+            if upgrade_id.startswith('global_'):
+                current_percent = level * 10
+                level_text = (
+                    f'{current_percent}% MAX' if maxed else
+                    f'{current_percent}→{(level + 1) * 10}%'
+                )
             iid = f'upgrade-{index}'
             upgrade_tree.insert(
                 '', 'end', iid=iid,
@@ -2942,7 +2977,7 @@ class ShopController(ShopPolishController):
                 values=(
                     definition.display_name,
                     '◀' if level > 0 else '',
-                    f'{level} / {definition.max_level}',
+                    level_text,
                     '▶' if not maxed else '',
                     state,
                     next_price,

@@ -107,7 +107,9 @@ from randomizer.maps.settings import mission_house_color_rules
 from randomizer.maps.shop_modifiers import (
     apply_shop_clone_modifiers,
     apply_shop_global_modifiers,
+    apply_shop_production_restrictions,
 )
+from randomizer.shop.modifiers import stage_production_restrictions
 from randomizer.ui.config import (
     PLAYER_COLOR_ENGINE_VALUES,
     RAINBOWIZER_COLORS,
@@ -1321,6 +1323,11 @@ throw "Map $name was not found in expandmo*.mix"
                 ),
                 runtime_consumer_unit_ids=paradrop_unit_ids,
                 native_direct_unit_ids=native_mcv_ids,
+                shop_global_buff_levels=(
+                    self.active_reward_settings().get(
+                        'shop_global_buff_levels', {}
+                    ) if self.shop_launch_active() else None
+                ),
             )
             if self.shop_launch_active():
                 apply_shop_clone_modifiers(
@@ -1527,6 +1534,15 @@ throw "Map $name was not found in expandmo*.mix"
                         enhanced=bool(mission.get('required_addon'))
                     ),
                     self.active_reward_settings(),
+                )
+                apply_shop_production_restrictions(
+                    dta_rules,
+                    source_lines,
+                    installed_effective_sections(
+                        enhanced=bool(mission.get('required_addon'))
+                    ),
+                    isolation_report.get('production_house', ''),
+                    stage_production_restrictions(self._shop_launch_run),
                 )
             hook = prepare_spawn_map(
                 mission,

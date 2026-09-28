@@ -121,7 +121,8 @@ Pure modules must not import `randomizer/application`. Tk variables stay on the 
 release manifests receive `APP_VERSION` during packaging; never duplicate the
 version in APWorld source files or build scripts.
 
-Do not add unit tests or unit-test suites to this project. Use compilation,
+Do not add, modify, or run automated test files or suites unless the user
+explicitly requests them. Do not propose tests by default. Use compilation,
 the existing non-invasive launcher diagnostics, generated-map inspection,
 and live gameplay checks to validate changes.
 
@@ -150,7 +151,7 @@ Equivalent Linux maintainer commands (the EXE remains a Windows executable):
 python3 Archipelago/build_apworld.py
 ```
 
-Changes affecting mission parsing, map generation, difficulty, access, clones, buffs, launch, or completion require focused generated-map checks and relevant live DTA mission tests. Changes affecting the catalogue or APWorld require matching launcher and APWorld builds.
+Changes affecting mission parsing, map generation, difficulty, access, clones, buffs, launch, or completion require focused generated-map checks and relevant live DTA mission checks. Changes affecting the catalogue or APWorld require matching launcher and APWorld builds.
 
 Regenerate the checked-in APWorld catalogue and generation snapshots from an
 installed DTA copy before building whenever reward, mission, or unit catalogue

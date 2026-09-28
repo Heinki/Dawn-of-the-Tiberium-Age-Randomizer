@@ -401,6 +401,14 @@ def build_shop_tab(self, workspace_tabs):
         command=self.give_up_shop_run,
     )
     self.shop_give_up_button.pack(side='left')
+    self.shop_production_restriction_var = tk.StringVar(value='')
+    ttk.Label(
+        actions,
+        textvariable=self.shop_production_restriction_var,
+        style='Shop.Help.TLabel',
+        wraplength=320,
+        justify='left',
+    ).pack(side='left', padx=(12, 0))
     self.shop_reset_profile_button = ttk.Button(
         actions,
         text='Reset Profile…',
