@@ -897,6 +897,13 @@ class AdvancedSettingsController:
                 f'missions {included_missions}/{len(visible_missions)}, '
                 f'units {included_units}/{len(visible_unit_ids)}, '
                 f'powers {included_powers}/{len(visible_power_ids)} included'
+                + (
+                    ' | Warning: Shop Mode requires at least 10 missions.'
+                    if self.shop_mode_selected() and included_missions < 10
+                    else ' | Warning: exactly 10 missions selected; repeats possible.'
+                    if self.shop_mode_selected() and included_missions == 10
+                    else ''
+                )
             )
         )
 
