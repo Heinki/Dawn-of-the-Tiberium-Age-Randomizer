@@ -21,16 +21,16 @@ from randomizer.shop.model import PurchaseResult, ShopProfile, ShopRewardType
 
 
 class ReportedDtaIssuesTest(unittest.TestCase):
-    def test_powerhouse_adds_normal_units_without_special_swarm(self):
+    def test_powerhouse_adds_specials_to_reinforcements_only(self):
         sections = {
             'Houses': {'0': 'Nod1', '1': 'Nod2'},
             'Nod1': {'ActsLike': '1'},
             'Nod2': {'ActsLike': '1'},
             'TeamTypes': {'0': 'T1', '1': 'T2', '2': 'T3', '3': 'T4'},
-            'T1': {'House': 'Nod1', 'TaskForce': 'F1'},
-            'T2': {'House': 'Nod1', 'TaskForce': 'F2'},
+            'T1': {'House': 'Nod1', 'TaskForce': 'F1', 'Reinforce': 'yes'},
+            'T2': {'House': 'Nod1', 'TaskForce': 'F2', 'Reinforce': 'yes'},
             'T3': {'House': 'Nod1', 'TaskForce': 'F3'},
-            'T4': {'House': 'Nod2', 'TaskForce': 'F4'},
+            'T4': {'House': 'Nod2', 'TaskForce': 'F4', 'Reinforce': 'yes'},
             'TaskForces': {'0': 'F1', '1': 'F2', '2': 'F3', '3': 'F4'},
             'F1': {'0': '2,E1N'},
             'F2': {'0': '3,E3N'},
@@ -40,15 +40,119 @@ class ReportedDtaIssuesTest(unittest.TestCase):
         rules, applications = _team_taskforce_rules(
             sections, installed_effective_sections(True), {'Nod1', 'Nod2'}, 0, 1
         )
-        cloned = [rules[rules[team]['TaskForce']] for team in ('T1', 'T2', 'T3', 'T4')]
-        all_members = [value for force in cloned for value in force.values()]
-        self.assertEqual(sum(value.endswith(',AIPLSM') for value in all_members), 1)
+        self.assertNotIn('T3', rules)
+        cloned = [rules[rules[team]['TaskForce']] for team in ('T1', 'T2', 'T4')]
+        self.assertEqual(
+            {
+                force[key].split(',')[-1]
+                for force in cloned for key in ('1', '2')
+            },
+            {'AIPLSM', 'AISCRINTNK', 'ILHEMOTH'},
+        )
+        self.assertTrue(all(force['1'] != force['2'] for force in cloned))
         self.assertEqual(
             [int(next(value for value in force.values() if value.endswith(unit)).split(',')[0])
-             for force, unit in zip(cloned, (',E1N', ',E3N', ',LTNK', ',E1N'))],
-            [3, 4, 3, 2],
+             for force, unit in zip(cloned, (',E1N', ',E3N', ',E1N'))],
+            [2, 3, 1],
         )
-        self.assertEqual(sum(item[4] == 'TaskForce normal unit count' for item in applications), 4)
+        self.assertEqual(sum(item[4] == 'TaskForce special unit' for item in applications), 6)
+
+    def test_powerhouse_rotates_only_each_factions_specials(self):
+        pools = {
+            0: {'AIHTNK', 'AIXO', 'CARRTRUK'},
+            1: {'AIPLSM', 'AISCRINTNK', 'ILHEMOTH'},
+            2: {'TTNKMSL', 'AIBFRT', 'BRIG'},
+            3: {'AI4TNK', 'AIBEHEMOTH', 'BEHEPLSM'},
+        }
+        sections = {'TeamTypes': {}, 'TaskForces': {}}
+        for faction in pools:
+            house = f'House{faction}'
+            sections[house] = {'ActsLike': str(faction)}
+            for index in range(3):
+                team, force = f'T{faction}_{index}', f'F{faction}_{index}'
+                sections['TeamTypes'][team] = team
+                sections['TaskForces'][force] = force
+                sections[team] = {
+                    'House': house, 'TaskForce': force, 'Reinforce': 'yes',
+                }
+                sections[force] = {'0': '2,E1N'}
+        rules, _ = _team_taskforce_rules(
+            sections, installed_effective_sections(True),
+            {f'House{faction}' for faction in pools}, 0, 1,
+        )
+        for faction, expected in pools.items():
+            chosen = [
+                {
+                    rules[rules[f'T{faction}_{index}']['TaskForce']][key].split(',')[-1]
+                    for key in ('1', '2')
+                }
+                for index in range(3)
+            ]
+            self.assertTrue(all(len(pair) == 2 for pair in chosen))
+            self.assertEqual(set().union(*chosen), expected)
+
+    def test_powerhouse_reinforces_existing_special_only_teams(self):
+        for faction, original in ((1, 'AIPLSM'), (2, 'TTNKMSL')):
+            with self.subTest(original=original):
+                sections = {
+                    'Enemy': {'ActsLike': str(faction)},
+                    'TeamTypes': {'0': 'T1'},
+                    'TaskForces': {'0': 'F1'},
+                    'T1': {'House': 'Enemy', 'TaskForce': 'F1', 'Reinforce': 'yes'},
+                    'F1': {'0': f'1,{original}'},
+                }
+                rules, applications = _team_taskforce_rules(
+                    sections, installed_effective_sections(True), {'Enemy'}, 0, 1
+                )
+                members = rules[rules['T1']['TaskForce']]
+                self.assertEqual(
+                    sum(int(value.split(',')[0]) for value in members.values()), 3
+                )
+                self.assertEqual(
+                    len({value.split(',')[-1] for value in members.values()}), len(members)
+                )
+                self.assertEqual(len(applications), 2)
+
+    def test_powerhouse_reuses_air_and_naval_types_and_skips_mcv_transports(self):
+        sections = {
+            'Nod': {'ActsLike': '1'},
+            'TeamTypes': {str(index): f'T{index}' for index in range(1, 8)},
+            'TaskForces': {str(index): f'F{index}' for index in range(1, 8)},
+            'Actions': {'0': '1,80,0,T7,0,0,0,0,A'},
+        }
+        for index, unit in enumerate(('HELI', 'BOAT', 'GMCV', 'TRAN', 'SLST', 'E1N'), 1):
+            sections[f'T{index}'] = {
+                'House': 'Nod', 'TaskForce': f'F{index}', 'Reinforce': 'yes',
+            }
+            sections[f'F{index}'] = {'0': f'2,{unit}'}
+        sections['T7'] = {'House': 'Nod', 'TaskForce': 'F7'}
+        sections['F7'] = {'0': '1,E1N', '1': '2,HELI'}
+        rules, applications = _team_taskforce_rules(
+            sections, installed_effective_sections(True), {'Nod'}, 0, 1
+        )
+        for index, unit in ((1, 'HELI'), (2, 'BOAT')):
+            clone = rules[rules[f'T{index}']['TaskForce']]
+            self.assertEqual(clone['0'], f'3,{unit}')
+            self.assertEqual(len(clone), 1)
+        for index in (3, 4, 5):
+            self.assertNotIn(f'T{index}', rules)
+        land_clone = rules[rules['T6']['TaskForce']]
+        self.assertEqual(land_clone['0'], '2,E1N')
+        self.assertEqual(len({land_clone['1'], land_clone['2']}), 2)
+        self.assertTrue(all(
+            land_clone[key] in {'1,AIPLSM', '1,AISCRINTNK', '1,ILHEMOTH'}
+            for key in ('1', '2')
+        ))
+        mixed_clone = rules[rules['T7']['TaskForce']]
+        self.assertEqual(mixed_clone, {'0': '1,E1N', '1': '3,HELI'})
+        self.assertEqual(len(applications), 5)
+        regional_rules, _ = _team_taskforce_rules(
+            sections, installed_effective_sections(True), {'Nod'}, 1, 0
+        )
+        self.assertEqual(
+            regional_rules[regional_rules['T1']['TaskForce']]['0'], '3,HELI'
+        )
+        self.assertNotIn('T2', regional_rules)
 
     def test_flamethrowers_are_independent_shop_units(self):
         self.assertEqual(unit_role_equivalents('E4'), {'E4'})

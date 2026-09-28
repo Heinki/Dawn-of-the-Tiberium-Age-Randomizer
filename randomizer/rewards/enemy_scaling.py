@@ -399,7 +399,11 @@ def enemy_effect_text(reward, count=1, base_engine_value=1.0):
             f'{values["displayed_percentage"]}% shorter'
         )
     if effect == 'reinforcement_size':
-        return f'{category} gain +{int(count)} units per scripted team'
+        rank = 'elite' if int(count) >= 3 else 'veteran'
+        return (
+            f'{category} gain +{int(count)} units per scripted team; '
+            f'hostile off-map teams spawn at least {rank}'
+        )
     if effect == 'production_activation':
         return (
             f'{category} elapsed delays '
@@ -407,8 +411,9 @@ def enemy_effect_text(reward, count=1, base_engine_value=1.0):
         )
     if effect == 'powerhouse':
         return (
-            f'{category} gain normal units in land teams and one '
-            'special unit per enemy faction'
+            f'{category} reinforcement teams gain two faction special units on land '
+            'or more of their existing air/naval units; hostile off-map '
+            'teams spawn at least veteran'
         )
     if effect == 'unit':
         buff_type = definition.get('unit_buff_type')

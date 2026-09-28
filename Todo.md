@@ -1,2 +1,3 @@
 ALL:
 - being able to manually configure a level list/order for shop mode would be pretty fun - for instance let's say I just want to run through a campaign in order, but use the shop mode system as I go -> All randomizers: adjustable maps for Shopmode with advanced tab
+- Add "endless" mode once all 10 missions are done, next to the "Start a new run" the player can now say "Start endless mode", HOWEVER in endless mode we add 2! modifiers for the Enemy AI buffs PER MISSION! SO if the enemy ai had buffs with like 11% more amor we can add it to 33% more armor, 33% more health and the max we defined beforehand! So at some point when ALL enemy BUffs are on the player can just continue! 

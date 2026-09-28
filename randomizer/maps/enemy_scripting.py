@@ -20,13 +20,18 @@ SCRIPT_ENEMY_EFFECTS = frozenset({
 })
 
 _PRODUCTION_ACTIONS = frozenset({'3', '13', '74'})
-_CREATE_TEAM_ACTIONS = frozenset({'4', '80'})
-_SPECIAL_UNIT_BY_ACTS_LIKE = {
-    0: 'AIHTNK',
-    1: 'AIPLSM',
-    2: 'TTNKMSL',
-    3: 'AI4TNK',
+_CREATE_TEAM_ACTIONS = frozenset({'4', '7', '80', '107'})
+# Installed land specials with faction-specific AI versions where available.
+_SPECIAL_UNITS_BY_ACTS_LIKE = {
+    0: ('AIHTNK', 'AIXO', 'CARRTRUK'),
+    1: ('AIPLSM', 'AISCRINTNK', 'ILHEMOTH'),
+    2: ('TTNKMSL', 'AIBFRT', 'BRIG'),
+    3: ('AI4TNK', 'AIBEHEMOTH', 'BEHEPLSM'),
 }
+_SPECIAL_REINFORCEMENT_IDS = frozenset(
+    unit_id for pool in _SPECIAL_UNITS_BY_ACTS_LIKE.values()
+    for unit_id in pool
+)
 _MCV_IDS = frozenset({'BASEUNIT', 'GMCV', 'NMCV', 'AMCV', 'SMCV'})
 
 
@@ -149,15 +154,15 @@ def _reinforcement_member_kind(unit_id, map_sections, installed_sections):
         return 'unknown', False
     unit_id = str(unit_id).upper()
     try:
-        passengers = int(values.get('passengers', 0))
-        build_limit = int(values.get('buildlimit', 0))
+        passengers = int(values.get('passengers') or 0)
+        build_limit = int(values.get('buildlimit') or 0)
     except (TypeError, ValueError):
         return 'unknown', False
     safe = not (
         unit_id in _MCV_IDS
         or unit_id.endswith('MCV')
         or unit_id in CURATED_HERO_BUILD_LIMITS
-        or unit_id in _SPECIAL_UNIT_BY_ACTS_LIKE.values()
+        or unit_id in _SPECIAL_REINFORCEMENT_IDS
         or values.get('category', '').casefold() == 'transport'
         or passengers > 0
         or build_limit > 0
@@ -169,7 +174,58 @@ def _reinforcement_member_kind(unit_id, map_sections, installed_sections):
         or values.get('speedtype', '').casefold() == 'float'
         or values.get('movementzone', '').casefold() == 'water'
     )
-    return ('naval' if naval else 'land'), safe
+    air = (
+        values.get('category', '').casefold() == 'airpower'
+        or values.get('movementzone', '').casefold() == 'fly'
+    )
+    return ('naval' if naval else 'air' if air else 'land'), safe
+
+
+def _offmap_enemy_veterancy_rules(
+    sections, hostile_houses, desired_level,
+):
+    """Promote every hostile TeamType created as an off-map wave."""
+    if desired_level <= 1:
+        return {}, []
+    map_by_lower = _casefold_sections(sections)
+    hostile = {str(house).casefold() for house in hostile_houses}
+    rules = {}
+    changed = []
+    action_teams = _team_ids_created_by_actions(sections)
+    team_ids = dict.fromkeys(
+        str(value).casefold()
+        for value in sections.get('TeamTypes', {}).values()
+    )
+    for team_id in team_ids:
+        team_item = map_by_lower.get(team_id)
+        if team_item is None:
+            continue
+        team_name, team_values = team_item
+        folded = _casefold_values(team_values)
+        house = str(folded.get('house') or '').strip()
+        if house.casefold() not in hostile:
+            continue
+        if (
+            team_id not in action_teams
+            and str(folded.get('reinforce') or '').casefold()
+            not in {'yes', 'true', '1'}
+        ):
+            continue
+        taskforce_id = str(folded.get('taskforce') or '').casefold()
+        taskforce_item = map_by_lower.get(taskforce_id)
+        if taskforce_item is None:
+            continue
+        if not any(str(key).isdigit() for key in taskforce_item[1]):
+            continue
+        try:
+            current_level = int(folded.get('veteranlevel', 1))
+        except (TypeError, ValueError):
+            current_level = 1
+        if current_level >= desired_level:
+            continue
+        rules.setdefault(team_name, {})['VeteranLevel'] = str(desired_level)
+        changed.append((house, 'TeamType.VeteranLevel'))
+    return rules, changed
 
 
 def _team_taskforce_rules(
@@ -194,7 +250,17 @@ def _team_taskforce_rules(
         for value in sections.get('TeamTypes', {}).values()
         if str(value).strip()
     ]
-    special_units_added = set()
+    mission_identity = repr((
+        sections.get('Basic', {}), sections.get('TeamTypes', {}),
+        sections.get('TaskForces', {}),
+    ))
+    special_cursors = {
+        faction: int.from_bytes(
+            sha256(f'{faction}|{mission_identity}'.encode('utf-8')).digest()[:4],
+            'big',
+        ) % len(pool)
+        for faction, pool in _SPECIAL_UNITS_BY_ACTS_LIKE.items()
+    }
     for team_id in team_ids:
         team_item = by_lower.get(team_id.casefold())
         if team_item is None:
@@ -204,15 +270,13 @@ def _team_taskforce_rules(
         house = str(team_folded.get('house', '')).strip()
         if house.casefold() not in hostile:
             continue
-        apply_regional = (
-            regional_count > 0
-            and (
-                team_id.casefold() in reinforcement_teams
-                or str(team_folded.get('reinforce', '')).casefold()
-                in {'yes', 'true', '1'}
-            )
+        is_reinforcement = (
+            team_id.casefold() in reinforcement_teams
+            or str(team_folded.get('reinforce', '')).casefold()
+            in {'yes', 'true', '1'}
         )
-        apply_powerhouse = powerhouse_count > 0
+        apply_regional = regional_count > 0 and is_reinforcement
+        apply_powerhouse = powerhouse_count > 0 and is_reinforcement
         if not apply_regional and not apply_powerhouse:
             continue
         taskforce_id = str(team_folded.get('taskforce', '')).strip()
@@ -227,22 +291,27 @@ def _team_taskforce_rules(
         )
         if not member_keys:
             continue
+        unit_ids = [
+            str(clone_values[key]).split(',')[-1].strip().upper()
+            for key in member_keys
+        ]
         members = [
             _reinforcement_member_kind(
-                str(clone_values[key]).split(',')[-1].strip(),
-                by_lower, installed_by_lower,
+                unit_id, by_lower, installed_by_lower,
             )
-            for key in member_keys
+            for unit_id in unit_ids
         ]
         land_team = all(kind == 'land' for kind, _safe in members)
         regional_applied = 0
         if apply_regional:
-            # TeamType spawn cells are authored. Extra ships can spill onto
-            # land, and mixed/unknown teams have no safe shared terrain.
+            # Preserve Regional Presence for land and air members. Extra
+            # ships can spill onto land; unknown members lack safe terrain.
             eligible_keys = [
                 key for key, (_kind, safe) in zip(member_keys, members)
                 if safe
-            ] if land_team else []
+            ] if all(
+                kind in {'land', 'air'} for kind, _safe in members
+            ) else []
             for offset in range(regional_count):
                 if not eligible_keys:
                     break
@@ -256,11 +325,13 @@ def _team_taskforce_rules(
                     continue
                 clone_values[key] = ','.join(fields)
                 regional_applied += 1
-        normal_applied = False
-        if apply_powerhouse and land_team:
+        same_type_applied = False
+        # Air and naval teams already have suitable spawn paths. Reinforce an
+        # existing type instead of inserting a land-only faction special.
+        if apply_powerhouse and not land_team:
             eligible_keys = [
-                key for key, (_kind, safe) in zip(member_keys, members)
-                if safe
+                key for key, (kind, safe) in zip(member_keys, members)
+                if safe and kind in {'air', 'naval'}
             ]
             if eligible_keys:
                 key = eligible_keys[0]
@@ -272,33 +343,43 @@ def _team_taskforce_rules(
                         pass
                     else:
                         clone_values[key] = ','.join(fields)
-                        normal_applied = True
-        special_applied = False
-        special_id = _SPECIAL_UNIT_BY_ACTS_LIKE.get(
-            _house_acts_like(house, by_lower)
-        )
-        # Several scenario houses can share a faction. Add only one special
-        # unit of each faction type across the entire mission.
-        if normal_applied and special_id and special_id not in special_units_added:
-            existing_key = next((
-                key for key in member_keys
-                if str(clone_values[key]).split(',')[-1].strip().casefold()
-                == special_id.casefold()
-            ), None)
-            if existing_key is not None:
-                fields = [item.strip() for item in str(
-                    clone_values[existing_key]
-                ).split(',')]
-                fields[0] = str(max(1, int(fields[0])) + 1)
-                clone_values[existing_key] = ','.join(fields)
-                special_applied = True
-            else:
-                next_member = str(max(int(key) for key in member_keys) + 1)
-                clone_values[next_member] = f'1,{special_id}'
-                special_applied = True
-            if special_applied:
-                special_units_added.add(special_id)
-        if not regional_applied and not normal_applied and not special_applied:
+                        same_type_applied = True
+        special_ids_added = []
+        faction = _house_acts_like(house, by_lower)
+        special_pool = _SPECIAL_UNITS_BY_ACTS_LIKE.get(faction, ())
+        if apply_powerhouse and land_team and any(
+            safe or unit_id in special_pool
+            for unit_id, (_kind, safe) in zip(unit_ids, members)
+        ) and special_pool:
+            for offset in range(min(2, len(special_pool))):
+                special_id = special_pool[
+                    (special_cursors[faction] + offset) % len(special_pool)
+                ]
+                existing_key = next((
+                    key for key in clone_values if str(key).isdigit()
+                    and str(clone_values[key]).split(',')[-1].strip().casefold()
+                    == special_id.casefold()
+                ), None)
+                if existing_key is not None:
+                    fields = [item.strip() for item in str(
+                        clone_values[existing_key]
+                    ).split(',')]
+                    try:
+                        fields[0] = str(max(1, int(fields[0])) + 1)
+                    except (IndexError, ValueError):
+                        continue
+                    clone_values[existing_key] = ','.join(fields)
+                else:
+                    next_member = str(max(
+                        int(key) for key in clone_values if str(key).isdigit()
+                    ) + 1)
+                    clone_values[next_member] = f'1,{special_id}'
+                special_ids_added.append(special_id)
+            if special_ids_added:
+                special_cursors[faction] = (
+                    special_cursors[faction] + 1
+                ) % len(special_pool)
+        if not regional_applied and not same_type_applied and not special_ids_added:
             continue
         clone_id = _taskforce_clone_id(team_id, occupied)
         taskforce_list[_next_list_key(taskforce_list)] = clone_id
@@ -308,17 +389,29 @@ def _team_taskforce_rules(
         })
         rules[clone_id] = clone_values
         rules.setdefault(team_id, {})['TaskForce'] = clone_id
+        added_strength = regional_applied + (
+            powerhouse_count if same_type_applied or special_ids_added else 0
+        )
+        # DTA TeamTypes use VeteranLevel=2 for veteran (100 experience)
+        # and VeteranLevel=3 for elite (200 experience).
+        desired_level = 3 if added_strength >= 3 else 2
+        try:
+            current_level = int(team_folded.get('veteranlevel', 1))
+        except (TypeError, ValueError):
+            current_level = 1
+        if current_level < desired_level:
+            rules[team_id]['VeteranLevel'] = str(desired_level)
         if regional_applied:
             applications.append((
                 'reinforcement_size', house, team_id, regional_applied,
                 'TaskForce unit counts',
             ))
-        if normal_applied:
+        if same_type_applied:
             applications.append((
                 'powerhouse', house, team_id, powerhouse_count,
-                'TaskForce normal unit count',
+                'TaskForce air/naval unit count',
             ))
-        if special_applied:
+        for special_id in special_ids_added:
             applications.append((
                 'powerhouse', house, f'{team_id} / {special_id}', 1,
                 'TaskForce special unit',
@@ -485,6 +578,31 @@ def enemy_script_buff_rules(
         applied.append(regional[0])
     if powerhouse and any(item[0] == 'powerhouse' for item in team_results):
         applied.append(powerhouse[0])
+    if regional or powerhouse:
+        strength = (regional[1] if regional else 0) + (
+            powerhouse[1] if powerhouse else 0
+        )
+        desired_level = 3 if strength >= 3 else 2
+        veteran_rules, veteran_changes = _offmap_enemy_veterancy_rules(
+            sections, hostile_houses, desired_level,
+        )
+        merge(veteran_rules)
+        counts_by_target = {}
+        for house, field in veteran_changes:
+            target = (house, field)
+            counts_by_target[target] = counts_by_target.get(target, 0) + 1
+        for effect in (regional, powerhouse):
+            if effect is None or not veteran_changes:
+                continue
+            effect_id, count, reward = effect
+            if effect_id not in applied:
+                applied.append(effect_id)
+            for (house, field), changed_count in counts_by_target.items():
+                applications.append(_application(
+                    reward, count, house,
+                    f'{changed_count} off-map teams',
+                    field, changed_count,
+                ))
 
     readiness = by_effect.get('production_activation')
     if readiness:
