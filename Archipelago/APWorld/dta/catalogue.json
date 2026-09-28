@@ -2985,11 +2985,25 @@
       "id": 81064052
     },
     {
+      "name": "Demolition Truck (DTRK) Blast Expansion I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066771
+    },
+    {
       "name": "Demolition Truck (DTRK) Drill I",
       "classification": "useful",
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064053
+    },
+    {
+      "name": "Demolition Truck (DTRK) Firepower I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066772
     },
     {
       "name": "Demolition Truck (DTRK) Logistics I",
@@ -3053,13 +3067,6 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064637
-    },
-    {
-      "name": "Demolition Truck (DTRK) Targeting I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064638
     },
     {
       "name": "Disc Launcher (DISCARTY) Amphibious Drive I",
@@ -5414,6 +5421,111 @@
       "id": 81064788
     },
     {
+      "name": "Heavy APC (APC2) Amphibious Drive I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066773
+    },
+    {
+      "name": "Heavy APC (APC2) Armor Plating I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066774
+    },
+    {
+      "name": "Heavy APC (APC2) Drill I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066775
+    },
+    {
+      "name": "Heavy APC (APC2) Expanded Transport I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066776
+    },
+    {
+      "name": "Heavy APC (APC2) Firepower I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066777
+    },
+    {
+      "name": "Heavy APC (APC2) Logistics I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066778
+    },
+    {
+      "name": "Heavy APC (APC2) Optics I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066779
+    },
+    {
+      "name": "Heavy APC (APC2) Rapid Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066780
+    },
+    {
+      "name": "Heavy APC (APC2) Regeneration Capacity I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066781
+    },
+    {
+      "name": "Heavy APC (APC2) Regeneration I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066782
+    },
+    {
+      "name": "Heavy APC (APC2) Reinforcement I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066783
+    },
+    {
+      "name": "Heavy APC (APC2) Sensor Array I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066784
+    },
+    {
+      "name": "Heavy APC (APC2) Stealth Field I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066785
+    },
+    {
+      "name": "Heavy APC (APC2) Targeting I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066786
+    },
+    {
+      "name": "Heavy APC (APC2) Weapon Tuning I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066787
+    },
+    {
       "name": "Heavy Artillery (LTNKCRUS) Amphibious Drive I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -7008,13 +7120,6 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81064882
-    },
-    {
-      "name": "MIG (MIG) Weapon Tuning I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064185
     },
     {
       "name": "Machine-Gunner (MGI) Armor Plating I",
@@ -9815,6 +9920,13 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065527
+    },
+    {
+      "name": "Player Army Armor Plating I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066788
     },
     {
       "name": "Player Army Drill I",
@@ -13114,83 +13226,6 @@
       "id": 81064417
     },
     {
-      "name": "Thief (THIEF) Armor Plating I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065745
-    },
-    {
-      "name": "Thief (THIEF) Drill I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065746
-    },
-    {
-      "name": "Thief (THIEF) Logistics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065747
-    },
-    {
-      "name": "Thief (THIEF) Mobility I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065748
-    },
-    {
-      "name": "Thief (THIEF) Optics I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065749
-    },
-    {
-      "name": "Thief (THIEF) Rapid Regeneration I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81066748
-    },
-    {
-      "name": "Thief (THIEF) Regeneration Capacity I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81066749
-    },
-    {
-      "name": "Thief (THIEF) Regeneration I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81066750
-    },
-    {
-      "name": "Thief (THIEF) Reinforcement I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065750
-    },
-    {
-      "name": "Thief (THIEF) Sensor Array I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065751
-    },
-    {
-      "name": "Thief (THIEF) Stealth Field I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81065752
-    },
-    {
       "name": "Tiberium Harvester (TDHARV) Amphibious Drive I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -13800,6 +13835,13 @@
       "id": 81065311
     },
     {
+      "name": "Unlock Heavy APC (APC2)",
+      "classification": "progression",
+      "category": "unit_unlocks",
+      "repeatable": false,
+      "id": 81066789
+    },
+    {
       "name": "Unlock Heavy Artillery (LTNKCRUS)",
       "classification": "progression",
       "category": "special_unlocks",
@@ -14325,13 +14367,6 @@
       "id": 81065364
     },
     {
-      "name": "Unlock Thief (THIEF)",
-      "classification": "progression",
-      "category": "special_unlocks",
-      "repeatable": false,
-      "id": 81065787
-    },
-    {
       "name": "Unlock Torpedo Boat (TORPBOAT) (TORPBOAT)",
       "classification": "progression",
       "category": "unit_unlocks",
@@ -14799,13 +14834,6 @@
       "category": "unit_buffs",
       "repeatable": true,
       "id": 81065407
-    },
-    {
-      "name": "Yak (YAK) Weapon Tuning I",
-      "classification": "useful",
-      "category": "unit_buffs",
-      "repeatable": true,
-      "id": 81064445
     }
   ],
   "missions": [
@@ -16504,7 +16532,7 @@
       ]
     }
   ],
-  "catalogue_checksum": "c61967319210cc1764732e14e49109147cba7b3422bbc8f33fe61c9a2cea07ab",
+  "catalogue_checksum": "c947871daa535e3b7547a085befafa27c781152d6baa91f9837d9f92f8d2cbb2",
   "locations": [
     {
       "name": "Tutorial Mission 1 - Mission Complete - Reward 1",
