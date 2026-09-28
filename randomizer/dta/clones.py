@@ -1918,6 +1918,25 @@ def unit_specific_buff_rules(
                     ):
                         clone_values.pop(key, None)
                 clone_values['TechLevel'] = '1'
+                if target.get('category') == 'aircraft':
+                    # Missions can make scripted aircraft unselectable and
+                    # send them into shroud (CRC12 A10). Production clones
+                    # need the installed aircraft's player-control behavior.
+                    native_aircraft = effective_section(installed, unit_id)
+                    mission_aircraft_keys = {
+                        key.casefold() for key in authored.get(unit_id, {})
+                    }
+                    for key in ('Selectable', 'MoveToShroud'):
+                        if key.casefold() not in mission_aircraft_keys:
+                            continue
+                        for clone_key in list(clone_values):
+                            if clone_key.casefold() == key.casefold():
+                                clone_values.pop(clone_key)
+                        native_value = native_aircraft.get(key)
+                        if native_value is not None:
+                            clone_values[key] = native_value
+                        elif key == 'Selectable':
+                            clone_values[key] = 'yes'
             if unlimited_build_limit:
                 for key in list(clone_values):
                     if key.casefold() == 'buildlimit':
