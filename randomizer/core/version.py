@@ -1,3 +1,3 @@
 """Single source of truth for launcher and APWorld release version."""
 
-APP_VERSION = '2.0'
+APP_VERSION = '2.1'
