@@ -806,6 +806,12 @@
         "permanent_access": null,
         "permanent_buff": 6
       },
+      "SGEN": {
+        "run_access": 8,
+        "run_buff": 4,
+        "permanent_access": 32,
+        "permanent_buff": 8
+      },
       "SMCV": {
         "run_access": null,
         "run_buff": 6,

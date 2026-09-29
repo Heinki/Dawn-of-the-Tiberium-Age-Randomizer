@@ -18,7 +18,7 @@ DEFENSE_BUILDING_IDS = frozenset({
     'TWR', 'ATWR',
     'GUN', 'SAM', 'OBLI',
     'RAPBOX', 'RAHBOX', 'RAGUN', 'RAAGUN', 'VMINE', 'RAGAP', 'ART',
-    'RAFTUR', 'RASAM', 'RATSLA', 'RAPARTY',
+    'RAFTUR', 'RASAM', 'RATSLA', 'RAPARTY', 'SGEN',
 })
 ALWAYS_AVAILABLE_MOBILE_IDS = frozenset({
     'ENGINEER',
@@ -51,8 +51,9 @@ HIDDEN_DTA_DEFENSE_IDS = frozenset({
     # DTA registers these defenses globally with TechLevel=-1. ART becomes an
     # Allied buildable Artillery Emplacement in CR Route C #15; DTA tutorial
     # text identifies RAPARTY as neo-Soviet Shore Artillery. VMINE and RAGAP
-    # retain explicit Allied owners and native build prerequisites.
-    'ART', 'RAPARTY', 'VMINE', 'RAGAP',
+    # retain explicit Allied owners and native build prerequisites. SGEN is
+    # Nod's hidden Stealth Generator, enabled by Enhance.ini.
+    'ART', 'RAPARTY', 'VMINE', 'RAGAP', 'SGEN',
 })
 NORMAL_REWARD_MOBILE_IDS = frozenset({
     # These normal roster units are hidden behind campaign progression in

@@ -211,6 +211,7 @@ class ShopController(ShopPolishController):
         self._shop_loadout_upgrade_details = {}
         self._shop_permanent_rows = {}
         self._shop_permanent_buyable = {}
+        self._shop_permanent_always_available_rows = {}
         self._shop_permanent_power_rows = {}
         self._shop_permanent_power_buyable = {}
         self._shop_upgrade_rows = {}
@@ -1339,6 +1340,18 @@ class ShopController(ShopPolishController):
     def open_selected_permanent_unit_buffs(self):
         selected = self.shop_permanent_unit_tree.selection()
         if not selected:
+            return
+        always_available_label = self._shop_permanent_always_available_rows.get(
+            selected[0]
+        )
+        if always_available_label:
+            self.shop_permanent_search_var.set('')
+            self.shop_permanent_buff_target_var.set(always_available_label)
+            self._refresh_permanent_buffs(bool(
+                self.shop_run is not None
+                and self.shop_run.status is RunStatus.ACTIVE
+            ))
+            self.shop_permanent_tabs.select(self.shop_permanent_buffs_panel)
             return
         reward_id = self._shop_permanent_rows.get(selected[0], '')
         entry = self._shop_entry_by_reward_id.get(reward_id)
@@ -2785,6 +2798,7 @@ class ShopController(ShopPolishController):
         unit_tree.delete(*unit_tree.get_children())
         self._shop_permanent_rows = {}
         self._shop_permanent_buyable = {}
+        self._shop_permanent_always_available_rows = {}
         term = self.shop_permanent_search_var.get().strip().casefold()
         owned = set(self.shop_profile.permanent_unit_unlocks)
         owned_targets = {
@@ -2867,6 +2881,21 @@ class ShopController(ShopPolishController):
             unit_tree.insert('', 'end', **options)
             self._shop_permanent_rows[iid] = entry.reward_id
             self._shop_permanent_buyable[iid] = buyable
+        if unit_filter != 'Not Owned':
+            for group in SHOP_ALWAYS_AVAILABLE_UNIT_GROUPS:
+                target_id = group[0]
+                label = SHOP_ALWAYS_AVAILABLE_UNIT_LABELS[target_id]
+                if term and term not in (
+                    label + ' ' + ' '.join(group)
+                ).casefold():
+                    continue
+                iid = f'permanent-core-{target_id}'
+                unit_tree.insert(
+                    '', 'end', iid=iid, tags=('owned',),
+                    values=(label, 'Core', 'Always unlocked', 'No cost'),
+                )
+                self._shop_permanent_always_available_rows[iid] = label
+                self._shop_permanent_buyable[iid] = False
         power_tree = self.shop_permanent_power_tree
         power_tree.delete(*power_tree.get_children())
         self._shop_permanent_power_rows = {}
@@ -3330,6 +3359,9 @@ class ShopController(ShopPolishController):
     def buy_selected_permanent_unit(self, _event=None):
         selected = self.shop_permanent_unit_tree.selection()
         if not selected:
+            return
+        if selected[0] in self._shop_permanent_always_available_rows:
+            self.open_selected_permanent_unit_buffs()
             return
         reward_id = self._shop_permanent_rows.get(selected[0])
         if not reward_id:

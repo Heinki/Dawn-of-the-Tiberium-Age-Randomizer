@@ -1870,8 +1870,11 @@ class ShopPolishController(ShopArchipelagoController):
         )
         owned_unit_selected = bool(
             unit_selection
-            and self._shop_permanent_rows.get(unit_selection[0], '')
-            in self.shop_profile.permanent_unit_unlocks
+            and (
+                unit_selection[0] in self._shop_permanent_always_available_rows
+                or self._shop_permanent_rows.get(unit_selection[0], '')
+                in self.shop_profile.permanent_unit_unlocks
+            )
         )
         self.shop_permanent_unit_buffs_button.configure(
             state='normal' if owned_unit_selected else 'disabled'
@@ -1880,6 +1883,15 @@ class ShopPolishController(ShopArchipelagoController):
             values = self.shop_permanent_unit_tree.item(
                 unit_selection[0], 'values'
             )
+            if unit_selection[0] in self._shop_permanent_always_available_rows:
+                self.shop_permanent_unit_info_var.set(
+                    f'{values[0]} • Always unlocked. Permanent buffs are '
+                    'available without spending a starting loadout slot.'
+                )
+                self.shop_permanent_unit_button.configure(
+                    text='Always Unlocked'
+                )
+                return
             reward_id = self._shop_permanent_rows.get(unit_selection[0], '')
             self.shop_permanent_unit_info_var.set(
                 f'{values[0]} • {values[1]} • {values[2]} • {values[3]}. '

@@ -14,6 +14,7 @@ from randomizer.maps.ini import (
     action_group_tokens,
     append_section_entry,
     merge_ini_section_values,
+    next_numeric_section_index,
     read_text,
 )
 
@@ -81,7 +82,34 @@ def mission_source_lines(scenario):
 
 def mission_runtime_fixes(mission):
     """Repair mission rules that break a required player ability."""
-    if str(mission.get('code', '')).upper() == 'M_CR7':
+    mission_code = str(mission.get('code', '')).upper()
+    if mission_code == 'M_JC1':
+        # The map defines MercenarySide and assigns it to the player, but
+        # never registers that side with the engine.
+        return {'Sides': {'MercenarySide': 'Mercenary'}}
+    if mission_code == 'M_SE6':
+        # The authored MCV-complete trigger fires only when Nod builds an MCV.
+        # Give the exact native type beside the starting Mobile HQ and let
+        # the existing completion action run at mission start.
+        unit_key = str(next_numeric_section_index(
+            mission_source_lines(mission['scenario']), 'Units'
+        ))
+        return {
+            'Units': {
+                unit_key: 'Nod,NMCV,256,67,287,64,Guard,None,0,-1,0,-1,0,0',
+            },
+            'Events': {'01000960': '1,13,0,1'},
+            'Triggers': {
+                '01000960': 'Nod,<none>,MCV Provided,0,1,1,1,0',
+            },
+            'Tags': {
+                '01000961': '0,MCV Provided (tag),01000960',
+            },
+            'Briefing': {
+                '8': '@@Objective 1: Take command of the supplied MCV.',
+            },
+        }
+    if mission_code == 'M_CR7':
         # Snowhopper's authored SPY override removes disguise, while the
         # installed AI globally sees through disguised spies. Both rules
         # must change for its infiltration objective to work as a spy mission.
