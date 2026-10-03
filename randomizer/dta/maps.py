@@ -83,6 +83,12 @@ def mission_source_lines(scenario):
 def mission_runtime_fixes(mission):
     """Repair mission rules that break a required player ability."""
     mission_code = str(mission.get('code', '')).upper()
+    if mission_code == 'M_BUNNY_HUNT':
+        # Objective 1 asks the player to deploy the starting MCV. Event 19
+        # watches building production; event 32 also sees a deployed GFACT.
+        # The existing building-event bridge adds the player-clone equivalent
+        # when that MCV received a buff.
+        return {'Events': {'01000022': '1,32,0,0'}}
     if mission_code == 'M_JC1':
         # The map defines MercenarySide and assigns it to the player, but
         # never registers that side with the engine.

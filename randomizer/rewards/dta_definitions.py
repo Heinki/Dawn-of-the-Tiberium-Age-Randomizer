@@ -16,7 +16,10 @@ from randomizer.config.tuning import (
 )
 from randomizer.config.static import load_static_config
 from randomizer.dta.powers import POWER_SPECS, power_unlock_rewards
-from randomizer.dta.movement import supports_amphibious_drive
+from randomizer.dta.movement import (
+    supports_amphibious_drive,
+    supports_movement_speed_buff,
+)
 from randomizer.dta.rules import ALWAYS_AVAILABLE_MOBILE_IDS, techno_catalogue
 from randomizer.rewards.dta_power_buffs import (
     POWER_BUFF_TYPES,
@@ -256,7 +259,11 @@ def _allowed_buff_types(record):
     strength = int(round(float(record.get('strength', 0))))
     if cost > 0 and stacked_cost(cost, 1) < cost:
         allowed.append('cost')
-    if speed > 0 and capped_movement_speed(record, 1) > speed:
+    if (
+        speed > 0
+        and supports_movement_speed_buff(record)
+        and capped_movement_speed(record, 1) > speed
+    ):
         allowed.append('speed')
     if strength > 0:
         if int(round(strength / float(BUFF_EFFECTS['armor']['factor_per_stack']))) > strength:
@@ -353,6 +360,8 @@ for _record in _MOBILE_RECORDS:
         'strength': _record['strength'],
         'sight': _record['sight'],
         'ammo': _record['ammo'],
+        'is_dropship': _record['is_dropship'],
+        'primary_weapon': _record['primary_weapon'],
         'passengers': _record['passengers'],
         'trainable': _record['trainable'],
         'self_healing': _record['self_healing'],

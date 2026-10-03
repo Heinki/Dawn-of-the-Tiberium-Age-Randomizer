@@ -315,6 +315,9 @@ def techno_catalogue():
                 'armor': values.get('Armor', ''),
                 'sight': numeric_value(values, 'Sight'),
                 'ammo': numeric_value(values, 'Ammo'),
+                'is_dropship': values.get('IsDropship', '').casefold() in {
+                    'yes', 'true', '1',
+                },
                 'passengers': numeric_value(values, 'Passengers'),
                 'build_limit': max(
                     0,

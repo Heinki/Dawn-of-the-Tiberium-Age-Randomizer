@@ -37,7 +37,10 @@ from randomizer.config.tuning import (
     stacked_weapon_damage,
     stacked_weapon_rof,
 )
-from randomizer.dta.movement import amphibious_drive_overrides
+from randomizer.dta.movement import (
+    amphibious_drive_overrides,
+    supports_movement_speed_buff,
+)
 
 
 MIN_SAFE_TECHNO_STRENGTH = 2
@@ -238,6 +241,8 @@ def apply_unit_buff_value(values, target, buff_type, count):
         base = parse_float(values.get(existing_key), 1.0)
         values[existing_key] = format_multiplier(base * multiplier)
     elif buff_type == 'speed':
+        if not supports_movement_speed_buff(target):
+            return False
         values['Speed'] = str(capped_movement_speed(target, count))
     elif buff_type == 'armor':
         multiplier = stacking_multiplier('armor', count)

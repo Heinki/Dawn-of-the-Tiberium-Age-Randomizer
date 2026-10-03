@@ -23,7 +23,10 @@ from randomizer.dta.demolition import (
     player_demolition_blast_art,
 )
 from randomizer.dta.maps import mission_source_path
-from randomizer.dta.movement import amphibious_drive_overrides
+from randomizer.dta.movement import (
+    amphibious_drive_overrides,
+    supports_movement_speed_buff,
+)
 from randomizer.dta.rules import (
     ALWAYS_AVAILABLE_MOBILE_IDS,
     catalogue_by_id,
@@ -1008,7 +1011,7 @@ def _unit_overrides(values, counts, target):
                 overrides['Cost'] = str(final_cost)
         except (TypeError, ValueError):
             pass
-    if counts['speed'] or counts['shop_speed']:
+    if (counts['speed'] or counts['shop_speed']) and supports_movement_speed_buff(target):
         try:
             base_speed = int(round(float(target.get('speed', 0))))
             final_speed = capped_movement_speed(target, counts['speed'])
@@ -1139,6 +1142,10 @@ def _target_with_effective_rules(target, values):
             effective[output_key] = values[rule_key]
     if 'Naval' in values:
         effective['naval'] = str(values['Naval']).casefold() in {
+            'yes', 'true', '1',
+        }
+    if 'IsDropship' in values:
+        effective['is_dropship'] = str(values['IsDropship']).casefold() in {
             'yes', 'true', '1',
         }
     return effective
@@ -1951,6 +1958,8 @@ def unit_specific_buff_rules(
                 'RequiredHouses': production_house,
                 **unit_rules,
             }
+            if production_access and unit_id == 'MSA':
+                unit_rules['Prerequisite'] = values['Prerequisite']
             core_aircraft = (
                 target.get('category') == 'aircraft'
                 and unit_id in ALWAYS_AVAILABLE_MOBILE_IDS
@@ -2226,6 +2235,21 @@ def unit_specific_buff_rules(
                 )
                 linked_rules['RequiredHouses'] = production_house
                 linked_rules['TechLevel'] = '-1'
+                buildable_sensor_array = (
+                    production_access
+                    and unit_id == 'MSA'
+                    and linked_source.upper() == 'DMSA'
+                    and linked_target.get('category') == 'buildings'
+                )
+                if buildable_sensor_array:
+                    # DTA registers the mobile and deployed Sensor Array in
+                    # separate production lists. An earned MSA also exposes
+                    # its deployed form in the Buildings queue, using the
+                    # mobile form's price and factory/radar prerequisites.
+                    linked_rules['TechLevel'] = unit_rules['TechLevel']
+                    linked_rules['Prerequisite'] = unit_rules.get(
+                        'Prerequisite', values['Prerequisite']
+                    )
                 if linked_target.get('category') in {
                     'infantry', 'vehicles', 'aircraft'
                 }:
@@ -2244,6 +2268,8 @@ def unit_specific_buff_rules(
                         linked_values, linked_counts, linked_target
                     )
                 )
+                if buildable_sensor_array:
+                    linked_rules['Cost'] = unit_rules.get('Cost', values['Cost'])
                 # Flattening an inherited deployed form can retain the mobile
                 # source's forward link (for example DEPCRUIS inheriting
                 # DeploysInto=DEPCRUIS). Never let a player clone transition
@@ -2561,7 +2587,8 @@ def unit_specific_buff_rules(
     from randomizer.dta.compatibility import docking_rules, building_event_rules
     for section, values in docking_rules(combined, rules, report).items():
         rules.setdefault(section, {}).update(values)
-    for section, values in building_event_rules(installed, authored, rules, report).items():
+    event_source = _merged_sections(authored, rule_overlays or {})
+    for section, values in building_event_rules(installed, event_source, rules, report).items():
         rules.setdefault(section, {}).update(values)
     harvester_sources = {
         item.upper()

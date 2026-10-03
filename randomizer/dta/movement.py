@@ -45,6 +45,17 @@ def supports_amphibious_drive(target):
     )
 
 
+def supports_movement_speed_buff(target):
+    """Keep armed VTOL aircraft at native speed for reliable attack runs."""
+    if target.get('category') != 'aircraft':
+        return True
+    return not (
+        not target.get('is_dropship')
+        and target.get('primary_weapon')
+        and int(target.get('ammo') or 0) > 0
+    )
+
+
 def amphibious_drive_overrides(values, target):
     """Return HVCSAM-style movement fields for an eligible dry vehicle."""
     if not supports_amphibious_drive(target) or has_water_movement(values):

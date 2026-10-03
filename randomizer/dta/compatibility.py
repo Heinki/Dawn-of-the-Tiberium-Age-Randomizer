@@ -3,6 +3,11 @@
 from randomizer.dta.rules import comma_items, effective_section
 
 
+# DTA 16.2 registers three engine building types after Rules.ini's list.
+# Its debug log reports 501 types for the 498 entries in [BuildingTypes].
+_IMPLICIT_ENGINE_BUILDING_TYPES = 3
+
+
 def docking_rules(combined, generated, report):
     """Share docking types; the engine still enforces building ownership.
 
@@ -57,11 +62,23 @@ def building_event_rules(installed, authored, generated, report):
     when the clone satisfies the event. Either path destroys the other
     trigger, so mission progression runs only once.
     """
-    buildings = list(dict.fromkeys([
-        *installed.get('BuildingTypes', {}).values(),
-        *authored.get('BuildingTypes', {}).values(),
-        *generated.get('BuildingTypes', {}).values(),
-    ]))
+    installed_buildings = list(dict.fromkeys(
+        installed.get('BuildingTypes', {}).values()
+    ))
+    added_buildings = [
+        building for building in dict.fromkeys([
+            *authored.get('BuildingTypes', {}).values(),
+            *generated.get('BuildingTypes', {}).values(),
+        ])
+        if building not in installed_buildings
+    ]
+    # Original trigger indices still point into Rules.ini's list. New map
+    # types follow the engine's three implicit entries in the runtime heap.
+    buildings = [
+        *installed_buildings,
+        *([None] * _IMPLICIT_ENGINE_BUILDING_TYPES),
+        *added_buildings,
+    ]
     clones = {}
     for item in report['applied']:
         if item.get('category') in {'buildings', 'defenses'}:
