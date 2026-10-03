@@ -92,6 +92,7 @@ class EnemyScalingController:
         for effect_id in group['effect_ids']:
             self.enemy_buff_enabled_vars[effect_id].set(enabled)
         self.refresh_setting_states()
+        self.save_current_launcher_config()
 
     def sync_enemy_buff_group_vars(self):
         for group in ENEMY_BUFF_GROUP_DEFINITIONS:
@@ -135,6 +136,7 @@ class EnemyScalingController:
         self.sync_enemy_buff_group_vars()
         self.refresh_advanced_enemy_buff_controls()
         self.refresh_setting_states()
+        self.save_current_launcher_config()
 
     def set_advanced_enemy_buffs(self, enabled):
         if self.gameplay_settings_locked():

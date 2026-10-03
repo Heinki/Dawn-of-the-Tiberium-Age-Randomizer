@@ -70,6 +70,7 @@ def canonical_reward(reward):
             merged = dict(current_enemy)
             for key in (
                 'enemy_maximum', 'enemy_source', 'enemy_earned_from',
+                'enemy_player_unit_limits',
                 'enemy_progress_tier', 'enemy_progress_threshold',
                 'enemy_per_stack_percent',
                 'enemy_minimum_engine_multiplier',

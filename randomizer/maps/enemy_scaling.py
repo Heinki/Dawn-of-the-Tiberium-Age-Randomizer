@@ -2,6 +2,7 @@
 
 import re
 
+from randomizer.dta.rules import techno_catalogue
 from randomizer.rewards.enemy_scaling import (
     enemy_effect_text,
     enemy_effect_values,
@@ -348,12 +349,34 @@ def enemy_native_unit_buff_rules(
     direct_order = ('health', 'armor', 'sight', 'ammo', 'speed')
     weapon_order = ('damage', 'range', 'reload')
 
-    for unit_id, target in sorted(BUFF_TARGETS.items()):
+    player_unit_limits = any(
+        definition.get('enemy_player_unit_limits')
+        for definition, _count in unit_effects.values()
+    )
+    targets = {
+        unit_id: (target, unit_id)
+        for unit_id, target in BUFF_TARGETS.items()
+    }
+    if player_unit_limits:
+        # DTA registers AI variants and faction aliases separately from the
+        # player's reward identity. Reuse that identity's approved buff types,
+        # but calculate from each variant's own effective rules below.
+        for record in techno_catalogue():
+            if record['id'] in targets or not (
+                record.get('ai_only') or record.get('duplicate_of')
+            ):
+                continue
+            source_id = record.get('duplicate_of') or record.get('image')
+            source_target = BUFF_TARGETS.get(source_id)
+            if source_target and source_target['category'] == record['category']:
+                targets[record['id']] = (source_target, source_id)
+
+    for unit_id, (target, buff_source_id) in sorted(targets.items()):
         unit_id = str(unit_id).upper()
         if (
             target.get('category') not in {'infantry', 'vehicles', 'aircraft'}
             or target.get('special_reward')
-            or not target.get('trainable', True)
+            or (not player_unit_limits and not target.get('trainable', True))
         ):
             continue
         authored_values = _standalone_clone_values_from_maps(
@@ -419,7 +442,7 @@ def enemy_native_unit_buff_rules(
 
         for buff_type in direct_order:
             effect_entry = unit_effects.get((tier, buff_type))
-            if not effect_entry or (unit_id, buff_type) not in player_buff_pairs:
+            if not effect_entry or (buff_source_id, buff_type) not in player_buff_pairs:
                 continue
             definition, count = effect_entry
             before_values = {**current_values, **unit_updates}
@@ -475,7 +498,7 @@ def enemy_native_unit_buff_rules(
                 (buff_type, unit_effects[(tier, buff_type)])
                 for buff_type in weapon_order
                 if (tier, buff_type) in unit_effects
-                and (unit_id, buff_type) in player_buff_pairs
+                and (buff_source_id, buff_type) in player_buff_pairs
             ]
             if not active_effects:
                 continue

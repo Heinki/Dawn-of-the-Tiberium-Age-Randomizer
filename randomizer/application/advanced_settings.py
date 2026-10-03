@@ -1332,15 +1332,12 @@ class AdvancedSettingsController:
         for group, check in getattr(
             self, 'enemy_buff_group_controls', []
         ):
-            check.configure(state=(
-                'normal' if self.enemy_reward_pool_var.get() else 'disabled'
-            ))
+            check.configure(state='normal')
         for check, cap in getattr(
             self, 'advanced_enemy_buff_controls', []
         ):
-            state = 'normal' if self.enemy_reward_pool_var.get() else 'disabled'
-            check.configure(state=state)
-            cap.configure(state=state)
+            check.configure(state='normal')
+            cap.configure(state='normal')
         if hasattr(self, 'enemy_mission_rewards_spinbox'):
             self.enemy_mission_rewards_spinbox.configure(state=(
                 'normal' if self.enemy_reward_pool_var.get() else 'disabled'

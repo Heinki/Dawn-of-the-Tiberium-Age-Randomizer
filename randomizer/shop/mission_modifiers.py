@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from hashlib import sha256
 
 from randomizer.config.static import load_static_config
+from randomizer.config.tuning import stacking_stack_limit
 from randomizer.rewards.catalogue import REWARD_POOL
 
 from .active import active_shop_reward_ids
@@ -227,6 +228,22 @@ def _enemy_reward_allowed_for_mission(reward, mission):
     return not mission_blocks_shop_enemy_buffs(mission)
 
 
+def _shop_enemy_maximum(run, reward):
+    """Let Endless unit buffs reach the same stat limits as player buffs."""
+    effect_id = str(reward.get('enemy_effect_id') or '')
+    settings = run.reward_settings.get('enemy_scaling') or {}
+    allowed = settings.get('allowed_buff_ids')
+    if allowed is not None and '*' not in allowed and effect_id not in allowed:
+        return 0
+    caps = settings.get('caps', {})
+    maximum = max(0, int(caps.get(effect_id, reward.get('enemy_maximum', 0))))
+    if run.endless and maximum > 0 and reward.get('enemy_effect') == 'unit':
+        player_maximum = stacking_stack_limit(reward['unit_buff_type'])
+        if player_maximum is not None:
+            return player_maximum
+    return maximum
+
+
 def shop_enemy_scaling_entries(
     run, offer, mission, *, challenge_slots=0
 ):
@@ -349,8 +366,6 @@ def shop_enemy_scaling_entries(
         ))
 
     if run.endless:
-        scaling_settings = run.reward_settings.get('enemy_scaling') or {}
-        caps = scaling_settings.get('caps') or {}
         rewards = sorted(
             (reward for reward in REWARD_POOL if reward.get('enemy_reward')),
             key=lambda reward: str(reward.get('enemy_effect_id') or ''),
@@ -364,10 +379,7 @@ def shop_enemy_scaling_entries(
                 reward for reward in rewards
                 if _enemy_reward_allowed_for_mission(reward, mission)
                 and stack_counts[str(reward.get('enemy_effect_id') or '')] <
-                max(0, int(caps.get(
-                    str(reward.get('enemy_effect_id') or ''),
-                    reward.get('enemy_maximum', 0),
-                )))
+                _shop_enemy_maximum(run, reward)
             ]
             if not available:
                 break
@@ -388,10 +400,18 @@ def shop_enemy_scaling_entries(
         if not _enemy_reward_allowed_for_mission(reward, mission):
             continue
         effect_id = str(reward.get('enemy_effect_id') or '')
-        maximum = max(0, int((run.reward_settings.get('enemy_scaling') or {})
-            .get('caps', {}).get(effect_id, reward.get('enemy_maximum', 0))))
+        maximum = _shop_enemy_maximum(run, reward)
         if not effect_id or counts[effect_id] >= maximum:
             continue
+        if run.endless and reward.get('enemy_effect') == 'unit':
+            # Carry the limit through canonicalization into every map buff
+            # application; changing selection alone would still clamp at five.
+            reward = {
+                **reward,
+                'enemy_maximum': maximum,
+                'enemy_player_unit_limits': True,
+                '_runtime_canonical': True,
+            }
         counts[effect_id] += 1
         entries.append({
             'reward': reward,

@@ -851,7 +851,8 @@ def build_shop_tab(self, workspace_tabs):
         text=(
             '1. Buy a power on Powers. 2. Select it below. 3. Buy lasting '
             'buff stacks with Gems. Permanent powers and their buffs activate '
-            'automatically for every future run.'
+            'automatically for every future run. Between runs, use arrows '
+            'to buy or refund one stack for its full Gem price.'
         ),
         style='Shop.Help.TLabel',
         wraplength=620,
@@ -874,21 +875,32 @@ def build_shop_tab(self, workspace_tabs):
     permanent_power_buff_tree_frame.grid(row=2, column=0, sticky='nsew')
     self.shop_permanent_power_buff_tree = _tree(
         permanent_power_buff_tree_frame,
-        ('effect', 'stacks', 'state', 'price'),
+        ('effect', 'decrease', 'stacks', 'increase', 'state', 'price'),
         (
             ('effect', 'Permanent Effect', 380),
+            ('decrease', '', 38),
             ('stacks', 'Stacks', 90),
+            ('increase', '', 38),
             ('state', 'State', 160),
             ('price', 'Next Price', 100),
         ),
         height=10,
         cameos=True,
     )
+    self.shop_permanent_power_buff_tree.column(
+        'decrease', stretch=False, anchor='center'
+    )
+    self.shop_permanent_power_buff_tree.column(
+        'increase', stretch=False, anchor='center'
+    )
+    self.shop_permanent_power_buff_tree.bind(
+        '<Button-1>', self.on_shop_permanent_power_buff_tree_click
+    )
     self.shop_permanent_power_buff_tree.bind(
         '<<TreeviewSelect>>', self.refresh_permanent_power_buff_button
     )
     self.shop_permanent_power_buff_tree.bind(
-        '<Double-1>', self.buy_selected_permanent_power_buff
+        '<Double-1>', self.on_shop_permanent_power_buff_tree_double_click
     )
     self.shop_permanent_power_buff_info_var = tk.StringVar(
         value='Select a permanently unlocked power, then choose a buff.'
