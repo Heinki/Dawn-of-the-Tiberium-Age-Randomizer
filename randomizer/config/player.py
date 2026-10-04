@@ -325,12 +325,23 @@ def load_config():
     loaded = read_simple_yaml(CONFIG_PATH)
     migrated = migrate_loaded_config(loaded)
     config = deep_merge(DEFAULT_CONFIG, loaded)
+    from randomizer.coop.feature import enabled, player_count
+    config.pop('coop_feature_enabled', None)
+    config['coop_mode'] = enabled(config)
+    try:
+        config['coop_player_count'] = player_count(config.get('coop_player_count', 2))
+    except ValueError:
+        config['coop_player_count'] = 2
     if migrated or not CONFIG_PATH.exists():
         save_config(config)
     return config
 
 
 def save_config(config):
+    from randomizer.coop.feature import enabled
+    config = dict(config)
+    config.pop('coop_feature_enabled', None)
+    config['coop_mode'] = enabled(config)
     write_simple_yaml(CONFIG_PATH, deep_merge(DEFAULT_CONFIG, config))
 
 

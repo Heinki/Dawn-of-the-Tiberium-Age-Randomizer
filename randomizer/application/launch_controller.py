@@ -1012,7 +1012,7 @@ throw "Map $name was not found in expandmo*.mix"
             )
 
     def poll_hook_log(self):
-        if self.active_hook and self.active_hook.get('dta'):
+        if self.active_hook and self.active_hook.get('dta') and not self.active_hook.get('coop'):
             log_path = newest_debug_log(DEBUG_LOG)
             if log_path is not None:
                 previous_path = self.active_hook.get('debug_path')
@@ -1030,7 +1030,7 @@ throw "Map $name was not found in expandmo*.mix"
                     self.process_hook_log_text(text)
                 except OSError as exc:
                     self.append_log(f'DTA log read failed: {exc}', error=True)
-        elif self.active_hook and DEBUG_LOG.exists():
+        elif self.active_hook and not self.active_hook.get('coop') and DEBUG_LOG.exists():
             try:
                 size = DEBUG_LOG.stat().st_size
                 offset = self.active_hook.get('offset', 0)
@@ -1828,5 +1828,7 @@ throw "Map $name was not found in expandmo*.mix"
                 finish_context()
         else:
             self.append_log(
+                'DTA victory watcher is monitoring the human roster in the Vinifera multiplayer score log.'
+                if (hook or {}).get('coop') else
                 'DTA victory watcher is monitoring the Vinifera score-screen log signal.'
             )

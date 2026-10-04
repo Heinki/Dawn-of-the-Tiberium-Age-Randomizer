@@ -164,6 +164,8 @@ def mission_modifier_for_run_offer(run, offer, *, challenge_slots=0):
     """Resolve stable offer modifiers without duplicate visible choices."""
     if run is None or offer is None:
         return None
+    if run.reward_settings.get('coop_mode'):
+        return None
     try:
         offer_index = run.mission_offers.index(offer)
     except ValueError:

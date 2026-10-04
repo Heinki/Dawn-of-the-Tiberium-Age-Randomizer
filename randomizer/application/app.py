@@ -52,9 +52,11 @@ from .unlock_data import UnlockDataController
 from .unlock_view import UnlockViewController
 from .enemy_scaling import EnemyScalingController
 from .archipelago_controller import ArchipelagoController
+from .coop_controller import CoopController
 
 
 class LauncherApp(
+    CoopController,
     WindowController,
     ShopController,
     StateController,
@@ -95,6 +97,7 @@ class LauncherApp(
         self.missions = []
         self._mission_by_code = {}
         self.config = load_config()
+        self.initialize_coop()
         archipelago_config = self.config.setdefault('archipelago', {})
         self.archipelago_client_uuid = str(
             archipelago_config.get('client_uuid') or uuid.uuid4()
@@ -476,6 +479,7 @@ class LauncherApp(
         self.disable_generated_rules_for_client()
 
         self.create_widgets()
+        self.refresh_coop_controls()
         self.after(40, self.process_ui_queue)
 
         self.after_idle(self.start_initial_load)

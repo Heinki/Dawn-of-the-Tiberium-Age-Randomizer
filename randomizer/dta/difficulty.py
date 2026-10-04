@@ -46,6 +46,12 @@ def _display_label(value):
 
 def mission_difficulty_labels(mission):
     """Return labels shown by DTA for one mission, in trackbar order."""
+    if mission.get('coop_mode'):
+        modes = set(mission.get('coop_modes', ()))
+        return tuple(label for mode, label in (
+            ('Co-Op Easy', 'Easy'), ('Co-Op Medium', 'Normal'),
+            ('Co-Op Hard', 'Hard'), ('Co-Op Brutal', 'Brutal'),
+        ) if mode in modes) or DEFAULT_DIFFICULTY_LABELS
     extended = bool(mission.get('has_extended_difficulty'))
     labels = tuple(
         _display_label(label)

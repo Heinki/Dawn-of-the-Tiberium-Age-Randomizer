@@ -1521,6 +1521,8 @@ def unit_specific_buff_rules(
     runtime_consumer_unit_ids=(),
     native_direct_unit_ids=(),
     shop_global_buff_levels=None,
+    source_sections=None,
+    human_only_production=False,
 ):
     """Build map-local original buffs or player production clones.
 
@@ -1533,7 +1535,7 @@ def unit_specific_buff_rules(
     """
     source = mission_source_path(mission.get('scenario'))
     installed = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
-    authored = ini_sections(source)
+    authored = ini_sections(source) if source_sections is None else source_sections
     combined = _merged_sections(installed, authored)
     if rule_overlays:
         combined = _merged_sections(combined, rule_overlays)
@@ -1958,6 +1960,11 @@ def unit_specific_buff_rules(
                 'RequiredHouses': production_house,
                 **unit_rules,
             }
+            if human_only_production:
+                unit_rules.update({
+                    'Buildability': 'HumanOnly',
+                    'AllowedToStartInMultiplayer': 'no', 'CrateGoodie': 'no',
+                })
             if production_access and unit_id == 'MSA':
                 unit_rules['Prerequisite'] = values['Prerequisite']
             core_aircraft = (
@@ -2071,9 +2078,14 @@ def unit_specific_buff_rules(
                 and not runtime_only
                 and not helper_family_fallback_needed
             ):
-                _add_forbidden_house(
-                    rules, unit_id, values, production_house
-                )
+                if human_only_production and str(values.get('Buildability', 'Both')).casefold() in {'both', 'aionly'}:
+                    # Keep native AI production available, including same-side
+                    # allies/enemies, while humans use their exclusive clone.
+                    rules.setdefault(unit_id, {})['Buildability'] = 'AIOnly'
+                else:
+                    _add_forbidden_house(
+                        rules, unit_id, values, production_house
+                    )
             list_name = TYPE_LIST_BY_CATEGORY[target['category']]
             list_key = _next_list_key(
                 installed, authored, list_name, list_offsets
@@ -2235,6 +2247,11 @@ def unit_specific_buff_rules(
                 )
                 linked_rules['RequiredHouses'] = production_house
                 linked_rules['TechLevel'] = '-1'
+                if human_only_production:
+                    linked_rules.update({
+                        'Buildability': 'HumanOnly',
+                        'AllowedToStartInMultiplayer': 'no', 'CrateGoodie': 'no',
+                    })
                 buildable_sensor_array = (
                     production_access
                     and unit_id == 'MSA'

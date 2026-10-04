@@ -296,6 +296,15 @@ def normalize_shop_run(document, *, config=SHOP_CONFIG):
     if document is None:
         return None
     document = migrate_shop_run(document)
+    cooperative = document.get('reward_settings', {})
+    if isinstance(cooperative, dict) and cooperative.get('coop_mode'):
+        from randomizer.coop.feature import player_count
+        try:
+            player_count(cooperative.get('coop_player_count'))
+        except ValueError as exc:
+            raise ShopStateError(str(exc)) from exc
+        if not isinstance(cooperative.get('coop_metadata'), dict):
+            raise ShopStateError('Co-op Shop run lacks native mission metadata.')
     try:
         status = RunStatus(document.get('status', RunStatus.ACTIVE.value))
     except ValueError as exc:

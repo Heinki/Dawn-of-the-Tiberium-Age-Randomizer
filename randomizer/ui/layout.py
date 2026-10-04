@@ -580,6 +580,7 @@ def _build_right_panel(self, main_frame):
     self.shop_faction_pool_combo.bind(
         '<<ComboboxSelected>>', self.on_shop_faction_pool_changed, add='+'
     )
+    self.build_coop_controls(shop_settings_frame, 40)
     shop_mission_filters = ttk.LabelFrame(
         shop_settings_frame, text='Mission Pool', padding=8
     )

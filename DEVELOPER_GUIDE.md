@@ -4,6 +4,12 @@ Start with [README.md](README.md) for current scope and runtime behavior. This g
 
 ## Source map
 
+Experimental co-op lives in `randomizer/coop/` and
+`randomizer/application/coop_controller.py`. Its source-only
+`COOP_FEATURE_ENABLED` constant must remain `False` for releases.
+See [the reference mapping, native engine requirements and limitations](COOP_PROTOTYPE.md)
+before changing multiplayer reward ownership or launch settings.
+
 ### DTA adapter
 
 - `randomizer/dta/rules.py`: installed `Rules.ini` catalogue and collision diagnostics.

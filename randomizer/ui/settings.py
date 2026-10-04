@@ -695,6 +695,7 @@ def _build_gameplay_settings(self, settings_frame):
     self.rainbowizer_check.grid(
         row=1, column=0, columnspan=2, sticky='w', pady=(5, 0)
     )
+    self.build_coop_controls(map_colors_frame, 2)
     WidgetTooltip(
         self.rainbowizer_check,
         'Assigns deterministic random colors to non-neutral allied and enemy AI houses. '

@@ -7,6 +7,14 @@ This project is the randomizer launcher for DTA 16.0.2 and Vinifera. It reuses t
 For APWorld installation, room generation, connection, and troubleshooting,
 see the [Archipelago player guide](Archipelago/README.md).
 
+Developer builds can enable [experimental native co-op Grid/Shop](COOP_PROTOTYPE.md)
+for 2–4 humans. Release builds keep its source-only feature flag off. The host
+owns a shared run and loadout; unsupported maps and effects are excluded.
+Co-op player setup uses a private ZeroTier network. Follow the
+[co-op connection guide](COOP_CONNECTION_GUIDE.md) for setup, firewall
+troubleshooting and streaming privacy. The compact connection window hides
+IP and pairing code by default and uses the standard lobby/game ports automatically.
+
 ## Current DTA integration
 
 - Reads all installed campaign entries from `INI/Battle.ini`, plus installed DTA bonus missions such as the 12th Shadow Exodus mission.

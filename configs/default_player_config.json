@@ -4,6 +4,8 @@
   "sections": {
     "defaults": {
       "player_name": "Commander",
+      "coop_mode": false,
+      "coop_player_count": 2,
       "game": "Dawn of the Tiberium Age",
       "dark_mode": false,
       "hide_reward_details": false,

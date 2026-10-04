@@ -2160,13 +2160,13 @@ class ShopController(ShopPolishController):
             )
         try:
             mission_pool = self._shop_run_mission_pool()
-            if len(mission_pool) < self.shop_config.run_length:
+            if len(mission_pool) < self.shop_config.run_length and not getattr(self, 'coop_enabled', lambda: False)():
                 raise ShopTransitionError(
                     f'Shop Mode needs at least {self.shop_config.run_length} '
                     'eligible missions under current filters'
                 )
             repeat_missions = bool(
-                self.excluded_mission_codes
+                (self.excluded_mission_codes or getattr(self, 'coop_enabled', lambda: False)())
                 and self.archipelago_shop_slot_settings() is None
             )
             offers = generate_mission_offers(
