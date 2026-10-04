@@ -96,6 +96,14 @@ purchases, mission choices, commitments, and victory receipts live in
 `shop_run.json`. Two-file transitions use `shop_transaction.json` for crash
 recovery. Packaged builds store these files under `RandomizerLauncherData`.
 
+The **Mobile Gap Generators** Shop run modifier randomly selects enemy infantry,
+vehicles (including naval units), or aircraft for each stage. Eligible types in
+that class gain `GapRadiusInCells=10`; the choice stays fixed across rerolls and
+relaunches. It adds 2 Ore to each victory. Player, allied, transfer-to-player,
+and shared types are protected, and no-build missions disable the enemy effect.
+Buildings are never targeted. Mission cards show the selected class; launch
+logs report affected and protected type counts.
+
 ## Mission preconditions
 
 The Details tab and each Shop mission card show two compact dropdowns when

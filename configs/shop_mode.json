@@ -1556,6 +1556,14 @@
           "run_reward_flat": 2
         }
       },
+      "mobile_gap_generators": {
+        "display_name": "Mobile Gap Generators",
+        "description": "Each stage randomly gives enemy infantry, vehicles, or aircraft a 10-cell gap-generator radius. Types shared with friendly forces are protected; disabled in no-build missions. Each victory gives 2 extra Ore.",
+        "effects": {
+          "enemy_gap_generators": 1,
+          "run_reward_flat": 2
+        }
+      },
       "blockbuster_special": {
         "display_name": "Blockbuster Special",
         "description": "Current-run Shop purchases last only for the current stage. Each victory gives 10 extra Ore.",

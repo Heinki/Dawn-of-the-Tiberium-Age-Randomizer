@@ -32,6 +32,7 @@ from randomizer.shop.modifiers import (
     modifier_difficulty,
     modifier_effects,
     modifier_shop_faction,
+    stage_enemy_gap_category,
 )
 from randomizer.shop.text import gem_text
 from randomizer.shop.inventory import (
@@ -608,6 +609,14 @@ class ShopPolishController(ShopArchipelagoController):
             faction = normalize_faction(str(mission.get('side', '')))
             faction = faction or 'Unknown faction'
             enemy_buff_lines = enemy_buff_breakdown_lines(enemy_entries)
+            gap_category = stage_enemy_gap_category(run)
+            if gap_category:
+                enemy_buff_lines = (*enemy_buff_lines, (
+                    'Mobile Gap Generators: disabled for this no-build mission'
+                    if self._shop_mission_blocks_enemy_buffs(offer.mission_code)
+                    else f'Mobile Gap Generators: enemy {gap_category}, '
+                    '10-cell radius (shared friendly types protected)'
+                ))
             if card['code'] != offer.mission_code:
                 card['details_canvas'].yview_moveto(0)
             card['code'] = offer.mission_code

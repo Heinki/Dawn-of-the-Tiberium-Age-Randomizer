@@ -210,6 +210,133 @@ def _effective_values(section_id, installed_sections, map_sections, rule_section
     return values
 
 
+def apply_shop_enemy_gap_generators(
+    rule_sections, source_lines, installed_sections, enemy_houses, category,
+):
+    """Give one class of exclusively hostile native types mobile gaps.
+
+    Keep authored object and team identities. Shared types must remain
+    unchanged because GapRadiusInCells applies to every instance of a type.
+    """
+    from randomizer.maps.houses import (
+        canonical_house_name, is_buffable_helper_house, map_house_records,
+        player_controlled_houses,
+    )
+    from randomizer.maps.ini import (
+        IniLines, all_section_value_maps, merge_ini_section_values,
+    )
+    from randomizer.maps.ownership import (
+        build_unit_usage_index, player_transfer_houses,
+        techno_type_possible_houses,
+    )
+
+    report = {'category': category, 'radius': 10, 'applied': [], 'skipped': []}
+    list_name = {
+        'infantry': 'InfantryTypes', 'vehicles': 'VehicleTypes',
+        'aircraft': 'AircraftTypes',
+    }.get(category)
+    if not list_name or not enemy_houses:
+        return report
+
+    # Include final player routes and production isolation before checking
+    # consumers; the original map alone does not describe the launch masks.
+    lines = IniLines(source_lines)
+    merge_ini_section_values(lines, rule_sections)
+    sections = all_section_value_maps(lines)
+    by_lower = {name.casefold(): values for name, values in sections.items()}
+    records = map_house_records(lines, sections=sections)
+    protected = set(player_controlled_houses(lines, records=records))
+    changed = True
+    while changed:
+        changed = False
+        for house, record in records.items():
+            if not is_buffable_helper_house(record):
+                continue
+            allies = {
+                canonical
+                for ally in record.get('allies', ())
+                if (canonical := canonical_house_name(records, ally))
+                and is_buffable_helper_house(records[canonical])
+            }
+            linked = {house, *allies}
+            if linked.intersection(protected) and not linked.issubset(protected):
+                protected.update(linked)
+                changed = True
+    protected.update(player_transfer_houses(lines, records=records))
+    hostile = {house.casefold() for house in enemy_houses} - {
+        house.casefold() for house in protected
+    }
+    usage = build_unit_usage_index(lines)
+    active = hostile | {house.casefold() for house in protected}
+    active.update(
+        (canonical_house_name(records, house) or house).casefold()
+        for consumers in usage.values() for house in consumers
+    )
+    for house in records:
+        values = by_lower.get(house.casefold(), {})
+        if _number(values, 'IQ', 0) > 0 or _number(values, 'NodeCount', 0) > 0:
+            active.add(house.casefold())
+    # The Houses list also registers unused production-mask identities.
+    # Only scenario consumers can own an instance during this mission.
+    records = {
+        house: record for house, record in records.items()
+        if house.casefold() in active
+    }
+
+    # DTA resolves Owner/RequiredHouses/ForbiddenHouses through ActsLike,
+    # rather than through the campaign scenario house's name.
+    house_types = by_lower.get('houses', {})
+    for house, record in records.items():
+        values = by_lower.get(house.casefold(), {})
+        production_house = house_types.get(str(values.get('actslike', '')))
+        if production_house:
+            record['country'] = production_house
+            record['parent_country'] = ''
+
+    combined = {
+        name.casefold(): {str(key).casefold(): value for key, value in values.items()}
+        for name, values in installed_sections.items()
+    }
+    for name, values in by_lower.items():
+        combined.setdefault(name, {}).update(values)
+
+    def effective(type_id, seen=frozenset()):
+        name = type_id.casefold()
+        values = combined.get(name, {})
+        parent = values.get('$inherits') or values.get('basesection')
+        inherited = effective(str(parent), seen | {name}) if (
+            parent and name not in seen
+        ) else {}
+        return {**inherited, **values}
+
+    for type_id in _registered_ids(
+        installed_sections, sections, rule_sections, list_name
+    ):
+        values = effective(type_id)
+        if not values:
+            continue
+        possible = {
+            house.casefold() for house in techno_type_possible_houses(
+                lines, values, records=records, sections=sections,
+                sections_by_lower=by_lower,
+            )
+        }
+        consumers = possible | {
+            (canonical_house_name(records, house) or house).casefold()
+            for house in usage.get(type_id.upper(), ())
+        }
+        if not consumers.intersection(hostile):
+            continue
+        if consumers - hostile:
+            report['skipped'].append(type_id)
+            continue
+        section_id = _key(rule_sections, type_id) or type_id
+        updates = rule_sections.setdefault(section_id, {})
+        updates[_key(updates, 'GapRadiusInCells') or 'GapRadiusInCells'] = '10'
+        report['applied'].append(type_id)
+    return report
+
+
 def apply_shop_production_restrictions(
     rule_sections, source_lines, installed_sections, production_house,
     restrictions,

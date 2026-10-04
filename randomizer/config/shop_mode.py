@@ -356,6 +356,7 @@ def validate_shop_mode_config(sections, path, invalid):
         'melee_fighters',
         'one_shot_one_kill',
         'production_roulette',
+        'enemy_gap_generators',
     }
     percent_flat_pairs = {
         'run_reward_percent': 'run_reward_flat',
@@ -417,6 +418,7 @@ def validate_shop_mode_config(sections, path, invalid):
             or effects.get('melee_fighters', 0) > 0
             or effects.get('one_shot_one_kill', 0) > 0
             or effects.get('production_roulette', 0) > 0
+            or effects.get('enemy_gap_generators', 0) > 0
         ))
         mixes_percent_and_flat = bool(isinstance(effects, dict) and any(
             effects.get(percent_key, 100) != 100

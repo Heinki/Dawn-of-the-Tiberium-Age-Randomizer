@@ -52,6 +52,7 @@ def modifier_effects(modifier_ids, config: ShopModeConfig = SHOP_CONFIG):
         'melee_fighters': 0,
         'one_shot_one_kill': 0,
         'production_roulette': 0,
+        'enemy_gap_generators': 0,
     }
     seen = set()
     for modifier_id in modifier_ids or ():
@@ -84,6 +85,21 @@ PRODUCTION_RESTRICTION_LABELS = {
     'infantry': 'Manpower Shortage: no infantry or barracks',
     'naval': 'Aquaphobia: no boats, hovercraft, or shipyards',
 }
+
+
+ENEMY_GAP_CATEGORIES = ('infantry', 'vehicles', 'aircraft')
+
+
+def stage_enemy_gap_category(run):
+    """Choose one reproducible enemy gap-generator class for each stage."""
+    if run is None or 'mobile_gap_generators' not in run.modifiers:
+        return ''
+    digest = sha256(
+        f'{run.seed}:{int(run.stage)}:enemy-gap-generators'.encode('utf-8')
+    ).digest()
+    return ENEMY_GAP_CATEGORIES[
+        int.from_bytes(digest[:4], 'big') % len(ENEMY_GAP_CATEGORIES)
+    ]
 
 
 def stage_production_restrictions(run):

@@ -106,10 +106,13 @@ from randomizer.dta.powers import (
 from randomizer.maps.settings import mission_house_color_rules
 from randomizer.maps.shop_modifiers import (
     apply_shop_clone_modifiers,
+    apply_shop_enemy_gap_generators,
     apply_shop_global_modifiers,
     apply_shop_production_restrictions,
 )
-from randomizer.shop.modifiers import stage_production_restrictions
+from randomizer.shop.modifiers import (
+    stage_enemy_gap_category, stage_production_restrictions,
+)
 from randomizer.ui.config import (
     PLAYER_COLOR_ENGINE_VALUES,
     RAINBOWIZER_COLORS,
@@ -1527,6 +1530,23 @@ throw "Map $name was not found in expandmo*.mix"
             for section, values in color_rules.items():
                 dta_rules.setdefault(section, {}).update(values)
             if self.shop_launch_active():
+                gap_category = stage_enemy_gap_category(self._shop_launch_run)
+                if gap_category and not enemy_report['protected_no_build']:
+                    gap_report = apply_shop_enemy_gap_generators(
+                        dta_rules,
+                        source_lines,
+                        installed_effective_sections(
+                            enhanced=bool(mission.get('required_addon'))
+                        ),
+                        enemy_report['hostile_houses'],
+                        gap_category,
+                    )
+                    self.append_log(
+                        f'Mobile Gap Generators: enemy {gap_category}, '
+                        f'{gap_report["radius"]}-cell radius; '
+                        f'{len(gap_report["applied"])} types affected, '
+                        f'{len(gap_report["skipped"])} shared types protected.'
+                    )
                 apply_shop_global_modifiers(
                     dta_rules,
                     source_lines,
