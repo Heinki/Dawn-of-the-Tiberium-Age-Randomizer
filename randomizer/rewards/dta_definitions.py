@@ -220,6 +220,7 @@ _MOBILE_ALIAS_RECORDS = tuple(
 )
 
 SHOP_ALWAYS_AVAILABLE_UNIT_GROUPS = (
+    ('ENGINEER',),
     ('TDHARV', 'RAHARV'),
     ('GMCV', 'NMCV', 'AMCV', 'SMCV'),
     ('TRAN',),
@@ -235,6 +236,7 @@ SHOP_ALWAYS_AVAILABLE_REPRESENTATIVE_BY_ID = {
     for unit_id in group
 }
 SHOP_ALWAYS_AVAILABLE_UNIT_LABELS = {
+    'ENGINEER': 'Engineer',
     'TDHARV': 'Harvesters (both factions)',
     'GMCV': 'MCVs (all factions)',
     'TRAN': 'Chinook Transport',
