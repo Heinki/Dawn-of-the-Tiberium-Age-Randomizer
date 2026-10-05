@@ -7,6 +7,7 @@ from randomizer.rewards.enemy_scaling import (
     enemy_effect_values,
 )
 from randomizer.dta.rules import CURATED_HERO_BUILD_LIMITS
+from randomizer.missions.overrides import MISSION_ENEMY_SCRIPT_EXCLUDED_TEAMS
 
 from .ini import all_section_value_maps, parse_action_groups
 
@@ -182,13 +183,14 @@ def _reinforcement_member_kind(unit_id, map_sections, installed_sections):
 
 
 def _offmap_enemy_veterancy_rules(
-    sections, hostile_houses, desired_level,
+    sections, hostile_houses, desired_level, excluded_teams=(),
 ):
-    """Promote every hostile TeamType created as an off-map wave."""
+    """Promote eligible hostile TeamTypes created as off-map waves."""
     if desired_level <= 1:
         return {}, []
     map_by_lower = _casefold_sections(sections)
     hostile = {str(house).casefold() for house in hostile_houses}
+    excluded = {str(team).casefold() for team in excluded_teams}
     rules = {}
     changed = []
     action_teams = _team_ids_created_by_actions(sections)
@@ -197,6 +199,8 @@ def _offmap_enemy_veterancy_rules(
         for value in sections.get('TeamTypes', {}).values()
     )
     for team_id in team_ids:
+        if team_id in excluded:
+            continue
         team_item = map_by_lower.get(team_id)
         if team_item is None:
             continue
@@ -234,12 +238,14 @@ def _team_taskforce_rules(
     hostile_houses,
     regional_count,
     powerhouse_count,
+    excluded_teams=(),
 ):
     if regional_count <= 0 and powerhouse_count <= 0:
         return {}, []
     by_lower = _casefold_sections(sections)
     installed_by_lower = _casefold_sections(installed_sections)
     hostile = {str(house).casefold() for house in hostile_houses}
+    excluded = {str(team).casefold() for team in excluded_teams}
     reinforcement_teams = _team_ids_created_by_actions(sections)
     occupied = set(by_lower)
     taskforce_list = dict(sections.get('TaskForces', {}))
@@ -262,6 +268,8 @@ def _team_taskforce_rules(
         for faction, pool in _SPECIAL_UNITS_BY_ACTS_LIKE.items()
     }
     for team_id in team_ids:
+        if team_id.casefold() in excluded:
+            continue
         team_item = by_lower.get(team_id.casefold())
         if team_item is None:
             continue
@@ -561,12 +569,18 @@ def enemy_script_buff_rules(
 
     regional = by_effect.get('reinforcement_size')
     powerhouse = by_effect.get('powerhouse')
+    # Cinematic and objective teams can depend on exact member counts and
+    # durability. Keep them native in both growth and veterancy passes.
+    excluded_teams = MISSION_ENEMY_SCRIPT_EXCLUDED_TEAMS.get(
+        str(mission.get('code') or '').upper(), ()
+    )
     team_rules, team_results = _team_taskforce_rules(
         sections,
         installed_sections,
         hostile_houses,
         regional[1] if regional else 0,
         powerhouse[1] if powerhouse else 0,
+        excluded_teams=excluded_teams,
     )
     merge(team_rules)
     for effect, house, target, applied_count, field in team_results:
@@ -585,6 +599,7 @@ def enemy_script_buff_rules(
         desired_level = 3 if strength >= 3 else 2
         veteran_rules, veteran_changes = _offmap_enemy_veterancy_rules(
             sections, hostile_houses, desired_level,
+            excluded_teams=excluded_teams,
         )
         merge(veteran_rules)
         counts_by_target = {}

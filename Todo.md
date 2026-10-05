@@ -1,3 +1,5 @@
+- [x] Preserve Sarin Gas 1's scripted truck counts and veterancy so enemy reinforcement buffs cannot block battle control.
+
 
 # Experimental co-op / Vinifera
 

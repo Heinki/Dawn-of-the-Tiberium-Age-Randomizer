@@ -49,6 +49,15 @@ MISSION_SCRIPTED_NATIVE_DEPLOY_TASKFORCES = {
     ).items()
 }
 
+# Cinematic and objective teams whose authored counts and veterancy must
+# survive enemy reinforcement bonuses.
+MISSION_ENEMY_SCRIPT_EXCLUDED_TEAMS = {
+    str(code).upper(): frozenset(teams)
+    for code, teams in _MISSION_CONFIG.get(
+        'enemy_script_excluded_teams', {}
+    ).items()
+}
+
 MISSION_TEAM_HOUSE_OVERRIDES = dict(_MISSION_CONFIG['team_house_overrides'])
 
 # Native MCV identities exposed only in configured missions. An empty list

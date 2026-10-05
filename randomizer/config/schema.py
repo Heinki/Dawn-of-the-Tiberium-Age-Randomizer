@@ -162,6 +162,17 @@ def _validate_missions(sections, path):
 
     validate_mission_reward_config(sections, path, _invalid)
 
+    excluded_teams = sections.get('enemy_script_excluded_teams', {})
+    if not isinstance(excluded_teams, dict):
+        _invalid('enemy_script_excluded_teams must be an object', path)
+    for code, team_ids in excluded_teams.items():
+        if (
+            code not in sections['build_classifications']
+            or not isinstance(team_ids, list)
+            or any(not _is_nonempty_string(team_id) for team_id in team_ids)
+        ):
+            _invalid(f'Invalid enemy script exclusion for {code!r}', path)
+
     scripted_deploys = sections.get('scripted_native_deploy_taskforces', {})
     if not isinstance(scripted_deploys, dict):
         _invalid('scripted_native_deploy_taskforces must be an object', path)

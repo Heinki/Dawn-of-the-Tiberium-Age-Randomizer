@@ -16,6 +16,13 @@ The active static configuration targets Dawn of the Tiberium Age.
 - `rewards/tuning.json` and `rewards/enemy_scaling.json` contain active DTA reward tuning.
 - `rewards/powers.json` defines six supported player powers. Ion Cannon and the neutral Paradrop use mission-local startup grants. Airstrike, both Nuclear Strikes, and Chrono Vortex use buildable provider clones whose inherited prerequisites are removed; the physical Construction Yard remains required.
 
+The optional `enemy_script_excluded_teams` mission section lists TeamType IDs
+that retain their authored TaskForce and veterancy under Regional Presence
+and Powerhouse. Sarin Gas 1 protects its opening chemical convoy and eight
+escape-truck teams: extra members can block the input-unlock route or alter
+the scripted escape and destruction checks. Combat reinforcements still
+receive enemy bonuses.
+
 DTA unit and defense catalogues are derived from installed game data at runtime. Firestorm and obsolete power aliases remain disabled.
 
 The first Shop stage offers Act 1 mission choices, including a fixed-unit or
