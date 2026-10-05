@@ -104,6 +104,19 @@ permanent buff prices aligned when adding a rewardable DTA target.
 
 Pure modules must not import `randomizer/application`. Tk variables stay on the UI thread; workers receive plain Python data.
 
+Shop refreshes mark purchase, loadout, permanent, and history views dirty and
+render the selected panel. Notebook navigation renders deferred views from the
+current in-memory state. Loadout upgrades share the catalogue renderer without
+changing the main catalogue's search, category, or selection. Search writes
+are debounced for 120 ms; explicit refreshes cancel pending search callbacks.
+Embedded upgrade buttons retain their widgets and callbacks between refreshes.
+
+DTA cameo sources, palette expansion, decoded paths, and missing artwork are
+cached for the launcher process. The first decode refreshes on-disk artwork so
+art fixes from an update still take effect. Power sidebar overrides use distinct
+cache identities and output paths. Restart the launcher after changing installed
+art or rules during development.
+
 ## Change rules
 
 - Preserve deterministic RNG call order. New deterministic behavior needs a named stream.

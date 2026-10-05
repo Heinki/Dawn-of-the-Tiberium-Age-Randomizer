@@ -168,20 +168,26 @@ def _png_chunk(kind, payload):
     )
 
 
+@lru_cache(maxsize=4)
+def _rgba_palette(palette_data):
+    scale = 4 if max(palette_data) <= 63 else 1
+    return tuple(
+        bytes(
+            min(255, component * scale)
+            for component in palette_data[index * 3:index * 3 + 3]
+        )
+        + bytes((0 if index == 0 else 255,))
+        for index in range(256)
+    )
+
+
 def _write_indexed_png(width, height, pixels, palette_data, output_path):
     if len(palette_data) < 768:
         raise ValueError('Invalid DTA cameo palette')
-    scale = 4 if max(palette_data[:768]) <= 63 else 1
-    rgba = bytearray(width * height * 4)
-    cursor = 0
-    for color_index in pixels:
-        palette_offset = color_index * 3
-        rgba[cursor:cursor + 3] = bytes(
-            min(255, component * scale)
-            for component in palette_data[palette_offset:palette_offset + 3]
-        )
-        rgba[cursor + 3] = 0 if color_index == 0 else 255
-        cursor += 4
+    # Color expansion is identical for every pixel using this palette.
+    # Precompute its 256 RGBA values instead of scaling three channels per pixel.
+    colors = _rgba_palette(bytes(palette_data[:768]))
+    rgba = b''.join(colors[color_index] for color_index in pixels)
     scanlines = b''.join(
         b'\0' + bytes(rgba[row * width * 4:(row + 1) * width * 4])
         for row in range(height)
@@ -222,7 +228,9 @@ def _effective_art_value(sections, section_id, key, seen=None):
     )
 
 
-def ensure_unit_cameos(unit_ids):
+@lru_cache(maxsize=1)
+def _cameo_sources():
+    """Read the installed artwork once, shared by all launcher views."""
     rules = _ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
     for unit_id, values in player_unit_rule_overlays().items():
         rules.setdefault(unit_id, {}).update({
@@ -230,88 +238,99 @@ def ensure_unit_cameos(unit_ids):
         })
     art = _ini_sections(GAME_ROOT / 'INI' / 'Art.ini')
     palette = mix_asset('CAMEO.PAL')
+    return rules, art, palette
+
+
+@lru_cache(maxsize=512)
+def _unit_cameo_path(unit_id):
+    """Decode once per identity, including identities without native artwork."""
+    output = CAMEO_CACHE_DIR / f'{unit_id.lower()}-dta.png'
+    if unit_id in TEXT_ONLY_CAMEO_IDS:
+        # Older builds may have cached the incorrect inherited cameo.
+        output.unlink(missing_ok=True)
+        return None
+    rules, art, palette = _cameo_sources()
     if palette is None:
-        return {}
+        return None
+    art_id = (_effective_art_value(rules, unit_id, 'image') or unit_id).upper()
+    cameo = _effective_art_value(art, art_id, 'cameo')
+    if not cameo:
+        return None
+    filename = cameo if Path(cameo).suffix else cameo + '.SHP'
+    shp = mix_asset(filename)
+    if shp is None:
+        return None
+    # Refresh older on-disk artwork once at startup, then reuse the decoded
+    # image. This keeps fixes to inherited artwork effective across upgrades.
+    shp_to_png(shp, palette, output)
+    return output
+
+
+def ensure_unit_cameos(unit_ids):
     result = {}
     for raw_unit_id in unit_ids:
         unit_id = str(raw_unit_id or '').upper()
-        output = CAMEO_CACHE_DIR / f'{unit_id.lower()}-dta.png'
-        if unit_id in TEXT_ONLY_CAMEO_IDS:
-            # Older builds may have cached the incorrect inherited cameo.
-            # Remove it so every UI surface is forced back to its text card.
-            try:
-                output.unlink(missing_ok=True)
-            except OSError:
-                pass
-            continue
-        art_id = (
-            _effective_art_value(rules, unit_id, 'image') or unit_id
-        ).upper()
-        cameo = _effective_art_value(art, art_id, 'cameo')
-        filenames = []
-        if cameo:
-            filenames.append(cameo if Path(cameo).suffix else cameo + '.SHP')
-        shp = next(
-            (payload for filename in filenames if (payload := mix_asset(filename)) is not None),
-            None,
-        )
         try:
-            if shp is None:
-                continue
-            shp_to_png(shp, palette, output)
+            output = _unit_cameo_path(unit_id)
         except (OSError, ValueError, struct.error):
             continue
-        result[unit_id] = output
+        if output is not None:
+            result[unit_id] = output
     return result
 
 
 def ensure_superweapon_cameos(superweapon_ids, sidebar_overrides=None):
     """Extract distinct DTA power cameos, using buildable provider artwork."""
-    rules = _ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
-    art = _ini_sections(GAME_ROOT / 'INI' / 'Art.ini')
-    palette = mix_asset('CAMEO.PAL')
-    if palette is None:
-        return {}
     overrides = {
         str(power_id).upper(): str(image)
         for power_id, image in (sidebar_overrides or {}).items()
         if image
     }
+    result = {}
+    for raw_power_id in superweapon_ids:
+        power_id = str(raw_power_id or '').upper()
+        try:
+            output = _power_cameo_path(power_id, overrides.get(power_id, ''))
+        except (OSError, ValueError, struct.error):
+            continue
+        if output is not None:
+            result[power_id] = output
+    return result
+
+
+@lru_cache(maxsize=128)
+def _power_cameo_path(power_id, sidebar_override):
+    rules, art, palette = _cameo_sources()
+    if palette is None:
+        return None
     # Import locally: powers loads static reward configuration and should not
     # need the image decoder during catalogue construction.
     from randomizer.dta.powers import POWER_SPEC_BY_ID
 
-    result = {}
-    for raw_power_id in superweapon_ids:
-        power_id = str(raw_power_id or '').upper()
-        cameo = overrides.get(power_id, '')
-        if not cameo:
-            provider = POWER_SPEC_BY_ID.get(power_id, {}).get('provider') or {}
-            provider_id = str(provider.get('source') or '').upper()
-            if provider.get('buildable') and provider_id:
-                provider_art_id = (
-                    _effective_art_value(rules, provider_id, 'image')
-                    or provider_id
-                ).upper()
-                cameo = _effective_art_value(art, provider_art_id, 'cameo')
-        if not cameo:
-            cameo = str(
-                (POWER_SPEC_BY_ID.get(power_id, {}).get('values') or {}).get(
-                    'SidebarImage', ''
-                )
+    cameo = sidebar_override
+    if not cameo:
+        provider = POWER_SPEC_BY_ID.get(power_id, {}).get('provider') or {}
+        provider_id = str(provider.get('source') or '').upper()
+        if provider.get('buildable') and provider_id:
+            provider_art_id = (
+                _effective_art_value(rules, provider_id, 'image') or provider_id
+            ).upper()
+            cameo = _effective_art_value(art, provider_art_id, 'cameo')
+    if not cameo:
+        cameo = str(
+            (POWER_SPEC_BY_ID.get(power_id, {}).get('values') or {}).get(
+                'SidebarImage', ''
             )
-        if not cameo:
-            cameo = _effective_art_value(rules, power_id, 'sidebarimage')
-        if not cameo:
-            continue
-        filename = cameo if Path(cameo).suffix else cameo + '.SHP'
-        shp = mix_asset(filename)
-        if shp is None:
-            continue
-        output = CAMEO_CACHE_DIR / f'sw-{power_id.lower()}-dta.png'
-        try:
-            shp_to_png(shp, palette, output)
-        except (OSError, ValueError, struct.error):
-            continue
-        result[power_id] = output
-    return result
+        )
+    if not cameo:
+        cameo = _effective_art_value(rules, power_id, 'sidebarimage')
+    if not cameo:
+        return None
+    filename = cameo if Path(cameo).suffix else cameo + '.SHP'
+    shp = mix_asset(filename)
+    if shp is None:
+        return None
+    variant = f'-{mix_crc(sidebar_override):08x}' if sidebar_override else ''
+    output = CAMEO_CACHE_DIR / f'sw-{power_id.lower()}{variant}-dta.png'
+    shp_to_png(shp, palette, output)
+    return output

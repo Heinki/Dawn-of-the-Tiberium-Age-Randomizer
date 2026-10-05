@@ -62,7 +62,6 @@ from randomizer.shop.archipelago import (
 )
 from randomizer.shop.catalogue import (
     canonical_reward_for_id,
-    catalogue_entry,
     shop_catalogue,
     shop_entry_available,
 )
@@ -234,6 +233,8 @@ class ShopController(ShopPolishController):
         self._shop_buff_target_ids = {}
         self._shop_ap_purchase_rows = {}
         self._shop_cameo_images = {}
+        self._shop_dirty_panels = set()
+        self._shop_search_after_ids = {}
         self._shop_cameo_retry_after_id = None
         self._shop_cameo_retry_count = 0
         self._shop_launch_run = None
@@ -1073,20 +1074,61 @@ class ShopController(ShopPolishController):
                 self.shop_choices_frame.grid()
                 self.shop_actions_frame.grid()
         self._refresh_shop_missions()
-        self.refresh_shop_catalogue()
-        self._refresh_shop_loadout()
-        if self.__dict__.get('_shop_loadout_upgrade_target'):
-            self._refresh_shop_loadout_upgrade_view()
+        # Purchases invalidate every view, but only the selected panel needs
+        # widgets now. Hidden panels consume the latest state when opened.
+        self._shop_dirty_panels.update({'catalogue', 'loadout', 'permanent', 'history'})
+        self.refresh_visible_shop_panel()
         self._refresh_shop_setup()
-        self._refresh_permanent_shop()
         if hasattr(self, 'header_summary_var'):
             self.update_header_summary()
-        self._refresh_shop_history()
         self._refresh_archipelago_shop_purchases()
         self.refresh_shop_settings_controls()
         if hasattr(self, 'shop_debug_mission_combo'):
             self.refresh_shop_debug_completion_choices()
         self.refresh_progress_view()
+
+    def refresh_visible_shop_panel(self, _event=None):
+        if not hasattr(self, 'shop_panels'):
+            return
+        if self.workspace_tabs.select() != str(self.shop_tab):
+            return
+        panels = {
+            str(self.shop_run_panel): ('catalogue', self.refresh_shop_catalogue),
+            str(self.shop_loadout_panel): (
+                'loadout',
+                self._refresh_shop_loadout_upgrade_view
+                if self.__dict__.get('_shop_loadout_upgrade_target')
+                else self._refresh_shop_loadout,
+            ),
+            str(self.shop_permanent_panel): ('permanent', self._refresh_permanent_shop),
+            str(self.shop_summary_panel): ('history', self._refresh_shop_history),
+            str(self.shop_history_panel): ('history', self._refresh_shop_history),
+        }
+        panel = panels.get(self.shop_panels.select())
+        if panel is not None and panel[0] in self._shop_dirty_panels:
+            panel[1]()
+            self._shop_dirty_panels.discard(panel[0])
+
+    def schedule_shop_search_refresh(self, section):
+        """Coalesce typing and avoid refreshes from temporary search writes."""
+        self.cancel_shop_search_refresh(section)
+        refresh = {
+            'catalogue': self.refresh_shop_catalogue,
+            'loadout': self._refresh_shop_loadout,
+            'setup': self._refresh_shop_setup,
+            'permanent': self._refresh_permanent_shop,
+        }[section]
+
+        def apply_search():
+            self._shop_search_after_ids.pop(section, None)
+            refresh()
+
+        self._shop_search_after_ids[section] = self.after(120, apply_search)
+
+    def cancel_shop_search_refresh(self, section):
+        after_id = self._shop_search_after_ids.pop(section, None)
+        if after_id is not None:
+            self.after_cancel(after_id)
 
     def refresh_shop_debug_completion_choices(self):
         """Populate hidden developer picker from current mission choices."""
@@ -1139,7 +1181,7 @@ class ShopController(ShopPolishController):
         )
 
     def _shop_unit_id_for_item(self, item_id):
-        entry = catalogue_entry(canonical_reward_for_id(item_id))
+        entry = self._shop_entry_by_reward_id.get(item_id)
         if entry is not None and entry.reward_type in {
             ShopRewardType.UNIT_ACCESS,
             ShopRewardType.UNIT_BUFF,
@@ -1150,7 +1192,7 @@ class ShopController(ShopPolishController):
 
     def _shop_power_cameo_for_item(self, item_id):
         reward = canonical_reward_for_id(item_id)
-        entry = catalogue_entry(reward)
+        entry = self._shop_entry_by_reward_id.get(item_id)
         if entry is None or entry.reward_type not in {
             ShopRewardType.POWER_ACCESS,
             ShopRewardType.POWER_BUFF,
@@ -2237,7 +2279,7 @@ class ShopController(ShopPolishController):
             return
         self._buy_shop_reward(reward_id)
 
-    def _buy_shop_reward(self, reward_id):
+    def _buy_shop_reward(self, reward_id, *, loadout=False):
         if self.shop_launch_active():
             self._set_shop_message('Wait for current mission process to close.')
             return
@@ -2247,7 +2289,11 @@ class ShopController(ShopPolishController):
             self._set_shop_message(exc, error=True)
         else:
             if validation.allowed:
-                self._shop_focus_reward_id = reward_id
+                focus_attribute = (
+                    '_shop_loadout_upgrade_focus_reward_id' if loadout
+                    else '_shop_focus_reward_id'
+                )
+                self.__dict__[focus_attribute] = reward_id
                 self._set_shop_message(
                     f'Purchased {reward_id} with a Free Buff Token.'
                     if validation.cost == 0 else
@@ -2261,8 +2307,9 @@ class ShopController(ShopPolishController):
         self.refresh_shop_mode()
 
     def _refresh_shop_loadout(self):
+        self.cancel_shop_search_refresh('loadout')
+        self._shop_dirty_panels.discard('loadout')
         tree = self.shop_loadout_tree
-        self._clear_shop_tree_buttons('_shop_loadout_upgrade_buttons')
         tree.delete(*tree.get_children())
         self._shop_current_loadout_targets = {}
         self._shop_loadout_details = {}
@@ -2533,6 +2580,7 @@ class ShopController(ShopPolishController):
         )
 
     def _refresh_shop_setup(self):
+        self.cancel_shop_search_refresh('setup')
         tree = self.shop_loadout_select_tree
         tree.delete(*tree.get_children())
         self._shop_loadout_rows = {}
@@ -2791,6 +2839,8 @@ class ShopController(ShopPolishController):
             )
 
     def _refresh_permanent_shop(self):
+        self.cancel_shop_search_refresh('permanent')
+        self._shop_dirty_panels.discard('permanent')
         active_run = bool(
             self.shop_run is not None
             and self.shop_run.status is RunStatus.ACTIVE

@@ -127,11 +127,7 @@ class ShopPolishController(ShopArchipelagoController):
         )
 
         def schedule_reflow(_event=None):
-            self.after_idle(
-                lambda: self._position_shop_tree_buttons(
-                    tree, button_attribute
-                )
-            )
+            self._schedule_shop_tree_button_reflow(tree, button_attribute)
 
         if scrollbar is not None:
             def update_scrollbar(first, last):
@@ -160,11 +156,16 @@ class ShopPolishController(ShopArchipelagoController):
         tree.bind('<Button-4>', schedule_reflow, add='+')
         tree.bind('<Button-5>', schedule_reflow, add='+')
 
-    def _clear_shop_tree_buttons(self, button_attribute):
-        buttons = self.__dict__.get(button_attribute, {})
-        for button in buttons.values():
-            button.destroy()
-        self.__dict__[button_attribute] = {}
+    def _schedule_shop_tree_button_reflow(self, tree, button_attribute):
+        if getattr(tree, '_shop_button_reflow_pending', False):
+            return
+        tree._shop_button_reflow_pending = True
+
+        def reflow():
+            tree._shop_button_reflow_pending = False
+            self._position_shop_tree_buttons(tree, button_attribute)
+
+        tree.after_idle(reflow)
 
     def _position_shop_tree_buttons(self, tree, button_attribute):
         if not tree.winfo_exists():
@@ -187,56 +188,46 @@ class ShopPolishController(ShopArchipelagoController):
             )
 
     def _rebuild_shop_catalogue_upgrade_buttons(self):
-        attribute = '_shop_catalogue_upgrade_buttons'
-        self._clear_shop_tree_buttons(attribute)
-        buttons = {}
-        for iid, target in self._shop_catalogue_upgrade_targets.items():
-            def activate(_event=None, row=iid, value=target):
-                self._open_shop_catalogue_upgrade_button(row, value)
-                return 'break'
+        self._sync_shop_tree_buttons(
+            self.shop_catalogue_tree, '_shop_catalogue_upgrade_buttons',
+            self._shop_catalogue_upgrade_targets,
+            self._open_shop_catalogue_upgrade_button,
+        )
 
-            button = ttk.Button(
-                self.shop_catalogue_tree,
-                text='Open Upgrades',
-                style='Launch.TButton',
-                takefocus=False,
-                command=activate,
-            )
-            # Explicit mouse binding avoids platform-specific failures where a
-            # placed ttk.Button inside a Treeview never invokes its command.
-            button.bind('<ButtonRelease-1>', activate)
-            buttons[iid] = button
-        self.__dict__[attribute] = buttons
-        self.after_idle(lambda: self._position_shop_tree_buttons(
-            self.shop_catalogue_tree, attribute
-        ))
+    def _sync_shop_tree_buttons(self, tree, attribute, targets, open_upgrades):
+        """Reuse row buttons instead of destroying all widgets after a purchase."""
+        buttons = self.__dict__.setdefault(attribute, {})
+        for iid in tuple(buttons):
+            if iid not in targets:
+                buttons.pop(iid).destroy()
+        for iid, target in targets.items():
+            button = buttons.get(iid)
+            if button is None:
+                button = ttk.Button(
+                    tree, text='Open Upgrades', style='Launch.TButton',
+                    takefocus=False,
+                )
+                buttons[iid] = button
+                def activate(_event=None, row=iid, widget=button):
+                    open_upgrades(row, widget._shop_upgrade_target)
+                    return 'break'
+
+                button.configure(command=activate)
+                # Explicit binding preserves embedded button behavior on Windows.
+                button.bind('<ButtonRelease-1>', activate)
+            button._shop_upgrade_target = target
+        self._schedule_shop_tree_button_reflow(tree, attribute)
 
     def _open_shop_catalogue_upgrade_button(self, iid, target):
         self.shop_catalogue_tree.selection_set(iid)
         self._show_shop_buffs_for_target(target[0], power=target[1])
 
     def _rebuild_shop_loadout_upgrade_buttons(self):
-        attribute = '_shop_loadout_upgrade_buttons'
-        self._clear_shop_tree_buttons(attribute)
-        buttons = {}
-        for iid, target in self._shop_current_loadout_targets.items():
-            def activate(_event=None, row=iid, value=target):
-                self._open_shop_loadout_upgrade_button(row, value)
-                return 'break'
-
-            button = ttk.Button(
-                self.shop_loadout_tree,
-                text='Open Upgrades',
-                style='Launch.TButton',
-                takefocus=False,
-                command=activate,
-            )
-            button.bind('<ButtonRelease-1>', activate)
-            buttons[iid] = button
-        self.__dict__[attribute] = buttons
-        self.after_idle(lambda: self._position_shop_tree_buttons(
-            self.shop_loadout_tree, attribute
-        ))
+        self._sync_shop_tree_buttons(
+            self.shop_loadout_tree, '_shop_loadout_upgrade_buttons',
+            self._shop_current_loadout_targets,
+            self._open_shop_loadout_upgrade_button,
+        )
 
     def _open_shop_loadout_upgrade_button(self, iid, target):
         self.shop_loadout_tree.selection_set(iid)
@@ -853,14 +844,14 @@ class ShopPolishController(ShopArchipelagoController):
             return f'FREE TOKEN ({ore_price} Ore)'
         return f'{price} Ore'
 
-    def _selected_shop_catalogue_entries(self):
+    def _selected_shop_catalogue_entries(self, category=None):
         return {
             'Offers': (*self._shop_unit_entries, *self._shop_power_entries),
             'Units': self._shop_unit_entries,
             'Unit Buffs': self._shop_buff_entries,
             'Powers': self._shop_power_entries,
             'Power Buffs': self._shop_power_buff_entries,
-        }.get(self.shop_category_var.get(), ())
+        }.get(category or self.shop_category_var.get(), ())
 
     def _sync_shop_buff_target_selector(
         self, category, candidates, active_tech, active_powers
@@ -912,13 +903,15 @@ class ShopPolishController(ShopArchipelagoController):
         return mapping.get(current, '')
 
     def _shop_catalogue_entry_state(
-        self, entry, run, active_tech, active_powers, active_role_tech=None
+        self, entry, run, active_tech, active_powers, active_role_tech=None,
+        *, rewards=None,
     ):
         active_role_tech = (
             active_tech if active_role_tech is None else active_role_tech
         )
         stacks = role_buff_stack_count(
-            active_shop_rewards(run), canonical_reward_for_id(entry.reward_id)
+            active_shop_rewards(run) if rewards is None else rewards,
+            canonical_reward_for_id(entry.reward_id),
         )
         price = self._entry_price(entry, current_stacks=stacks)
         locked = (
@@ -988,23 +981,35 @@ class ShopPolishController(ShopArchipelagoController):
         return effect
 
     def refresh_shop_catalogue(self, *_args):
+        self._refresh_shop_catalogue_view()
+
+    def _refresh_shop_catalogue_view(self, *, loadout_target=None):
+        """Render either purchase tree without changing the other view's filters."""
         if not hasattr(self, 'shop_catalogue_tree'):
             return
-        tree = self.shop_catalogue_tree
+        is_loadout = loadout_target is not None
+        if not is_loadout:
+            self.cancel_shop_search_refresh('catalogue')
+        section = 'loadout' if is_loadout else 'catalogue'
+        self._shop_dirty_panels.discard(section)
+        tree = self.shop_loadout_upgrade_tree if is_loadout else self.shop_catalogue_tree
+        previous_rows = (
+            self._shop_loadout_upgrade_rows if is_loadout else self._shop_catalogue_rows
+        )
         previous_selection = tree.selection()
         selected_reward_id = self.__dict__.pop(
-            '_shop_focus_reward_id', ''
+            '_shop_loadout_upgrade_focus_reward_id' if is_loadout
+            else '_shop_focus_reward_id', ''
         ) or (
-            self._shop_catalogue_rows.get(previous_selection[0], '')
+            previous_rows.get(previous_selection[0], '')
             if previous_selection else ''
         )
-        self._clear_shop_tree_buttons('_shop_catalogue_upgrade_buttons')
         tree.delete(*tree.get_children())
-        self._shop_catalogue_rows = {}
-        self._shop_catalogue_buyable = {}
-        self._shop_catalogue_upgrade_targets = {}
-        self._shop_catalogue_details = {}
-        term = self.shop_search_var.get().strip().casefold()
+        rows, buyable_rows, upgrade_targets, details = {}, {}, {}, {}
+        help_var = (
+            self.shop_loadout_upgrade_help_var if is_loadout else self.shop_catalogue_help_var
+        )
+        term = '' if is_loadout else self.shop_search_var.get().strip().casefold()
         run = self.shop_run
         modifier_values = modifier_effects(run.modifiers) if run else None
         rotation_note = ''
@@ -1015,35 +1020,37 @@ class ShopPolishController(ShopArchipelagoController):
                 run_key=f'{run.seed}:{run.run_id}',
             )
             rotation_note = f'Faction: {current_faction}. '
-        display_rewards = expand_equivalent_role_buffs(
-            active_shop_rewards(run), enabled=True
-        )
+        rewards = active_shop_rewards(run)
+        display_rewards = expand_equivalent_role_buffs(rewards, enabled=True)
+        buff_counts_by_target = {}
         active_tech = set(active_shop_role_tech_ids(run))
-        active_role_tech = set(active_shop_role_tech_ids(run))
+        active_role_tech = active_tech
         active_powers = set(active_shop_power_ids(run))
         visible = []
-        category = self.shop_category_var.get()
+        category = (
+            'Power Buffs' if loadout_target[1] else 'Unit Buffs'
+        ) if is_loadout else self.shop_category_var.get()
         access_category = category in {'Offers', 'Units', 'Powers'}
         buff_category = category in {'Unit Buffs', 'Power Buffs'}
         owned_view = bool(
             access_category and self.shop_access_view_var.get() == 'Owned'
         )
-        tree.column(
-            'upgrades',
-            width=130 if access_category else 0,
-            minwidth=100 if access_category else 0,
-            stretch=access_category,
-        )
-        tree.heading(
-            'upgrades',
-            text=(
-                'Upgrades'
-                if access_category else ''
-            ),
-        )
+        if not is_loadout:
+            tree.column(
+                'upgrades',
+                width=130 if access_category else 0,
+                minwidth=100 if access_category else 0,
+                stretch=access_category,
+            )
+            tree.heading('upgrades', text='Upgrades' if access_category else '')
         tree.heading('name', text='Effect' if buff_category else 'Reward')
+        entries = self._selected_shop_catalogue_entries(category)
+        if is_loadout:
+            entries = tuple(
+                entry for entry in entries if entry.target_id == loadout_target[0]
+            )
         candidates = tuple(
-            entry for entry in self._selected_shop_catalogue_entries()
+            entry for entry in entries
             if owned_view or self._shop_entry_available(
                 entry, run, stock=bool(run and access_category)
             )
@@ -1057,9 +1064,24 @@ class ShopPolishController(ShopArchipelagoController):
                     run.modifiers,
                 )
             )
-        selected_target = self._sync_shop_buff_target_selector(
-            category, candidates, active_tech, active_powers
-        )
+        if is_loadout:
+            owned = active_powers if loadout_target[1] else active_tech
+            selected_target = (
+                loadout_target[0]
+                if loadout_target[0] in owned
+                and any(entry.target_id == loadout_target[0] for entry in candidates)
+                else ''
+            )
+            target_label = (
+                f'{selected_target if loadout_target[1] else unit_display_label(selected_target)} '
+                f'[{selected_target}]'
+            ) if selected_target else ''
+            self.shop_loadout_upgrade_target_var.set(target_label)
+        else:
+            selected_target = self._sync_shop_buff_target_selector(
+                category, candidates, active_tech, active_powers
+            )
+            target_label = self.shop_buff_target_var.get()
         access_candidates = candidates
         stock_definition = self.shop_config.permanent_upgrades[
             'extra_shop_stock'
@@ -1211,7 +1233,8 @@ class ShopPolishController(ShopArchipelagoController):
             ).casefold():
                 continue
             detail = self._shop_catalogue_entry_state(
-                entry, run, active_tech, active_powers, active_role_tech
+                entry, run, active_tech, active_powers, active_role_tech,
+                rewards=rewards,
             )
             if buff_category and detail[2]:
                 continue
@@ -1235,15 +1258,15 @@ class ShopPolishController(ShopArchipelagoController):
         )
         visible.sort(key=key)
         if category == 'Unit Buffs':
-            self.shop_catalogue_help_var.set(
-                f'Buffing {self.shop_buff_target_var.get()}. '
+            help_var.set(
+                f'Buffing {target_label}. '
                 'Buy a buff repeatedly to stack it up to its listed limit.'
                 if visible else
                 'Select an owned unit above. No unavailable-unit buffs are shown.'
             )
         elif category == 'Power Buffs':
-            self.shop_catalogue_help_var.set(
-                f'Buffing {self.shop_buff_target_var.get()}. '
+            help_var.set(
+                f'Buffing {target_label}. '
                 'Buy a buff repeatedly to add stacks up to its listed limit.'
                 if visible else
                 'Select an owned power above. No unavailable-power buffs are shown.'
@@ -1253,7 +1276,7 @@ class ShopPolishController(ShopArchipelagoController):
                 entry.reward_type is ShopRewardType.UNIT_ACCESS
                 for entry in candidates
             )
-            self.shop_catalogue_help_var.set(
+            help_var.set(
                 f'{len(candidates)} active purchases and starting unlocks '
                 f'({unit_count} units/buildings, '
                 f'{len(candidates) - unit_count} powers). Use Open Upgrades '
@@ -1264,7 +1287,7 @@ class ShopPolishController(ShopArchipelagoController):
                 entry.reward_type is ShopRewardType.POWER_ACCESS
                 for entry in candidates
             )
-            self.shop_catalogue_help_var.set(
+            help_var.set(
                 f'{len(candidates)} current offers, including {power_count} '
                 f'powers, for stage '
                 f'{run.stage if run is not None else "—"}. '
@@ -1273,7 +1296,7 @@ class ShopPolishController(ShopArchipelagoController):
                 'use its Open Upgrades button.'
             )
         elif category == 'Units':
-            self.shop_catalogue_help_var.set(
+            help_var.set(
                 f'{len(candidates)} units stocked for stage '
                 f'{run.stage if run is not None else "—"}. '
                 f'{rotation_note}'
@@ -1281,14 +1304,14 @@ class ShopPolishController(ShopArchipelagoController):
                 'use its Open Upgrades button.'
             )
         elif category == 'Powers':
-            self.shop_catalogue_help_var.set(
+            help_var.set(
                 f'{len(candidates)} random superweapons and aid powers stocked '
                 f'for stage {run.stage if run is not None else "—"}. '
                 f'{rotation_note}'
                 'Stock changes after each mission victory.'
             )
         else:
-            self.shop_catalogue_help_var.set(
+            help_var.set(
                 'Green rows can be bought now. Grey rows are unavailable; '
                 'blue rows are already active.'
             )
@@ -1298,6 +1321,11 @@ class ShopPolishController(ShopArchipelagoController):
         restore_iid = ''
         for index, (entry, detail) in enumerate(visible):
             state, price, locked, stacks = detail
+            if entry.target_id not in buff_counts_by_target:
+                buff_counts_by_target[entry.target_id] = unit_buff_counts(
+                    display_rewards, entry.target_id
+                )
+            counts = buff_counts_by_target[entry.target_id]
             iid = f'shop-{index}'
             buyable = state == 'Available' or state.startswith('Stacks ')
             row_tag = (
@@ -1340,7 +1368,7 @@ class ShopPolishController(ShopArchipelagoController):
                 'values': (
                 self._shop_catalogue_display_name(
                     entry, state, stacks,
-                    buff_counts=unit_buff_counts(display_rewards, entry.target_id),
+                    buff_counts=counts,
                 ),
                 (
                     'Power'
@@ -1360,11 +1388,13 @@ class ShopPolishController(ShopArchipelagoController):
             cameo = cameo_images.get(entry.reward_id)
             if cameo is not None:
                 insert_options['image'] = cameo
+            if is_loadout:
+                insert_options['values'] = insert_options['values'][:4]
             tree.insert('', 'end', **insert_options)
-            self._shop_catalogue_rows[iid] = entry.reward_id
-            self._shop_catalogue_buyable[iid] = buyable
+            rows[iid] = entry.reward_id
+            buyable_rows[iid] = buyable
             if upgrade_available:
-                self._shop_catalogue_upgrade_targets[iid] = (
+                upgrade_targets[iid] = (
                     entry.target_id,
                     entry.reward_type is ShopRewardType.POWER_ACCESS,
                 )
@@ -1374,7 +1404,7 @@ class ShopPolishController(ShopArchipelagoController):
                 else 'Purchase/unlock this power first.'
                 if locked else state
             )
-            self._shop_catalogue_details[iid] = (
+            details[iid] = (
                 f'{entry.reward_id}\nType: '
                 f'{entry.reward_type.value.replace("_", " ").title()}\n'
                 f'Target: {entry.target_id or "—"}\n'
@@ -1384,7 +1414,7 @@ class ShopPolishController(ShopArchipelagoController):
                     '\nEffect: '
                     + self._shop_catalogue_display_name(
                     entry, state, stacks,
-                    buff_counts=unit_buff_counts(display_rewards, entry.target_id),
+                    buff_counts=counts,
                 )
                     if buff_category else ''
                 )
@@ -1409,59 +1439,24 @@ class ShopPolishController(ShopArchipelagoController):
         if restore_iid:
             tree.selection_set(restore_iid)
             tree.see(restore_iid)
-        self._rebuild_shop_catalogue_upgrade_buttons()
-        self.refresh_shop_purchase_buttons()
-
-    def _copy_shop_catalogue_to_loadout_upgrades(self):
-        source = self.shop_catalogue_tree
-        tree = self.shop_loadout_upgrade_tree
-        selected_reward = self.__dict__.pop(
-            '_shop_loadout_upgrade_focus_reward_id', ''
-        )
-        tree.delete(*tree.get_children())
-        self._shop_loadout_upgrade_rows = dict(self._shop_catalogue_rows)
-        self._shop_loadout_upgrade_buyable = dict(self._shop_catalogue_buyable)
-        self._shop_loadout_upgrade_details = dict(self._shop_catalogue_details)
-        restore_iid = ''
-        for iid in source.get_children():
-            item = source.item(iid)
-            options = dict(
-                text=item.get('text', ''),
-                values=tuple(item.get('values', ()))[:4],
-                tags=item.get('tags', ()),
-            )
-            if item.get('image'):
-                options['image'] = item['image']
-            tree.insert('', 'end', iid=iid, **options)
-            if self._shop_loadout_upgrade_rows.get(iid) == selected_reward:
-                restore_iid = iid
-        if restore_iid:
-            tree.selection_set(restore_iid)
-            tree.see(restore_iid)
-        self.refresh_loadout_upgrade_purchase_button()
+        if is_loadout:
+            self._shop_loadout_upgrade_rows = rows
+            self._shop_loadout_upgrade_buyable = buyable_rows
+            self._shop_loadout_upgrade_details = details
+            self.refresh_loadout_upgrade_purchase_button()
+        else:
+            self._shop_catalogue_rows = rows
+            self._shop_catalogue_buyable = buyable_rows
+            self._shop_catalogue_upgrade_targets = upgrade_targets
+            self._shop_catalogue_details = details
+            self._rebuild_shop_catalogue_upgrade_buttons()
+            self.refresh_shop_purchase_buttons()
 
     def _refresh_shop_loadout_upgrade_view(self):
         target = self.__dict__.get('_shop_loadout_upgrade_target')
         if not target or not hasattr(self, 'shop_loadout_upgrade_tree'):
             return
-        saved_category = self.shop_category_var.get()
-        saved_search = self.shop_search_var.get()
-        selected = self.shop_catalogue_tree.selection()
-        saved_reward = (
-            self._shop_catalogue_rows.get(selected[0], '') if selected else ''
-        )
-        self.shop_category_var.set('Power Buffs' if target[1] else 'Unit Buffs')
-        self.shop_search_var.set('')
-        self._shop_requested_buff_target_id = target[0]
-        self.refresh_shop_catalogue()
-        self.shop_loadout_upgrade_target_var.set(self.shop_buff_target_var.get())
-        self.shop_loadout_upgrade_help_var.set(self.shop_catalogue_help_var.get())
-        self._copy_shop_catalogue_to_loadout_upgrades()
-        self.shop_category_var.set(saved_category)
-        self.shop_search_var.set(saved_search)
-        if saved_reward:
-            self._shop_focus_reward_id = saved_reward
-        self.refresh_shop_catalogue()
+        self._refresh_shop_catalogue_view(loadout_target=target)
 
     def _show_shop_loadout_upgrades(self, target_id, *, power=False):
         if not target_id:
@@ -1477,6 +1472,8 @@ class ShopPolishController(ShopArchipelagoController):
         self.shop_loadout_upgrades_frame.grid_remove()
         self.shop_loadout_overview_frame.grid()
         self.shop_panels.select(self.shop_loadout_panel)
+        self._shop_dirty_panels.add('loadout')
+        self.refresh_visible_shop_panel()
 
     def refresh_loadout_upgrade_purchase_button(self, _event=None):
         selected = self.shop_loadout_upgrade_tree.selection()
@@ -1497,7 +1494,7 @@ class ShopPolishController(ShopArchipelagoController):
         )
         if reward_id:
             self._shop_loadout_upgrade_focus_reward_id = reward_id
-            self._buy_shop_reward(reward_id)
+            self._buy_shop_reward(reward_id, loadout=True)
         return 'break'
 
     def shop_loadout_upgrade_tooltip(self, row_id):
@@ -1580,8 +1577,6 @@ class ShopPolishController(ShopArchipelagoController):
         self.shop_category_var.set('Power Buffs' if power else 'Unit Buffs')
         if self.shop_search_var.get():
             self.shop_search_var.set('')
-        # The search write trace refreshes the catalogue. Set this only after
-        # clearing search so that refresh cannot consume the target early.
         self._shop_requested_buff_target_id = target_id
         self.refresh_shop_catalogue()
         self.shop_panels.select(self.shop_run_panel)
@@ -1965,6 +1960,7 @@ class ShopPolishController(ShopArchipelagoController):
         )
 
     def _refresh_shop_history(self):
+        self._shop_dirty_panels.discard('history')
         tree = self.shop_history_tree
         tree.delete(*tree.get_children())
         if self.shop_run is not None:

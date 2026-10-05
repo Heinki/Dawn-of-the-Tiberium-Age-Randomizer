@@ -1,3 +1,4 @@
+- [x] Improve Shop UI performance by caching cameo decoding, rendering loadout upgrades directly, deferring hidden panels, and coalescing search and button layout updates.
 - [x] Preserve Sarin Gas 1's scripted truck counts and veterancy so enemy reinforcement buffs cannot block battle control.
 
 
