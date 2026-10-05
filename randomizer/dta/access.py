@@ -91,9 +91,11 @@ def player_infantry_access_rules(
             or not target.get('rewardable')
             or unit_id.startswith('AI')
             or unit_id in ALWAYS_AVAILABLE_MOBILE_IDS
-            or target.get('duplicate_of')
         ):
             continue
+        # Catalogue aliases stay hidden in the UI, but remain registered
+        # production types. E1S/E3S otherwise sit beside the earned E1A/E3A
+        # clones in the Soviet sidebar and bypass randomized access.
         values = effective_section(combined, unit_id)
         # Earned production uses a player-only clone. Keep every randomized
         # original blocked for the player so enemy/map identities and native

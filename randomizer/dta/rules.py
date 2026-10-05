@@ -173,6 +173,19 @@ def _merge_sections(base, overlay):
     return merged
 
 
+@lru_cache(maxsize=1)
+def player_unit_rule_overlays():
+    """Use DTA's authored Heavy APC for its distinct randomizer reward.
+
+    Base Rules.ini still inherits the Allied APC's gun and art. Enhance.ini
+    defines the Heavy APC advertised by the reward: an unarmed six-passenger
+    transport that gains M60mg at Elite rank. Apply only this unit's section
+    to the catalogue and player clones, leaving native mission types intact.
+    """
+    enhanced = ini_sections(GAME_ROOT / 'INI' / 'Enhance.ini')
+    return {'APC2': dict(enhanced['APC2'])}
+
+
 @lru_cache(maxsize=2)
 def installed_effective_sections(enhanced=False):
     """Return flattened installed runtime rules for map-local cloning."""
@@ -194,6 +207,7 @@ def installed_effective_sections(enhanced=False):
 def techno_catalogue():
     """Build the DTA catalogue from the installed consolidated Rules.ini."""
     sections = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
+    sections = _merge_sections(sections, player_unit_rule_overlays())
     records = []
     for list_name, category in TYPE_LISTS.items():
         for roster_key, type_id in sections.get(list_name, {}).items():

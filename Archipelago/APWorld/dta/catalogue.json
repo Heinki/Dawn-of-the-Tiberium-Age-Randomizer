@@ -5484,6 +5484,13 @@
       "id": 81066778
     },
     {
+      "name": "Heavy APC (APC2) Mobility I",
+      "classification": "useful",
+      "category": "unit_buffs",
+      "repeatable": true,
+      "id": 81066820
+    },
+    {
       "name": "Heavy APC (APC2) Optics I",
       "classification": "useful",
       "category": "unit_buffs",
@@ -16322,7 +16329,7 @@
       ]
     }
   ],
-  "catalogue_checksum": "8a9de7bf7b9817769332bda98cfa63da1c0c33db2efaecfa15b32ba4799ffda2",
+  "catalogue_checksum": "4f0834e826820e483559e9c9cba364e8ea61534a1deb24b740883b0f6c99d1a7",
   "locations": [
     {
       "name": "Tutorial Mission 1 - Mission Complete - Reward 1",

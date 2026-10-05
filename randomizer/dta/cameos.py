@@ -6,6 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from randomizer.core.paths import CAMEO_CACHE_DIR, GAME_ROOT
+from randomizer.dta.rules import player_unit_rule_overlays
 
 
 TEXT_ONLY_CAMEO_IDS = frozenset({
@@ -223,6 +224,10 @@ def _effective_art_value(sections, section_id, key, seen=None):
 
 def ensure_unit_cameos(unit_ids):
     rules = _ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
+    for unit_id, values in player_unit_rule_overlays().items():
+        rules.setdefault(unit_id, {}).update({
+            key.casefold(): value for key, value in values.items()
+        })
     art = _ini_sections(GAME_ROOT / 'INI' / 'Art.ini')
     palette = mix_asset('CAMEO.PAL')
     if palette is None:

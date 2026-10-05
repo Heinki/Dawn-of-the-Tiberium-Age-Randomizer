@@ -33,6 +33,7 @@ from randomizer.dta.rules import (
     comma_items,
     effective_section,
     ini_sections,
+    player_unit_rule_overlays,
     unit_collision_report,
 )
 from randomizer.missions.overrides import (
@@ -1587,7 +1588,8 @@ def unit_specific_buff_rules(
     source = mission_source_path(mission.get('scenario'))
     installed = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
     authored = ini_sections(source) if source_sections is None else source_sections
-    combined = _merged_sections(installed, authored)
+    player_installed = _merged_sections(installed, player_unit_rule_overlays())
+    combined = _merged_sections(player_installed, authored)
     if rule_overlays:
         combined = _merged_sections(combined, rule_overlays)
     enhanced_combined = None
@@ -1658,6 +1660,22 @@ def unit_specific_buff_rules(
         })
         return {}, report
 
+    essential_infantry_factories = tuple(dict.fromkeys(
+        str(building_id)
+        for building_id in combined.get('BuildingTypes', {}).values()
+        if effective_section(combined, building_id).get(
+            'Factory', ''
+        ).casefold() == 'infantrytype'
+    ))
+    essential_infantry_owners = tuple(dict.fromkeys((
+        *access_owner_houses,
+        *(house for house in ('GDI', 'Nod', 'Allies', 'Soviet')
+          if house.casefold() in registered_houses),
+        *(house for factory in essential_infantry_factories
+          for house in comma_items(effective_section(combined, factory).get('Owner'))
+          if house.casefold() in registered_houses),
+    )))
+
     counts_by_unit = {}
     access_units = set()
     assistance_units = set()
@@ -1714,8 +1732,27 @@ def unit_specific_buff_rules(
     # their earned buffs as active even when this seed did not award the
     # corresponding permanent unlock.
     access_units.update(native_direct_units)
+    # Engineers are essential production, even without an access reward or
+    # buff. A clone also avoids map-local technology locks and supports
+    # captured factories without changing enemy/scripted engineers.
+    access_units.add('ENGINEER')
 
     catalogue = catalogue_by_id()
+    # Starter roles can grant both the public unit and its faction alias
+    # (E1A/E1S or E3A/E3S). They share one reward identity, so only the public
+    # type needs a production clone. Access rules lock both native entries.
+    redundant_access_aliases = {
+        unit_id for unit_id, target in catalogue.items()
+        if target.get('duplicate_of') in access_units
+        and unit_id not in native_direct_units
+    }
+    access_units.difference_update(redundant_access_aliases)
+    curated_units = {
+        unit_id for unit_id in player_unit_rule_overlays()
+        if not access_randomized and _can_player_produce(
+            effective_section(combined, unit_id), production_house
+        )
+    }
     unlimited_units = set()
     if unlimited_hero_units:
         for unit_id, target in catalogue.items():
@@ -1786,6 +1823,7 @@ def unit_specific_buff_rules(
             free_unit_providers.add(building_id)
     candidate_ids = (
         set(counts_by_unit) | access_units | unlimited_units | free_unit_providers
+        | curated_units
     )
     for unit_id in _techno_ids_in_registration_order(combined, candidate_ids):
         target = catalogue.get(unit_id)
@@ -1807,7 +1845,7 @@ def unit_specific_buff_rules(
         # for earned production, leaving the mission's placed props untouched.
         restored_weapons = False
         if unit_id in access_units:
-            native = effective_section(installed, unit_id)
+            native = effective_section(player_installed, unit_id)
             for key in WEAPON_KEYS:
                 if (
                     str(values.get(key, '')).casefold() in {'', 'none'}
@@ -1824,11 +1862,22 @@ def unit_specific_buff_rules(
             source_sections,
         )
         production_access = unit_id in access_units
+        essential_infantry = unit_id == 'ENGINEER'
         unlimited_build_limit = unit_id in unlimited_units
         player_mobile_placements = [
             entry for entry in collision['player_placements']
             if entry['section'] in {'Infantry', 'Units', 'Aircraft'}
         ]
+        if (
+            unit_id in redundant_access_aliases
+            and not player_mobile_placements
+            and unit_id not in runtime_consumer_units
+        ):
+            report['skipped'].append({
+                'unit': unit_id,
+                'reason': 'duplicate_production_alias',
+            })
+            continue
         helper_references = _helper_unit_references(
             authored, combined, unit_id, helper_context
         )
@@ -1885,6 +1934,7 @@ def unit_specific_buff_rules(
             or unit_id in free_unit_providers
             or production_access
             or unlimited_build_limit
+            or unit_id in curated_units
             or identity_collision
             or weapon_collision
         )
@@ -1902,7 +1952,8 @@ def unit_specific_buff_rules(
             counts
             and player_mobile_placements
             and (
-                production_context['shared_hostile_houses']
+                unit_id in redundant_access_aliases
+                or production_context['shared_hostile_houses']
                 or (
                     access_randomized
                     and unit_id in assistance_units
@@ -1950,6 +2001,11 @@ def unit_specific_buff_rules(
         unit_rules = _unit_overrides(values, counts, target)
         helper_family_fallback_needed = False
         if use_clone:
+            clone_owners = (
+                essential_infantry_owners if essential_infantry
+                else access_owner_houses if production_access
+                else (production_house,)
+            )
             output_id = _clone_id(unit_id, 'PLAYER', occupied)
             clone_values = dict(values)
             clone_values.pop('BaseSection', None)
@@ -2004,10 +2060,7 @@ def unit_specific_buff_rules(
             unit_rules = {
                 **clone_values,
                 'Image': values.get('Image', unit_id),
-                'Owner': ','.join(
-                    access_owner_houses
-                    if production_access else (production_house,)
-                ),
+                'Owner': ','.join(clone_owners),
                 'RequiredHouses': production_house,
                 **unit_rules,
             }
@@ -2024,7 +2077,7 @@ def unit_specific_buff_rules(
             )
             if (
                 production_access and allow_foreign_factory_access
-            ) or (
+            ) or essential_infantry or (
                 target.get('category') == 'aircraft'
                 and (production_access or core_aircraft)
             ):
@@ -2057,6 +2110,12 @@ def unit_specific_buff_rules(
                     ).get(production_type, ())
                 ]
                 if target.get('category') == 'infantry':
+                    if essential_infantry:
+                        # Include native AI aliases and map-local barracks,
+                        # not just each faction's default building.
+                        # RequiredHouses still gates the clone to the human
+                        # production mask.
+                        built_at.extend(essential_infantry_factories)
                     # A mission-granted native Enforcer deploys into DBFRT,
                     # while a rewarded/buffed Enforcer deploys into its clone.
                     # Keep the native factory as a route; reference rewriting
@@ -2114,7 +2173,10 @@ def unit_specific_buff_rules(
             if (
                 helper_family_fallback_needed
                 and producible
-                and (counts or production_access or unit_id in free_unit_providers)
+                and (
+                    counts or production_access
+                    or unit_id in free_unit_providers or unit_id in curated_units
+                )
                 and not placement_only
             ):
                 # The player and allied helpers share one ActsLike production
@@ -2124,7 +2186,10 @@ def unit_specific_buff_rules(
                 rules.setdefault(unit_id, {})['Buildability'] = 'AIOnly'
             if (
                 producible
-                and (counts or production_access or unit_id in free_unit_providers)
+                and (
+                    counts or production_access
+                    or unit_id in free_unit_providers or unit_id in curated_units
+                )
                 and not placement_only
                 and not runtime_only
                 and not helper_family_fallback_needed
@@ -2137,6 +2202,23 @@ def unit_specific_buff_rules(
                     _add_forbidden_house(
                         rules, unit_id, values, production_house
                     )
+            if not placement_only and not runtime_only:
+                for alias_id, alias_target in catalogue.items():
+                    if alias_target.get('duplicate_of') != unit_id:
+                        continue
+                    alias_values = effective_section(combined, alias_id)
+                    if not _can_player_produce(alias_values, production_house):
+                        continue
+                    if helper_family_fallback_needed or (
+                        human_only_production
+                        and str(alias_values.get('Buildability', 'Both')).casefold()
+                        in {'both', 'aionly'}
+                    ):
+                        rules.setdefault(alias_id, {})['Buildability'] = 'AIOnly'
+                    else:
+                        _add_forbidden_house(
+                            rules, alias_id, alias_values, production_house
+                        )
             list_name = TYPE_LIST_BY_CATEGORY[target['category']]
             list_key = _next_list_key(
                 installed, authored, list_name, list_offsets
