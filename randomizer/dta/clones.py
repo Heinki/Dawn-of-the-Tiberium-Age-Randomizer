@@ -37,6 +37,7 @@ from randomizer.dta.rules import (
 )
 from randomizer.missions.overrides import (
     MISSION_PLAYER_PRODUCTION_ISOLATION_HOUSE_TYPES,
+    MISSION_SCRIPTED_NATIVE_DEPLOY_TASKFORCES,
 )
 
 
@@ -861,6 +862,56 @@ def _rewrite_player_taskforces(
             'entries_rewritten': rewritten_entries,
         })
     report['player_taskforce_routes'] = routes
+
+
+def _preserve_scripted_deploy_identities(
+    mission, rules, report, installed, authored, combined, occupied, list_offsets,
+):
+    """Keep reviewed cinematic deployment checks on their native yard type.
+
+    The scripted mobile clone retains its buffs, including cloak. Its native
+    yard lets the authored cutscene and ownership transfer run unchanged.
+    Factory-produced MCVs retain their separate buffed deployment route.
+    """
+    routes = []
+    configured = MISSION_SCRIPTED_NATIVE_DEPLOY_TASKFORCES.get(
+        str(mission.get('code') or '').upper(), {}
+    )
+    for taskforce, unit_ids in configured.items():
+        for key, value in authored.get(taskforce, {}).items():
+            native_fields = list(comma_items(value))
+            if len(native_fields) != 2 or native_fields[1].upper() not in unit_ids:
+                continue
+            current = rules.get(taskforce, {}).get(key, value)
+            fields = list(comma_items(current))
+            if len(fields) != 2 or fields[1] == native_fields[1]:
+                continue
+            source = native_fields[1].upper()
+            native_deploy = effective_section(combined, source).get('DeploysInto')
+            clone_values = rules.get(fields[1], {})
+            if not native_deploy or clone_values.get('DeploysInto') == native_deploy:
+                continue
+            scripted_output = _clone_id(source, 'SCRIPTED', occupied)
+            rules[scripted_output] = {
+                **clone_values,
+                'DeploysInto': native_deploy,
+                'TechLevel': '-1',
+                'CrateGoodie': 'no',
+            }
+            list_key = _next_list_key(
+                installed, authored, 'VehicleTypes', list_offsets
+            )
+            rules.setdefault('VehicleTypes', {})[list_key] = scripted_output
+            fields[1] = scripted_output
+            rules.setdefault(taskforce, {})[key] = ','.join(fields)
+            routes.append({
+                'taskforce': taskforce,
+                'key': key,
+                'source_type': source,
+                'output_type': scripted_output,
+                'deploys_into': native_deploy,
+            })
+    report['scripted_native_deploy_routes'] = routes
 
 
 def _add_forbidden_house(rules, unit_id, values, production_house):
@@ -2595,6 +2646,9 @@ def unit_specific_buff_rules(
         player_house,
         occupied,
         list_offsets,
+    )
+    _preserve_scripted_deploy_identities(
+        mission, rules, report, installed, authored, combined, occupied, list_offsets,
     )
     for source_id, output_id in output_by_source.items():
         values = effective_section(combined, source_id)

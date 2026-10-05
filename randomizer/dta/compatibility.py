@@ -79,25 +79,40 @@ def building_event_rules(installed, authored, generated, report):
         *([None] * _IMPLICIT_ENGINE_BUILDING_TYPES),
         *added_buildings,
     ]
-    clones = {}
+    # A helper can deploy a different clone than the human produces. Keep
+    # every route under its actual scenario owner; a source-only mapping can
+    # silently replace the scripted MCV's yard with another production clone.
+    clones_by_house = {}
+
+    def add_route(houses, source, output):
+        if output not in buildings or output == source:
+            return
+        for house in houses:
+            house = str(house or '').casefold()
+            if not house:
+                continue
+            outputs = clones_by_house.setdefault(house, {}).setdefault(source, [])
+            if output not in outputs:
+                outputs.append(output)
+
+    player_houses = (report.get('player_house'),)
     for item in report['applied']:
         if item.get('category') in {'buildings', 'defenses'}:
-            clones[item['unit']] = item['output_type']
+            add_route(player_houses, item['unit'], item['output_type'])
         linked = item.get('linked_deploy_route')
-        if linked and linked['output_type'] in buildings:
-            clones[linked['source_type']] = linked['output_type']
+        if linked:
+            add_route(player_houses, linked['source_type'], linked['output_type'])
+        for route in item.get('allied_helper_routes', ()):
+            houses = route.get('scenario_houses', ())
+            if item.get('category') in {'buildings', 'defenses'}:
+                add_route(houses, item['unit'], route['output_type'])
+            linked = route.get('linked_deploy_route')
+            if linked:
+                add_route(houses, linked['source_type'], linked['output_type'])
     rules = {}
     occupied = set(authored) | set(generated)
     for values in authored.values():
         occupied.update(values)
-    eligible_houses = {str(report.get('player_house') or '').casefold()}
-    eligible_houses.update(
-        str(house).casefold()
-        for item in report['applied']
-        for route in item.get('allied_helper_routes', ())
-        for house in route.get('scenario_houses', ())
-    )
-    eligible_houses.discard('')
 
     def unique(prefix):
         index = 1
@@ -115,7 +130,7 @@ def building_event_rules(installed, authored, generated, report):
             or fields[0] != '1'
             or fields[1] not in {'19', '32'}
             or len(trigger) != 8 or trigger[3] != '0'
-            or trigger[0].casefold() not in eligible_houses
+            or trigger[0].casefold() not in clones_by_house
         ):
             continue
         tags = [comma_items(value) for value in authored.get('Tags', {}).values()]
@@ -125,21 +140,31 @@ def building_event_rules(installed, authored, generated, report):
             native = buildings[int(fields[3])]
         except (ValueError, IndexError):
             continue
-        output = clones.get(native)
-        if not output or output == native:
+        outputs = clones_by_house[trigger[0].casefold()].get(native, ())
+        if not outputs:
             continue
         actions = list(comma_items(authored.get('Actions', {}).get(trigger_id)))
         if not actions or len(actions) != 1 + 8 * int(actions[0]):
             continue
-        companion, tag_id = unique('DTABE'), unique('DTABT')
-        fields[3] = str(buildings.index(output))
-        trigger[2] += ' (player clone)'
-        rules.setdefault('Events', {})[companion] = ','.join(fields)
-        rules.setdefault('Triggers', {})[companion] = ','.join(trigger)
-        rules.setdefault('Tags', {})[tag_id] = f'0,{trigger[2]},{companion}'
-        for key, other in ((trigger_id, companion), (companion, trigger_id)):
+        companions = []
+        for output in outputs:
+            companion, tag_id = unique('DTABE'), unique('DTABT')
+            companions.append(companion)
+            clone_fields, clone_trigger = list(fields), list(trigger)
+            clone_fields[3] = str(buildings.index(output))
+            clone_trigger[2] += ' (player clone)'
+            rules.setdefault('Events', {})[companion] = ','.join(clone_fields)
+            rules.setdefault('Triggers', {})[companion] = ','.join(clone_trigger)
+            rules.setdefault('Tags', {})[tag_id] = f'0,{clone_trigger[2]},{companion}'
+        trigger_ids = [trigger_id, *companions]
+        for key in trigger_ids:
+            destroy_actions = [
+                field
+                for other in trigger_ids if other != key
+                for field in ('12', '2', other, '0', '0', '0', '0', 'A')
+            ]
             rules.setdefault('Actions', {})[key] = ','.join([
-                str(int(actions[0]) + 1), *actions[1:],
-                '12', '2', other, '0', '0', '0', '0', 'A',
+                str(int(actions[0]) + len(trigger_ids) - 1), *actions[1:],
+                *destroy_actions,
             ])
     return rules

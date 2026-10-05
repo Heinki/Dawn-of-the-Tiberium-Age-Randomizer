@@ -37,6 +37,18 @@ MISSION_SCRIPTED_PLAYER_BUFF_TASKFORCES = _frozenset_mapping(
     'scripted_player_buff_taskforces'
 )
 
+# Cinematic MCV teams whose deployment is watched through a native building
+# heap index before the mission transfers ownership to the player.
+MISSION_SCRIPTED_NATIVE_DEPLOY_TASKFORCES = {
+    code: {
+        taskforce: frozenset(unit_ids)
+        for taskforce, unit_ids in values.items()
+    }
+    for code, values in _MISSION_CONFIG.get(
+        'scripted_native_deploy_taskforces', {}
+    ).items()
+}
+
 MISSION_TEAM_HOUSE_OVERRIDES = dict(_MISSION_CONFIG['team_house_overrides'])
 
 # Native MCV identities exposed only in configured missions. An empty list

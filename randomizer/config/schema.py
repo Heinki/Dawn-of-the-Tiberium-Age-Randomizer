@@ -162,6 +162,21 @@ def _validate_missions(sections, path):
 
     validate_mission_reward_config(sections, path, _invalid)
 
+    scripted_deploys = sections.get('scripted_native_deploy_taskforces', {})
+    if not isinstance(scripted_deploys, dict):
+        _invalid('scripted_native_deploy_taskforces must be an object', path)
+    for code, taskforces in scripted_deploys.items():
+        if code not in sections['build_classifications'] or not isinstance(taskforces, dict):
+            _invalid(f'Invalid scripted deployment mission {code!r}', path)
+        for taskforce, unit_ids in taskforces.items():
+            if (
+                not _is_nonempty_string(taskforce)
+                or not isinstance(unit_ids, list)
+                or not unit_ids
+                or any(not _is_nonempty_string(unit_id) for unit_id in unit_ids)
+            ):
+                _invalid(f'Invalid scripted deployment TaskForce {code!r}/{taskforce!r}', path)
+
     for section in (
         'original_mcv_access',
         'native_production_gate_exclusions',

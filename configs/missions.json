@@ -394,6 +394,11 @@
     "reward_excluded_player_houses": {},
     "clone_only_country_buff_types": {},
     "scripted_player_buff_taskforces": {},
+    "scripted_native_deploy_taskforces": {
+      "M_CRC10": {
+        "01000077": ["AMCV"]
+      }
+    },
     "team_house_overrides": {},
     "original_mcv_access": {
       "M_SE6": [

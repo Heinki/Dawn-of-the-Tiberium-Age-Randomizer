@@ -1095,8 +1095,6 @@ class ShopPolishController(ShopArchipelagoController):
             )
         power_offer_count = (
             base_power_offer_count
-            + self.shop_profile.upgrade_level('extra_shop_stock')
-            * int(stock_definition.effects['powers_per_level'])
             + (modifier_values['power_inventory_flat'] if modifier_values else 0)
         )
         if owned_view:
@@ -1744,8 +1742,7 @@ class ShopPolishController(ShopArchipelagoController):
             ),
             'extra_shop_stock': (
                 f'Each level adds +{effects.get("units_per_level", 0)} unit '
-                f'and +{effects.get("powers_per_level", 0)} power to every '
-                'stage stock rotation.'
+                'to every stage stock rotation.'
             ),
             'expanded_loadout': (
                 f'Each level adds +{effects.get("slots_per_level", 0)} '

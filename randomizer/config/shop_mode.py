@@ -253,10 +253,11 @@ def validate_shop_mode_config(sections, path, invalid):
         ):
             invalid(f'Invalid Shop Mode upgrade {upgrade_id!r}', path)
         for effect_key in required_upgrades.get(upgrade_id, ()):
+            minimum = 0 if effect_key == 'powers_per_level' else 1
             if (
                 not isinstance(effects.get(effect_key), int)
                 or isinstance(effects.get(effect_key), bool)
-                or effects[effect_key] < 1
+                or effects[effect_key] < minimum
             ):
                 invalid(
                     f'Invalid Shop Mode upgrade effect '
