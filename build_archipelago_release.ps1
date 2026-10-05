@@ -28,6 +28,10 @@ Copy-Item -LiteralPath (
 $launcherVersion = (& python -c (
     "from randomizer.core.version import APP_VERSION; print(APP_VERSION)"
 )).Trim()
+$archipelagoVersion = (& python -c (
+    "from randomizer.core.version import ARCHIPELAGO_VERSION; print(ARCHIPELAGO_VERSION)"
+)).Trim()
+$worldVersion = ((@($launcherVersion.Split('.')) + @('0', '0'))[0..2] -join '.')
 $worldSourceManifest = Get-Content -LiteralPath (
     Join-Path $PSScriptRoot "Archipelago\APWorld\dta\archipelago.json"
 ) -Raw | ConvertFrom-Json
@@ -47,9 +51,9 @@ foreach ($name in $payloadFiles) {
 $releaseManifest = [ordered]@{
     format = 1
     launcher_version = $launcherVersion
-    archipelago_version = "0.6.7"
+    archipelago_version = $archipelagoVersion
     apworld_game = $worldSourceManifest.game
-    apworld_version = $launcherVersion
+    apworld_version = $worldVersion
     files = $payloadHashes
 } | ConvertTo-Json -Depth 5
 [IO.File]::WriteAllText(

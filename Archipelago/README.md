@@ -7,13 +7,19 @@ YAML, connect to a room, and continue an existing multiworld game.
 
 - Dawn of the Tiberium Age 16.0.0 with Vinifera in a separate, unmodified game
   installation
-- DTA Randomizer Launcher 2.1
+- DTA Randomizer Launcher 2.2
 - The same `BattleE.ini`, `Tutorial.ini`, and fan mission maps as the APWorld catalogue when using fan missions. Put the INI files in DTA's `INI` folder and maps in their listed `Maps/Missions` or `Maps/Custom` locations.
-- Archipelago 0.6.7
+- Archipelago 0.6.8
 - `dta.apworld` from the same Randomizer release as the launcher
 
 Use the current launcher and APWorld. Compatible release labels are accepted;
 incompatible schemas, catalogues, or damaged manifests are rejected.
+
+The current packaged catalogue contains 93 missions. The local installation
+used for this build does not contain `BattleE.ini`; restore the matching add-on
+INI and mission maps, then regenerate the catalogue and APWorld before adding
+those fan missions to a room. Previously published item and location IDs are
+preserved when regenerating.
 
 ## Install the Randomizer
 
@@ -76,7 +82,7 @@ run. Install the updated `dta.apworld` before using settings-only YAML files.
 
 1. Install `dta.apworld` for the person generating the room.
 2. Put every participant's YAML in Archipelago's `Players` folder.
-3. Generate the multiworld normally with Archipelago 0.6.7.
+3. Generate the multiworld normally with Archipelago 0.6.8.
 4. Host or upload the generated output using the normal Archipelago workflow.
 
 Do not replace the DTA YAML after the room has been generated. Reusing it for a

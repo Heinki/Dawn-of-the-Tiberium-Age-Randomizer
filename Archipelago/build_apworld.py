@@ -40,7 +40,7 @@ def build(output_directory: Path) -> Path:
         frozen_techno_records,
         generation_files,
     )
-    from randomizer.core.version import APP_VERSION
+    from randomizer.core.version import APP_VERSION, ARCHIPELAGO_VERSION
 
     catalogue = json.loads(catalogue_path.read_text(encoding='utf-8'))
     generation_snapshot = json.loads(
@@ -87,10 +87,11 @@ def build(output_directory: Path) -> Path:
 
     manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
     manifest.update({
-        'world_version': APP_VERSION,
-        'compatible_version': 8,
+        'world_version': '.'.join((APP_VERSION.split('.') + ['0', '0'])[:3]),
+        # AP 0.6.8 reads format 7; this archive needs no format 8 features.
+        'compatible_version': 7,
         'version': 8,
-        'maximum_ap_version': '0.6.7',
+        'maximum_ap_version': ARCHIPELAGO_VERSION,
     })
     manifest_data = json.dumps(
         manifest,

@@ -32,7 +32,11 @@ $launcherVersion = Read-RequiredMatch `
     -Path $launcherVersionPath `
     -Pattern ('APP_VERSION\s*=\s*[''"](?<version>{0})[''"]' -f $versionPattern) `
     -Label "launcher version"
-$worldVersion = $launcherVersion
+$worldVersion = ((@($launcherVersion.Split('.')) + @('0', '0'))[0..2] -join '.')
+$archipelagoVersion = Read-RequiredMatch `
+    -Path $launcherVersionPath `
+    -Pattern ('ARCHIPELAGO_VERSION\s*=\s*[''"](?<version>{0})[''"]' -f $versionPattern) `
+    -Label "Archipelago version"
 
 if ($ExpectedVersion) {
     $normalizedExpectedVersion = $ExpectedVersion -replace '^[vV]', ''
@@ -98,9 +102,9 @@ try {
 
     if (
         [string]$packagedManifest.world_version -ne $worldVersion -or
-        [int]$packagedManifest.compatible_version -ne 8 -or
+        [int]$packagedManifest.compatible_version -ne 7 -or
         [int]$packagedManifest.version -ne 8 -or
-        [string]$packagedManifest.maximum_ap_version -ne '0.6.7'
+        [string]$packagedManifest.maximum_ap_version -ne $archipelagoVersion
     ) {
         throw "Committed APWorld manifest is stale or incompatible."
     }

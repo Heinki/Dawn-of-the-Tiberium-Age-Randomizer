@@ -44,7 +44,7 @@ try {
         launcher = $launcherPath
         launcher_version = $launcherVersion
         apworld = $apworldPath
-        apworld_version = $launcherVersion
+        apworld_version = ((@($launcherVersion.Split('.')) + @('0', '0'))[0..2] -join '.')
     })
 }
 finally {
