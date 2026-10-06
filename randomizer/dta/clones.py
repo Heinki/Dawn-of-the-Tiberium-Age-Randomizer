@@ -1575,6 +1575,7 @@ def unit_specific_buff_rules(
     shop_global_buff_levels=None,
     source_sections=None,
     human_only_production=False,
+    isolated_production_mask=False,
 ):
     """Build map-local original buffs or player production clones.
 
@@ -2194,7 +2195,7 @@ def unit_specific_buff_rules(
                 and not runtime_only
                 and not helper_family_fallback_needed
             ):
-                if human_only_production and str(values.get('Buildability', 'Both')).casefold() in {'both', 'aionly'}:
+                if human_only_production and not isolated_production_mask and str(values.get('Buildability', 'Both')).casefold() in {'both', 'aionly'}:
                     # Keep native AI production available, including same-side
                     # allies/enemies, while humans use their exclusive clone.
                     rules.setdefault(unit_id, {})['Buildability'] = 'AIOnly'
@@ -2211,6 +2212,7 @@ def unit_specific_buff_rules(
                         continue
                     if helper_family_fallback_needed or (
                         human_only_production
+                        and not isolated_production_mask
                         and str(alias_values.get('Buildability', 'Both')).casefold()
                         in {'both', 'aionly'}
                     ):

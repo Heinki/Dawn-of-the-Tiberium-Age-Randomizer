@@ -1,4 +1,4 @@
-"""Native cooperative map preparation with shared, production-only rewards."""
+"""Native cooperative map preparation with personal, production-only rewards."""
 
 import hashlib
 
@@ -9,6 +9,7 @@ from randomizer.maps.ini import IniLines, append_section_entry
 from randomizer.maps.hooks import unique_section_key
 
 from .catalogue import inherited_sections, merge, native_options, resolve_path
+from .compatibility import text_hash
 from .feature import require_enabled
 
 
@@ -39,7 +40,7 @@ def safe_settings(settings, count):
     return settings
 
 
-def prepare_map(root, mission, rewards, difficulty, *, settings=None, credit_bonus=0):
+def prepare_map(root, mission, rewards, difficulty, *, settings=None, credit_bonus=0, player_loadouts=None):
     require_enabled()
     verify_dependencies(root, mission)
     source = resolve_path(root, mission['scenario'])
@@ -56,6 +57,43 @@ def prepare_map(root, mission, rewards, difficulty, *, settings=None, credit_bon
     overlays.append(resolve_path(root, f'INI/Map Code/Difficulty {name}.ini'))
     for overlay in overlays:
         merge(sections, inherited_sections(root, overlay))
+    if player_loadouts is not None:
+        from .production import player_production_rules
+        sides, report = player_production_rules(root, mission, sections, player_loadouts)
+        spawn_settings['_coop_player_sides'] = sides
+    else:
+        report = _shared_production_rules(mission, rewards, settings, sections)
+    sections.setdefault('Basic', {}).update({'SkipScore': 'no', 'EndOfGame': 'no'})
+    # Flatten inheritance: spawnmap.ini lives outside Maps/Co-Op and must
+    # never resolve inherited map filenames relative to the game root.
+    sections.pop('INISystem', None)
+    lines = IniLines([line for section, values in sections.items()
+                      for line in [f'[{section}]', *(f'{key}={value}' for key, value in values.items()), '']])
+    # Settings/Credits initializes AI as well as humans. Native action 106
+    # targets Spawn houses (50–57), so personal bonuses/debits never touch AI.
+    bonuses = ([item['credit_bonus'] for item in player_loadouts] if player_loadouts is not None
+               else [credit_bonus] * mission['coop_player_count'])
+    actions = []
+    for slot, bonus in enumerate(bonuses):
+        bonus = max(-int(spawn_settings['Credits']), int(bonus))
+        if bonus:
+            actions.append(f'106,0,{50 + slot},{bonus},0,0,0,A')
+    if actions:
+        trigger = unique_section_key(lines, ('Events', 'Actions', 'Triggers'), 'DTACC')
+        tag = unique_section_key(lines, ('Tags',), 'DTACR')
+        append_section_entry(lines, 'Events', trigger, '1,13,0,1')
+        append_section_entry(lines, 'Actions', trigger, f'{len(actions)},' + ','.join(actions))
+        append_section_entry(lines, 'Triggers', trigger, 'Spawn1,<none>,Co-op Starting Credits,0,1,1,1,0')
+        append_section_entry(lines, 'Tags', tag, f'0,Co-op Starting Credits,{trigger}')
+    preserve_collateral_damage_coefficients(lines)
+    data = ('\r\n'.join(lines) + '\r\n').encode('cp1252')
+    spawn_settings.update({'AIDifficulty': str(handicap), 'DifficultyName': name,
+                           'CoachMode': 'Yes', 'WriteStatistics': 'Yes'})
+    return data, spawn_settings, report, hashlib.sha256(data).hexdigest()
+
+
+def _shared_production_rules(mission, rewards, settings, sections):
+    """Preserve the preparation API for callers without personal Shop data."""
     faction = PLAYABLE_FACTIONS[mission['coop_side']]
     production_context = {
         # Synthetic actor ensures no placed unit, scripted house or team is
@@ -73,32 +111,10 @@ def prepare_map(root, mission, rewards, difficulty, *, settings=None, credit_bon
     if report['map_objects_rewritten'] or report['player_taskforce_routes']:
         raise ValueError('Co-op rewards attempted to rewrite authored actors.')
     merge(sections, rules)
-    sections.setdefault('Basic', {}).update({'SkipScore': 'no', 'EndOfGame': 'no'})
-    # Flatten inheritance: spawnmap.ini lives outside Maps/Co-Op and must
-    # never resolve inherited map filenames relative to the game root.
-    sections.pop('INISystem', None)
-    lines = IniLines([line for section, values in sections.items()
-                      for line in [f'[{section}]', *(f'{key}={value}' for key, value in values.items()), '']])
-    # Settings/Credits initializes AI as well as humans. Native action 106
-    # targets Spawn houses (50–57), so team bonuses/debits never touch AI.
-    credit_bonus = max(-int(spawn_settings['Credits']), int(credit_bonus))
-    if credit_bonus:
-        trigger = unique_section_key(lines, ('Events', 'Actions', 'Triggers'), 'DTACC')
-        tag = unique_section_key(lines, ('Tags',), 'DTACR')
-        actions = [f'106,0,{50 + slot},{credit_bonus},0,0,0,A'
-                   for slot in range(mission['coop_player_count'])]
-        append_section_entry(lines, 'Events', trigger, '1,13,0,1')
-        append_section_entry(lines, 'Actions', trigger, f'{len(actions)},' + ','.join(actions))
-        append_section_entry(lines, 'Triggers', trigger, 'Spawn1,<none>,Co-op Starting Credits,0,1,1,1,0')
-        append_section_entry(lines, 'Tags', tag, f'0,Co-op Starting Credits,{trigger}')
-    preserve_collateral_damage_coefficients(lines)
-    data = ('\r\n'.join(lines) + '\r\n').encode('cp1252')
-    spawn_settings.update({'AIDifficulty': str(handicap), 'DifficultyName': name,
-                           'CoachMode': 'Yes', 'WriteStatistics': 'Yes'})
-    return data, spawn_settings, report, hashlib.sha256(data).hexdigest()
+    return report
 
 
 def verify_dependencies(root, mission):
     for name, digest in mission['coop_dependencies'].items():
-        if hashlib.sha256(resolve_path(root, name).read_bytes()).hexdigest() != digest:
+        if text_hash(resolve_path(root, name).read_bytes()) != digest:
             raise ValueError('Native co-op map/options changed; refresh catalogue and generate a new run.')

@@ -4,6 +4,7 @@ import base64
 import binascii
 import hashlib
 import hmac
+import ipaddress
 import json
 import queue
 import re
@@ -13,11 +14,14 @@ import threading
 import zlib
 
 from .feature import player_count, require_enabled
+from .compatibility import FINGERPRINT_POLICY, normalize_text
 
 
 LOBBY_PORT = 19420
 MAX_WIRE = 16 * 1024 * 1024
 MAX_DATA = 32 * 1024 * 1024
+INSTALLATION_FILES = ('version', 'game.exe', 'Vinifera.dll', 'INI/Rules.ini', 'INI/Enhance.ini',
+                      'Resources/GameOptions.ini', 'Resources/SkirmishLobby.ini', 'INI/MPMaps.ini')
 
 
 def pack(data):
@@ -38,12 +42,28 @@ def unpack(value):
 
 
 def installation(root):
+    return installation_manifest(root)[0]
+
+
+def installation_manifest(root):
+    fingerprint, files, _raw_files = installation_details(root)
+    return fingerprint, files
+
+
+def installation_details(root):
+    """Ignore CRLF/LF differences in text without changing installed game files."""
     digest = hashlib.sha256()
-    for name in ('version', 'game.exe', 'Vinifera.dll', 'INI/Rules.ini', 'INI/Enhance.ini',
-                 'Resources/GameOptions.ini', 'Resources/SkirmishLobby.ini', 'INI/MPMaps.ini'):
+    files = {}
+    raw_files = {}
+    for name in INSTALLATION_FILES:
+        data = (root / name).read_bytes()
+        raw_files[name] = hashlib.sha256(data).hexdigest()
+        if name == 'version' or name.endswith('.ini'):
+            data = normalize_text(data)
         digest.update(name.encode())
-        digest.update((root / name).read_bytes())
-    return digest.hexdigest()
+        digest.update(data)
+        files[name] = hashlib.sha256(data).hexdigest()
+    return digest.hexdigest(), files, raw_files
 
 
 class Lobby:
@@ -52,6 +72,14 @@ class Lobby:
         require_enabled()
         if role not in ('host', 'guest'):
             raise ValueError('Select Host or Join.')
+        if role == 'guest':
+            try:
+                address = str(ipaddress.IPv4Address(str(address).strip()))
+            except ipaddress.AddressValueError:
+                raise ValueError(
+                    'Enter only the host\'s ZeroTier Managed IPv4: four numbers separated by dots. '
+                    'Do not include /24, a port, a network ID, or the pairing code.'
+                ) from None
         if isinstance(name, str):
             name = name.strip()
         if not isinstance(name, str) or not name.strip() or not re.fullmatch(r'[A-Za-z0-9 _-]{1,15}', name):
@@ -90,8 +118,12 @@ class Lobby:
     @staticmethod
     def receive(stream):
         data = stream.readline(MAX_WIRE + 1)
-        if not data or len(data) > MAX_WIRE or not data.endswith(b'\n'):
-            raise ConnectionError('Co-op peer disconnected or exceeded message size.')
+        if not data:
+            raise ConnectionError('Co-op peer disconnected before sending a message.')
+        if len(data) > MAX_WIRE:
+            raise ValueError('Co-op message exceeds size limit.')
+        if not data.endswith(b'\n'):
+            raise ConnectionError('Co-op peer disconnected before completing a message.')
         message = json.loads(data)
         if not isinstance(message, dict):
             raise ValueError('Invalid co-op message.')
@@ -107,9 +139,16 @@ class Lobby:
                 connection.sendall(data)
 
     def _run(self):
+        phase = 'reading the local DTA runtime'
+        stream = None
         try:
-            fingerprint = installation(self.root)
+            fingerprint, self.runtime_files, raw_files = installation_details(self.root)
+            self.events.put(('diagnostic', ('coop_runtime_manifest', {
+                'role': self.role, 'fingerprint': fingerprint, 'files': self.runtime_files,
+                'fingerprint_policy': FINGERPRINT_POLICY, 'raw_files': raw_files,
+            })))
             if self.role == 'host':
+                phase = f'opening the host lobby (TCP {self.port})'
                 self.listener = socket.create_server(('0.0.0.0', self.port), backlog=3)
                 self.listener.settimeout(0.5)
                 self.events.put(('status', f'Waiting for {self.count - 1} guests'))
@@ -120,7 +159,7 @@ class Lobby:
                         continue
                     try:
                         self._pair(connection, fingerprint, remote[0])
-                    except (OSError, ValueError) as exc:
+                    except (OSError, ValueError, KeyError, TypeError) as exc:
                         connection.close()
                         self.events.put(('status', f'Guest rejected: {exc}'))
                 if self.closed.is_set():
@@ -132,40 +171,104 @@ class Lobby:
                     self.send({'type': 'roster', 'players': self.players, 'slot': slot}, slot)
                 self.events.put(('connected', self.players))
             else:
+                phase = f'connecting to the host over ZeroTier (TCP {self.port})'
+                self.events.put(('status', f'Connecting to host (TCP {self.port})...'))
                 connection = socket.create_connection((self.address, self.port), timeout=15)
                 self.peers[0] = connection
                 stream = connection.makefile('rb')
+                phase = 'waiting for the host greeting'
+                self.events.put(('status', 'Host reached; checking DTA runtime...'))
                 hello = self.receive(stream)
-                if hello.get('fingerprint') != fingerprint:
-                    raise ValueError('Host DTA runtime differs.')
+                if hello.get('fingerprint_policy') != FINGERPRINT_POLICY:
+                    raise ValueError('DTA compatibility check differs. Update both launchers to the same build.')
                 nonce = hello['nonce']
                 proof = hmac.new(self.pairing_code.encode(), nonce.encode(), hashlib.sha256).hexdigest()
-                self.send({'type': 'hello', 'protocol': 1, 'name': self.name,
+                phase = 'checking DTA runtime and pairing code with the host'
+                self.send({'type': 'hello', 'protocol': 2, 'name': self.name,
                            'count': self.count, 'port': self.game_port,
-                           'fingerprint': fingerprint, 'proof': proof,
+                           'fingerprint': fingerprint, 'files': self.runtime_files, 'proof': proof,
+                           'fingerprint_policy': FINGERPRINT_POLICY,
                            'folder': str(self.root.resolve()), 'node': socket.gethostname()})
                 paired = self.receive(stream)
                 expected = hmac.new(self.pairing_code.encode(), ('host:' + nonce).encode(), hashlib.sha256).hexdigest()
+                if (paired.get('type') == 'rejected'
+                        and hmac.compare_digest(str(paired.get('proof', '')), expected)):
+                    if paired.get('reason') == 'runtime':
+                        raise ValueError(self._runtime_mismatch(hello, 'Host'))
+                    reasons = {'protocol': 'Co-op protocol differs. Update both launchers.',
+                               'count': 'Player count differs. Choose the same count on both PCs.'}
+                    raise ValueError(reasons.get(paired.get('reason'), 'Host rejected the connection.'))
                 if paired.get('type') != 'paired' or not hmac.compare_digest(str(paired.get('proof', '')), expected):
-                    raise ValueError('Host did not authenticate with the pairing code.')
+                    raise ValueError('Host did not authenticate with the pairing code. Check that both codes match.')
+                if hello.get('fingerprint') != fingerprint:
+                    raise ValueError(self._runtime_mismatch(hello, 'Host'))
                 connection.settimeout(None)
+                self.events.put(('status', f'Paired; waiting for all {self.count} players...'))
                 threading.Thread(target=self._reader, args=(0, stream), daemon=True).start()
-        except (OSError, ValueError, KeyError) as exc:
+                stream = None  # The reader owns the stream after pairing.
+        except (OSError, ValueError, KeyError, TypeError) as exc:
             if not self.closed.is_set():
-                self.events.put(('error', str(exc)))
+                if isinstance(exc, TimeoutError):
+                    detail = f'Timed out while {phase}.'
+                    if phase.startswith('connecting to the host'):
+                        detail += f' Confirm Host is waiting and its firewall allows TCP {self.port} on ZeroTier.'
+                else:
+                    detail = f'Failed while {phase}: {exc}'
+                self.events.put(('error', detail))
                 self.close()
+        finally:
+            if stream is not None:
+                stream.close()
+
+    def _runtime_mismatch(self, remote, peer):
+        files = remote.get('files')
+        differences = {}
+        if isinstance(files, dict):
+            for name, local_hash in self.runtime_files.items():
+                remote_hash = files.get(name)
+                if remote_hash != local_hash:
+                    # Only fixed relative paths and hashes enter diagnostic output.
+                    valid = isinstance(remote_hash, str) and re.fullmatch(r'[0-9a-f]{64}', remote_hash)
+                    differences[name] = {'local': local_hash, 'remote': remote_hash if valid else 'unavailable'}
+        self.events.put(('diagnostic', ('coop_runtime_mismatch', {
+            'role': self.role, 'files': differences,
+        })))
+        if differences:
+            return (f'{peer} DTA runtime differs: ' + ', '.join(differences)
+                    + '. Use matching DTA game files on both PCs; see connection log for hashes.')
+        return (f'{peer} DTA runtime differs. Use matching DTA game files on both PCs. '
+                'Update both launchers for per-file diagnostics.')
 
     def _pair(self, connection, fingerprint, ip):
         connection.settimeout(15)
         nonce = secrets.token_hex(24)
-        connection.sendall((json.dumps({'nonce': nonce, 'fingerprint': fingerprint}) + '\n').encode())
+        connection.sendall((json.dumps({'nonce': nonce, 'fingerprint': fingerprint,
+                                       'files': self.runtime_files,
+                                       'fingerprint_policy': FINGERPRINT_POLICY}) + '\n').encode())
         stream = connection.makefile('rb')
+        try:
+            self._authenticate_guest(connection, stream, fingerprint, nonce, ip)
+        except (OSError, ValueError, KeyError, TypeError):
+            stream.close()
+            raise
+
+    def _authenticate_guest(self, connection, stream, fingerprint, nonce, ip):
         hello = self.receive(stream)
         expected = hmac.new(self.pairing_code.encode(), nonce.encode(), hashlib.sha256).hexdigest()
-        if (hello.get('protocol') != 1 or hello.get('count') != self.count
-                or hello.get('fingerprint') != fingerprint
-                or not hmac.compare_digest(str(hello.get('proof', '')), expected)):
-            raise ValueError('Pairing code, player count, or DTA runtime differs.')
+        if not hmac.compare_digest(str(hello.get('proof', '')), expected):
+            raise ValueError('Pairing code differs. Guest must paste the host pairing code.')
+        reason = None
+        detail = ''
+        if hello.get('protocol') != 2 or hello.get('fingerprint_policy') != FINGERPRINT_POLICY:
+            reason, detail = 'protocol', 'Co-op protocol differs. Update both launchers.'
+        elif hello.get('count') != self.count:
+            reason, detail = 'count', 'Player count differs. Choose the same count on both PCs.'
+        elif hello.get('fingerprint') != fingerprint:
+            reason, detail = 'runtime', self._runtime_mismatch(hello, 'Guest')
+        if reason:
+            proof = hmac.new(self.pairing_code.encode(), ('host:' + nonce).encode(), hashlib.sha256).hexdigest()
+            connection.sendall((json.dumps({'type': 'rejected', 'reason': reason, 'proof': proof}) + '\n').encode())
+            raise ValueError(detail)
         name = str(hello.get('name', '')).strip()
         if not name.strip() or not re.fullmatch(r'[A-Za-z0-9 _-]{1,15}', name):
             raise ValueError('Invalid guest name.')

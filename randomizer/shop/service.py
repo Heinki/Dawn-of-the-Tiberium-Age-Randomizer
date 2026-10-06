@@ -64,8 +64,9 @@ from .transitions import (
 
 
 class ShopProgressionService:
-    def __init__(self, repository=None):
+    def __init__(self, repository=None, *, loadout=None):
         self.repository = repository or ShopRepository()
+        self.loadout = loadout or (lambda run: run)
 
     def start_run(self, **run_options):
         profile, current_run = self.repository.load()
@@ -223,6 +224,7 @@ class ShopProgressionService:
         profile, run = self.repository.load()
         if run is None:
             raise ShopTransitionError('No Shop run exists')
+        team_run = self.loadout(run)
         reward = canonical_reward_for_id(reward_id)
         entry = catalogue_entry(reward)
         if entry is None or entry.reward_type not in {
@@ -249,7 +251,7 @@ class ShopProgressionService:
             buff_purchase
             and run.free_buff_tokens_used_stage < token_capacity
         )
-        stacks = role_buff_stack_count(active_shop_rewards(run), reward)
+        stacks = role_buff_stack_count(active_shop_rewards(team_run), reward)
         coupon_definition = SHOP_CONFIG.permanent_upgrades['coupon_book']
         coupon_discount = (
             profile.upgrade_level('coupon_book')
@@ -266,7 +268,7 @@ class ShopProgressionService:
             ),
             coupon_discount_ore=coupon_discount,
         )
-        owned = active_shop_reward_ids(run)
+        owned = active_shop_reward_ids(team_run)
         effects = modifier_effects(run.modifiers)
         stock_faction = str(
             run.reward_settings.get('shop_faction_filter')
@@ -305,9 +307,9 @@ class ShopProgressionService:
             run_status=run.status,
             mission_committed=run.mission_committed,
             owned_reward_ids=owned,
-            active_tech_ids=active_shop_tech_ids(run),
-            active_equivalent_tech_ids=active_shop_role_tech_ids(run),
-            active_power_ids=active_shop_power_ids(run),
+            active_tech_ids=active_shop_tech_ids(team_run),
+            active_equivalent_tech_ids=active_shop_role_tech_ids(team_run),
+            active_power_ids=active_shop_power_ids(team_run),
             current_stacks=stacks,
             shop_eligible=shop_eligible,
         )

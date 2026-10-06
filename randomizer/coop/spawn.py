@@ -28,11 +28,15 @@ def spawn_data(mission, players, local_slot, game_id, map_data, settings, game_s
             raise ValueError('Invalid cooperative UDP port.')
     local = players[local_slot]
     section_settings = dict(settings)
+    sides = section_settings.pop('_coop_player_sides', [mission['coop_side']] * count)
+    if (not isinstance(sides, list) or len(sides) != count
+            or any(isinstance(side, bool) or not isinstance(side, int) or not 0 <= side < 31 for side in sides)):
+        raise ValueError('Invalid personal cooperative production countries.')
     section_settings.update({
         'Scenario': 'spawnmap.ini', 'Name': local['name'],
         'Host': 'Yes' if local_slot == 0 else 'No', 'IsSinglePlayer': 'No',
         'PlayerCount': str(count), 'GameID': str(game_id), 'Seed': str(game_id),
-        'Side': str(mission['coop_side']), 'Color': str(mission['coop_colors'][local_slot]),
+        'Side': str(sides[local_slot]), 'Color': str(mission['coop_colors'][local_slot]),
         'Port': str(local['port']), 'MapHash': hashlib.sha1(map_data).hexdigest(),
         'UIMapName': mission['title'], 'GameSpeed': str(game_speed),
         'AIPlayers': str(len(mission['coop_allies']) + len(mission['coop_enemies'])),
@@ -41,7 +45,7 @@ def spawn_data(mission, players, local_slot, game_id, map_data, settings, game_s
     for other_index, slot in enumerate((slot for slot in range(count) if slot != local_slot), 1):
         peer = players[slot]
         sections[f'Other{other_index}'] = {
-            'Name': peer['name'], 'Side': str(mission['coop_side']),
+            'Name': peer['name'], 'Side': str(sides[slot]),
             'Color': str(mission['coop_colors'][slot]), 'Ip': peer['ip'], 'Port': str(peer['port']),
         }
     for slot in range(count):

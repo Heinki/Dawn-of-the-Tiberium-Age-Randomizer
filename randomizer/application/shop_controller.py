@@ -137,6 +137,10 @@ SHOP_GLOBAL_BUFF_LEVEL_KEYS = {
     'global_reload': 'shop_reload',
 }
 class ShopController(ShopPolishController):
+    def effective_shop_run(self, run):
+        """Return the gameplay loadout without changing the persisted run."""
+        return run
+
     def initialize_shop_controller(self):
         self.shop_config = SHOP_CONFIG
         self.shop_repository = ShopRepository()
@@ -558,7 +562,7 @@ class ShopController(ShopPolishController):
 
     def active_launch_rewards(self):
         if self.shop_launch_active():
-            run = self._shop_launch_run
+            run = self.effective_shop_run(self._shop_launch_run)
             effects = modifier_effects(run.modifiers)
             rewards = [dict(item) for item in active_shop_rewards(run)]
             rewards = expand_equivalent_role_buffs(
@@ -2313,7 +2317,7 @@ class ShopController(ShopPolishController):
         tree.delete(*tree.get_children())
         self._shop_current_loadout_targets = {}
         self._shop_loadout_details = {}
-        run = self.shop_run
+        run = self.effective_shop_run(self.shop_run)
         if run is None:
             self._rebuild_shop_loadout_upgrade_buttons()
             self.shop_loadout_upgrade_button.configure(state='disabled')
@@ -2611,6 +2615,7 @@ class ShopController(ShopPolishController):
             self.shop_run is not None
             and self.shop_run.status is RunStatus.ACTIVE
         )
+        run = self.effective_shop_run(self.shop_run) if active_run else self.shop_run
         if active_run:
             for reward_id in ap_owned:
                 entry = self._shop_entry_by_reward_id.get(reward_id)
@@ -2618,7 +2623,7 @@ class ShopController(ShopPolishController):
                     for peer_id in unit_role_equivalents(entry.target_id):
                         owned_unit_source_by_target.setdefault(peer_id, reward_id)
         loadout_modifiers = (
-            self.shop_run.modifiers
+            run.modifiers
             if active_run
             else tuple(
                 modifier_id
@@ -2638,8 +2643,8 @@ class ShopController(ShopPolishController):
         owned = local_owned | (ap_owned if active_run else set())
         if active_run:
             selected = set((
-                *self.shop_run.selected_permanent_units,
-                *self.shop_run.permanent_power_unlocks_snapshot,
+                *run.selected_permanent_units,
+                *run.permanent_power_unlocks_snapshot,
             ))
             self._shop_pending_loadout_selection = (
                 selected & eligible_local_owned

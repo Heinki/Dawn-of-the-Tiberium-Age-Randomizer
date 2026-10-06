@@ -111,12 +111,19 @@ def resolve_mission_difficulty(mission, requested_label):
 
     index, label, _ = selected
     extended = bool(mission.get('has_extended_difficulty'))
-    if extended:
-        client_ranks = (10, 20, 30, 40)
+    if mission.get('coop_mode'):
+        # Co-op uses authored difficulty overlays and native AI handicaps.
+        # Its four labels must not index the three-position campaign selector,
+        # and a subset of modes must retain each label's semantic difficulty.
+        extended = 'Brutal' in labels
+        client_rank = {'Easy': 10, 'Normal': 20, 'Hard': 30, 'Brutal': 40}[label]
+        engine_value = {'Easy': 0, 'Normal': 1, 'Hard': 2, 'Brutal': 2}[label]
+        apply_normal_modifiers = False
     else:
-        client_ranks = (10, 30, 40)
-    client_rank = client_ranks[index]
-    engine_value = 0 if client_rank == 10 else 2 if client_rank == 40 else 1
+        client_ranks = (10, 20, 30, 40) if extended else (10, 30, 40)
+        client_rank = client_ranks[index]
+        engine_value = 0 if client_rank == 10 else 2 if client_rank == 40 else 1
+        apply_normal_modifiers = client_rank == 20
     return MissionDifficulty(
         requested_label=requested,
         label=label,
@@ -125,6 +132,6 @@ def resolve_mission_difficulty(mission, requested_label):
         has_extended_difficulty=extended,
         client_rank=client_rank,
         engine_value=engine_value,
-        apply_normal_modifiers=client_rank == 20,
+        apply_normal_modifiers=apply_normal_modifiers,
         used_fallback=label.casefold() != requested.casefold(),
     )

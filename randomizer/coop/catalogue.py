@@ -7,6 +7,7 @@ from pathlib import Path
 
 from randomizer.dta.rules import PLAYABLE_FACTIONS, ini_sections
 from randomizer.missions.catalogue import normalize_long_description
+from .compatibility import normalize_text, text_hash
 
 
 # These retired checkboxes are absent from the installed client. The native
@@ -25,6 +26,24 @@ def metadata_hash(mission):
     values = {key: value for key, value in mission.items()
               if key.startswith('coop_') and key != 'coop_metadata_hash'}
     return hashlib.sha256(json.dumps(values, sort_keys=True).encode()).hexdigest()
+
+
+def refresh_metadata_hashes(mission):
+    mission['coop_metadata_hash'] = metadata_hash(mission)
+    # Old catalogues hashed raw bytes and preserved OS-dependent map spelling.
+    # Accept only hashes reconstructed from this installation's unchanged
+    # content, then upgrade the saved fingerprint without resetting progress.
+    variants = []
+    for style in range(3):
+        for windows_names in (False, True):
+            dependencies = {}
+            for name, hashes in mission['_coop_legacy_dependencies'].items():
+                if windows_names and name.endswith('.map'):
+                    parent, leaf = name.rsplit('/', 1)
+                    name = parent + '/' + Path(leaf).stem.upper() + '.map'
+                dependencies[name] = hashes[style]
+            variants.append(metadata_hash(dict(mission, coop_dependencies=dependencies)))
+    mission['_coop_legacy_metadata_hashes'] = tuple(sorted(set(variants)))
 
 
 def truth(value):
@@ -51,19 +70,24 @@ def resolve_path(root, name, parent=None):
     return path
 
 
-def inherited_sections(root, path, stack=(), dependencies=None):
+def inherited_sections(root, path, stack=(), dependencies=None, legacy_dependencies=None):
     path = Path(path).resolve()
     if path in stack or len(stack) >= 20:
         raise ValueError(f'Cyclic or excessive native map inheritance: {path.name}')
     data = path.read_bytes()
+    name = str(path.relative_to(root)).replace('\\', '/')
     if dependencies is not None:
-        dependencies[str(path.relative_to(root)).replace('\\', '/')] = hashlib.sha256(data).hexdigest()
+        dependencies[name.casefold()] = text_hash(data)
+    if legacy_dependencies is not None:
+        normalized = normalize_text(data)
+        legacy_dependencies[name] = tuple(hashlib.sha256(content).hexdigest() for content in
+                                          (data, normalized, normalized.replace(b'\n', b'\r\n')))
     local = ini_sections(path)
     result = {}
     for name in local.get('INISystem', {}).get('BasedOn', '').split(','):
         if name.strip():
             source = resolve_path(root, name.strip(), path.parent)
-            merge(result, inherited_sections(root, source, (*stack, path), dependencies))
+            merge(result, inherited_sections(root, source, (*stack, path), dependencies, legacy_dependencies))
     local.pop('INISystem', None)
     merge(result, local)
     return result
@@ -149,8 +173,10 @@ def discover_coop_missions(root, *, include_excluded=False):
         mission = {'code': 'COOP_' + normalized_name.rsplit('/', 1)[-1].upper(), 'coop_mode': True}
         try:
             dependencies = {}
+            legacy_dependencies = {}
             path = resolve_path(root, name + '.map')
-            sections = inherited_sections(root, path, dependencies=dependencies)
+            sections = inherited_sections(root, path, dependencies=dependencies,
+                                          legacy_dependencies=legacy_dependencies)
             if (unpublished_campaign(name, sections.get('Basic', {}))
                     or any(unpublished_campaign(source) for source in dependencies)):
                 continue
@@ -210,12 +236,14 @@ def discover_coop_missions(root, *, include_excluded=False):
             if any(str(position) not in sections.get('Waypoints', {}) for position in required_positions):
                 raise ValueError('Missing required native starting waypoint')
             for overlay in overlays:
-                inherited_sections(root, overlay, dependencies=dependencies)
+                inherited_sections(root, overlay, dependencies=dependencies,
+                                   legacy_dependencies=legacy_dependencies)
             modes = metadata.get('GameModes', metadata.get('GameMode', '')).split(',')
             for mode in modes:
                 mode = mode.strip()
                 if mode.startswith('Co-Op '):
-                    inherited_sections(root, resolve_path(root, f'INI/Map Code/Difficulty {mode[6:]}.ini'), dependencies=dependencies)
+                    inherited_sections(root, resolve_path(root, f'INI/Map Code/Difficulty {mode[6:]}.ini'),
+                                       dependencies=dependencies, legacy_dependencies=legacy_dependencies)
             faction = PLAYABLE_FACTIONS[side]
             mission.update({
                 'index': len(missions) + 1, 'scenario': str(path.relative_to(root)),
@@ -228,13 +256,14 @@ def discover_coop_missions(root, *, include_excluded=False):
                 'coop_player_count': maximum, 'coop_side': side,
                 'coop_colors': allowed_colors[:maximum], 'coop_allies': allies, 'coop_enemies': enemies,
                 'coop_settings': settings, 'coop_dependencies': dependencies,
+                '_coop_legacy_dependencies': legacy_dependencies,
                 'coop_modes': [mode.strip() for mode in modes],
                 'coop_excluded_reason': '', 'no_build': False, 'true_no_build': False,
                 'no_build_production': False, 'operation': False,
             })
             if minimum != maximum:
                 mission.update({'coop_min_player_count': minimum, 'coop_max_player_count': maximum})
-            mission['coop_metadata_hash'] = metadata_hash(mission)
+            refresh_metadata_hashes(mission)
         except (OSError, ValueError, KeyError) as exc:
             mission['coop_excluded_reason'] = str(exc)
         if include_excluded or not mission['coop_excluded_reason']:
@@ -255,14 +284,20 @@ def eligible(missions, count):
             if 'coop_min_player_count' in mission:
                 mission = dict(mission, coop_player_count=count,
                                coop_colors=mission['coop_colors'][:count])
-                mission['coop_metadata_hash'] = metadata_hash(mission)
+                refresh_metadata_hashes(mission)
             result.append(mission)
     return result
 
 
 def validate_pool(missions, codes, count, metadata=None):
+    """Validate native content and upgrade matching legacy hashes in place."""
     by_code = {mission['code']: mission for mission in eligible(missions, count)}
-    invalid = [code for code in codes if code not in by_code or (metadata is not None and metadata.get(code) != by_code[code]['coop_metadata_hash'])]
+    codes = tuple(codes)
+    invalid = [code for code in codes if code not in by_code or (metadata is not None
+               and metadata.get(code) not in {by_code[code]['coop_metadata_hash'],
+                                             *by_code[code].get('_coop_legacy_metadata_hashes', ())})]
     if invalid:
         raise ValueError('Saved co-op pool no longer matches player count/native metadata: ' + ', '.join(invalid[:8]))
+    if metadata is not None:
+        metadata.update({code: by_code[code]['coop_metadata_hash'] for code in codes})
     return by_code

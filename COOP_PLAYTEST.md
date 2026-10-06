@@ -42,9 +42,11 @@ and 4 humans to verify their native ranged player-count support.
 | Grid launch | Every client launches the same mission and enters the match without connection failure or desync. |
 | Human ownership | Each player controls the intended Spawn house/start position; no player becomes AI and all humans are allied. Native allied/enemy AI keep their positions and ownership. |
 | Production rewards | Unlock a unit and a unit buff on the host; all humans receive the same production reward and upgraded new units. Authored starting forces and scripted AI stay unchanged. |
-| Starting credits | Select a starting-credit reward; each human receives the same bonus after about one second. AI should retain native balances; inspect replay/debug data if available. |
+| Starting credits | Shared Grid rewards apply equally. In Shop, give players different permanent starting-credit upgrade levels: each receives their own bonus after about one second. AI retains native balances. |
 | Grid victory | A normal scripted win unlocks host progress once, updates guests and survives host launcher restart. |
 | Shop launch | Start Shop on the host, buy an upgrade, reroll and commit an offer. Guests see the same run; the committed mission launches on all clients. |
+| Personal permanent access | A selects permanent Artillery, B selects Behemoth. A can build Artillery only; B can build Behemoth only. Current Loadout and Shop Setup show each player’s own selections. Buy access through the shared run shop to make it available to both. |
+| Personal buffs | Give players different permanent unit buff stacks and global upgrade levels. Each player’s newly built units use only their own permanent levels, plus applicable shared run buffs. Check deployed/transformed forms and factory prerequisites too. |
 | Shop victory | A win grants Ore/Gems and advances the stage once on the host; guests receive the result without changing their own profile files. |
 | Defeat/revival | A real team defeat follows the existing Shop failure/revival lifecycle once; relaunch keeps the committed mission and shared loadout consistent. |
 | Guest exit | A guest exiting early does not independently complete/fail the host's run. The host's final runtime result remains authoritative. |
@@ -54,12 +56,44 @@ and 4 humans to verify their native ranged player-count support.
 Also check once:
 
 - Wrong pairing code, mismatched runtime or player count fails visibly before
-  launching. Disconnect and retry with matching settings.
-- On a streamed/captured connection window, IP and pairing code start hidden.
-  Verify hidden paste and private code copying, and that deliberate reveal
-  masks again after 30 seconds or when switching away from the window. Confirm
+  launching. A runtime mismatch lists the differing files on both updated
+  launchers; Show connection log includes both hashes. Host rejection and
+  connection stages also appear in the persistent launcher log. Disconnect
+  and retry with matching settings.
+- Matching runtime text files using CRLF on one PC and LF on the other connect.
+  Confirm `files` hashes match while `raw_files` hashes can differ. Changing an
+  actual rules value or an executable/DLL byte still fails. Personal saves,
+  completions, Gems, and randomizer configuration files need not match.
+- An older launcher using raw-byte fingerprints reports that the compatibility
+  check differs instead of incorrectly blaming matching DTA game files.
+- Native map/option files with CRLF/LF or filename casing differences produce
+  matching metadata. Legacy Grid/Shop hashes upgrade without changing saved
+  progress, Gems, purchases, or mission selection. Real map changes still fail.
+- Applying a host snapshot never sends the unchanged guest loadout back. A
+  rejected snapshot leaves the last valid guest state intact and disconnects
+  with one rejection instead of repeating errors.
+- Join with a different existing seed, selected mission, and unlock history.
+  The guest's Grid, mission details, unlock icons, progress, and header must
+  reflect the host immediately. Both launch buttons say Suggest Mission.
+  Disconnect restores the guest's previous selection, data, and button labels.
+- Select Brutal on a map that supports it and launch from the host. Preparation
+  must reach the ready/go barrier without a campaign difficulty indexing error.
+  Easy, Normal (native Medium), Hard, and Brutal use the map's authored modes;
+  a missing mode falls back to a supported difficulty.
+- Launch validation and preparation errors appear in Show connection log and
+  the persistent launcher log, including a traceback for validation failures.
+- Host always shows its generated code as a noneditable text label. Switching
+  to Join shows a separate input; switching back restores the same host label.
+  Copying, connecting, disconnecting, and reopening Host keep the code visible.
+- In Join, IP and pairing-code inputs start hidden. Verify hidden paste and
+  code copying, and that deliberate reveal
+  stays visible while changing roles, connecting, disconnecting, and switching
+  away from the window. Confirm the entered guest code survives role changes.
+  Unchecking reveal or closing/reopening the window masks details again. Confirm
   connection errors do not reveal addresses or codes. Keep chat, clipboard
   history and ZeroTier Central outside the captured scene.
+- In a 3/4-player lobby, submit guest loadouts in a different arrival order.
+  Player slot mappings must remain correct; no player gets another’s loadout.
 - In a 3/4-player lobby, disconnect one guest during preparation. No remaining
   player should launch alone. Other guests must receive the abort/disconnect
   without waiting for the preparation timeout.
@@ -81,7 +115,7 @@ Before launching another mission, copy these files from every participant:
 - `RandomizerLauncher/logs/launcher.log` for source launches, or
   `RandomizerLauncherData/logs/launcher.log` for packaged launches.
 - Host co-op state: `randomizer_coop_state.json`, `shop_coop_run.json` and
-  `shop_coop_profile.json`, as relevant, from the launcher data folder.
+  `shop_profile.json`, as relevant, from the launcher data folder.
 
 Include host/guest roles, player count, mission code, seed, difficulty, connection
 method, what happened and whether any player exited or was defeated early.

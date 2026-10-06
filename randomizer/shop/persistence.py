@@ -38,6 +38,14 @@ DEFAULT_SHOP_PATHS = ShopPersistencePaths(
     backup_dir=BACKUP_DIR / 'shop',
 )
 
+# Solo and co-op share personal progression, but keep separate run journals.
+COOP_SHOP_PATHS = ShopPersistencePaths(
+    profile=SHOP_PROFILE_PATH,
+    run=SHOP_PROFILE_PATH.parent / 'shop_coop_run.json',
+    transaction=SHOP_PROFILE_PATH.parent / 'shop_coop_shared_transaction.json',
+    backup_dir=BACKUP_DIR / 'shop_coop',
+)
+
 
 def _next_backup_path(path, backup_dir):
     backup_dir.mkdir(parents=True, exist_ok=True)
@@ -155,6 +163,18 @@ class ShopRepository:
             atomic_write_json(self.paths.transaction, document, indent=None)
 
     def recover_pending_transaction(self):
+        """Recover both modes before reading or writing their shared profile."""
+        with self._lock:
+            companion = (
+                COOP_SHOP_PATHS if self.paths == DEFAULT_SHOP_PATHS else
+                DEFAULT_SHOP_PATHS if self.paths == COOP_SHOP_PATHS else None
+            )
+            recovered = False
+            if companion is not None:
+                recovered = ShopRepository(companion)._recover_pending_transaction()
+            return self._recover_pending_transaction() or recovered
+
+    def _recover_pending_transaction(self):
         """Replay one journal until both exact target documents are durable."""
         with self._lock:
             if not self.paths.transaction.is_file():
@@ -195,5 +215,4 @@ class ShopRepository:
         with self._lock:
             self.prepare_commit(profile, run, transaction_id)
             self.recover_pending_transaction()
-
 

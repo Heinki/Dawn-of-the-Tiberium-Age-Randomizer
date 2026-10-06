@@ -13,9 +13,10 @@ Mental Omega reference: upstream commit `9c12927abdfa089212809d8f489fd5d021deffe
 | `generation/seed_controller.py`, Grid state | Existing DTA generator/Grid | Reuse with separate state and validated player count |
 | Shop offers, stage messages and run persistence | Existing DTA Shop service/repository | Reuse host-owned run/profile; guests view the host snapshot |
 | `coop/lobby.py`, `coop/direct.py` | Persistent multi-peer lobby, native Vinifera spawn writer | Adapt wire protocol and readiness barrier |
-| `coop/reward_map.py`, `enemy_rewards.py` | DTA production clone builder | Shared team loadout; native HumanOnly/AIOnly gates separate same-faction AI |
+| `coop/reward_map.py`, `enemy_rewards.py` | DTA production clone builder | Personal human HouseType masks and HumanOnly clones; native AI unchanged |
 | `coop/victory.py`, YR empty-TeamType marker | Vinifera multiplayer score log | Adapt; solo score-screen signal is not a multiplayer victory |
-| Private Shop countries/loadouts, YR power grants | No audited per-human DTA production mask/power path | Do not port |
+| Private Shop countries/loadouts | Registered DTA HouseTypes with native faction side/owner permissions | Personal production masks; no YR keys |
+| YR power grants | No audited DTA power path | Do not port |
 
 Native DTA missions are registered in `INI/MPMaps.ini`, not Battle.ini.
 Metadata can live in the map's `[Basic]`, `[CoopInfo]`, an inherited map, or
@@ -72,12 +73,19 @@ The launcher lobby uses TCP and native gameplay uses peer UDP through ZeroTier;
 ZeroTier manages the virtual network rather than the launcher installing or
 configuring it. The underlying IPv4 sockets remain necessary for this transport.
 
-The host owns generation, mission selection, purchases, rerolls, progression,
-Ore, Gems and the Shop profile. Guests receive a read-only snapshot and can
-suggest missions. Guest saves are not overwritten. Maps transfer from the host,
+The host owns generation, mission selection, run purchases, rerolls, progression
+and Ore. Each player keeps their existing personal Shop profile and Gems.
+Players select their own permanent units before joining. Selected units,
+permanent unit buffs, global combat upgrades and starting-credit upgrades
+remain personal. Shared run purchases and starters are layered onto each
+player’s loadout. Loadout views never write another player’s ownership or
+buff levels to a personal profile. Guests receive
+a read-only run snapshot and can suggest missions. Guest saves are not
+overwritten. Maps transfer from the host,
 with installation/source hashes and an all-player preparation acknowledgement
 before launch. Reconnecting restores the latest host state. Cooperative Grid
-and Shop files are separate from solo files. Changing player count is blocked
+and Shop run files are separate from solo files; `shop_profile.json` is shared
+between solo and co-op on each player's computer. Changing player count is blocked
 while a run/lobby is active; incompatible saved pools fail visibly.
 
 ## Deliberate limitations
@@ -92,14 +100,17 @@ cyclic, escaping, or unsupported map inheritance/options are excluded with a
 catalogue reason. Difficulty-specific map variants retain their native mode.
 Native map units, teams, triggers, scripted allies and ownership stay authored.
 Unused faction teams and neutral objects do not exclude a mission. Earned
-production clones and unit buffs are shared by every human through the selected
-faction's HouseType mask plus native `Buildability=HumanOnly`. Replaced originals
-use `AIOnly` to retain AI production, including AI sharing the human faction;
-original HumanOnly types retain their AI restrictions. Deployed/transformed
+production clones use a distinct registered HouseType mask per human, with
+native `Buildability=HumanOnly`. The map copies the selected native faction’s
+side and owner/factory permissions to those otherwise unused HouseTypes.
+Spawn identities and AI countries stay native. Replaced originals are forbidden
+only for that human mask, retaining other human and AI production. Deployed/transformed
 reward clones are also human-only. Original forces and weapons are not buffed.
 Reward clones cannot enter native starting-force or crate selection, which
 bypass production eligibility; those routes retain native types.
-Native technology without a replacement remains available.
+When access randomization is enabled, rewardable native mobile units and
+defenses are forbidden for human masks; earned personal clones provide access.
+Always-available infrastructure remains available.
 Retired `chkQueuing`/`chkSilosNeeded` map controls follow the current client's
 defaults. Scripted AI houses need no start waypoint when Bases and UnitCount
 disable generated starting forces; human starting waypoints remain required.
@@ -111,14 +122,13 @@ all stages can repeat eligible maps so small four-player pools remain usable.
 Power purchases/grants/buffs, enemy scaling, allied-helper buffs, per-offer
 Shop boons/challenges and gameplay-changing Shop modifiers are disabled in
 this prototype. Economy-only modifiers retain their existing behavior.
-Unit production buffs and global Shop unit upgrades apply through shared
-production clones. Starting credit bonuses apply equally to every human.
-They use native Give Credits action 106 targeted to Spawn1–Spawn4 after one
-second, preserving AI starting balances; changing Settings/Credits would also
-change AI funds and is deliberately avoided.
-Authored starting forces are not converted to reward clones. Private guest
-Shop loadouts are intentionally not ported: MO uses distinct same-faction
-countries, whereas DTA exposes faction masks and Spawn house identities.
+Unit production buffs and global Shop unit upgrades apply through personal
+production clones. Each human receives their own starting-credit bonus via
+native Give Credits action 106 targeted to Spawn1–Spawn4 after one second.
+AI starting balances remain native. Authored starting forces are not converted
+to reward clones. The shared map includes every player’s distinct production
+rules; sending different map bytes to players would break synchronization.
+The lobby and loadout protocol reject older builds without personal production.
 
 Structural validation is not a completed multiplayer playtest. Real 2/3/4
 player networking, sidebars, scripted victory, defeat and revival still need
