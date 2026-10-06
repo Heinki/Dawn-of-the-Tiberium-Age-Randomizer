@@ -1,6 +1,6 @@
 """Developer switch matching Mental Omega's experimental source-only gate."""
 
-COOP_FEATURE_ENABLED = False
+COOP_FEATURE_ENABLED = True
 
 
 def enabled(config):

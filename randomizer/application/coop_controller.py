@@ -23,7 +23,7 @@ from randomizer.coop.victory import ScoreLog
 from randomizer.core.paths import DEBUG_LOG, GAME_EXE, GAME_LAUNCHER_EXE, GAME_ROOT, SPAWN_INI, SPAWN_MAP_INI
 from randomizer.core.storage import atomic_write_json, read_json_object
 from randomizer.shop.model import RunStatus, ShopRewardType
-from randomizer.shop.persistence import ShopRepository
+from randomizer.shop.persistence import ShopPersistenceError, ShopRepository
 from randomizer.shop.service import ShopProgressionService
 from randomizer.shop.state import normalize_shop_profile, normalize_shop_run
 from randomizer.shop.transitions import ShopTransitionError
@@ -91,11 +91,12 @@ class CoopController:
         process = getattr(self, 'active_game_process', None)
         run = getattr(self, 'shop_run', None)
         locked = bool(self._coop_lobby or (process and process.poll() is None)
-                      or (run and run.status is RunStatus.ACTIVE)
+                      or self.shop_launch_active() or self.gameplay_settings_locked()
                       or self.busy_depth)
+        active_shop_run = bool(run and run.status is RunStatus.ACTIVE)
         for toggle, count, connect in self._coop_controls:
             toggle.configure(state='disabled' if locked else 'normal')
-            count.configure(state='disabled' if locked or (self.state and self.coop_enabled()) else 'readonly')
+            count.configure(state='disabled' if locked or active_shop_run or (self.state and self.coop_enabled()) else 'readonly')
             connect.configure(state='normal' if self.coop_enabled() else 'disabled')
         if self.coop_enabled():
             for modifier_id, variable in getattr(self, 'shop_modifier_vars', {}).items():
@@ -128,11 +129,12 @@ class CoopController:
 
     def on_coop_mode_changed(self, *_args):
         previous = self.coop_enabled()
+        requested = bool(self.coop_mode_var.get())
         process = getattr(self, 'active_game_process', None)
         run = getattr(self, 'shop_run', None)
         if (not feature.COOP_FEATURE_ENABLED or self._coop_lobby or self.busy_depth
                 or self.gameplay_settings_locked() or (process and process.poll() is None)
-                or (run and run.status is RunStatus.ACTIVE)):
+                or self.shop_launch_active()):
             self.coop_mode_var.set(previous)
             self.coop_player_count_var.set(str(self.config.get('coop_player_count', 2)))
             messagebox.showwarning('Co-op settings', 'Finish the active run/game or disconnect before changing co-op settings.', parent=self)
@@ -142,7 +144,31 @@ class CoopController:
             self.coop_player_count_var.set(str(self.coop_count()))
             messagebox.showwarning('Co-op settings', 'Start a new co-op Grid before changing player count, or switch to solo first.', parent=self)
             return
-        self.config.update({'coop_mode': bool(self.coop_mode_var.get()), 'coop_player_count': count})
+        if run and run.status is RunStatus.ACTIVE:
+            if requested == previous:
+                self.coop_player_count_var.set(str(self.coop_count()))
+                messagebox.showwarning('Co-op settings', 'Finish the active Shop run before changing player count.', parent=self)
+                return
+            mode = 'co-op' if requested else 'solo'
+            if not messagebox.askyesno(
+                'End Shop Run?',
+                f'Switching to {mode} will end your active Shop run.\n\n'
+                'Run Ore and run purchases will be abandoned. '
+                'Gems and permanent unlocks are kept.\n\nContinue?',
+                default=messagebox.NO,
+                parent=self,
+            ):
+                self.coop_mode_var.set(previous)
+                self.coop_player_count_var.set(str(self.coop_count()))
+                return
+            try:
+                self.shop_service.give_up_run()
+            except (ShopTransitionError, ShopPersistenceError, OSError) as exc:
+                self.coop_mode_var.set(previous)
+                self.coop_player_count_var.set(str(self.coop_count()))
+                messagebox.showerror('Co-op settings', f'Cannot end the active Shop run: {exc}', parent=self)
+                return
+        self.config.update({'coop_mode': requested, 'coop_player_count': count})
         self.state = self.load_state()
         if self.state:
             self.campaign_var.set(self.state.get('campaign_filter', 'All Campaigns'))
@@ -260,7 +286,7 @@ class CoopController:
 
     def refresh_shop_mode(self, *_args):
         result = super().refresh_shop_mode(*_args)
-        if self.coop_enabled() and hasattr(self, '_coop_controls'):
+        if hasattr(self, '_coop_controls'):
             self.refresh_coop_controls()
         return result
 
