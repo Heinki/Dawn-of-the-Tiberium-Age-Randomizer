@@ -60,8 +60,11 @@ this flag off until live verification is complete.
 7. The launcher uses lobby TCP `19420` and game UDP `1234` automatically;
    there are no port controls to configure.
 8. Wait until every launcher displays the complete player roster. The host
-   selects and launches the mission. Guests receive the host's run; their
-   selected permanent units and applicable permanent buffs stay personal.
+   selects and launches the mission. Grid selections update immediately;
+   clicking a mission as a guest pings it on every player's grid. In Shop,
+   each guest starts their own run with the host's seed, mission pool, run length
+   and modifiers. The Start Shop Mode button uses the host seed and modifiers.
+   Join a new run at stage 1; reconnect later using your matching personal save.
    **Current Loadout** shows only that player’s active units and buffs. Each player sees
    their own Gems and permanent ownership. Select guest units before joining;
    disconnect to change that selection. Permanent purchases remain locked
@@ -69,11 +72,14 @@ this flag off until live verification is complete.
 
 Solo and co-op use the same personal `shop_profile.json`. Switching modes
 does not reset Gems or permanent unlocks. Co-op keeps its own run and Ore;
-the host controls run purchases and progression. Permanent selected units,
+each player controls their own run purchases, while the host controls mission
+offers, commitment, rerolls, difficulty assists and team results. Permanent selected units,
 unit buffs, global combat upgrades and starting-credit upgrades apply only
 to their owner. A player selecting Artillery cannot build a partner’s Behemoth
-unless their own selection or a shared run purchase unlocks it. Run purchases
-remain shared, but never copy permanent ownership or buffs between profiles. Powers remain
+unless their own selection or purchase unlocks it. Run units, unit buffs, drafts,
+Ore and Gems stay personal. Team victory awards each player's own economy;
+the host's defeat/revival decision applies to everyone. Repeated snapshots do
+not award rewards twice. Profiles are never copied between players. Powers remain
 disabled in this prototype. Every player must use an updated launcher.
 
 **Connected means the launcher lobby works.** Gameplay uses a separate UDP

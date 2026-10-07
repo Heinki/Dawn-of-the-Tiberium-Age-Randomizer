@@ -44,14 +44,15 @@ and 4 humans to verify their native ranged player-count support.
 | Production rewards | Unlock a unit and a unit buff on the host; all humans receive the same production reward and upgraded new units. Authored starting forces and scripted AI stay unchanged. |
 | Starting credits | Shared Grid rewards apply equally. In Shop, give players different permanent starting-credit upgrade levels: each receives their own bonus after about one second. AI retains native balances. |
 | Grid victory | A normal scripted win unlocks host progress once, updates guests and survives host launcher restart. |
-| Shop launch | Start Shop on the host, buy an upgrade, reroll and commit an offer. Guests see the same run; the committed mission launches on all clients. |
-| Personal permanent access | A selects permanent Artillery, B selects Behemoth. A can build Artillery only; B can build Behemoth only. Current Loadout and Shop Setup show each player’s own selections. Buy access through the shared run shop to make it available to both. |
-| Personal buffs | Give players different permanent unit buff stacks and global upgrade levels. Each player’s newly built units use only their own permanent levels, plus applicable shared run buffs. Check deployed/transformed forms and factory prerequisites too. |
-| Shop victory | A win grants Ore/Gems and advances the stage once on the host; guests receive the result without changing their own profile files. |
+| Grid selection/ping | Click different missions on the host and every guest. Host selection updates immediately; each guest ping appears on every grid, retaining the host's launch authority. |
+| Shop launch | Start personal Shop runs with matching seed, mission pool, run length and modifiers. Buy different units on each player; host rerolls and commits an offer. Mission decisions sync, while purchases and Ore remain different. The committed mission launches on all clients. |
+| Personal permanent access | A selects permanent Artillery, B selects Behemoth. A can build Artillery only; B can build Behemoth only. Current Loadout and Shop Setup show each player's own selections. A run purchase grants access only to its buyer. |
+| Personal buffs | Give players different permanent and purchased unit buff stacks and global upgrade levels. Newly built units use only their owner's levels. Check deployed/transformed forms and factory prerequisites too. |
+| Shop victory | A win grants each player's own Ore/Gems and advances every personal run once. Repeated snapshots and reconnects must not duplicate rewards or overwrite personal purchases. |
 | Defeat/revival | A real team defeat follows the existing Shop failure/revival lifecycle once; relaunch keeps the committed mission and shared loadout consistent. |
 | Guest exit | A guest exiting early does not independently complete/fail the host's run. The host's final runtime result remains authoritative. |
 | Host defeated first | With the host watching in CoachMode, a surviving human teammate's scripted win counts as team victory. An AI winner alone never grants progress. |
-| Reconnect | Close the game, explicitly disconnect, reconnect every player and launch again. Guest local selection/progression returns on disconnect; solo files remain unchanged. |
+| Reconnect | Close the game, explicitly disconnect, reconnect every player and launch again. Guest local Grid selection/progression returns on disconnect; personal co-op Shop progress persists. Solo run files remain unchanged. |
 
 Also check once:
 
@@ -94,6 +95,12 @@ Also check once:
   history and ZeroTier Central outside the captured scene.
 - In a 3/4-player lobby, submit guest loadouts in a different arrival order.
   Player slot mappings must remain correct; no player gets another’s loadout.
+- Try a wrong pairing code or unreachable host, then retry Connect without
+  reopening the launcher. Failed initial connections must release controls.
+- Try buying while the host prepares the map. Changes to prepared loadouts must
+  be rejected; unchanged mission-control acknowledgements must not abort launch.
+- Use different Art.ini, AI.ini or Vinifera.ini on one PC. Pairing must report
+  the differing runtime file before any native game starts.
 - In a 3/4-player lobby, disconnect one guest during preparation. No remaining
   player should launch alone. Other guests must receive the abort/disconnect
   without waiting for the preparation timeout.

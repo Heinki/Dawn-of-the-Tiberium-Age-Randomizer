@@ -73,15 +73,21 @@ The launcher lobby uses TCP and native gameplay uses peer UDP through ZeroTier;
 ZeroTier manages the virtual network rather than the launcher installing or
 configuring it. The underlying IPv4 sockets remain necessary for this transport.
 
-The host owns generation, mission selection, run purchases, rerolls, progression
-and Ore. Each player keeps their existing personal Shop profile and Gems.
+The host owns Grid generation, mission selection, rerolls and team results.
+Grid unit unlocks and buffs are shared by every human. In Shop, each player
+owns their purchases, Ore, Gems and existing personal profile.
 Players select their own permanent units before joining. Selected units,
 permanent unit buffs, global combat upgrades and starting-credit upgrades
-remain personal. Shared run purchases and starters are layered onto each
-player’s loadout. Loadout views never write another player’s ownership or
-buff levels to a personal profile. Guests receive
-a read-only run snapshot and can suggest missions. Guest saves are not
-overwritten. Maps transfer from the host,
+remain personal. Run purchases, starters and draft buffs are taken from each
+player's own run. All players start Shop with matching seed, mission pool,
+run length and modifiers; guests can start at stage 1 after connecting.
+Host snapshots apply only mission decisions and durable results to personal
+Shop saves. Each player's economy handles victory and failure independently;
+the host controls the team's revival decision. Duplicate snapshots are
+idempotent. Guest clicks ping missions on every grid; host selection syncs
+immediately without transferring the full progression document.
+Loadout views never copy another player's purchases or profile.
+Maps transfer from the host,
 with installation/source hashes and an all-player preparation acknowledgement
 before launch. Reconnecting restores the latest host state. Cooperative Grid
 and Shop run files are separate from solo files; `shop_profile.json` is shared
@@ -128,7 +134,12 @@ native Give Credits action 106 targeted to Spawn1–Spawn4 after one second.
 AI starting balances remain native. Authored starting forces are not converted
 to reward clones. The shared map includes every player’s distinct production
 rules; sending different map bytes to players would break synchronization.
-The lobby and loadout protocol reject older builds without personal production.
+Lobby protocol 3 and loadout protocol 3 reject older builds with shared Shop
+purchases. Runtime comparison includes Art.ini, AI.ini, Vinifera.ini and the
+native launcher in addition to the existing game/rules/options checks.
+MO's YR-specific Grid power providers and Behind animation workaround are
+not ported: this prototype uses Vinifera human-only production clones and
+does not support co-op powers. Both engines still need their own live tests.
 
 Structural validation is not a completed multiplayer playtest. Real 2/3/4
 player networking, sidebars, scripted victory, defeat and revival still need

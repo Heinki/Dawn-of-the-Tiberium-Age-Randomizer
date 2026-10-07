@@ -20,7 +20,8 @@ from .compatibility import FINGERPRINT_POLICY, normalize_text
 LOBBY_PORT = 19420
 MAX_WIRE = 16 * 1024 * 1024
 MAX_DATA = 32 * 1024 * 1024
-INSTALLATION_FILES = ('version', 'game.exe', 'Vinifera.dll', 'INI/Rules.ini', 'INI/Enhance.ini',
+INSTALLATION_FILES = ('version', 'game.exe', 'Vinifera.dll', 'LaunchVinifera.dat',
+                      'INI/Rules.ini', 'INI/Enhance.ini', 'INI/Art.ini', 'INI/AI.ini', 'INI/Vinifera.ini',
                       'Resources/GameOptions.ini', 'Resources/SkirmishLobby.ini', 'INI/MPMaps.ini')
 
 
@@ -184,7 +185,7 @@ class Lobby:
                 nonce = hello['nonce']
                 proof = hmac.new(self.pairing_code.encode(), nonce.encode(), hashlib.sha256).hexdigest()
                 phase = 'checking DTA runtime and pairing code with the host'
-                self.send({'type': 'hello', 'protocol': 2, 'name': self.name,
+                self.send({'type': 'hello', 'protocol': 3, 'name': self.name,
                            'count': self.count, 'port': self.game_port,
                            'fingerprint': fingerprint, 'files': self.runtime_files, 'proof': proof,
                            'fingerprint_policy': FINGERPRINT_POLICY,
@@ -259,7 +260,7 @@ class Lobby:
             raise ValueError('Pairing code differs. Guest must paste the host pairing code.')
         reason = None
         detail = ''
-        if hello.get('protocol') != 2 or hello.get('fingerprint_policy') != FINGERPRINT_POLICY:
+        if hello.get('protocol') != 3 or hello.get('fingerprint_policy') != FINGERPRINT_POLICY:
             reason, detail = 'protocol', 'Co-op protocol differs. Update both launchers.'
         elif hello.get('count') != self.count:
             reason, detail = 'count', 'Player count differs. Choose the same count on both PCs.'

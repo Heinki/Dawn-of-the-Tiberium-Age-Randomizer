@@ -1,4 +1,4 @@
-"""Personal cooperative loadouts layered over the shared run purchases."""
+"""Personal cooperative profiles and independently purchased Shop loadouts."""
 
 from dataclasses import replace
 
@@ -8,7 +8,7 @@ from randomizer.shop.catalogue import canonical_reward_for_id, canonical_reward_
 from randomizer.shop.config import SHOP_CONFIG
 from randomizer.shop.model import BuffPurchase, ShopRewardType
 from randomizer.shop.modifiers import modifier_allows_loadout_entry
-from randomizer.shop.state import normalize_shop_profile
+from randomizer.shop.state import normalize_shop_profile, normalize_shop_run
 
 from .maps import supported_reward
 
@@ -24,7 +24,7 @@ PERSONAL_UPGRADES = {
 }
 
 
-def contribution(profile, selected):
+def contribution(profile, selected, run=None):
     """Validate owned selections and share only permanent gameplay data."""
     selected = tuple(dict.fromkeys(canonical_reward_id(item) for item in selected))
     if any(item not in profile.permanent_unit_unlocks for item in selected):
@@ -41,6 +41,7 @@ def contribution(profile, selected):
             raise ValueError('Co-op loadout contains an unsupported permanent unit.')
     return {
         'selected': list(selected),
+        'run': run.to_dict() if run is not None else None,
         'profile': {
             'permanent_unit_unlocks': list(profile.permanent_unit_unlocks),
             'permanent_buffs': [item.to_dict() for item in profile.permanent_buffs
@@ -54,7 +55,10 @@ def contribution(profile, selected):
 def normalize_contribution(document):
     if not isinstance(document, dict) or not isinstance(document.get('selected'), list):
         raise ValueError('Invalid co-op permanent loadout.')
-    return contribution(normalize_shop_profile(document['profile']), document['selected'])
+    if 'run' not in document:
+        raise ValueError('Update every launcher for personal co-op Shop purchases.')
+    run = normalize_shop_run(document['run'])
+    return contribution(normalize_shop_profile(document['profile']), document['selected'], run)
 
 
 def personal_upgrade_levels(loadout):
@@ -72,10 +76,10 @@ def _buff_key(reward):
 
 
 def personal_shop_run(run, loadout):
-    """Replace the host's permanent selections and buffs with this player's.
+    """Layer the player's permanent selections and buffs over their own run.
 
-    Run purchases, starters, draft rewards and progression remain shared.
-    This view is never written back to the host run or a personal profile.
+    Run purchases, starters and draft rewards belong to this player.
+    This view is never written back to a run or personal profile.
     """
     if run is None:
         return run
@@ -114,7 +118,7 @@ def personal_shop_run(run, loadout):
         stacks = min(item.stacks, max(0, (entry.stack_limit or 1) - purchased.get(key, 0)))
         if stacks:
             capped.append(BuffPurchase(item.reward_id, stacks))
-    # Shared buffs only apply to units this player can actually produce.
+    # Purchased buffs only apply to units this player can actually produce.
     def accessible(item):
         entry = catalogue_entry(canonical_reward_for_id(item.reward_id))
         return entry is not None and entry.target_id in active

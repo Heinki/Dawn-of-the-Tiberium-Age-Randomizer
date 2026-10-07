@@ -1,4 +1,4 @@
-"""Personal Shop profiles with separate co-op runs and host-owned progression."""
+"""Personal Shop profiles and runs that publish cooperative session updates."""
 
 from randomizer.core.paths import APP_DIR, BACKUP_DIR
 from randomizer.shop.persistence import COOP_SHOP_PATHS, ShopPersistencePaths, ShopRepository
