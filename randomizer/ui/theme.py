@@ -263,6 +263,10 @@ def apply_color_mode(self):
         canvas.configure(background=palette['canvas'])
     for slider in getattr(self, 'reward_weight_slider_controls', ()):
         slider.refresh_theme(palette)
+    for slider_name in ('unit_access_limit_slider', 'power_access_limit_slider'):
+        slider = getattr(self, slider_name, None)
+        if slider is not None:
+            slider.refresh_theme(palette)
     for text_name in (
         'rewards_text', 'unlocks_text', 'archipelago_history_text'
     ):

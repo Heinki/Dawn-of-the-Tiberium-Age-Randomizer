@@ -290,6 +290,11 @@ class RewardGeneration:
                 self.active_reward_mode() == 'Chaos' or grid_role_identity
             ),
             reward_weights=settings.get('reward_weights'),
+            access_limits=(
+                None
+                if self.active_progression_mode() == 'Shop Mode'
+                else settings.get('access_limits')
+            ),
             rng_namespace='starting-rewards',
             avoid_unlocked_access=True,
             blocked_reward_names=self.active_starting_unlock_names(),
@@ -852,4 +857,12 @@ class RewardGeneration:
             blocked_reward_names=self.active_starting_unlock_names(),
             rng_namespace=rng_namespace,
             reserved_rewards=reserved_rewards,
+            access_limits=(
+                None
+                if (
+                    self.active_reward_mode() == ARSENAL_MODE
+                    or progression_mode == 'Shop Mode'
+                )
+                else self.active_reward_settings().get('access_limits')
+            ),
         )

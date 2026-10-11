@@ -699,6 +699,7 @@ def _build_gameplay_settings(self, settings_frame):
     WidgetTooltip(
         self.rainbowizer_check,
         'Assigns deterministic random colors to non-neutral allied and enemy AI houses. '
+        'Avoids the player color and similar shades, including the authored Default color. '
         'Civilian, neutral, and script-only neutral houses keep their authored colors.',
     )
     mission_pool_frame = ttk.LabelFrame(
@@ -879,7 +880,9 @@ def _build_gameplay_settings(self, settings_frame):
     self.include_superweapon_rewards_check.grid(row=9, column=0, sticky='w', pady=(4, 0))
     WidgetTooltip(
         self.include_superweapon_rewards_check,
-        'Adds DTA Ion Cannon and Paratroopers unlocks. Each reward grants a map-local copy only to the scenario player house.',
+        'Adds Ion Cannon, Airstrike, Nod Nuclear Strike, Allied Chrono Vortex, and Soviet Nuclear Strike unlocks. '
+        'Their provider buildings count as power unlocks, not unit/building unlocks. '
+        'Use Advanced Pool Settings to exclude individual powers such as Ion Cannon.',
     )
     self.include_aid_power_rewards_check = ttk.Checkbutton(
         reward_frame,
@@ -906,11 +909,109 @@ def _build_gameplay_settings(self, settings_frame):
         'Adds only buffs valid for already-unlocked powers. Native mission powers remain unchanged.',
     )
 
+    self.access_limits_frame = ttk.Frame(reward_frame)
+    self.access_limits_frame.grid(row=13, column=0, sticky='ew', pady=(8, 0))
+    self.access_limits_frame.columnconfigure(0, weight=1)
+    self.limit_access_rewards_check = ttk.Checkbutton(
+        self.access_limits_frame,
+        text='Limit Units/Powers',
+        variable=self.limit_access_rewards_var,
+        command=self.refresh_setting_states,
+    )
+    self.limit_access_rewards_check.grid(
+        row=0, column=0, columnspan=3, sticky='w'
+    )
+    WidgetTooltip(
+        self.limit_access_rewards_check,
+        'Caps total unit/building and power unlocks across Starting Rewards and mission rewards. '
+        'Exact Starting Unlocks count toward the caps but are never removed. Tier 1 starters and '
+        'always-available essentials remain outside them. Disabled preserves unrestricted planning. '
+        'Shop Mode and Randomizer Arsenal do not use these caps.',
+    )
+    self.access_limit_options_frame = ttk.Frame(
+        self.access_limits_frame,
+        padding=(20, 6, 0, 2),
+    )
+    self.access_limit_options_frame.grid(row=1, column=0, sticky='ew')
+    self.access_limit_options_frame.columnconfigure(0, weight=1)
+
+    self.unit_access_limit_row = ttk.Frame(self.access_limit_options_frame)
+    self.unit_access_limit_row.grid(row=0, column=0, sticky='ew')
+    self.unit_access_limit_row.columnconfigure(0, weight=1)
+    ttk.Label(
+        self.unit_access_limit_row,
+        text='Units / buildings',
+        font=('Segoe UI', 9, 'bold'),
+    ).grid(row=0, column=0, sticky='w')
+    self.unit_access_limit_max_label = ttk.Label(
+        self.unit_access_limit_row,
+        text='',
+        style='Muted.TLabel',
+    )
+    self.unit_access_limit_max_label.grid(row=0, column=1, sticky='e')
+    self.unit_access_limit_slider = IntegerSlider(
+        self.unit_access_limit_row,
+        variable=self.unit_access_limit_var,
+        minimum=1,
+        maximum=max(1, len(REWARD_POOL)),
+        palette=self.ui_palette(),
+    )
+    self.unit_access_limit_slider.grid(
+        row=1, column=0, columnspan=2, sticky='ew', pady=(1, 0)
+    )
+
+    self.power_access_limit_row = ttk.Frame(self.access_limit_options_frame)
+    self.power_access_limit_row.grid(row=1, column=0, sticky='ew', pady=(7, 0))
+    self.power_access_limit_row.columnconfigure(0, weight=1)
+    ttk.Label(
+        self.power_access_limit_row,
+        text='Superpowers / aid powers',
+        font=('Segoe UI', 9, 'bold'),
+    ).grid(row=0, column=0, sticky='w')
+    self.power_access_limit_max_label = ttk.Label(
+        self.power_access_limit_row,
+        text='',
+        style='Muted.TLabel',
+    )
+    self.power_access_limit_max_label.grid(row=0, column=1, sticky='e')
+    self.power_access_limit_slider = IntegerSlider(
+        self.power_access_limit_row,
+        variable=self.power_access_limit_var,
+        minimum=0,
+        maximum=max(1, len(REWARD_POOL)),
+        command=self.on_power_access_limit_changed,
+        palette=self.ui_palette(),
+    )
+    self.power_access_limit_slider.grid(
+        row=1, column=0, columnspan=2, sticky='ew', pady=(1, 0)
+    )
+    WidgetTooltip(
+        self.power_access_limit_max_label,
+        'Counts selectable superweapon and aid-power unlocks, including powers unlocked through buildings. '
+        'A positive limit enables their reward categories. Individual exclusions in Advanced Pool Settings reduce the maximum. '
+        'Set 0 to receive no random power unlocks and use the mission\'s normal construction path. '
+        'Exact Starting Unlocks are still retained; clear any selected powers there to start without them.',
+    )
+    for control in (
+        self.unit_access_limit_slider,
+        self.power_access_limit_slider,
+    ):
+        WidgetTooltip(
+            control.canvas,
+            'Maximum unique access identities assigned to this generated seed. '
+            'Remaining reward slots use eligible buffs when possible.',
+        )
+        WidgetTooltip(
+            control.value_entry,
+            'Type an exact value or use arrow keys. The value is clamped to '
+            'the currently available reward pool.',
+        )
+
     ttk.Separator(reward_frame, orient='horizontal').grid(
-        row=13, column=0, sticky='ew', pady=(8, 6)
+        row=14, column=0, sticky='ew', pady=(8, 6)
     )
     starting_rewards_frame = ttk.Frame(reward_frame)
-    starting_rewards_frame.grid(row=14, column=0, sticky='ew')
+    starting_rewards_frame.grid(row=15, column=0, sticky='ew')
     starting_rewards_frame.columnconfigure(1, weight=1)
     ttk.Label(starting_rewards_frame, text='Starting Rewards').grid(
         row=0, column=0, sticky='w', padx=(0, 8)

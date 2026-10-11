@@ -48,11 +48,56 @@ from ._dependencies import (
 )
 
 from randomizer.generation.reward_controller import RewardGeneration
+from randomizer.generation.service import RunGenerator
 
 
 class RewardController(RewardGeneration):
 
 
+
+    def access_limit_capacities(self):
+        """Return unique available unit/building and power identities."""
+        if self.reward_mode_var.get() == ARSENAL_MODE:
+            return {'units': 0, 'powers': 0}
+        # Controls describe the next seed, even when a saved run has a
+        # different pool. Preview without changing the active run or caches.
+        preview = RunGenerator({
+            'seed': self.seed_var.get(),
+            'campaign_filter': self.campaign_var.get(),
+            'progression_mode': self.progression_mode_var.get(),
+            'generation': {
+                **self.current_reward_settings(),
+                'reward_mode': self.reward_mode_var.get(),
+            },
+        }, self.missions)
+        unit_ids = set()
+        for reward in preview.reward_pool_for_code('__access_limits__'):
+            if reward.get('kind') == 'buff':
+                continue
+            if reward.get('kind') == 'superweapon':
+                continue
+            unit_ids.update(tech_ids_for_rewards([reward]))
+        # The slider must expose selectable catalogue powers even when the
+        # category switches are off. They control generation, not discovery.
+        settings = preview.config_reward_settings()
+        excluded_power_ids = {
+            str(power_id).upper()
+            for power_id in settings.get('excluded_superweapon_ids', ())
+        }
+        power_ids = {
+            str(reward['superweapon']).upper()
+            for reward in REWARD_POOL
+            if reward.get('kind') == 'superweapon'
+            and reward.get('superweapon')
+            and str(reward['superweapon']).upper() not in excluded_power_ids
+            and (
+                settings.get('include_special_rewards', True)
+                or not reward.get('special_reward')
+            )
+        }
+        if getattr(self, 'coop_enabled', lambda: False)():
+            power_ids.clear()
+        return {'units': len(unit_ids), 'powers': len(power_ids)}
 
     def foehn_standard_bundles_enabled(self):
         return False

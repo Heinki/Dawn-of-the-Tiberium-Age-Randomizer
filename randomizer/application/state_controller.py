@@ -3,6 +3,8 @@
 from randomizer.config.tuning import mission_assistance_stack_count
 from .archipelago_state import normalize_archipelago_activation
 
+from randomizer.rewards.access_limits import normalize_access_limits
+
 from ._dependencies import (
     ARSENAL_FACTIONS,
     ARSENAL_MODE,
@@ -433,6 +435,11 @@ class StateController(GenerationSettings):
         })
         return {
             'arsenal': arsenal_settings,
+            'access_limits': normalize_access_limits({
+                'enabled': self.limit_access_rewards_var.get(),
+                'units': self.unit_access_limit_var.get(),
+                'powers': self.power_access_limit_var.get(),
+            }),
             'randomize_unit_access': randomize_access,
             'start_with_tier_one_units': start_with_tier_one_units,
             'start_with_tier_one_defenses': start_with_tier_one_defenses,
@@ -665,6 +672,7 @@ class StateController(GenerationSettings):
         self.config['generation']['randomize_unit_access'] = reward_settings['randomize_unit_access']
         self.config['generation']['start_with_tier_one_units'] = reward_settings['start_with_tier_one_units']
         self.config['generation']['start_with_tier_one_defenses'] = reward_settings['start_with_tier_one_defenses']
+        self.config['generation']['access_limits'] = reward_settings['access_limits']
         self.config['generation']['starting_reward_count'] = reward_settings['starting_reward_count']
         self.config['generation']['starting_reward_types'] = reward_settings['starting_reward_types']
         self.config['generation']['starting_unlock_rewards'] = reward_settings['starting_unlock_rewards']
@@ -918,6 +926,17 @@ class StateController(GenerationSettings):
         }
         for key, variable in setting_vars.items():
             variable.set(bool(reward_settings[key]))
+        # Old slider bounds must not truncate imported values before the
+        # loaded reward pool establishes its new available range.
+        self.unit_access_limit_slider.set_bounds(
+            1, reward_settings['access_limits']['units']
+        )
+        self.power_access_limit_slider.set_bounds(
+            0, reward_settings['access_limits']['powers']
+        )
+        self.limit_access_rewards_var.set(reward_settings['access_limits']['enabled'])
+        self.unit_access_limit_var.set(reward_settings['access_limits']['units'])
+        self.power_access_limit_var.set(reward_settings['access_limits']['powers'])
         self.starting_reward_count_var.set(str(reward_settings['starting_reward_count']))
         allowed_starting_types = set(reward_settings['starting_reward_types'])
         for definition in STARTING_REWARD_TYPE_DEFINITIONS:

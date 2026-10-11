@@ -20,6 +20,7 @@ from randomizer.rewards.catalogue import (
     linked_buff_variant_ids,
 )
 from randomizer.rewards.enemy_scaling import normalize_enemy_scaling_settings
+from randomizer.rewards.access_limits import normalize_access_limits
 from randomizer.rewards.starting import (
     normalize_starting_reward_count,
     normalize_starting_reward_types,
@@ -94,6 +95,9 @@ class GenerationSettings:
             randomize_access = True
         return {
             'arsenal': arsenal_settings,
+            'access_limits': normalize_access_limits(
+                generation_config.get('access_limits')
+            ),
             'randomize_unit_access': randomize_access,
             'start_with_tier_one_units': start_with_tier_one_units,
             'start_with_tier_one_defenses': start_with_tier_one_defenses,
@@ -187,6 +191,9 @@ class GenerationSettings:
             settings['randomize_unit_access'] = True
         settings['arsenal'] = normalize_arsenal_settings(
             settings.get('arsenal')
+        )
+        settings['access_limits'] = normalize_access_limits(
+            settings.get('access_limits')
         )
         settings.setdefault('start_with_tier_one_units', False)
         settings.setdefault('start_with_tier_one_defenses', False)

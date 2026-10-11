@@ -67,6 +67,11 @@
             "aid": 0
           }
         },
+        "access_limits": {
+          "enabled": false,
+          "units": 1,
+          "powers": 1
+        },
         "starting_unlocked_missions": 3,
         "include_no_build_missions": true,
         "include_no_build_production_missions": true,

@@ -58,7 +58,10 @@ NO_BUILD_PRODUCTION = 'no_build_production'
 
 # Static DTA classification. Keep every catalogue code explicit: this is
 # player-facing seed data, not a title/stage-name guess.
-MISSION_BUILD_CLASSIFICATIONS = dict(_MISSION_CONFIG['build_classifications'])
+MISSION_BUILD_CLASSIFICATIONS = {
+    str(code).upper(): classification
+    for code, classification in _MISSION_CONFIG['build_classifications'].items()
+}
 
 TRUE_NO_BUILD_MISSION_CODES = frozenset(
     code for code, classification in MISSION_BUILD_CLASSIFICATIONS.items()
@@ -83,17 +86,21 @@ NO_BUILD_MISSION_FLAGS = {
 LATE_FOEHN_MISSION_CODES = frozenset(_MISSION_CATALOGUE['late_foehn_mission_codes'])
 
 
+def mission_build_classification(mission):
+    """Use the curated type, with metadata as a fallback for custom missions."""
+    return MISSION_BUILD_CLASSIFICATIONS.get(
+        str(mission.get('code') or '').upper(),
+        mission.get('build_classification') or BASE_BUILD,
+    )
+
+
 def mission_build_label(mission):
     """Return the mission's build type independently of its reward class."""
-    classification = mission.get('build_classification') or (
-        MISSION_BUILD_CLASSIFICATIONS.get(
-            str(mission.get('code') or '').upper(), BASE_BUILD
-        )
-    )
+    classification = mission_build_classification(mission)
     return {
-        BASE_BUILD: 'Build',
-        TRUE_NO_BUILD: 'No Build',
-        NO_BUILD_PRODUCTION: 'Production',
+        BASE_BUILD: 'Base Build',
+        TRUE_NO_BUILD: 'True No Build',
+        NO_BUILD_PRODUCTION: 'No Build (Production)',
     }.get(classification, 'Unknown')
 
 
@@ -143,7 +150,7 @@ def filter_missions_by_build_settings(
         excluded.add(NO_BUILD_PRODUCTION)
     return [
         mission for mission in missions
-        if mission.get('build_classification', BASE_BUILD) not in excluded
+        if mission_build_classification(mission) not in excluded
         and (
             include_operation_missions
             or mission.get('code', '').upper() not in OPERATION_MISSION_CODES
@@ -275,6 +282,7 @@ def parse_missions(path, fallback_objective_count=FALLBACK_OBJECTIVE_COUNT):
             long_description
         )
         force_enhanced_mode = code in FORCED_ENHANCED_MODE_MISSION_CODES
+        classification = mission_build_classification({'code': code})
         missions.append({
             'index': len(missions) + 1,
             'code': code,
@@ -286,10 +294,10 @@ def parse_missions(path, fallback_objective_count=FALLBACK_OBJECTIVE_COUNT):
             'briefing_objectives': briefing_objectives,
             'objectives': objectives,
             'objective_count': len(objectives) or fallback_objective_count,
-            'build_classification': MISSION_BUILD_CLASSIFICATIONS.get(code, BASE_BUILD),
-            'no_build': bool(NO_BUILD_MISSION_FLAGS.get(code, False)),
-            'true_no_build': code in TRUE_NO_BUILD_MISSION_CODES,
-            'no_build_production': code in NO_BUILD_PRODUCTION_MISSION_CODES,
+            'build_classification': classification,
+            'no_build': classification != BASE_BUILD,
+            'true_no_build': classification == TRUE_NO_BUILD,
+            'no_build_production': classification == NO_BUILD_PRODUCTION,
             'operation': code in OPERATION_MISSION_CODES,
             'reward_class': mission_reward_class(code),
             'reward_multiplier': mission_reward_multiplier(code),
@@ -319,7 +327,7 @@ def parse_missions(path, fallback_objective_count=FALLBACK_OBJECTIVE_COUNT):
             mission_source_path(scenario)
         except (FileNotFoundError, ImportError):
             continue
-        classification = str(extra.get('build_classification') or BASE_BUILD)
+        classification = mission_build_classification(extra)
         reward_class = str(extra.get('reward_class') or '')
         missions.append({
             'index': len(missions) + 1,

@@ -379,6 +379,15 @@ class LauncherApp(
         self.start_with_tier_one_defenses_var = tk.BooleanVar(
             value=reward_settings['start_with_tier_one_defenses']
         )
+        self.limit_access_rewards_var = tk.BooleanVar(
+            value=reward_settings['access_limits']['enabled']
+        )
+        self.unit_access_limit_var = tk.IntVar(
+            value=reward_settings['access_limits']['units']
+        )
+        self.power_access_limit_var = tk.IntVar(
+            value=reward_settings['access_limits']['powers']
+        )
         self.starting_reward_count_var = tk.StringVar(
             value=str(reward_settings['starting_reward_count'])
         )

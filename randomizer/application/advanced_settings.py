@@ -581,6 +581,40 @@ class AdvancedSettingsController:
             ),
         )
 
+    def power_reward_category_variable(self, category):
+        return {
+            'offensive': self.include_superweapon_rewards_var,
+            'secondary': self.include_secondary_superweapon_rewards_var,
+            'aid': self.include_aid_power_rewards_var,
+        }.get(category)
+
+    def enable_power_reward_categories(self, power_ids):
+        """Make an explicit power selection eligible for reward generation."""
+        if getattr(self, 'coop_enabled', lambda: False)():
+            return
+        power_ids = {str(power_id).upper() for power_id in power_ids}
+        changed = False
+        for entry in self.advanced_power_pool_entries():
+            if entry['id'] in power_ids:
+                variable = self.power_reward_category_variable(entry['category'])
+                if variable is not None and not variable.get():
+                    variable.set(True)
+                    changed = True
+        if changed:
+            self.refresh_setting_states()
+
+    def on_power_access_limit_changed(self, value):
+        """A positive user-entered cap enables the selected catalogue powers."""
+        if self.gameplay_settings_locked():
+            return
+        if int(value) > 0:
+            self.enable_power_reward_categories(
+                entry['id'] for entry in self.advanced_power_pool_entries()
+                if entry['id'] not in self.excluded_superweapon_ids
+            )
+        self.refresh_setting_states()
+        self.save_current_launcher_config()
+
     def advanced_pool_photo(self, key, path):
         if not path:
             return None
@@ -607,9 +641,17 @@ class AdvancedSettingsController:
             'powers': self.excluded_superweapon_ids,
         }
         excluded = entry['id'] in excluded_sets[pool_key]
+        category_variable = (
+            self.power_reward_category_variable(entry['category'])
+            if pool_key == 'powers'
+            else None
+        )
+        category_disabled = (
+            category_variable is not None and not category_variable.get()
+        )
         faction = entry.get('faction', '')
         base_color = FACTION_TILE_COLORS.get(faction, '#315b82')
-        border = '#777777' if excluded else '#4d92d8'
+        border = '#777777' if excluded or category_disabled else '#4d92d8'
         card = tk.Canvas(
             parent,
             width=102,
@@ -637,12 +679,12 @@ class AdvancedSettingsController:
             width=96,
             justify='center',
         )
-        if excluded:
+        if excluded or category_disabled:
             card.create_rectangle(
                 0, 0, 102, 90, fill='#777777', outline='', stipple='gray50'
             )
             card.create_text(
-                51, 44, text='EXCLUDED', fill='#ffffff',
+                51, 44, text='EXCLUDED' if excluded else 'DISABLED', fill='#ffffff',
                 font=('Segoe UI', 8, 'bold'),
             )
         card.bind(
@@ -658,6 +700,8 @@ class AdvancedSettingsController:
             ),
         )
         status = 'Excluded from next seeds' if excluded else 'Included in next seeds'
+        if category_disabled:
+            status = 'Reward category disabled. Click to enable this power category and include this power.'
         WidgetTooltip(card, f'{entry["label"]} ({entry["id"]})\n{status}')
 
     def refresh_advanced_pool_views(self, pool_key=None):
@@ -802,20 +846,9 @@ class AdvancedSettingsController:
                 )
 
         all_power_entries = self.advanced_power_pool_entries()
-        enabled_power_categories = {
-            category
-            for category, enabled in (
-                ('offensive', self.include_superweapon_rewards_var.get()),
-                ('secondary', self.include_secondary_superweapon_rewards_var.get()),
-                ('aid', self.include_aid_power_rewards_var.get()),
-            )
-            if enabled
-        }
         power_entries = [
             entry for entry in all_power_entries
             if visible_for_campaign(entry)
-            and entry['reward'].get('power_category', 'offensive')
-            in enabled_power_categories
             and (
                 self.include_special_rewards_var.get()
                 or not entry['reward'].get('special_reward')
@@ -907,6 +940,8 @@ class AdvancedSettingsController:
             )
         )
 
+        self.refresh_access_limit_controls()
+
     def toggle_advanced_pool_entry(self, pool_key, item_id):
         if self.gameplay_settings_locked():
             return
@@ -916,8 +951,21 @@ class AdvancedSettingsController:
             'powers': self.excluded_superweapon_ids,
         }[pool_key]
         item_id = str(item_id).upper()
-        if item_id in target:
+        power_entry = next((
+            entry for entry in self.advanced_power_pool_entries()
+            if entry['id'] == item_id
+        ), None) if pool_key == 'powers' else None
+        category_variable = (
+            self.power_reward_category_variable(power_entry['category'])
+            if power_entry is not None else None
+        )
+        if category_variable is not None and not category_variable.get():
+            self.enable_power_reward_categories((item_id,))
+            target.discard(item_id)
+        elif item_id in target:
             target.remove(item_id)
+            if pool_key == 'powers':
+                self.enable_power_reward_categories((item_id,))
         else:
             target.add(item_id)
         self.save_current_launcher_config()
@@ -935,6 +983,8 @@ class AdvancedSettingsController:
         }
         if include:
             target.difference_update(all_ids)
+            if pool_key == 'powers':
+                self.enable_power_reward_categories(all_ids)
         else:
             target.update(all_ids)
         self.save_current_launcher_config()
@@ -976,23 +1026,13 @@ class AdvancedSettingsController:
                 )
             ]
             return entries, self.excluded_unit_access_ids
-        enabled_categories = {
-            category
-            for category, enabled in (
-                ('offensive', self.include_superweapon_rewards_var.get()),
-                ('secondary', self.include_secondary_superweapon_rewards_var.get()),
-                ('aid', self.include_aid_power_rewards_var.get()),
-            )
-            if enabled
-        }
         entries = [
             {
                 **entry,
                 'special': bool(entry['reward'].get('special_reward')),
             }
             for entry in self.advanced_power_pool_entries()
-            if entry['category'] in enabled_categories
-            and (
+            if (
                 self.include_special_rewards_var.get()
                 or not entry['reward'].get('special_reward')
             )
@@ -1085,6 +1125,8 @@ class AdvancedSettingsController:
             return
         target.update(entry['id'] for entry in scope)
         target.difference_update(included_ids)
+        if pool_key == 'powers':
+            self.enable_power_reward_categories(included_ids)
         self.save_current_launcher_config()
         self.update_mission_goal_limit()
         self.refresh_advanced_pool_views()
@@ -1113,6 +1155,8 @@ class AdvancedSettingsController:
             return
         if include:
             target.difference_update(matching_ids)
+            if pool_key == 'powers':
+                self.enable_power_reward_categories(matching_ids)
         else:
             target.update(matching_ids)
         self.save_current_launcher_config()
@@ -1140,6 +1184,8 @@ class AdvancedSettingsController:
             return
         if include:
             target.difference_update(matching_ids)
+            if pool_key == 'powers':
+                self.enable_power_reward_categories(matching_ids)
         else:
             target.update(matching_ids)
         self.save_current_launcher_config()
@@ -1305,6 +1351,7 @@ class AdvancedSettingsController:
         self.start_with_tier_one_defenses_check.configure(
             state='disabled' if arsenal_mode else 'normal'
         )
+        self.refresh_access_limit_controls()
         if arsenal_mode:
             self.arsenal_frame.grid()
         else:
@@ -1373,6 +1420,56 @@ class AdvancedSettingsController:
         ):
             self.refresh_advanced_pool_views()
         self._enforce_archipelago_control_lock()
+
+    def refresh_access_limit_controls(self):
+        """Clamp access-cap controls to the currently available reward pool."""
+        if not hasattr(self, 'access_limits_frame'):
+            return
+        arsenal_mode = self.reward_mode_var.get() == ARSENAL_MODE
+        if arsenal_mode:
+            self.access_limits_frame.grid_remove()
+            return
+        self.access_limits_frame.grid()
+        capacities = self.access_limit_capacities()
+        enabled = bool(self.limit_access_rewards_var.get())
+        show_options = enabled
+        if show_options:
+            self.access_limit_options_frame.grid()
+        else:
+            self.access_limit_options_frame.grid_remove()
+        self.limit_access_rewards_check.configure(
+            state='normal' if any(capacities.values()) else 'disabled'
+        )
+        for category, variable, slider, label, row in (
+            (
+                'units', self.unit_access_limit_var,
+                self.unit_access_limit_slider,
+                self.unit_access_limit_max_label,
+                self.unit_access_limit_row,
+            ),
+            (
+                'powers', self.power_access_limit_var,
+                self.power_access_limit_slider,
+                self.power_access_limit_max_label,
+                self.power_access_limit_row,
+            ),
+        ):
+            maximum = capacities[category]
+            minimum = 0 if category == 'powers' else 1
+            if maximum > 0 or category == 'powers':
+                row.grid()
+            else:
+                row.grid_remove()
+            slider.set_bounds(minimum, max(minimum, maximum))
+            try:
+                value = int(variable.get())
+            except (TypeError, ValueError, tk.TclError):
+                value = 1
+            bounded = max(minimum, min(max(minimum, maximum), value))
+            if value != bounded:
+                variable.set(bounded)
+            slider.set(bounded)
+            label.configure(text=f'{minimum}–{maximum} available')
 
     def update_mission_goal_limit(self):
         if not self.missions:

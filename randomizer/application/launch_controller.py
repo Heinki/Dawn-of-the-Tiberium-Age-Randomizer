@@ -1526,6 +1526,9 @@ throw "Map $name was not found in expandmo*.mix"
                 rainbowizer=bool(self.rainbowizer_var.get()),
                 rainbow_colors=rainbow_colors,
                 random_key=f'{self.state.get("seed", "")}|{mission_code}',
+                installed_sections=installed_effective_sections(
+                    enhanced=bool(mission.get('required_addon'))
+                ),
             )
             for section, values in color_rules.items():
                 dta_rules.setdefault(section, {}).update(values)
