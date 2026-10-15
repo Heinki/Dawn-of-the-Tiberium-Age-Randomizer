@@ -943,6 +943,10 @@ class ShopPolishController(ShopArchipelagoController):
             state = 'Locked during mission'
         elif self.shop_launch_active():
             state = 'Previous mission closing'
+        elif not modifier_allows_shop_offer(
+            entry, canonical_reward_for_id(entry.reward_id), run.modifiers,
+        ):
+            state = 'Disabled by run modifier'
         elif price is not None and run.run_coins < price:
             state = f'Need {price - run.run_coins} more Ore'
         elif stacks:
@@ -1258,7 +1262,22 @@ class ShopPolishController(ShopArchipelagoController):
             lambda item: item[0].reward_id.casefold(),
         )
         visible.sort(key=key)
-        if category == 'Unit Buffs':
+        if category == 'Unit Buffs' and modifier_values and modifier_values['random_training_price']:
+            help_var.set(
+                'Field Training.. for Dummies disables manual unit upgrades. '
+                'Use Random Unit Upgrade above to train a random unlocked unit.'
+            )
+        elif access_category and not owned_view and modifier_values and modifier_values['vibe_unlocking']:
+            help_var.set(
+                'Vibe-Unlocking disables manual access purchases. '
+                'Each victory grants one random new unit or power for free.'
+            )
+        elif category == 'Powers' and not owned_view and modifier_values and modifier_values['unknown_mutation']:
+            help_var.set(
+                'Unknown Mutation grants one random power for this stage only. '
+                'Check Current Loadout for the active power; manual power unlocks are disabled.'
+            )
+        elif category == 'Unit Buffs':
             help_var.set(
                 f'Buffing {target_label}. '
                 'Buy a buff repeatedly to stack it up to its listed limit.'
@@ -2009,6 +2028,8 @@ class ShopPolishController(ShopArchipelagoController):
                 )
             ),
         )
+        if transition.unlocked_reward_id:
+            lines.append(f'Vibe-Unlocking: {transition.unlocked_reward_id} (free)')
         dividend = transition.reward.gem_dividend_meta_coins
         completion_bonus = transition.reward.run_completion_meta_coins
         modifier_completion_gems = (

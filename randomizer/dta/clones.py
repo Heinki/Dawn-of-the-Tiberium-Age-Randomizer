@@ -1573,6 +1573,7 @@ def unit_specific_buff_rules(
     runtime_consumer_unit_ids=(),
     native_direct_unit_ids=(),
     shop_global_buff_levels=None,
+    shop_modifier_settings=None,
     source_sections=None,
     human_only_production=False,
     isolated_production_mask=False,
@@ -1826,6 +1827,21 @@ def unit_specific_buff_rules(
         set(counts_by_unit) | access_units | unlimited_units | free_unit_providers
         | curated_units
     )
+    from randomizer.maps.shop_modifiers import shop_modifier_needs_clone
+    modifier_units = {
+        unit_id for unit_id in catalogue
+        if shop_modifier_needs_clone(unit_id, shop_modifier_settings or {})
+        and (
+            catalogue[unit_id].get('category') == 'buildings'
+            or not access_randomized
+            or unit_id in access_units
+            or unit_id in ALWAYS_AVAILABLE_MOBILE_IDS
+        )
+        and _can_player_produce(
+            effective_section(enhanced_combined or combined, unit_id), production_house
+        )
+    }
+    candidate_ids.update(modifier_units)
     for unit_id in _techno_ids_in_registration_order(combined, candidate_ids):
         target = catalogue.get(unit_id)
         if (
@@ -1932,6 +1948,7 @@ def unit_specific_buff_rules(
         # player-only behavior, even when a static collision scan is empty.
         use_clone = (
             bool(counts)
+            or unit_id in modifier_units
             or unit_id in free_unit_providers
             or production_access
             or unlimited_build_limit
@@ -2175,7 +2192,7 @@ def unit_specific_buff_rules(
                 helper_family_fallback_needed
                 and producible
                 and (
-                    counts or production_access
+                    counts or production_access or unit_id in modifier_units
                     or unit_id in free_unit_providers or unit_id in curated_units
                 )
                 and not placement_only
@@ -2188,7 +2205,7 @@ def unit_specific_buff_rules(
             if (
                 producible
                 and (
-                    counts or production_access
+                    counts or production_access or unit_id in modifier_units
                     or unit_id in free_unit_providers or unit_id in curated_units
                 )
                 and not placement_only
@@ -2680,7 +2697,7 @@ def unit_specific_buff_rules(
             continue
         rules.setdefault(output_id, {}).update(unit_rules)
         rewritten_placements = []
-        if counts and use_clone and not restored_weapons:
+        if (counts or unit_id in modifier_units) and use_clone and not restored_weapons:
             for placement in player_mobile_placements:
                 source_value = authored.get(
                     placement['section'], {}

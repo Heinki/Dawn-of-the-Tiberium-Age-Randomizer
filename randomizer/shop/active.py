@@ -21,6 +21,7 @@ from randomizer.rewards.rules import tech_ids_for_rewards
 from .catalogue import canonical_reward_for_id, catalogue_entry
 from .archipelago import ap_automatic_reward_ids
 from .model import ShopRewardType
+from .random_modifiers import filter_mutation_rewards
 
 
 _SHOP_STARTER_FAMILIES = {
@@ -158,7 +159,7 @@ def active_shop_reward_ids(run):
         *(buff.reward_id for buff in run.run_buffs),
         *(buff.reward_id for buff in run.starting_draft_buffs),
     ]
-    return tuple(dict.fromkeys(str(reward_id) for reward_id in reward_ids))
+    return tuple(dict.fromkeys(filter_mutation_rewards(run, reward_ids)))
 
 
 def active_shop_rewards(run):
@@ -192,7 +193,10 @@ def active_shop_rewards(run):
         reward_ids.extend([buff.reward_id] * buff.stacks)
     for buff in run.starting_draft_buffs:
         reward_ids.extend([buff.reward_id] * buff.stacks)
-    return tuple(canonical_reward_for_id(reward_id) for reward_id in reward_ids)
+    return tuple(
+        canonical_reward_for_id(reward_id)
+        for reward_id in filter_mutation_rewards(run, reward_ids)
+    )
 
 
 def role_buff_stack_count(rewards, reward):

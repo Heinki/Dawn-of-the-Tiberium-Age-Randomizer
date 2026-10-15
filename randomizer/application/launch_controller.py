@@ -108,6 +108,7 @@ from randomizer.maps.shop_modifiers import (
     apply_shop_clone_modifiers,
     apply_shop_enemy_gap_generators,
     apply_shop_global_modifiers,
+    apply_shop_power_overwhelming,
     apply_shop_production_restrictions,
 )
 from randomizer.shop.modifiers import (
@@ -1331,12 +1332,30 @@ throw "Map $name was not found in expandmo*.mix"
                         'shop_global_buff_levels', {}
                     ) if self.shop_launch_active() else None
                 ),
+                shop_modifier_settings=(
+                    self.active_reward_settings() if self.shop_launch_active() else None
+                ),
             )
             if self.shop_launch_active():
+                shop_settings = self.active_reward_settings()
+                if shop_settings.get('shop_room_for_tiberium'):
+                    storage_values = {
+                        key.casefold(): value for key, value in installed_effective_sections(
+                            enhanced=bool(mission.get('required_addon'))
+                        ).get('Riparius', {}).items()
+                    }
+                    storage_values = {
+                        **storage_values,
+                        **all_section_value_maps(source_lines).get('Riparius', {}),
+                    }
+                    value = float(str(storage_values.get('value', 25)).split(';', 1)[0])
+                    shop_settings['shop_tiberium_storage_bails'] = max(
+                        1, int(1000000 / max(1, value))
+                    )
                 apply_shop_clone_modifiers(
                     clone_rules,
                     clone_report,
-                    self.active_reward_settings(),
+                    shop_settings,
                 )
             access_rules, access_report = player_infantry_access_rules(
                 mission,
@@ -1558,6 +1577,8 @@ throw "Map $name was not found in expandmo*.mix"
                     ),
                     self.active_reward_settings(),
                 )
+                if self.active_reward_settings().get('shop_power_overwhelming'):
+                    apply_shop_power_overwhelming(dta_rules, source_lines)
                 apply_shop_production_restrictions(
                     dta_rules,
                     source_lines,

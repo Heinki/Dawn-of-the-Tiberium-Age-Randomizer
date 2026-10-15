@@ -401,6 +401,12 @@ def build_shop_tab(self, workspace_tabs):
         command=self.give_up_shop_run,
     )
     self.shop_give_up_button.pack(side='left')
+    self.shop_random_training_button = ttk.Button(
+        actions,
+        text='Random Unit Upgrade',
+        command=self.buy_random_shop_training,
+        state='disabled',
+    )
     self.shop_production_restriction_var = tk.StringVar(value='')
     ttk.Label(
         actions,

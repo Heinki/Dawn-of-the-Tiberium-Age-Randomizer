@@ -106,6 +106,7 @@ from randomizer.shop.text import gem_text
 from randomizer.shop.transitions import ShopTransitionError
 from randomizer.core.paths import DTA_PUZZLE_PATH as ARCHIPELAGO_CAMEO_PATH
 from .shop_polish_controller import ShopPolishController
+from randomizer.shop.random_modifiers import random_training_entry, random_training_price
 
 
 SHOP_FACTION_POOLS = (
@@ -542,6 +543,10 @@ class ShopController(ShopPolishController):
                 'demolition_charges',
                 'melee_fighters',
                 'one_shot_one_kill',
+                'power_overwhelming',
+                'room_for_tiberium',
+                'impenetrable_front',
+                'public_transportation',
             ):
                 value = effects[key]
                 settings[f'shop_{key}'] = (
@@ -585,14 +590,20 @@ class ShopController(ShopPolishController):
             if mission_modifier is not None:
                 for reward_id in mission_modifier.player_reward_ids:
                     reward = dict(canonical_reward_for_id(reward_id))
+                    if reward.get('kind') == 'superweapon' and effects['unknown_mutation']:
+                        continue
                     if reward.get('kind') == 'superweapon':
                         reward['superweapon_ignore_foreign_tech_gate'] = True
                     rewards.append(reward)
-            if effects['player_armor_percent'] != 1:
+            if effects['player_armor_percent'] != 1 or effects['impenetrable_front']:
                 armor_seeds, _damage_seeds = (
                     self._shop_modifier_clone_seed_plan(run)
                 )
                 for target_id in armor_seeds:
+                    if effects['player_armor_percent'] == 1 and BUFF_TARGETS.get(
+                        target_id, {}
+                    ).get('category') != 'defenses':
+                        continue
                     reward = dict(next(
                         canonical_reward(item) for item in REWARD_POOL
                         if str(item.get('unit') or '').upper() == target_id
@@ -601,11 +612,15 @@ class ShopController(ShopPolishController):
                     reward['force_direct_unit_buff'] = True
                     reward['_shop_modifier_clone_seed'] = True
                     rewards.append(reward)
-            if effects['player_damage_percent'] != 1:
+            if effects['player_damage_percent'] != 1 or effects['impenetrable_front']:
                 _armor_seeds, damage_seeds = (
                     self._shop_modifier_clone_seed_plan(run)
                 )
                 for target_id in damage_seeds:
+                    if effects['player_damage_percent'] == 1 and BUFF_TARGETS.get(
+                        target_id, {}
+                    ).get('category') != 'defenses':
+                        continue
                     reward = dict(next(
                         canonical_reward(item) for item in REWARD_POOL
                         if str(item.get('unit') or '').upper() == target_id
@@ -988,6 +1003,30 @@ class ShopController(ShopPolishController):
                 ap_identity, ap_reward_ids, current_run=self.shop_run
             )
         run = self.shop_run
+        if hasattr(self, 'shop_random_training_button'):
+            training_price = random_training_price(run) if run is not None else 0
+            button = self.shop_random_training_button
+            if training_price:
+                definition = self.shop_config.permanent_upgrades['free_buff_token']
+                free = run.free_buff_tokens_used_stage < (
+                    self.shop_profile.upgrade_level('free_buff_token')
+                    * int(definition.effects['tokens_per_level'])
+                )
+                button.configure(
+                    text=(
+                        'Random Unit Upgrade (Free Buff Token)' if free else
+                        f'Random Unit Upgrade ({training_price} Ore)'
+                    ),
+                    state='normal' if (
+                        run.status is RunStatus.ACTIVE and not run.mission_committed
+                        and not self.shop_launch_active()
+                        and (free or run.run_coins >= training_price)
+                        and random_training_entry(run, self.effective_shop_run(run)) is not None
+                    ) else 'disabled',
+                )
+                button.pack(side='left', padx=(12, 0))
+            else:
+                button.pack_forget()
         if run is None:
             self.shop_stage_var.set(
                 f'Stage — / {self.shop_config.run_length}'
@@ -2283,12 +2322,19 @@ class ShopController(ShopPolishController):
             return
         self._buy_shop_reward(reward_id)
 
+    def buy_random_shop_training(self):
+        self._buy_shop_reward(None)
+
     def _buy_shop_reward(self, reward_id, *, loadout=False):
         if self.shop_launch_active():
             self._set_shop_message('Wait for current mission process to close.')
             return
         try:
-            validation = self.shop_service.purchase_run_reward(reward_id)
+            validation = (
+                self.shop_service.purchase_random_training() if reward_id is None
+                else self.shop_service.purchase_run_reward(reward_id)
+            )
+            reward_id = validation.reward_id
         except ShopTransitionError as exc:
             self._set_shop_message(exc, error=True)
         else:

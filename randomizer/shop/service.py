@@ -48,6 +48,7 @@ from .modifiers import (
 )
 from .persistence import ShopRepository
 from .purchases import apply_validated_run_purchase, validate_run_purchase
+from .random_modifiers import random_training_entry, random_training_price
 from .transitions import (
     ShopTransitionError,
     abandon_run,
@@ -220,11 +221,29 @@ class ShopProgressionService:
             self.repository.save_run(updated)
         return updated
 
+    def purchase_random_training(self):
+        run = self.repository.load_run()
+        if run is None:
+            raise ShopTransitionError('No Shop run exists')
+        if not random_training_price(run):
+            raise ShopTransitionError('Field Training.. for Dummies is not active')
+        entry = random_training_entry(run, self.loadout(run))
+        if entry is None:
+            raise ShopTransitionError('No eligible unit upgrades remain')
+        return self._purchase_run_reward(entry.reward_id, random_training=True)
+
     def purchase_run_reward(self, reward_id):
+        return self._purchase_run_reward(reward_id)
+
+    def _purchase_run_reward(self, reward_id, *, random_training=False):
         profile, run = self.repository.load()
         if run is None:
             raise ShopTransitionError('No Shop run exists')
         team_run = self.loadout(run)
+        if random_training:
+            selected = random_training_entry(run, team_run)
+            if selected is None or selected.reward_id != reward_id:
+                raise ShopTransitionError('Random training offer changed')
         reward = canonical_reward_for_id(reward_id)
         entry = catalogue_entry(reward)
         if entry is None or entry.reward_type not in {
@@ -268,6 +287,9 @@ class ShopProgressionService:
             ),
             coupon_discount_ore=coupon_discount,
         )
+        if random_training:
+            price = 0 if use_free_token else random_training_price(run)
+            coupon_discount = 0
         owned = active_shop_reward_ids(team_run)
         effects = modifier_effects(run.modifiers)
         stock_faction = str(
@@ -292,7 +314,9 @@ class ShopProgressionService:
         ):
             stock_faction = 'All Campaigns'
         shop_eligible = (
-            modifier_allows_shop_offer(entry, reward, run.modifiers)
+            modifier_allows_shop_offer(
+                entry, reward, run.modifiers, automatic=random_training,
+            )
             and shop_entry_available(
                 entry,
                 campaign_filter=stock_faction,

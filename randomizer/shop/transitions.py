@@ -27,6 +27,7 @@ from .meta import validate_starting_loadout
 from .model import (
     CurrencyReward,
     MissionOffer,
+    PurchaseRecord,
     RunStatus,
     ShopModeConfig,
     ShopProfile,
@@ -34,6 +35,7 @@ from .model import (
     ShopRun,
 )
 from .state import normalize_shop_run
+from .random_modifiers import mutation_reward_ids, victory_unlock
 
 
 class ShopTransitionError(ValueError):
@@ -54,6 +56,7 @@ class VictoryTransition:
     reward: CurrencyReward
     victory_key: str
     changed: bool
+    unlocked_reward_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -158,7 +161,7 @@ def _random_starting_unit_unlocks(
                     reward_settings.get('shop_faction_filter')
                 ),
             ) or not modifier_allows_shop_offer(
-                entry, reward, modifier_ids
+                entry, reward, modifier_ids, automatic=True
             ):
                 continue
             candidates.append(entry)
@@ -233,6 +236,8 @@ def start_new_run(
         raise ShopTransitionError(
             f'Unknown Shop run modifier IDs: {unknown_modifiers}'
         )
+    if {'unknown_mutation', 'low_tech_war'}.issubset(modifier_ids):
+        raise ShopTransitionError('Unknown Mutation cannot combine with Low-Tech War')
     loadout = validate_starting_loadout(
         starter_tech_ids=starter_tech_ids,
         selected_reward_ids=requested_loadout,
@@ -349,6 +354,8 @@ def start_new_run(
         modifiers=modifier_ids,
     )
     run = normalize_shop_run(run.to_dict(), config=config)
+    if 'unknown_mutation' in modifier_ids and not mutation_reward_ids(run):
+        raise ShopTransitionError('Unknown Mutation requires an eligible power pool')
     return StartRunTransition(
         updated_profile,
         run,
@@ -685,9 +692,16 @@ def apply_mission_victory(
         ),
         stock_lock_stage=None if expire_stock_lock else run.stock_lock_stage,
     )
+    unlock = victory_unlock(updated_run) if effects['vibe_unlocking'] else None
+    if unlock is not None:
+        updated_run = replace(
+            updated_run,
+            run_purchases=updated_run.run_purchases + (PurchaseRecord(unlock.reward_id),),
+        )
     updated_run = normalize_shop_run(updated_run.to_dict(), config=config)
     return VictoryTransition(
-        updated_profile, updated_run, reward, key, True
+        updated_profile, updated_run, reward, key, True,
+        unlock.reward_id if unlock is not None else None,
     )
 
 

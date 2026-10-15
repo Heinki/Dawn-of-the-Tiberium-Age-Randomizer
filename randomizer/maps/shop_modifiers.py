@@ -11,6 +11,18 @@ _WEAPON_REFERENCE_FIELDS = frozenset({
     'primary', 'secondary', 'elite', 'eliteprimary', 'elitesecondary',
     'deathweapon', 'explosion',
 })
+PUBLIC_TRANSPORT_IDS = frozenset({
+    'APC', 'APCN', 'RAAPC', 'APC2', 'STAPC', 'PTNK',
+    'TRAN', 'LST', 'GLST', 'NLST', 'ALST', 'SLST',
+})
+TIBERIUM_STORAGE_IDS = frozenset({'PROC', 'TDPROC', 'RAPROC', 'SILO', 'RASILO'})
+
+
+def shop_modifier_needs_clone(source_id, settings):
+    return bool(
+        settings.get('shop_room_for_tiberium') and source_id in TIBERIUM_STORAGE_IDS
+        or settings.get('shop_public_transportation') and source_id in PUBLIC_TRANSPORT_IDS
+    )
 
 
 def _key(values, requested):
@@ -122,14 +134,28 @@ def apply_shop_clone_modifiers(rule_sections, handled_by_unit, settings):
         ))
         target = BUFF_TARGETS.get(str(source_id).upper(), {})
         category = str(target.get('category') or '')
+        defense = bool(settings.get('shop_impenetrable_front') and category == 'defenses')
+        unit_armor_factor = armor_factor * (3.5 if defense else 1.0)
+        unit_damage_factor = damage_factor * (2.0 if defense else 1.0)
+        if defense:
+            current_limit = _number(clone_values, 'BuildLimit', 0)
+            clone_values[_key(clone_values, 'BuildLimit') or 'BuildLimit'] = str(
+                min(2, int(current_limit)) if current_limit > 0 else 2
+            )
+        if settings.get('shop_room_for_tiberium') and source_id in TIBERIUM_STORAGE_IDS:
+            clone_values[_key(clone_values, 'Storage') or 'Storage'] = str(
+                int(settings.get('shop_tiberium_storage_bails', 40000))
+            )
+        if settings.get('shop_public_transportation') and source_id in PUBLIC_TRANSPORT_IDS:
+            clone_values[_key(clone_values, 'Passengers') or 'Passengers'] = '40'
 
-        if armor_factor != 1.0:
+        if unit_armor_factor != 1.0:
             base_strength = target.get('strength', 1)
             # active_launch_rewards adds one Armor stack solely to guarantee
             # an isolated clone. Remove that seed stack, then apply the run
             # tradeoff to every deploy/transform form's fully buffed value.
             existing_stacks = armor_seed_stacks.get(str(source_id).upper())
-            correction = armor_factor
+            correction = unit_armor_factor
             if existing_stacks is not None:
                 correction *= (
                     stacking_multiplier('armor', existing_stacks + 1)
@@ -165,9 +191,9 @@ def apply_shop_clone_modifiers(rule_sections, handled_by_unit, settings):
             _set_number(clone_values, 'Cost', current * cost_factor, integer=True)
             counts['cost_clones'] += 1
 
-        if damage_factor != 1.0:
+        if unit_damage_factor != 1.0:
             existing_stacks = damage_seed_stacks.get(str(source_id).upper())
-            correction = damage_factor
+            correction = unit_damage_factor
             if existing_stacks is not None:
                 correction *= (
                     stacking_multiplier('damage', existing_stacks)
@@ -192,6 +218,48 @@ def apply_shop_clone_modifiers(rule_sections, handled_by_unit, settings):
                 )
                 counts['damage_weapons'] += 1
     return counts
+
+
+def apply_shop_power_overwhelming(rule_sections, source_lines):
+    from randomizer.maps.houses import map_house_records, player_house_from_map
+    from randomizer.maps.ini import IniLines, all_section_value_maps, merge_ini_section_values
+
+    lines = IniLines(source_lines)
+    merge_ini_section_values(lines, rule_sections)
+    sections = all_section_value_maps(lines)
+    records = map_house_records(lines, sections=sections)
+    occupied = {
+        str(key).casefold()
+        for name in ('Triggers', 'Events', 'Actions', 'Tags', 'Tutorial')
+        for key in sections.get(name, {})
+    }
+    player = player_house_from_map(lines, records=records)
+    houses = [
+        house for house in records
+        if house.casefold().removesuffix(' house') != 'neutral'
+    ]
+    for index, house in enumerate(houses):
+        suffix = index
+        while True:
+            trigger = f'RNPO{suffix:04d}'
+            tag = f'RNPOT{suffix:04d}'
+            message = f'RNPOM{suffix:04d}'
+            if not occupied.intersection({trigger.casefold(), tag.casefold(), message.casefold()}):
+                break
+            suffix += 1
+        occupied.update({trigger.casefold(), tag.casefold(), message.casefold()})
+        name = 'Power Overwhelming'
+        actions = ['135,0,0,1,0,0,0,A']
+        if house == player or not player and index == 0:
+            actions.append(f'11,0,{message},0,0,0,0,A')
+            rule_sections.setdefault('Tutorial', {})[message] = (
+                'Power Overwhelming: all non-Neutral houses gained +1% firepower.'
+            )
+        rule_sections.setdefault('Triggers', {})[trigger] = f'{house},<none>,{name},0,1,1,1,0'
+        rule_sections.setdefault('Events', {})[trigger] = '1,13,0,300'
+        rule_sections.setdefault('Actions', {})[trigger] = f'{len(actions)},' + ','.join(actions)
+        rule_sections.setdefault('Tags', {})[tag] = f'2,{name},{trigger}'
+    return tuple(houses)
 
 
 def _registered_ids(installed_sections, map_sections, rule_sections, list_name):

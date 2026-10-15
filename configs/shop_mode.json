@@ -1405,6 +1405,58 @@
       }
     },
     "modifiers": {
+      "vibe_unlocking": {
+        "display_name": "Vibe-Unlocking",
+        "description": "Each victory grants one random new unit or power for free. Manual current-run access purchases are disabled. Starting loadouts remain available.",
+        "effects": {
+          "vibe_unlocking": 1
+        }
+      },
+      "power_overwhelming": {
+        "display_name": "Power Overwhelming",
+        "description": "Every 5 in-game minutes, all houses except Neutral gain 1 percentage point of firepower, including enemies. A message announces each increase. Resets each mission.",
+        "effects": {
+          "power_overwhelming": 1
+        }
+      },
+      "room_for_tiberium": {
+        "display_name": "Room for Tiberium",
+        "description": "Player-built refineries and silos each store 1,000,000 credits worth of green Tiberium (more for richer resources). Each victory gives 1 less Ore. Stored resources remain vulnerable to destruction.",
+        "effects": {
+          "room_for_tiberium": 1,
+          "run_reward_flat": -1
+        }
+      },
+      "impenetrable_front": {
+        "display_name": "Impenetrable.. From the Front",
+        "description": "Player-built base defenses gain 250% more HP and 100% more damage, but each buildable defense type is capped at 2, including Command Capacity upgrades. One Shot, One Kill still sets HP to 1.",
+        "effects": {
+          "impenetrable_front": 1
+        }
+      },
+      "public_transportation": {
+        "display_name": "Public Transportation",
+        "description": "Player-built APCs, landing craft, Phase Tanks, and Chinooks carry 40 passengers. Each victory gives 1 less Ore. Passenger-capacity upgrades cannot exceed 40.",
+        "effects": {
+          "public_transportation": 1,
+          "run_reward_flat": -1
+        }
+      },
+      "field_training_for_dummies": {
+        "display_name": "Field Training.. for Dummies",
+        "description": "Manual current-run unit upgrades are disabled. Buy a random upgrade for a random unlocked unit for 3 Ore, increasing by 1 Ore every 3 stages. Free Buff Tokens apply; discounts and coupons do not. Permanent upgrades remain available.",
+        "effects": {
+          "random_training_price": 3,
+          "random_training_stage_interval": 3
+        }
+      },
+      "unknown_mutation": {
+        "display_name": "Unknown Mutation",
+        "description": "Each stage grants one random faction-eligible power for that stage only. Manual current-run power unlocks are disabled. Permanent and received power unlocks are suppressed during this run; permanent ownership is preserved without refunds. Cannot combine with Low-Tech War.",
+        "effects": {
+          "unknown_mutation": 1
+        }
+      },
       "greedy": {
         "display_name": "Greedy",
         "description": "Each victory gives 1 extra Gem. You start with 2 less Ore.",

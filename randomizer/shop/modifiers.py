@@ -53,6 +53,14 @@ def modifier_effects(modifier_ids, config: ShopModeConfig = SHOP_CONFIG):
         'one_shot_one_kill': 0,
         'production_roulette': 0,
         'enemy_gap_generators': 0,
+        'vibe_unlocking': 0,
+        'power_overwhelming': 0,
+        'room_for_tiberium': 0,
+        'impenetrable_front': 0,
+        'public_transportation': 0,
+        'random_training_price': 0,
+        'random_training_stage_interval': 0,
+        'unknown_mutation': 0,
     }
     seen = set()
     for modifier_id in modifier_ids or ():
@@ -153,12 +161,31 @@ def modifier_allows_faction_pool(modifier_ids, faction_filter):
     )
 
 
-def modifier_allows_shop_offer(entry, reward, modifier_ids):
+def modifier_allows_shop_offer(entry, reward, modifier_ids, *, automatic=False):
     """Apply run-wide access-offer exclusions."""
     effects = modifier_effects(modifier_ids)
     reward_type = getattr(entry.reward_type, 'value', entry.reward_type)
+    if reward_type == 'unit_buff':
+        from randomizer.maps.shop_modifiers import PUBLIC_TRANSPORT_IDS
+        from randomizer.rewards.catalogue import BUFF_TARGETS
+
+        if (
+            effects['impenetrable_front']
+            and BUFF_TARGETS.get(entry.target_id, {}).get('category') == 'defenses'
+            and reward.get('buff_type') in {'build_limit', 'building_limit'}
+            or effects['public_transportation']
+            and entry.target_id in PUBLIC_TRANSPORT_IDS
+            and reward.get('buff_type') == 'passenger_capacity'
+        ):
+            return False
+    if not automatic and (
+        effects['vibe_unlocking'] and reward_type in {'unit_access', 'power_access'}
+        or effects['unknown_mutation'] and reward_type == 'power_access'
+        or effects['random_training_price'] and reward_type == 'unit_buff'
+    ):
+        return False
     if reward_type == 'power_access':
-        return not effects['exclude_power_offers']
+        return not (effects['exclude_power_offers'] or effects['unknown_mutation'])
     if reward_type != 'unit_access':
         return True
     if effects['exclude_tier_3_offers'] and entry.tier == 'tier_3':
