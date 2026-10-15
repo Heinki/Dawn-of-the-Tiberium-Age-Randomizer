@@ -430,7 +430,14 @@ class ArsenalRosterSizes(OptionCounter):
     )
     min = 0
     max = 20
-    default = {key: 0 for key in valid_keys}
+    default = {
+        "tier_1_infantry": 3, "tier_1_vehicles": 2,
+        "tier_1_aircraft": 0, "tier_1_naval": 0,
+        "tier_2_infantry": 3, "tier_2_vehicles": 3,
+        "tier_2_aircraft": 1, "tier_2_naval": 1,
+        "tier_3_infantry": 2, "tier_3_vehicles": 2,
+        "tier_3_aircraft": 1, "tier_3_naval": 1,
+    }
 
 
 class ArsenalPowerCounts(OptionCounter):
@@ -440,7 +447,7 @@ class ArsenalPowerCounts(OptionCounter):
     valid_keys = frozenset({"offensive", "secondary", "aid"})
     min = 0
     max = 20
-    default = {key: 0 for key in valid_keys}
+    default = {"offensive": 1, "secondary": 0, "aid": 1}
 
 
 class EnemyRewardPool(Toggle):
