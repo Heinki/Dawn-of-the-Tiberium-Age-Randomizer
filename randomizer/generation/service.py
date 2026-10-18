@@ -18,7 +18,28 @@ from .state_controller import GenerationSettings
 class RunGenerator(SeedGeneration, RewardGeneration, GenerationSettings, StartingUnlocks):
     """Use the same generation methods as the GUI, with explicit inputs."""
 
-    current_reward_settings = GenerationSettings.config_reward_settings
+    def config_reward_settings(self):
+        settings = super().config_reward_settings()
+        if self.config.get('coop_mode'):
+            from randomizer.coop.settings import safe_settings
+            settings = safe_settings(settings, self.config['coop_player_count'])
+        return settings
+
+    current_reward_settings = config_reward_settings
+
+    def reward_pool_for_code(self, code):
+        rewards = super().reward_pool_for_code(code)
+        if self.config.get('coop_mode'):
+            from randomizer.coop.settings import supported_reward
+            rewards = [reward for reward in rewards if supported_reward(reward)]
+        return rewards
+
+    def configured_manual_starting_rewards(self):
+        rewards = super().configured_manual_starting_rewards()
+        if self.config.get('coop_mode'):
+            from randomizer.coop.settings import supported_reward
+            rewards = [reward for reward in rewards if supported_reward(reward)]
+        return rewards
 
     def active_progression_mode(self):
         return self.config['progression_mode']
@@ -30,6 +51,13 @@ class RunGenerator(SeedGeneration, RewardGeneration, GenerationSettings, Startin
             raise ValueError('launcher_settings.generation must be a mapping.')
         self.config = deep_merge(DEFAULT_CONFIG, settings)
         self.state = {}
+        if self.config.get('coop_mode'):
+            from randomizer.coop.feature import player_count
+            count = player_count(self.config.get('coop_player_count', 2))
+            self.config['coop_player_count'] = count
+            missions = [mission for mission in missions if mission.get('coop_player_count') == count]
+        elif any(not mission.get('coop_mode') for mission in missions):
+            missions = [mission for mission in missions if not mission.get('coop_mode')]
         self.missions = deepcopy(missions)
         self._mission_by_code = {mission['code']: mission for mission in self.missions}
 
@@ -38,10 +66,14 @@ class RunGenerator(SeedGeneration, RewardGeneration, GenerationSettings, Startin
         generation = config['generation']
         mode = config['progression_mode']
         campaign = config['campaign_filter']
+        cooperative = bool(config.get('coop_mode'))
+        campaigns = ('All Campaigns', 'GDI', 'Nod', 'Allies', 'Soviet') if cooperative else CAMPAIGN_FILTERS
+        if cooperative and mode not in ('Grid Mode', 'Shop Mode'):
+            raise ValueError('Native co-op supports Grid Mode and Shop Mode.')
         reward_mode = generation['reward_mode']
         for name, value, choices in (
             ('progression_mode', mode, PROGRESSION_MODES),
-            ('campaign_filter', campaign, CAMPAIGN_FILTERS),
+            ('campaign_filter', campaign, campaigns),
             ('generation.reward_mode', reward_mode, REWARD_MODES),
         ):
             if value not in choices:
@@ -65,6 +97,8 @@ class RunGenerator(SeedGeneration, RewardGeneration, GenerationSettings, Startin
         )
         if not missions:
             raise ValueError('Selected settings leave no missions to generate.')
+        if cooperative and type(config['mission_goal']) is int and config['mission_goal'] > 0:
+            config['mission_goal'] = min(config['mission_goal'], len(missions))
         for key, maximum in (('mission_goal', len(self.missions)),
                              ('rewards_per_objective', MAX_REWARDS_PER_CHECK)):
             value = config[key]
@@ -112,4 +146,7 @@ class RunGenerator(SeedGeneration, RewardGeneration, GenerationSettings, Startin
         state = self.build_seed_generation(options)['state']
         # Wall-clock time must not change slot data for an identical AP seed.
         state.pop('created_at', None)
+        if cooperative:
+            state.update(coop_mode=True, coop_player_count=config['coop_player_count'],
+                         coop_metadata={mission['code']: mission['coop_metadata_hash'] for mission in missions})
         return state

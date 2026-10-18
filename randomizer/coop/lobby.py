@@ -19,7 +19,7 @@ from .network import probe_network
 from .compatibility import FINGERPRINT_POLICY, normalize_text
 
 
-PROTOCOL = 4
+PROTOCOL = 5
 LOBBY_PORT = 19420
 MAX_WIRE = 16 * 1024 * 1024
 MAX_DATA = 32 * 1024 * 1024

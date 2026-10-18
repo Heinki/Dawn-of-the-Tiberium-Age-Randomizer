@@ -10,7 +10,7 @@ from __future__ import annotations
 from hashlib import sha256
 import json
 
-from randomizer.core.paths import BATTLE_CLIENT_INI
+from randomizer.core.paths import BATTLE_CLIENT_INI, GAME_ROOT
 from randomizer.missions.catalogue import parse_missions
 from randomizer.rewards.catalogue import MAX_REWARDS_PER_CHECK, REWARD_POOL
 from randomizer.rewards.weights import main_reward_weight_type
@@ -45,7 +45,7 @@ def _check_name(check_id):
     return "Objective " + check_id.rsplit("_", 1)[-1]
 
 
-def build_catalogue_projection():
+def build_catalogue_projection(include_coop=True):
     """Return stable AP-relevant data derived from the live Randomizer."""
     items = []
     for reward in sorted(REWARD_POOL, key=lambda entry: entry["name"]):
@@ -57,7 +57,12 @@ def build_catalogue_projection():
         })
 
     missions = []
-    for mission in parse_missions(BATTLE_CLIENT_INI):
+    catalogue = list(parse_missions(BATTLE_CLIENT_INI))
+    if include_coop:
+        from randomizer.coop.catalogue import discover_coop_missions
+        catalogue.extend(dict(mission, title=f"{mission['title']} [{mission['code']}]")
+                         for mission in sorted(discover_coop_missions(GAME_ROOT), key=lambda item: item['code']))
+    for mission in catalogue:
         objectives = list(mission.get("objectives") or ())
         checks = [
             {
@@ -105,6 +110,8 @@ def runtime_catalogue_checksum():
 
 def runtime_catalogue_is_compatible(checksum):
     """Accept only DTA catalogues with the exact runtime projection."""
+    if str(checksum or '') == projection_checksum(build_catalogue_projection(include_coop=False)):
+        return True
     return str(checksum or '') == runtime_catalogue_checksum()
 
 

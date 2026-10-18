@@ -1084,7 +1084,9 @@ throw "Map $name was not found in expandmo*.mix"
         )
         if callable(finish_context):
             finish_context()
+        self.finish_archipelago_mission_context()
         if getattr(self, '_close_after_game', False):
+            self.shutdown_archipelago()
             self.destroy()
 
     def launch_mission_async(self, mission, extra_rules=None, launch_note=''):

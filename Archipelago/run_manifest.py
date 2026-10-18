@@ -39,6 +39,8 @@ GAMEPLAY_CONFIG_KEYS = (
     "game_speed",
     "player_color",
     "rainbowizer",
+    "coop_mode",
+    "coop_player_count",
 )
 
 PLAYER_GENERATION_KEYS = {
@@ -362,7 +364,7 @@ def build_run_manifest(state, launcher_config=None, *, catalogue_checksum=None):
     if shop_mode:
         shop = _shop_manifest_settings()
         shop["mission_pool"] = list(mission_order)
-        if len(mission_order) < shop["run_length"]:
+        if len(mission_order) < shop["run_length"] and not state.get("coop_mode"):
             raise ValueError(
                 "Shop Mode AP mission pool is smaller than its run length."
             )

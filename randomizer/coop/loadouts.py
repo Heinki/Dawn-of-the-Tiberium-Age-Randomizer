@@ -26,6 +26,8 @@ PERSONAL_UPGRADES = {
 
 def contribution(profile, selected, run=None):
     """Validate owned selections and share only permanent gameplay data."""
+    if run is not None and run.ap_identity and not run.reward_settings.get('coop_mode'):
+        raise ValueError('Archipelago Shop saves cannot contribute to native co-op loadouts.')
     selected = tuple(dict.fromkeys(canonical_reward_id(item) for item in selected))
     if any(item not in profile.permanent_unit_unlocks for item in selected):
         raise ValueError('Co-op loadout contains an unowned permanent unit.')

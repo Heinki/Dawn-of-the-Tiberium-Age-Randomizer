@@ -29,6 +29,8 @@ CONTROL_FIELDS = (
 def validate_partner_run(local, host):
     if local is None or host is None:
         raise ValueError('Each player must start their own co-op Shop run with the host seed.')
+    if local.ap_identity != host.ap_identity:
+        raise ValueError('Players must use the same shared Archipelago slot for co-op Shop progression.')
     starting_endless = (host.endless and not local.endless
                         and len(host.completed_missions) >= local.run_length)
     if (local.seed != host.seed or (local.endless != host.endless and not starting_endless)

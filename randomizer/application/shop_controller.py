@@ -142,8 +142,28 @@ class ShopController(ShopPolishController):
         """Return the gameplay loadout without changing the persisted run."""
         return run
 
-    def create_shop_repository(self):
+    def archipelago_shop_persistence(self, state=None):
+        from randomizer.shop.archipelago import archipelago_shop_identity
+        from randomizer.shop.persistence import archipelago_shop_paths
+        state = self.state if state is None else state
+        ap = state.get('archipelago') or {}
+        if not ap.get('enabled') or state.get('progression_mode') != 'Shop Mode':
+            return None, ''
+        identity = archipelago_shop_identity(ap)
+        paths = archipelago_shop_paths(identity, bool(state.get('coop_mode')))
+        return paths, identity
+
+    def create_shop_repository(self, state=None):
+        from randomizer.shop.persistence import DEFAULT_SHOP_PATHS, seed_shop_repository
+        paths, identity = self.archipelago_shop_persistence(state)
+        if paths:
+            return seed_shop_repository(ShopRepository(paths), DEFAULT_SHOP_PATHS, identity)
         return ShopRepository()
+
+    def _select_shop_repository(self):
+        self.shop_repository = self.create_shop_repository()
+        self.shop_service = ShopProgressionService(self.shop_repository, loadout=self.effective_shop_run)
+        self.shop_profile, self.shop_run = self.shop_repository.load()
 
     def initialize_shop_controller(self):
         self.shop_config = SHOP_CONFIG
@@ -2254,8 +2274,8 @@ class ShopController(ShopPolishController):
                     'eligible missions under current filters'
                 )
             repeat_missions = bool(
-                (self.excluded_mission_codes or getattr(self, 'coop_enabled', lambda: False)())
-                and self.archipelago_shop_slot_settings() is None
+                getattr(self, 'coop_enabled', lambda: False)()
+                or self.excluded_mission_codes and self.archipelago_shop_slot_settings() is None
             )
             offers = generate_mission_offers(
                 mission_pool,

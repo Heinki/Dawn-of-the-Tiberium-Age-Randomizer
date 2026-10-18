@@ -277,7 +277,7 @@ def progression_for_manifest(value):
     )
 
 
-def _validate_shop_settings(value, mode, mission_order):
+def _validate_shop_settings(value, mode, mission_order, cooperative=False):
     if mode != "Shop Mode":
         if value is not None:
             raise ManifestError("Non-Shop manifest cannot contain Shop settings.")
@@ -310,7 +310,7 @@ def _validate_shop_settings(value, mode, mission_order):
         not isinstance(run_length, int)
         or isinstance(run_length, bool)
         or not 5 <= run_length <= MAXIMUM_SHOP_RUN_LENGTH
-        or len(mission_order) < run_length
+        or len(mission_order) < (3 if cooperative else run_length)
         or value.get("mission_pool") != mission_order
         or not isinstance(
             value.get("mission_victories_are_locations"), bool
@@ -426,7 +426,8 @@ def parse_manifest(raw_value):
         locations[code] = checks
 
     shop = _validate_shop_settings(
-        value.get("shop"), value.get("progression_mode"), mission_order
+        value.get("shop"), value.get("progression_mode"), mission_order,
+        cooperative=(value.get("state_snapshot") or {}).get("coop_mode") is True,
     )
     if shop is not None:
         total_locations += shop["item_location_count"]

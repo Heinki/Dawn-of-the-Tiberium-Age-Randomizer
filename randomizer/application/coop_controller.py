@@ -15,6 +15,7 @@ from tkinter import messagebox, ttk
 
 from randomizer.config.player import save_config
 from randomizer.coop import feature
+from randomizer.coop.archipelago import shared_run_state, shared_shop_inventory
 from randomizer.coop.catalogue import discover_coop_missions, eligible, validate_pool
 from randomizer.coop.privacy import redact_connection_details
 from randomizer.coop.lobby import Lobby, pack, unpack
@@ -25,11 +26,11 @@ from randomizer.coop.shop import gameplay_document, mission_view, sync_personal_
 from randomizer.coop.spawn import spawn_data
 from randomizer.coop.victory import ScoreLog
 from randomizer.core.paths import DEBUG_LOG, GAME_EXE, GAME_LAUNCHER_EXE, GAME_ROOT, SPAWN_INI, SPAWN_MAP_INI
-from randomizer.core.paths import LAUNCHER_LOG
+from randomizer.core.paths import LAUNCHER_LOG, BACKUP_DIR
 from randomizer.core.diagnostics import event as log_event
 from randomizer.core.storage import atomic_write_json, read_json_object
 from randomizer.shop.model import RunStatus, ShopRewardType
-from randomizer.shop.persistence import ShopPersistenceError, ShopRepository
+from randomizer.shop.persistence import COOP_SHOP_PATHS, ShopPersistenceError, ShopRepository
 from randomizer.shop.service import ShopProgressionService
 from randomizer.shop.state import normalize_shop_run
 from randomizer.shop.transitions import ShopTransitionError
@@ -108,6 +109,10 @@ class CoopController:
             count.configure(state='disabled' if locked or active_shop_run or (self.state and self.coop_enabled()) else 'readonly')
             connect.configure(state='normal' if self.coop_enabled() else 'disabled')
         if self.coop_enabled():
+            if self._coop_games_running or self._coop_pending_launch or self._coop_building_map:
+                purchase = getattr(self, 'shop_ap_purchase_button', None)
+                if purchase:
+                    purchase.configure(state='disabled')
             for modifier_id, variable in getattr(self, 'shop_modifier_vars', {}).items():
                 if modifier_id not in SAFE_SHOP_MODIFIERS:
                     variable.set(False)
@@ -169,6 +174,7 @@ class CoopController:
             messagebox.showwarning('Co-op settings', 'Finish the active Shop run before changing player count.', parent=self)
             return
         self.config.update({'coop_mode': requested, 'coop_player_count': count})
+        self._archipelago_cached_state = None
         self.state = self.load_state()
         if self.state:
             self.campaign_var.set(self.state.get('campaign_filter', 'All Campaigns'))
@@ -280,10 +286,12 @@ class CoopController:
             raise ValueError('Saved co-op run lacks native mission eligibility metadata.')
         validate_pool(self.missions, codes, self.coop_count(), hashes)
 
-    def create_shop_repository(self):
+    def create_shop_repository(self, state=None):
         if self.coop_enabled():
-            return SharedShopRepository(self.coop_publish_state, self._guard_coop_shop_write)
-        return super().create_shop_repository()
+            paths, identity = self.archipelago_shop_persistence(state)
+            return SharedShopRepository(self.coop_publish_state, self._guard_coop_shop_write,
+                                        paths=paths, identity=identity)
+        return super().create_shop_repository(state)
 
     def initialize_shop_controller(self):
         super().initialize_shop_controller()
@@ -291,9 +299,7 @@ class CoopController:
             self.shop_service = ShopProgressionService(self.shop_repository, loadout=self.effective_shop_run)
 
     def _select_coop_shop_repository(self):
-        self.shop_repository = SharedShopRepository(self.coop_publish_state, self._guard_coop_shop_write) if self.coop_enabled() else ShopRepository()
-        self.shop_service = ShopProgressionService(self.shop_repository, loadout=self.effective_shop_run)
-        self.shop_profile, self.shop_run = self.shop_repository.load()
+        self._select_shop_repository()
 
     def _guard_coop_shop_write(self):
         if getattr(self, '_coop_recording_result', False) or getattr(self, '_coop_applying_state', False):
@@ -386,15 +392,19 @@ class CoopController:
         config.pop('coop_feature_enabled', None)
         config['coop_mode'] = feature.enabled(config)
         config['coop_player_count'] = feature.player_count(config.get('coop_player_count', 2))
-        changed = (config['coop_mode'], config['coop_player_count']) != (self.coop_enabled(), self.coop_count())
+        changed = (config['coop_mode'] != self.coop_enabled()
+                   or config['coop_mode'] and config['coop_player_count'] != self.coop_count())
         run = getattr(self, 'shop_run', None)
-        if changed and (self._coop_lobby or self.busy_depth or (run and run.status is RunStatus.ACTIVE)):
+        session = getattr(self, '_archipelago_session', None)
+        if changed and (self._coop_lobby or self.busy_depth or (run and run.status is RunStatus.ACTIVE)
+                        or self.archipelago_run_active() or (session and session.running)):
             messagebox.showwarning('Co-op settings', 'Disconnect and finish the active run before importing different co-op settings.', parent=self)
             return
         result = super().apply_portable_settings(config)
         self.coop_mode_var.set(self.coop_enabled())
         self.coop_player_count_var.set(str(self.coop_count()))
         if changed:
+            self._archipelago_cached_state = None
             self.state = self.load_state()
             self._select_coop_shop_repository()
             self.apply_missions(self.load_missions())
@@ -532,8 +542,6 @@ class CoopController:
                 if key in SHARED_SHOP_MODIFIERS:
                     variable.set(key in host.modifiers)
         if self.coop_enabled():
-            if self.archipelago_run_active():
-                raise ShopTransitionError('Co-op and Archipelago cannot share a run.')
             for modifier_id, variable in self.shop_modifier_vars.items():
                 if modifier_id not in SAFE_SHOP_MODIFIERS:
                     variable.set(False)
@@ -551,16 +559,26 @@ class CoopController:
     def gameplay_settings_locked(self):
         return self.coop_guest_connected() or super().gameplay_settings_locked()
 
-    def connect_archipelago(self):
+    def _archipelago_resume_path(self):
         if self.coop_enabled():
-            messagebox.showwarning('Experimental co-op', 'Switch to solo before connecting Archipelago.', parent=self)
+            return BACKUP_DIR / 'archipelago_coop_resume.json'
+        return super()._archipelago_resume_path()
+
+    def archipelago_shop_context(self):
+        if self.coop_enabled() and self._active_archipelago_state() is None:
+            return '', ()
+        return super().archipelago_shop_context()
+
+    def connect_archipelago(self):
+        if self.coop_guest_connected():
+            messagebox.showwarning('Co-op Archipelago', 'The host owns the shared Archipelago slot. Guests receive its state through the lobby.', parent=self)
+            return
+        if self.coop_enabled() and (self._coop_games_running or self._coop_pending_launch or self._coop_building_map):
+            messagebox.showwarning('Co-op Archipelago', 'Wait for every player to finish before connecting Archipelago.', parent=self)
             return
         return super().connect_archipelago()
 
     def save_archipelago_yaml(self):
-        if self.coop_enabled():
-            messagebox.showwarning('Experimental co-op', 'Switch to solo before exporting an Archipelago YAML.', parent=self)
-            return
         return super().save_archipelago_yaml()
 
     def on_new_seed(self):
@@ -634,7 +652,7 @@ class CoopController:
         if selected in self._mission_by_code:
             self._coop_player_selections[0] = selected
         self._coop_state_revision += 1
-        snapshot = {'state': self.state, 'loadout_protocol': 4, 'revision': self._coop_state_revision,
+        snapshot = {'state': shared_run_state(self.state, getattr(self, '_archipelago_slot_data', None)), 'loadout_protocol': 5, 'revision': self._coop_state_revision,
                     'loadouts': {str(slot): loadout for slot, loadout in self._coop_loadouts.items()},
                     'shop_run': run.to_dict() if run else None,
                     'mode': self.progression_mode_var.get(), 'count': self.coop_count(),
@@ -863,6 +881,9 @@ class CoopController:
             role = 'host' if self._coop_role.get() == 'Host' else 'guest'
             if self.busy_depth or self._coop_pending_launch or self._coop_games_running or (self.active_game_process and self.active_game_process.poll() is None):
                 raise ValueError('Close the active game and finish preparation before connecting.')
+            session = getattr(self, '_archipelago_session', None)
+            if role == 'guest' and session and session.running:
+                raise ValueError('Disconnect your Archipelago client before joining; the host owns the shared slot.')
             if role == 'host':
                 self.validate_coop_run()
             if role == 'guest' and not self._coop_address.get().strip():
@@ -906,6 +927,7 @@ class CoopController:
         if lobby:
             lobby.close()
             self._record_coop_log('Co-op disconnected.')
+        self._finish_archipelago_mission_preparation({})
         self._coop_lobby = None
         self._coop_pending_launch = None
         self._coop_games_running = set()
@@ -930,6 +952,8 @@ class CoopController:
                 self.progression_mode_var.set(mode)
                 for name, value in selection.items():
                     getattr(self, name).set(value)
+            if not keep_shared_grid:
+                self._apply_coop_archipelago_state(self.state)
             self._refresh_coop_state_views()
         if hasattr(self, '_coop_status'):
             self._coop_status.set('Disconnected')
@@ -983,6 +1007,8 @@ class CoopController:
             self._record_coop_log('Co-op message rejected: ' + safe_value, error=True)
             self._coop_build_cancelled = True
             self._coop_pending_launch = None
+            if not self._coop_building_map and not self._coop_games_running:
+                self._finish_archipelago_mission_preparation({})
             if not (self.active_game_process and self.active_game_process.poll() is None):
                 self.finish_progression_launch_context()
             if lobby.connected:
@@ -999,6 +1025,7 @@ class CoopController:
                 return
         pending = self._coop_pending_launch
         if pending and time.monotonic() > pending['deadline']:
+            self._finish_archipelago_mission_preparation({})
             self.append_log('Co-op preparation timed out; no game started.', error=True)
             self._coop_pending_launch = None
             if lobby.connected:
@@ -1014,6 +1041,7 @@ class CoopController:
             self._coop_build_cancelled = True
             self._coop_pending_launch = None
             if preparing:
+                self._finish_archipelago_mission_preparation({})
                 if lobby.role == 'host' and lobby.connected:
                     lobby.send({'type': 'abort', 'reason': str(message.get('reason', 'Peer rejected preparation'))})
                 self.finish_progression_launch_context()
@@ -1110,7 +1138,7 @@ class CoopController:
         if self._coop_pending_launch:
             raise ValueError('Host changed run during co-op preparation.')
         snapshot = json.loads(unpack(message['snapshot']))
-        if snapshot.get('loadout_protocol') != 4:
+        if snapshot.get('loadout_protocol') != 5:
             raise ValueError('Host launcher must support personal Shop purchases and mission pings. Update every launcher.')
         revision = snapshot.get('revision')
         if type(revision) is not int or revision <= self._coop_received_revision:
@@ -1125,6 +1153,9 @@ class CoopController:
         state = snapshot['state']
         if not isinstance(state, dict):
             raise ValueError('Invalid host Grid state.')
+        ap = state.get('archipelago')
+        if ap and (not isinstance(ap, dict) or not ap.get('shared_coop')):
+            raise ValueError('Host must send a shared Archipelago projection without private session state.')
         run = normalize_shop_run(snapshot['shop_run']) if snapshot['shop_run'] else None
         active_run = run if snapshot['mode'] == 'Shop Mode' else None
         document = active_run.reward_settings if active_run else state
@@ -1133,7 +1164,13 @@ class CoopController:
             self._validate_coop_document(document, codes)
         # Reject incompatible snapshots before replacing any guest progress.
         personal = self._coop_personal_repository
+        paths, _identity = self.archipelago_shop_persistence(state)
+        if personal.paths != (paths or COOP_SHOP_PATHS):
+            personal = self.create_shop_repository(state)
         profile, local = personal.load()
+        original_local = local
+        if active_run and local is not None and local.status is RunStatus.ACTIVE:
+            local = shared_shop_inventory(local, state)
         personal_update = None
         if active_run and local is not None and (local.status is RunStatus.ACTIVE
                 or (local.seed == active_run.seed and local.completed_missions == active_run.completed_missions)):
@@ -1146,8 +1183,11 @@ class CoopController:
             raise ValueError('Invalid cooperative mission selections.')
         self._coop_applying_state = True
         try:
+            self._coop_personal_repository = personal
+            self.shop_repository = personal
+            self.shop_service = ShopProgressionService(personal, loadout=self.effective_shop_run)
             if personal_update:
-                self._commit_coop_shop_sync(local, *personal_update)
+                self._commit_coop_shop_sync(original_local, *personal_update)
             atomic_write_json(COOP_GUEST_STATE_PATH, state, indent=None)
             if snapshot['mode'] == 'Grid Mode':
                 atomic_write_json(COOP_STATE_PATH, state, indent=None)
@@ -1156,6 +1196,7 @@ class CoopController:
             self._coop_host_shop_run = run
             self._coop_received_revision = revision
             self._coop_restore_error = ''
+            self._apply_coop_archipelago_state(state)
             if active_run and personal_update is None:
                 self._set_shop_message(f'Start your own co-op Shop run with host seed {active_run.seed}. Purchases and Ore stay personal.', error=True)
             self.shop_profile, self.shop_run = personal.load()
@@ -1176,6 +1217,32 @@ class CoopController:
             self._coop_applying_state = False
         self.coop_publish_state()
 
+    def _apply_coop_archipelago_state(self, state):
+        ap = state.get('archipelago') or {}
+        self._archipelago_slot_data = copy.deepcopy(ap.get('slot_data') or {})
+        self._archipelago_location_groups = {}
+        self._archipelago_allowed_locations = frozenset()
+        self._archipelago_server_checked_locations = set()
+        self._archipelago_session_validated = False
+        if self._archipelago_slot_data:
+            self._cache_archipelago_location_mappings(self._archipelago_slot_data)
+        self.archipelago_status_var.set('Shared Archipelago slot — host connected' if ap.get('enabled') else 'Disconnected')
+
+    def _validate_archipelago_server_state(self, slot_data):
+        snapshot = super()._validate_archipelago_server_state(slot_data)
+        cooperative = snapshot.get('coop_mode') is True
+        if cooperative != self.coop_enabled():
+            raise ValueError('Select the same Single Player/Co-op mode as the generated Archipelago slot before connecting.')
+        if cooperative:
+            self._validate_coop_document(snapshot, snapshot['mission_order'])
+        return snapshot
+
+    def set_archipelago_controls_locked(self, locked):
+        result = super().set_archipelago_controls_locked(locked)
+        if getattr(self, '_coop_controls', None):
+            self.refresh_coop_controls()
+        return result
+
     def _sync_coop_shop_run(self, host):
         personal = self._coop_personal_repository
         profile, local = personal.load()
@@ -1183,8 +1250,10 @@ class CoopController:
                              and (local.seed != host.seed or local.completed_missions != host.completed_missions)):
             self._set_shop_message(f'Start your own co-op Shop run with host seed {host.seed}. Purchases and Ore stay personal.', error=True)
             return
+        original_local = local
+        local = shared_shop_inventory(local, self.state)
         profile, updated = sync_personal_run(profile, local, host, self._mission_by_code)
-        self._commit_coop_shop_sync(local, profile, updated)
+        self._commit_coop_shop_sync(original_local, profile, updated)
 
     def _commit_coop_shop_sync(self, local, profile, updated):
         personal = self._coop_personal_repository
@@ -1265,6 +1334,9 @@ class CoopController:
             difficulty = self.resolve_selected_mission_difficulty(mission)
             speed = self.get_selected_game_speed_value()
             self._record_coop_log(f'Co-op preparing {mission["code"]}: {difficulty.label}.')
+            if self.archipelago_run_active() and not getattr(self, '_archipelago_session_validated', False):
+                raise ValueError('Reconnect the host to the shared Archipelago slot before launching.')
+            self._begin_archipelago_mission_preparation(mission)
             self._coop_build_cancelled = False
             self._coop_building_map = True
             self.run_in_background(
@@ -1275,12 +1347,14 @@ class CoopController:
             )
         except (ValueError, OSError, KeyError, IndexError, TypeError, RuntimeError, subprocess.SubprocessError) as exc:
             self._coop_building_map = False
+            self._finish_archipelago_mission_preparation(mission)
             self._record_coop_launch_error(exc, 'launch validation')
             self.finish_progression_launch_context()
             messagebox.showerror('Co-op launch', self._coop_safe_message(exc), parent=self)
 
     def handle_mission_prepare_error(self, exc, detail):
         self._coop_building_map = False
+        self._finish_archipelago_mission_preparation({})
         if self.coop_enabled():
             self._record_coop_log('Co-op map preparation failed: ' + self._coop_safe_message(exc), error=True)
         return super().handle_mission_prepare_error(exc, detail)
@@ -1295,6 +1369,7 @@ class CoopController:
         data, settings, report, digest = result
         lobby = self._coop_lobby
         if not lobby or not lobby.connected or self._coop_build_cancelled:
+            self._finish_archipelago_mission_preparation(mission)
             self.finish_progression_launch_context()
             return
         pending = {'type': 'prepare', 'code': mission['code'], 'metadata_hash': mission['coop_metadata_hash'],
@@ -1312,6 +1387,7 @@ class CoopController:
             for player in report.get('players', ()):
                 self._record_coop_log(f'Player {player["slot"] + 1}: {player["production_house"]}; {len(player["applied"])} clones; starting credit bonus {player["credit_bonus"]}.')
         except (ValueError, OSError, RuntimeError, subprocess.SubprocessError) as exc:
+            self._finish_archipelago_mission_preparation(mission)
             self._record_coop_launch_error(exc, 'preparation')
             self._coop_pending_launch = None
             self.finish_progression_launch_context()
@@ -1451,6 +1527,8 @@ class CoopController:
         finally:
             if restore_context:
                 self.finish_progression_launch_context()
+        if not self._coop_games_running:
+            self._finish_archipelago_mission_preparation({})
         if not self._coop_games_running and self._coop_lobby and self._coop_lobby.connected:
             self._coop_lobby.send({'type': 'team_finished', 'token': self._coop_game_token, 'code': result['code']})
         self.refresh_coop_controls()

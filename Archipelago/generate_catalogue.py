@@ -19,7 +19,7 @@ GENERATION_SNAPSHOT_PATH = (
 
 
 def main():
-    from randomizer.core.paths import BATTLE_CLIENT_INI
+    from randomizer.core.paths import BATTLE_CLIENT_INI, GAME_ROOT
     from randomizer.dta.rules import techno_catalogue
     from randomizer.missions.catalogue import parse_missions
 
@@ -32,11 +32,13 @@ def main():
         encoding="utf-8",
         newline="\n",
     )
+    from randomizer.coop.catalogue import discover_coop_missions, eligible
+    native = discover_coop_missions(GAME_ROOT)
     generation_snapshot = {
         "schema_version": 1,
         "catalogue_checksum": snapshot["catalogue_checksum"],
         "techno_catalogue": techno_catalogue(),
-        "missions": parse_missions(BATTLE_CLIENT_INI),
+        "missions": parse_missions(BATTLE_CLIENT_INI) + [mission for count in (2, 3, 4) for mission in eligible(native, count)],
     }
     GENERATION_SNAPSHOT_PATH.write_text(
         json.dumps(

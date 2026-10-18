@@ -30,6 +30,9 @@ class ArchipelagoController(ArchipelagoYamlController):
         'location_info', 'locations_checked',
     }
 
+    def _archipelago_resume_path(self):
+        return ARCHIPELAGO_RESUME_PATH
+
     def _archipelago_log_context(self, mission=None):
         ap_state = self._active_archipelago_state() or {}
         checkpoint = ap_state.get('checkpoint')
@@ -244,7 +247,7 @@ class ArchipelagoController(ArchipelagoYamlController):
             return loaded_state, False
 
         self._archipelago_cached_state = deepcopy(loaded_state)
-        atomic_write_json(ARCHIPELAGO_RESUME_PATH, loaded_state, indent=None)
+        atomic_write_json(self._archipelago_resume_path(), loaded_state, indent=None)
         self._archipelago_standalone_state = deepcopy(standalone_state)
         self._archipelago_standalone_config = self._standalone_archipelago_config(
             self.config, standalone_config
@@ -267,6 +270,10 @@ class ArchipelagoController(ArchipelagoYamlController):
     def _restore_archipelago_standalone_context(self, refresh=True):
         """Switch from server-owned AP state back to the saved local run."""
         active_state = self._active_archipelago_state()
+        process = getattr(self, 'active_game_process', None)
+        if active_state is not None and process is not None and process.poll() is None:
+            self._archipelago_restore_after_game = True
+            return False
         if active_state is None:
             self._archipelago_session_validated = False
             return False
@@ -287,7 +294,7 @@ class ArchipelagoController(ArchipelagoYamlController):
 
         self._archipelago_cached_state = deepcopy(self.state)
         atomic_write_json(
-            ARCHIPELAGO_RESUME_PATH, self._archipelago_cached_state, indent=None
+            self._archipelago_resume_path(), self._archipelago_cached_state, indent=None
         )
         restored_config = self._standalone_archipelago_config(
             self.config, standalone_config
@@ -295,6 +302,7 @@ class ArchipelagoController(ArchipelagoYamlController):
         self.state = deepcopy(standalone_state)
         self._archipelago_standalone_state = deepcopy(self.state)
         self._archipelago_standalone_config = deepcopy(restored_config)
+        self._archipelago_restore_after_game = False
         self._archipelago_session_validated = False
         self._archipelago_slot_data = {}
         self._archipelago_item_names = {}
@@ -304,6 +312,7 @@ class ArchipelagoController(ArchipelagoYamlController):
         self._archipelago_allowed_locations = frozenset()
         self._archipelago_server_checked_locations = set()
         self._archipelago_displayed_receipts = set()
+        self._select_shop_repository()
         self.apply_portable_settings(restored_config)
         self.save_state()
         if refresh:
@@ -321,6 +330,15 @@ class ArchipelagoController(ArchipelagoYamlController):
         )
         return True
 
+    def finish_archipelago_mission_context(self):
+        if not getattr(self, '_archipelago_restore_after_game', False):
+            return
+        if self._restore_archipelago_standalone_context():
+            self.set_archipelago_controls_locked(False)
+            self.archipelago_status_var.set('Disconnected')
+            self.archipelago_connect_button.configure(state='normal')
+            self.archipelago_disconnect_button.configure(state='disabled')
+
     def reset_archipelago_after_new_seed(self):
         """Return UI/config identity to standalone after state replacement."""
         self.config.setdefault('archipelago', {})['enabled'] = False
@@ -337,7 +355,7 @@ class ArchipelagoController(ArchipelagoYamlController):
         self._archipelago_standalone_state = None
         self._archipelago_standalone_config = None
         self._archipelago_cached_state = None
-        ARCHIPELAGO_RESUME_PATH.unlink(missing_ok=True)
+        self._archipelago_resume_path().unlink(missing_ok=True)
         self._set_archipelago_chat_enabled(False)
         self.archipelago_status_var.set('Disconnected')
         self.archipelago_yaml_status_var.set(
@@ -424,7 +442,7 @@ class ArchipelagoController(ArchipelagoYamlController):
         cached_state = getattr(self, '_archipelago_cached_state', None)
         if cached_state is None:
             try:
-                cached_state = read_json_object(ARCHIPELAGO_RESUME_PATH)
+                cached_state = read_json_object(self._archipelago_resume_path())
             except FileNotFoundError:
                 pass
             except (OSError, ValueError) as exc:
@@ -455,6 +473,9 @@ class ArchipelagoController(ArchipelagoYamlController):
         try:
             if getattr(self, 'busy_depth', 0):
                 raise ValueError('Wait for the current launcher task to finish.')
+            process = getattr(self, 'active_game_process', None)
+            if (process is not None and process.poll() is None) or self.shop_launch_active():
+                raise ValueError('Close the active game before connecting to Archipelago.')
             from Archipelago.client import ArchipelagoSession, SessionConfig
 
             endpoint = self._archipelago_endpoint()
@@ -587,6 +608,8 @@ class ArchipelagoController(ArchipelagoYamlController):
                     if self.archipelago_run_active()
                     else 'Connecting — standalone rewards active'
                 )
+            elif state == 'disconnected' and getattr(self, '_archipelago_restore_after_game', False):
+                label = 'Disconnected — finish the active AP mission to restore standalone progress'
             elif state == 'disconnected':
                 connection_error = getattr(
                     self, '_archipelago_connection_error', ''
@@ -612,7 +635,7 @@ class ArchipelagoController(ArchipelagoYamlController):
             self.archipelago_status_label.configure(style=status_style)
             connected_or_waiting = state in {
                 'connecting', 'reconnecting', 'connected'
-            }
+            } or getattr(self, '_archipelago_restore_after_game', False)
             self.set_archipelago_controls_locked(connected_or_waiting)
             self.archipelago_connect_button.configure(
                 state='disabled' if connected_or_waiting else 'normal'
@@ -707,6 +730,7 @@ class ArchipelagoController(ArchipelagoYamlController):
                 item_names,
                 active_session,
             )
+            self._select_shop_repository()
             self.apply_archipelago_received_items(
                 active_session.checkpoint().get('received_items', ())
             )

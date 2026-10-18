@@ -1,10 +1,8 @@
 """Personal Shop profiles and runs that publish cooperative session updates."""
 
-from randomizer.core.paths import APP_DIR, BACKUP_DIR, SHOP_PROFILE_PATH
-from randomizer.shop.persistence import COOP_SHOP_PATHS, ShopPersistencePaths, ShopRepository
+from randomizer.core.paths import APP_DIR, BACKUP_DIR
+from randomizer.shop.persistence import COOP_SHOP_PATHS, DEFAULT_SHOP_PATHS, ShopPersistencePaths, ShopRepository, seed_shop_repository
 from randomizer.shop.transitions import ShopTransitionError
-from randomizer.shop.state import normalize_shop_profile
-from randomizer.core.storage import read_json_object
 
 
 COOP_STATE_PATH = APP_DIR / 'randomizer_coop_state.json'
@@ -16,14 +14,12 @@ LEGACY_COOP_SHOP_PATHS = ShopPersistencePaths(
 
 
 class SharedShopRepository(ShopRepository):
-    def __init__(self, publish, guard=lambda: None):
-        legacy = ShopRepository(LEGACY_COOP_SHOP_PATHS)
-        legacy.recover_pending_transaction()
-        super().__init__(COOP_SHOP_PATHS)
-        self.recover_pending_transaction()
-        if not self.paths.profile.exists() and SHOP_PROFILE_PATH.is_file():
-            profile = normalize_shop_profile(read_json_object(SHOP_PROFILE_PATH))
-            super().save_profile(profile)
+    def __init__(self, publish, guard=lambda: None, *, paths=None, identity=''):
+        if paths is None:
+            legacy = ShopRepository(LEGACY_COOP_SHOP_PATHS)
+            legacy.recover_pending_transaction()
+        super().__init__(paths or COOP_SHOP_PATHS)
+        seed_shop_repository(self, COOP_SHOP_PATHS if paths else DEFAULT_SHOP_PATHS, identity)
         self.publish = publish
         self.guard = guard
 

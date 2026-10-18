@@ -63,20 +63,9 @@ class ShopArchipelagoController:
     def archipelago_shop_context(self):
         """Return last validated AP identity and Shop-compatible rewards."""
         ap_state = self._active_archipelago_state()
-        if ap_state is not None:
-            records = self._archipelago_reward_records()
-        else:
-            cached_state = getattr(self, '_archipelago_cached_state', None)
-            ap_state = (
-                cached_state.get('archipelago')
-                if isinstance(cached_state, dict)
-                else None
-            )
-            records = (
-                ap_state.get('received_rewards', ())
-                if isinstance(ap_state, dict)
-                else ()
-            )
+        if ap_state is None or self.archipelago_progression_mode() != 'Shop Mode':
+            return '', ()
+        records = self._archipelago_reward_records()
         identity = archipelago_shop_identity(ap_state)
         if not identity:
             return '', ()
@@ -85,9 +74,6 @@ class ShopArchipelagoController:
     def archipelago_received_unit_loadout_mode(self):
         """Read signed AP restart policy from active or cached slot state."""
         states = [self._active_archipelago_state()]
-        cached_state = getattr(self, '_archipelago_cached_state', None)
-        if isinstance(cached_state, dict):
-            states.append(cached_state.get('archipelago'))
         for ap_state in states:
             if not isinstance(ap_state, dict):
                 continue

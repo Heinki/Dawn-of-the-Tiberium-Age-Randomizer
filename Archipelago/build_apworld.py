@@ -69,7 +69,10 @@ def build(output_directory: Path) -> Path:
     from randomizer.dta import rules as dta_rules
     from randomizer.missions import catalogue as mission_catalogue
     dta_rules.techno_catalogue = lambda: frozen_techno_records(techno_records)
-    mission_catalogue.parse_missions = lambda _path: missions
+    from randomizer.coop import catalogue as coop_catalogue
+    native_missions = {mission['code']: mission for mission in missions if mission.get('coop_mode')}
+    coop_catalogue.discover_coop_missions = lambda _root: list(native_missions.values())
+    mission_catalogue.parse_missions = lambda _path: [mission for mission in missions if not mission.get('coop_mode')]
     from Archipelago.catalogue_contract import runtime_catalogue_checksum
     if catalogue['catalogue_checksum'] != runtime_catalogue_checksum():
         raise ValueError(

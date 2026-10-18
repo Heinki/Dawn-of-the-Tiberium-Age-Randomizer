@@ -3,9 +3,11 @@
 from dataclasses import dataclass
 from pathlib import Path
 import shutil
+import re
 import threading
 
 from randomizer.core.paths import (
+    APP_DIR,
     BACKUP_DIR,
     SHOP_PROFILE_PATH,
     SHOP_RUN_PATH,
@@ -206,3 +208,24 @@ class ShopRepository:
             self.prepare_commit(profile, run, transaction_id)
             self.recover_pending_transaction()
 
+
+def archipelago_shop_paths(identity, cooperative=False):
+    if not isinstance(identity, str) or not re.fullmatch(r'ap-v1:[0-9a-f]{64}', identity):
+        raise ShopPersistenceError('Invalid Archipelago Shop identity.')
+    scope = 'coop' if cooperative else 'singleplayer'
+    directory = APP_DIR / 'shop_archipelago' / scope / identity.split(':', 1)[1]
+    return ShopPersistencePaths(directory / 'profile.json', directory / 'run.json',
+                                directory / 'transaction.json', directory / 'backups')
+
+
+def seed_shop_repository(repository, source_paths, identity=''):
+    repository.recover_pending_transaction()
+    if not repository.paths.profile.exists() and source_paths.profile.is_file():
+        profile = normalize_shop_profile(read_json_object(source_paths.profile))
+        ShopRepository.save_profile(repository, profile)
+    if identity and not repository.paths.run.exists() and source_paths.run.is_file():
+        run = normalize_shop_run(read_json_object(source_paths.run))
+        if run is not None and run.ap_identity == identity:
+            ShopRepository.commit(repository, repository.load_profile(), run,
+                                  f'{run.run_id}:archipelago-isolation')
+    return repository

@@ -65,6 +65,17 @@ class GeneratedWorld(OptionDict):
     default = {}
 
 
+class CoopMode(Toggle):
+    display_name = "Native Co-op"
+
+
+class CoopPlayerCount(Range):
+    display_name = "Co-op Players"
+    range_start = 2
+    range_end = 4
+    default = 2
+
+
 class Campaign(Choice):
     """Mission campaign pool. All Campaigns includes every installed campaign."""
 
@@ -91,7 +102,7 @@ class MissionGoal(Range):
 
     display_name = "Missions to Finish"
     range_start = 1
-    range_end = len(MISSION_DATA)
+    range_end = sum(not code.startswith("COOP_") for code in MISSION_DATA)
     default = 15
 
 
@@ -479,6 +490,8 @@ class DTAOptions(PerGameCommonOptions):
     launcher_settings: LauncherSettings
     generated_world: GeneratedWorld
     run_manifest: RunManifest
+    coop_mode: CoopMode
+    coop_player_count: CoopPlayerCount
     campaign: Campaign
     mission_goal: MissionGoal
     progression_mode: ProgressionMode
@@ -528,7 +541,7 @@ class DTAOptions(PerGameCommonOptions):
 
 DTA_OPTION_GROUPS = [
     OptionGroup("Randomizer Run", [
-        Campaign, MissionGoal, ProgressionMode, GridTwoStartPositions,
+        CoopMode, CoopPlayerCount, Campaign, MissionGoal, ProgressionMode, GridTwoStartPositions,
         UnlockAllGridRewards, Difficulty, GameSpeed, PlayerColor, Rainbowizer,
     ]),
     OptionGroup("Mission Pool", [
@@ -617,6 +630,8 @@ def launcher_settings_from_options(options):
         },
     }
     return {
+        "coop_mode": bool(options.coop_mode.value),
+        "coop_player_count": options.coop_player_count.value,
         "campaign_filter": CAMPAIGNS[options.campaign.value],
         "mission_goal": options.mission_goal.value,
         "progression_mode": PROGRESSION_MODES[options.progression_mode.value],
