@@ -462,7 +462,7 @@ def _append_house_mask(value, source_house, isolated_house):
     return ','.join(houses)
 
 
-def player_production_isolation_rules(mission):
+def player_production_isolation_rules(mission, rule_overlays=None):
     """Give shared campaign houses distinct Vinifera production masks.
 
     Vinifera evaluates TechnoType house masks through ``ActsLike``. When the
@@ -577,6 +577,11 @@ def player_production_isolation_rules(mission):
 
     rules = {}
     combined = _merged_sections(installed, authored)
+    if rule_overlays:
+        # Translate the final essential-unit permissions as well as authored
+        # rules. Applying essentials afterward would erase the isolated bit
+        # from native Chinook and MCV ownership/requirements.
+        combined = _merged_sections(combined, rule_overlays)
     for assignment in assignments:
         rules.setdefault(assignment['house'], {})['ActsLike'] = str(
             assignment['new_acts_like']
@@ -1547,6 +1552,21 @@ def _rewrite_building_references(rules, report, catalogue, combined):
         values = effective_section(combined, unit_id)
         for key, value in values.items():
             folded = key.casefold()
+            if folded == 'builtat':
+                # Permanent core units such as an unbuffed Chinook retain
+                # their native identity. Their exact factory whitelist must
+                # also accept replacement player infrastructure clones.
+                items = comma_items(value)
+                additions = [
+                    output
+                    for item in items
+                    for output in clone_by_source.get(item.upper(), ())
+                ]
+                if additions:
+                    rules.setdefault(unit_id, {})[key] = ','.join(
+                        dict.fromkeys([*items, *additions])
+                    )
+                continue
             if not (
                 folded in {'prerequisite', 'prerequisiteoverride'}
                 or folded.startswith('prerequisite.')

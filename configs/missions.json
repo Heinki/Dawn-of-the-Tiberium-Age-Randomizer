@@ -426,6 +426,7 @@
     "techno_base_rules": {},
     "map_section_rules": {},
     "player_production_isolation_house_types": {
+      "M_CRB11": "Nod1",
       "M_OP_GUIL": "Nod1",
       "M_SE10": "Nod1"
     },

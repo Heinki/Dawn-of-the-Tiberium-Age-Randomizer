@@ -1238,14 +1238,6 @@ throw "Map $name was not found in expandmo*.mix"
                     linked_buff_rewards.append(variant)
             active_rewards.extend(linked_buff_rewards)
             paradrop_unit_ids = active_paradrop_unit_ids(active_rewards)
-            isolation_rules, isolation_report = (
-                player_production_isolation_rules(mission)
-            )
-            if isolation_report.get('isolation_error'):
-                raise RuntimeError(
-                    'Could not isolate randomized player production: '
-                    + isolation_report['isolation_error']
-                )
             source_lines = mission_source_lines(scenario)
             essential_access_rules = {}
             for essential_rules in (
@@ -1256,11 +1248,21 @@ throw "Map $name was not found in expandmo*.mix"
                     essential_access_rules.setdefault(section, {}).update(
                         values
                     )
+            isolation_rules, isolation_report = (
+                player_production_isolation_rules(
+                    mission, rule_overlays=essential_access_rules
+                )
+            )
+            if isolation_report.get('isolation_error'):
+                raise RuntimeError(
+                    'Could not isolate randomized player production: '
+                    + isolation_report['isolation_error']
+                )
             clone_rule_overlays = {
                 section: dict(values)
-                for section, values in isolation_rules.items()
+                for section, values in essential_access_rules.items()
             }
-            for section, values in essential_access_rules.items():
+            for section, values in isolation_rules.items():
                 clone_rule_overlays.setdefault(section, {}).update(values)
             for section, values in mission_runtime_fixes(mission).items():
                 clone_rule_overlays.setdefault(section, {}).update(values)

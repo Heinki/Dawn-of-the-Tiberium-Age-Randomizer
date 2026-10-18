@@ -24,6 +24,12 @@ escape-truck teams: extra members can block the input-unlock route or alter
 the scripted escape and destruction checks. Combat reinforcements still
 receive enemy bonuses.
 
+`player_production_isolation_house_types` selects an inactive HouseType bit
+for the player when enemy AI must keep its authored production family.
+CR Route B #11 keeps its Allied enemy houses on `ActsLike=2`; moving them
+to their individual house indices prevents their native AI production from
+working. Only the player moves to the unused `Nod1` bit.
+
 DTA unit and defense catalogues are derived from installed game data at runtime. Firestorm and obsolete power aliases remain disabled.
 
 The first Shop stage offers Act 1 mission choices, including a fixed-unit or
