@@ -11,6 +11,14 @@ from randomizer.shop.transitions import (
 )
 
 
+SAFE_SHOP_MODIFIERS = frozenset({
+    'greedy', 'veteran_economy', 'poor_logistics', 'generous_command',
+    'blind_choice', 'no_safety_net', 'war_economy', 'narrow_intelligence',
+    'liquid_assets', 'low_tech_war', 'blockbuster_special',
+})
+SHARED_SHOP_MODIFIERS = frozenset({'no_safety_net', 'narrow_intelligence'})
+
+
 CONTROL_FIELDS = (
     'mission_offers', 'selected_mission_code', 'mission_committed',
     'rerolls_used', 'assisted_mission_code', 'difficulty_assists_used',
@@ -26,11 +34,13 @@ def validate_partner_run(local, host):
     if (local.seed != host.seed or (local.endless != host.endless and not starting_endless)
             or (not local.endless and not starting_endless and local.run_length != host.run_length)
             or (local.allow_repeats != host.allow_repeats and not starting_endless)
-            or set(local.modifiers) != set(host.modifiers)
+            or set(local.modifiers) - SAFE_SHOP_MODIFIERS
+            or set(host.modifiers) - SAFE_SHOP_MODIFIERS
+            or set(local.modifiers) & SHARED_SHOP_MODIFIERS != set(host.modifiers) & SHARED_SHOP_MODIFIERS
             or set(local.eligible_mission_codes) != set(host.eligible_mission_codes)
             or local.reward_settings.get('coop_mode') is not True
             or local.reward_settings.get('coop_player_count') != host.reward_settings.get('coop_player_count')):
-        raise ValueError('Shop players need matching seed, mission pool, run length and modifiers.')
+        raise ValueError('Shop players need matching seed, mission pool, run length and mission-control modifiers.')
 
 
 def mission_view(local, host):

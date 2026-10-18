@@ -142,9 +142,12 @@ class ShopController(ShopPolishController):
         """Return the gameplay loadout without changing the persisted run."""
         return run
 
+    def create_shop_repository(self):
+        return ShopRepository()
+
     def initialize_shop_controller(self):
         self.shop_config = SHOP_CONFIG
-        self.shop_repository = ShopRepository()
+        self.shop_repository = self.create_shop_repository()
         self.shop_service = ShopProgressionService(self.shop_repository)
         self.shop_profile, self.shop_run = self.shop_repository.load()
         self.shop_stage_var = tk.StringVar(value='Stage — / 10')

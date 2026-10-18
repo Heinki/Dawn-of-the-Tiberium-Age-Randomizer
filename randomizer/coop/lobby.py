@@ -11,12 +11,15 @@ import re
 import secrets
 import socket
 import threading
+import time
 import zlib
 
 from .feature import player_count, require_enabled
+from .network import probe_network
 from .compatibility import FINGERPRINT_POLICY, normalize_text
 
 
+PROTOCOL = 4
 LOBBY_PORT = 19420
 MAX_WIRE = 16 * 1024 * 1024
 MAX_DATA = 32 * 1024 * 1024
@@ -69,7 +72,7 @@ def installation_details(root):
 
 class Lobby:
     def __init__(self, root, role, name, count, *, address='', port=LOBBY_PORT,
-                 game_port=1234, pairing_code=''):
+                 game_port=1234, pairing_code='', bind_address=''):
         require_enabled()
         if role not in ('host', 'guest'):
             raise ValueError('Select Host or Join.')
@@ -81,18 +84,21 @@ class Lobby:
                     'Enter only the host\'s ZeroTier Managed IPv4: four numbers separated by dots. '
                     'Do not include /24, a port, a network ID, or the pairing code.'
                 ) from None
+        if bind_address:
+            bind_address = str(ipaddress.IPv4Address(str(bind_address).strip()))
         if isinstance(name, str):
             name = name.strip()
         if not isinstance(name, str) or not name.strip() or not re.fullmatch(r'[A-Za-z0-9 _-]{1,15}', name):
             raise ValueError('Player name must contain 1–15 letters, digits, spaces, underscores or hyphens.')
         if not 1 <= int(port) <= 65535 or not 1 <= int(game_port) <= 65535:
             raise ValueError('Ports must be between 1 and 65535.')
-        if not pairing_code or len(pairing_code) > 128:
+        if not isinstance(pairing_code, str) or not pairing_code.strip() or len(pairing_code) > 128:
             raise ValueError('Enter the host pairing code.')
         self.root, self.role, self.name = root, role, name
         self.count = player_count(count)
         self.address, self.port, self.game_port = address, int(port), int(game_port)
-        self.pairing_code = pairing_code
+        self.pairing_code = pairing_code.strip()
+        self.bind_address = bind_address
         self.events = queue.Queue()
         self.players = [{'name': name, 'ip': '127.0.0.1', 'port': self.game_port}]
         self.slot = 0
@@ -101,6 +107,11 @@ class Lobby:
         self.lock = threading.RLock()
         self.listener = None
         self.connected = False
+        self.network_release = threading.Event()
+        self.network_ready = set()
+        self.network_token = ''
+        self.pairing = None
+        self.last_received = {}
 
     def start(self):
         threading.Thread(target=self._run, daemon=True, name='DTACoopLobby').start()
@@ -108,7 +119,8 @@ class Lobby:
     def close(self):
         self.closed.set()
         self.connected = False
-        for connection in [self.listener, *self.peers.values()]:
+        self.network_release.set()
+        for connection in [self.listener, self.pairing, *list(self.peers.values())]:
             if connection:
                 try:
                     connection.shutdown(socket.SHUT_RDWR)
@@ -139,6 +151,66 @@ class Lobby:
             for connection in targets:
                 connection.sendall(data)
 
+    def _connect_to_host(self):
+        deadline = time.monotonic() + 30
+        while not self.closed.is_set():
+            try:
+                return socket.create_connection(
+                    (self.address, self.port), timeout=min(5, max(0.001, deadline - time.monotonic())),
+                    source_address=(self.bind_address, 0) if self.bind_address else None,
+                )
+            except (ConnectionRefusedError, TimeoutError):
+                if time.monotonic() >= deadline:
+                    raise
+                self.closed.wait(min(0.25, max(0, deadline - time.monotonic())))
+        raise ConnectionAbortedError('Co-op connection cancelled.')
+
+    def _start_network_check(self):
+        threading.Thread(target=self._check_network, daemon=True, name='DTACoopUDP').start()
+
+    def _check_network(self):
+        try:
+            self.events.put(('status', f'Checking game UDP {self.game_port} between all players...'))
+            probe_network(self.players, self.slot, self.network_token, self.closed,
+                          self.network_release, self._network_checked, bind_address=self.bind_address)
+            if not self.closed.is_set() and self.network_release.is_set():
+                self.connected = True
+                now = time.monotonic()
+                self.last_received = {slot: now for slot in self.peers}
+                for connection in list(self.peers.values()):
+                    connection.settimeout(30)
+                threading.Thread(target=self._heartbeat, daemon=True, name='DTACoopHeartbeat').start()
+                self.events.put(('connected', self.players))
+        except (OSError, ValueError) as exc:
+            if not self.closed.is_set():
+                self.events.put(('error', str(exc)))
+                self.close()
+
+    def _heartbeat(self):
+        while not self.closed.wait(3):
+            try:
+                if any(time.monotonic() - received > 25 for received in list(self.last_received.values())):
+                    raise TimeoutError('Co-op control connection lost. Reconnect the lobby before launching another mission.')
+                self.send({'type': 'ping'})
+            except OSError as exc:
+                if not self.closed.is_set():
+                    self.events.put(('error', str(exc)))
+                    self.close()
+                return
+
+    def _network_checked(self):
+        if self.role == 'guest':
+            self.send({'type': 'network_ready'})
+        else:
+            self._mark_network_ready(0)
+
+    def _mark_network_ready(self, slot):
+        with self.lock:
+            self.network_ready.add(slot)
+            if self.network_ready == set(range(self.count)) and not self.network_release.is_set():
+                self.send({'type': 'network_ok'})
+                self.network_release.set()
+
     def _run(self):
         phase = 'reading the local DTA runtime'
         stream = None
@@ -150,7 +222,7 @@ class Lobby:
             })))
             if self.role == 'host':
                 phase = f'opening the host lobby (TCP {self.port})'
-                self.listener = socket.create_server(('0.0.0.0', self.port), backlog=3)
+                self.listener = socket.create_server((self.bind_address or '0.0.0.0', self.port), backlog=3)
                 self.listener.settimeout(0.5)
                 self.events.put(('status', f'Waiting for {self.count - 1} guests'))
                 while len(self.players) < self.count and not self.closed.is_set():
@@ -159,33 +231,40 @@ class Lobby:
                     except socket.timeout:
                         continue
                     try:
+                        self.pairing = connection
                         self._pair(connection, fingerprint, remote[0])
+                        self.pairing = None
                     except (OSError, ValueError, KeyError, TypeError) as exc:
                         connection.close()
+                        self.pairing = None
                         self.events.put(('status', f'Guest rejected: {exc}'))
                 if self.closed.is_set():
                     return
                 self.listener.close()
                 self.listener = None
-                self.connected = True
-                for slot in self.peers:
-                    self.send({'type': 'roster', 'players': self.players, 'slot': slot}, slot)
-                self.events.put(('connected', self.players))
+                self.network_token = secrets.token_hex(32)
+                for slot in list(self.peers):
+                    self.send({'type': 'roster', 'players': self.players, 'slot': slot,
+                               'network_token': self.network_token}, slot)
+                self._start_network_check()
             else:
                 phase = f'connecting to the host over ZeroTier (TCP {self.port})'
                 self.events.put(('status', f'Connecting to host (TCP {self.port})...'))
-                connection = socket.create_connection((self.address, self.port), timeout=15)
+                connection = self._connect_to_host()
                 self.peers[0] = connection
+                connection.settimeout(15)
                 stream = connection.makefile('rb')
                 phase = 'waiting for the host greeting'
                 self.events.put(('status', 'Host reached; checking DTA runtime...'))
                 hello = self.receive(stream)
+                if hello.get('protocol') != PROTOCOL:
+                    raise ValueError('Co-op protocol differs. Update every launcher to the same build.')
                 if hello.get('fingerprint_policy') != FINGERPRINT_POLICY:
                     raise ValueError('DTA compatibility check differs. Update both launchers to the same build.')
                 nonce = hello['nonce']
                 proof = hmac.new(self.pairing_code.encode(), nonce.encode(), hashlib.sha256).hexdigest()
                 phase = 'checking DTA runtime and pairing code with the host'
-                self.send({'type': 'hello', 'protocol': 3, 'name': self.name,
+                self.send({'type': 'hello', 'protocol': PROTOCOL, 'name': self.name,
                            'count': self.count, 'port': self.game_port,
                            'fingerprint': fingerprint, 'files': self.runtime_files, 'proof': proof,
                            'fingerprint_policy': FINGERPRINT_POLICY,
@@ -198,7 +277,8 @@ class Lobby:
                         raise ValueError(self._runtime_mismatch(hello, 'Host'))
                     reasons = {'protocol': 'Co-op protocol differs. Update both launchers.',
                                'count': 'Player count differs. Choose the same count on both PCs.'}
-                    raise ValueError(reasons.get(paired.get('reason'), 'Host rejected the connection.'))
+                    detail = paired.get('detail')
+                    raise ValueError(reasons.get(paired.get('reason'), detail if isinstance(detail, str) else 'Host rejected the connection.'))
                 if paired.get('type') != 'paired' or not hmac.compare_digest(str(paired.get('proof', '')), expected):
                     raise ValueError('Host did not authenticate with the pairing code. Check that both codes match.')
                 if hello.get('fingerprint') != fingerprint:
@@ -243,13 +323,19 @@ class Lobby:
     def _pair(self, connection, fingerprint, ip):
         connection.settimeout(15)
         nonce = secrets.token_hex(24)
-        connection.sendall((json.dumps({'nonce': nonce, 'fingerprint': fingerprint,
+        connection.sendall((json.dumps({'nonce': nonce, 'protocol': PROTOCOL, 'fingerprint': fingerprint,
                                        'files': self.runtime_files,
                                        'fingerprint_policy': FINGERPRINT_POLICY}) + '\n').encode())
         stream = connection.makefile('rb')
         try:
             self._authenticate_guest(connection, stream, fingerprint, nonce, ip)
-        except (OSError, ValueError, KeyError, TypeError):
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            try:
+                proof = hmac.new(self.pairing_code.encode(), ('host:' + nonce).encode(), hashlib.sha256).hexdigest()
+                connection.sendall((json.dumps({'type': 'rejected', 'reason': 'setup',
+                                               'detail': str(exc), 'proof': proof}) + '\n').encode())
+            except OSError:
+                pass
             stream.close()
             raise
 
@@ -260,7 +346,7 @@ class Lobby:
             raise ValueError('Pairing code differs. Guest must paste the host pairing code.')
         reason = None
         detail = ''
-        if hello.get('protocol') != 3 or hello.get('fingerprint_policy') != FINGERPRINT_POLICY:
+        if hello.get('protocol') != PROTOCOL or hello.get('fingerprint_policy') != FINGERPRINT_POLICY:
             reason, detail = 'protocol', 'Co-op protocol differs. Update both launchers.'
         elif hello.get('count') != self.count:
             reason, detail = 'count', 'Player count differs. Choose the same count on both PCs.'
@@ -284,6 +370,10 @@ class Lobby:
             raise ValueError('Players on one computer need distinct game UDP ports.')
         if any(player['ip'] == ip and player['port'] == port for player in self.players):
             raise ValueError('Players on one computer need distinct game UDP ports.')
+        local_ip = connection.getsockname()[0]
+        if len(self.players) > 1 and self.players[0]['ip'] != local_ip:
+            raise ValueError('All guests must join the same host interface IPv4.')
+        self.players[0]['ip'] = local_ip
         slot = len(self.players)
         proof = hmac.new(self.pairing_code.encode(), ('host:' + nonce).encode(), hashlib.sha256).hexdigest()
         connection.sendall((json.dumps({'type': 'paired', 'proof': proof}) + '\n').encode())
@@ -297,15 +387,42 @@ class Lobby:
         try:
             while not self.closed.is_set():
                 message = self.receive(stream)
-                if message.get('type') == 'roster' and self.role == 'guest':
-                    self.players = message['players']
-                    self.slot = int(message['slot'])
-                    self.players[0]['ip'] = socket.gethostbyname(self.address)
-                    self.connected = True
-                    self.events.put(('connected', self.players))
+                self.last_received[slot] = time.monotonic()
+                if message.get('type') == 'ping':
+                    self.send({'type': 'pong'}, slot)
+                elif message.get('type') == 'pong':
+                    continue
+                elif message.get('type') == 'roster' and self.role == 'guest':
+                    players = message['players']
+                    local_slot = message['slot']
+                    if (not isinstance(players, list) or len(players) != self.count
+                            or type(local_slot) is not int or not 0 < local_slot < self.count
+                            or players[local_slot]['name'] != self.name):
+                        raise ValueError('Invalid cooperative player roster.')
+                    names, endpoints = set(), set()
+                    for player in players:
+                        name = player['name']
+                        ip = str(ipaddress.IPv4Address(player['ip']))
+                        port = int(player['port'])
+                        if (not re.fullmatch(r'[A-Za-z0-9 _-]{1,15}', name)
+                                or name.casefold() in names or not 1 <= port <= 65535
+                                or (ip, port) in endpoints):
+                            raise ValueError('Invalid cooperative player roster.')
+                        names.add(name.casefold())
+                        endpoints.add((ip, port))
+                    token = message['network_token']
+                    if not isinstance(token, str) or not re.fullmatch(r'[0-9a-f]{64}', token):
+                        raise ValueError('Invalid game network check.')
+                    self.players, self.slot, self.network_token = players, local_slot, token
+                    self.players[0]['ip'] = self.address
+                    self._start_network_check()
+                elif message.get('type') == 'network_ready' and self.role == 'host':
+                    self._mark_network_ready(slot)
+                elif message.get('type') == 'network_ok' and self.role == 'guest':
+                    self.network_release.set()
                 else:
                     self.events.put(('message', (slot, message)))
-        except (OSError, ValueError, KeyError) as exc:
+        except (OSError, ValueError, KeyError, TypeError) as exc:
             if not self.closed.is_set():
                 self.events.put(('error', str(exc)))
                 self.close()

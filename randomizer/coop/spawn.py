@@ -26,6 +26,11 @@ def spawn_data(mission, players, local_slot, game_id, map_data, settings, game_s
         ipaddress.IPv4Address(player['ip'])
         if not 1 <= int(player['port']) <= 65535:
             raise ValueError('Invalid cooperative UDP port.')
+    colors = mission['coop_colors']
+    if (len(colors) != count or colors != sorted(set(colors))
+            or any(type(color) is not int or not 0 <= color <= 7 for color in colors)
+            or count + len(mission['coop_allies']) + len(mission['coop_enemies']) > 8):
+        raise ValueError('Co-op colors must preserve player order within eight total houses.')
     local = players[local_slot]
     section_settings = dict(settings)
     sides = section_settings.pop('_coop_player_sides', [mission['coop_side']] * count)
@@ -37,7 +42,8 @@ def spawn_data(mission, players, local_slot, game_id, map_data, settings, game_s
         'Host': 'Yes' if local_slot == 0 else 'No', 'IsSinglePlayer': 'No',
         'PlayerCount': str(count), 'GameID': str(game_id), 'Seed': str(game_id),
         'Side': str(sides[local_slot]), 'Color': str(mission['coop_colors'][local_slot]),
-        'Port': str(local['port']), 'MapHash': hashlib.sha1(map_data).hexdigest(),
+        'Ip': local['ip'], 'Port': str(local['port']),
+        'LoadSaveGame': 'No', 'AutoSaveGame': '0', 'SaveGameName': '', 'MapHash': hashlib.sha1(map_data).hexdigest(),
         'UIMapName': mission['title'], 'GameSpeed': str(game_speed),
         'AIPlayers': str(len(mission['coop_allies']) + len(mission['coop_enemies'])),
     })
