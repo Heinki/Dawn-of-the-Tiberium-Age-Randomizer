@@ -4,8 +4,11 @@ import json
 import socket
 import time
 
+from .interfaces import unicast_ipv4
+
 
 def probe_network(players, slot, token, closed, release, ready, *, bind_address='', timeout=20):
+    local_address = unicast_ipv4(bind_address if bind_address else players[slot]['ip'])
     peers = {index: (player['ip'], int(player['port']))
              for index, player in enumerate(players) if index != slot}
     received = set()
@@ -33,7 +36,7 @@ def probe_network(players, slot, token, closed, release, ready, *, bind_address=
         if hasattr(socket, 'SO_EXCLUSIVEADDRUSE'):
             connection.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
         try:
-            connection.bind((bind_address or players[slot]['ip'], int(players[slot]['port'])))
+            connection.bind((local_address, int(players[slot]['port'])))
         except OSError as exc:
             raise OSError(f"Cannot open local game UDP {players[slot]['port']}; check the ZeroTier connection and close other game/launcher instances.") from exc
         connection.settimeout(0.1)

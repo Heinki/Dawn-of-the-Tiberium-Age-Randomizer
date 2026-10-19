@@ -5,11 +5,11 @@ import binascii
 import copy
 import hashlib
 import hmac
-import ipaddress
 import json
 import queue
 import re
 import secrets
+import select
 import socket
 import threading
 import time
@@ -17,6 +17,7 @@ import zlib
 
 from .feature import player_count, require_enabled
 from .network import probe_network
+from .interfaces import unicast_ipv4, zerotier_ipv4_addresses
 from .compatibility import FINGERPRINT_POLICY, normalize_text
 
 
@@ -98,14 +99,14 @@ class Lobby:
             raise ValueError('Select Host or Join.')
         if role == 'guest':
             try:
-                address = str(ipaddress.IPv4Address(str(address).strip()))
-            except ipaddress.AddressValueError:
+                address = unicast_ipv4(address)
+            except ValueError:
                 raise ValueError(
                     'Enter only the host\'s ZeroTier Managed IPv4: four numbers separated by dots. '
                     'Do not include /24, a port, a network ID, or the pairing code.'
                 ) from None
         if bind_address:
-            bind_address = str(ipaddress.IPv4Address(str(bind_address).strip()))
+            bind_address = unicast_ipv4(bind_address)
         if isinstance(name, str):
             name = name.strip()
         if not isinstance(name, str) or not name.strip() or not re.fullmatch(r'[A-Za-z0-9 _-]{1,15}', name):
@@ -126,7 +127,7 @@ class Lobby:
         self.outbound = {}
         self.closed = threading.Event()
         self.lock = threading.RLock()
-        self.listener = None
+        self.listeners = []
         self.connected = False
         self.network_release = threading.Event()
         self.network_ready = set()
@@ -144,7 +145,7 @@ class Lobby:
             self.closed.set()
             self.connected = False
             self.network_release.set()
-            connections = [self.listener, self.pairing, *self.peers.values()]
+            connections = [*self.listeners, self.pairing, *self.peers.values()]
             for outgoing in self.outbound.values():
                 try:
                     outgoing.put_nowait(None)
@@ -247,6 +248,16 @@ class Lobby:
                 self.closed.wait(min(0.25, max(0, deadline - time.monotonic())))
         raise ConnectionAbortedError('Co-op connection cancelled.')
 
+    def _open_host_listeners(self):
+        addresses = (self.bind_address,) if self.bind_address else zerotier_ipv4_addresses()
+        for address in addresses:
+            listener = socket.create_server((unicast_ipv4(address), self.port), backlog=3)
+            with self.lock:
+                if self.closed.is_set():
+                    listener.close()
+                    raise ConnectionAbortedError('Co-op connection cancelled.')
+                self.listeners.append(listener)
+
     def _start_network_check(self):
         threading.Thread(target=self._check_network, daemon=True, name='DTACoopUDP').start()
 
@@ -304,14 +315,13 @@ class Lobby:
             })))
             if self.role == 'host':
                 phase = f'opening the host lobby (TCP {self.port})'
-                self.listener = socket.create_server((self.bind_address or '0.0.0.0', self.port), backlog=3)
-                self.listener.settimeout(0.5)
+                self._open_host_listeners()
                 self.events.put(('status', f'Waiting for {self.count - 1} guests'))
                 while len(self.players) < self.count and not self.closed.is_set():
-                    try:
-                        connection, remote = self.listener.accept()
-                    except socket.timeout:
+                    available, _write, _error = select.select(self.listeners, [], [], 0.5)
+                    if not available:
                         continue
+                    connection, remote = available[0].accept()
                     try:
                         self.pairing = connection
                         self._pair(connection, fingerprint, remote[0])
@@ -322,8 +332,10 @@ class Lobby:
                         self.events.put(('status', f'Guest rejected: {exc}'))
                 if self.closed.is_set():
                     return
-                self.listener.close()
-                self.listener = None
+                with self.lock:
+                    listeners, self.listeners = self.listeners, []
+                for listener in listeners:
+                    listener.close()
                 self.network_token = secrets.token_hex(32)
                 for slot in list(self.peers):
                     self.send({'type': 'roster', 'players': self.players, 'slot': slot,
@@ -484,7 +496,7 @@ class Lobby:
                     names, endpoints = set(), set()
                     for player in players:
                         name = player['name']
-                        ip = str(ipaddress.IPv4Address(player['ip']))
+                        ip = unicast_ipv4(player['ip'])
                         port = int(player['port'])
                         if (not re.fullmatch(r'[A-Za-z0-9 _-]{1,15}', name)
                                 or name.casefold() in names or not 1 <= port <= 65535
