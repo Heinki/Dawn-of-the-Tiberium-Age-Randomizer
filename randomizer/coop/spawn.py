@@ -5,6 +5,7 @@ import ipaddress
 import re
 
 from .feature import player_count, require_enabled
+from .catalogue import matches_player_count
 
 
 ALLY_KEYS = ('One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight')
@@ -13,7 +14,7 @@ ALLY_KEYS = ('One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight')
 def spawn_data(mission, players, local_slot, game_id, map_data, settings, game_speed):
     require_enabled()
     count = player_count(len(players))
-    if count != mission['coop_player_count'] or not 0 <= local_slot < count:
+    if not matches_player_count(mission, count) or not 0 <= local_slot < count:
         raise ValueError('Co-op roster does not match the authored player count.')
     if not 1 <= int(game_id) <= 2**31 - 1:
         raise ValueError('Invalid cooperative game ID.')

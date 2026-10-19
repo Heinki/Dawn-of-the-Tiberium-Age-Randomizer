@@ -70,26 +70,32 @@ def resolve_path(root, name, parent=None):
     return path
 
 
-def inherited_sections(root, path, stack=(), dependencies=None, legacy_dependencies=None):
+def inherited_sections(root, path, stack=(), dependencies=None, legacy_dependencies=None, *, cache=None):
     path = Path(path).resolve()
     if path in stack or len(stack) >= 20:
         raise ValueError(f'Cyclic or excessive native map inheritance: {path.name}')
-    data = path.read_bytes()
+    cached = cache.get(path) if cache is not None else None
+    if cached is None:
+        data = path.read_bytes()
+        normalized = normalize_text(data)
+        cached = (ini_sections(path), text_hash(data), tuple(
+            hashlib.sha256(content).hexdigest() for content in
+            (data, normalized, normalized.replace(b'\n', b'\r\n'))))
+        if cache is not None:
+            cache[path] = cached
+    local, digest, legacy_hashes = cached
     name = str(path.relative_to(root)).replace('\\', '/')
     if dependencies is not None:
-        dependencies[name.casefold()] = text_hash(data)
+        dependencies[name.casefold()] = digest
     if legacy_dependencies is not None:
-        normalized = normalize_text(data)
-        legacy_dependencies[name] = tuple(hashlib.sha256(content).hexdigest() for content in
-                                          (data, normalized, normalized.replace(b'\n', b'\r\n')))
-    local = ini_sections(path)
+        legacy_dependencies[name] = legacy_hashes
     result = {}
     for name in local.get('INISystem', {}).get('BasedOn', '').split(','):
         if name.strip():
             source = resolve_path(root, name.strip(), path.parent)
-            merge(result, inherited_sections(root, source, (*stack, path), dependencies, legacy_dependencies))
-    local.pop('INISystem', None)
-    merge(result, local)
+            merge(result, inherited_sections(root, source, (*stack, path), dependencies,
+                                             legacy_dependencies, cache=cache))
+    merge(result, {name: values for name, values in local.items() if name != 'INISystem'})
     return result
 
 
@@ -98,10 +104,13 @@ def merge(target, source):
         target.setdefault(section, {}).update(values)
 
 
-def native_options(root, sections):
+def native_options(root, sections, *, controls=None, game_options=None):
     """Mirror the installed client's forced checkbox/dropdown interpretation."""
-    controls = ini_sections(root / 'Resources' / 'SkirmishLobby.ini')
-    settings = dict(ini_sections(root / 'Resources' / 'GameOptions.ini').get('ForcedSpawnIniOptions', {}))
+    if controls is None:
+        controls = ini_sections(root / 'Resources' / 'SkirmishLobby.ini')
+    if game_options is None:
+        game_options = ini_sections(root / 'Resources' / 'GameOptions.ini')
+    settings = dict(game_options.get('ForcedSpawnIniOptions', {}))
     overlays = []
     forced = sections.get('ForcedOptions', {})
     for name, control in controls.items():
@@ -159,9 +168,10 @@ def _houses(metadata, prefix):
 def discover_coop_missions(root, *, include_excluded=False):
     root = Path(root).resolve()
     catalogue = ini_sections(root / 'INI' / 'MPMaps.ini')
-    colors = sorted(int(value.split(',')[-1]) for value in ini_sections(
-        root / 'Resources' / 'GameOptions.ini'
-    ).get('MPColors', {}).values())
+    controls = ini_sections(root / 'Resources' / 'SkirmishLobby.ini')
+    game_options = ini_sections(root / 'Resources' / 'GameOptions.ini')
+    colors = sorted(int(value.split(',')[-1]) for value in game_options.get('MPColors', {}).values())
+    source_cache = {}
     missions = []
     registered = {name.replace('\\', '/').casefold()
                   for name in catalogue.get('MultiMaps', {}).values()}
@@ -176,7 +186,7 @@ def discover_coop_missions(root, *, include_excluded=False):
             legacy_dependencies = {}
             path = resolve_path(root, name + '.map')
             sections = inherited_sections(root, path, dependencies=dependencies,
-                                          legacy_dependencies=legacy_dependencies)
+                                          legacy_dependencies=legacy_dependencies, cache=source_cache)
             if (unpublished_campaign(name, sections.get('Basic', {}))
                     or any(unpublished_campaign(source) for source in dependencies)):
                 continue
@@ -231,19 +241,20 @@ def discover_coop_missions(root, *, include_excluded=False):
             positions = [*range(maximum), *(house[2] for house in (*allies, *enemies))]
             if len(positions) != len(set(positions)):
                 raise ValueError('Human and AI starting locations overlap')
-            settings, overlays = native_options(root, sections)
+            settings, overlays = native_options(root, sections, controls=controls, game_options=game_options)
             required_positions = positions if truth(settings['Bases']) or int(settings['UnitCount']) else range(maximum)
             if any(str(position) not in sections.get('Waypoints', {}) for position in required_positions):
                 raise ValueError('Missing required native starting waypoint')
             for overlay in overlays:
                 inherited_sections(root, overlay, dependencies=dependencies,
-                                   legacy_dependencies=legacy_dependencies)
+                                   legacy_dependencies=legacy_dependencies, cache=source_cache)
             modes = metadata.get('GameModes', metadata.get('GameMode', '')).split(',')
             for mode in modes:
                 mode = mode.strip()
                 if mode.startswith('Co-Op '):
                     inherited_sections(root, resolve_path(root, f'INI/Map Code/Difficulty {mode[6:]}.ini'),
-                                       dependencies=dependencies, legacy_dependencies=legacy_dependencies)
+                                       dependencies=dependencies, legacy_dependencies=legacy_dependencies,
+                                       cache=source_cache)
             faction = PLAYABLE_FACTIONS[side]
             mission.update({
                 'index': len(missions) + 1, 'scenario': str(path.relative_to(root)),
@@ -266,9 +277,17 @@ def discover_coop_missions(root, *, include_excluded=False):
             refresh_metadata_hashes(mission)
         except (OSError, ValueError, KeyError) as exc:
             mission['coop_excluded_reason'] = str(exc)
+            mission['_coop_legacy_dependencies'] = legacy_dependencies
         if include_excluded or not mission['coop_excluded_reason']:
             missions.append(mission)
     return missions
+
+
+def matches_player_count(mission, count):
+    """Require the authored human count; never shrink a four-human map."""
+    authored = mission.get('coop_max_player_count', mission.get('coop_player_count'))
+    return (mission.get('coop_player_count') == count == authored
+            and mission.get('coop_min_player_count', authored) <= count)
 
 
 def eligible(missions, count):
@@ -278,21 +297,24 @@ def eligible(missions, count):
     for mission in missions:
         if mission.get('coop_excluded_reason'):
             continue
-        minimum = mission.get('coop_min_player_count', mission['coop_player_count'])
-        maximum = mission.get('coop_max_player_count', mission['coop_player_count'])
-        if minimum <= count <= maximum:
-            if 'coop_min_player_count' in mission:
-                mission = dict(mission, coop_player_count=count,
-                               coop_colors=mission['coop_colors'][:count])
-                refresh_metadata_hashes(mission)
+        if matches_player_count(mission, count):
             result.append(mission)
     return result
 
 
 def validate_pool(missions, codes, count, metadata=None):
     """Validate native content and upgrade matching legacy hashes in place."""
+    missions = tuple(missions)
     by_code = {mission['code']: mission for mission in eligible(missions, count)}
     codes = tuple(codes)
+    other_counts = {mission['code'] for mission in missions
+                    if not matches_player_count(mission, count)}
+    wrong_count = [code for code in codes if code in other_counts]
+    if wrong_count:
+        raise ValueError(
+            f'Saved co-op run contains missions outside the strict {count}-player pool: '
+            + ', '.join(wrong_count[:8])
+            + '. Generate a new Grid or start a new Shop run for this player count.')
     invalid = [code for code in codes if code not in by_code or (metadata is not None
                and metadata.get(code) not in {by_code[code]['coop_metadata_hash'],
                                              *by_code[code].get('_coop_legacy_metadata_hashes', ())})]

@@ -504,8 +504,11 @@ class ShopPolishController(ShopArchipelagoController):
         if self.enemy_buffs_view_visible():
             self.refresh_enemy_buffs_view()
 
+    def _shop_mission_display_run(self):
+        return self.shop_run
+
     def _refresh_shop_missions(self):
-        run = self.shop_run
+        run = self._shop_mission_display_run()
         offers = run.mission_offers if run is not None else ()
         hidden = set(hidden_offer_codes(run)) if run is not None else set()
         reroll_capacity = self._shop_reroll_capacity()

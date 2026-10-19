@@ -8,7 +8,7 @@ from randomizer.dta.rules import PLAYABLE_FACTIONS
 from randomizer.maps.ini import IniLines, append_section_entry
 from randomizer.maps.hooks import unique_section_key
 
-from .catalogue import inherited_sections, merge, native_options, resolve_path
+from .catalogue import inherited_sections, matches_player_count, merge, native_options, resolve_path
 from .compatibility import text_hash
 from .feature import require_enabled
 from .settings import safe_settings, supported_reward
@@ -16,6 +16,8 @@ from .settings import safe_settings, supported_reward
 
 def prepare_map(root, mission, rewards, difficulty, *, settings=None, credit_bonus=0, player_loadouts=None):
     require_enabled()
+    if not matches_player_count(mission, mission['coop_player_count']):
+        raise ValueError('Native co-op mission requires its authored player count; reduced-player preparation is disabled.')
     verify_dependencies(root, mission)
     source = resolve_path(root, mission['scenario'])
     sections = inherited_sections(root, source)

@@ -33,6 +33,10 @@ def player_production_rules(root, mission, sections, loadouts):
         raise ValueError('DTA lacks enough registered HouseTypes for personal co-op production.')
     faction = PLAYABLE_FACTIONS[mission['coop_side']]
     combined = {name: dict(values) for name, values in installed.items()}
+    if mission.get('required_addon'):
+        # Match the game's Rules -> Enhance -> map precedence. In particular,
+        # Enhance separates the Allied and Soviet radar's Owner masks.
+        merge(combined, ini_sections(root / 'INI' / 'Enhance.ini'))
     merge(combined, player_unit_rule_overlays())
     merge(combined, sections)
     side = effective_section(combined, faction).get('Side')
@@ -77,18 +81,38 @@ def player_production_rules(root, mission, sections, loadouts):
     report = {'applied': [], 'skipped': [], 'players': [],
               'map_objects_rewritten': 0, 'player_taskforce_routes': []}
     catalogue = catalogue_by_id()
+    registered_types = set().union(*(set(combined.get(name, {}).values()) for name in
+                                    ('InfantryTypes', 'VehicleTypes', 'AircraftTypes', 'BuildingTypes')))
+    ai_types = {unit for unit in registered_types
+                if unit.upper().startswith('AI') or '_AI' in unit.upper()
+                or effective_section(combined, unit).get('Buildability', '').casefold() == 'aionly'}
+    randomized_types = {unit for unit, target in catalogue.items()
+                        if target.get('category') in {'infantry', 'vehicles', 'aircraft', 'defenses'}
+                        and target.get('rewardable') and not unit.startswith('AI')
+                        and unit not in ALWAYS_AVAILABLE_MOBILE_IDS}
+    randomized_types.add('2TNKMSL')
+    # Deployed forms are registered buildings, outside the mobile reward
+    # catalogue. Enhance makes DMSA buildable directly: it would bypass the
+    # locked MSA reward unless gated here too.
+    pending = list(randomized_types)
+    while pending:
+        values = effective_section(combined, pending.pop())
+        for key in ('DeploysInto', 'TransformsInto'):
+            linked = values.get(key, '').upper()
+            if linked in registered_types and linked not in randomized_types:
+                randomized_types.add(linked)
+                pending.append(linked)
     for slot, ((index, house), loadout) in enumerate(zip(countries, loadouts)):
         randomize = bool(loadout.get('randomize_access', True))
+        # Native AI variants can inherit a human alias through a parent type.
+        # Hide their production for humans without changing native AI masks.
+        for unit in sorted(ai_types):
+            _forbid(sections, combined, unit, house)
         # Hide randomized native types for this human only. Enemy production
         # and the other players' personal clones keep their own permissions.
         if randomize:
-            for unit, target in catalogue.items():
-                if (target.get('category') not in {'infantry', 'vehicles', 'aircraft', 'defenses'}
-                        or not target.get('rewardable') or unit.startswith('AI')
-                        or unit in ALWAYS_AVAILABLE_MOBILE_IDS):
-                    continue
+            for unit in sorted(randomized_types):
                 _forbid(sections, combined, unit, house)
-            _forbid(sections, combined, '2TNKMSL', house)
         context = {'player_house': '__COOP_PRODUCTION_ONLY__',
                    'production_house': house, 'acts_like': index,
                    'original_production_house': faction, 'shared_hostile_houses': []}

@@ -134,6 +134,12 @@ def build_shop_tab(self, workspace_tabs):
         label.grid(row=0, column=column, sticky='w', padx=(0, 10))
         self.shop_header_labels.append(label)
     self.shop_status_label = self.shop_header_labels[1]
+    self.shop_coop_join_button = ttk.Button(
+        header, text='Join Shop Run', command=self.start_shop_run,
+        style='Launch.TButton',
+    )
+    self.shop_coop_join_button.grid(row=1, column=0, columnspan=6, sticky='ew', pady=(6, 0))
+    self.shop_coop_join_button.grid_remove()
 
     canvas = tk.Canvas(
         tab,
@@ -359,6 +365,12 @@ def build_shop_tab(self, workspace_tabs):
             state='disabled',
         )
         ease_button.grid(row=0, column=1, sticky='ew', padx=(3, 0))
+        ping_button = ttk.Button(
+            mission_actions, text='Ping Mission',
+            command=lambda selected=index: self.ping_shop_mission(selected),
+        )
+        ping_button.grid(row=1, column=0, columnspan=2, sticky='ew', pady=(5, 0))
+        ping_button.grid_remove()
         card.columnconfigure(0, weight=1)
         card.rowconfigure(0, weight=1)
         tooltip = WidgetTooltip(card, '')
@@ -386,6 +398,7 @@ def build_shop_tab(self, workspace_tabs):
             'mission_actions': mission_actions,
             'reroll_button': reroll_button,
             'ease_button': ease_button,
+            'ping_button': ping_button,
             'tooltip': tooltip,
             'code': '',
         })

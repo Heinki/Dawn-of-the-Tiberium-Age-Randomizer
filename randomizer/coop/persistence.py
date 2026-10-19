@@ -3,6 +3,7 @@
 from randomizer.core.paths import APP_DIR, BACKUP_DIR
 from randomizer.shop.persistence import COOP_SHOP_PATHS, DEFAULT_SHOP_PATHS, ShopPersistencePaths, ShopRepository, seed_shop_repository
 from randomizer.shop.transitions import ShopTransitionError
+from .feature import player_count
 
 
 COOP_STATE_PATH = APP_DIR / 'randomizer_coop_state.json'
@@ -11,6 +12,10 @@ LEGACY_COOP_SHOP_PATHS = ShopPersistencePaths(
     APP_DIR / 'shop_coop_profile.json', APP_DIR / 'shop_coop_run.json',
     APP_DIR / 'shop_coop_transaction.json', BACKUP_DIR / 'shop_coop',
 )
+
+
+def coop_state_path(count):
+    return APP_DIR / f'randomizer_coop_state_{player_count(count)}p.json'
 
 
 class SharedShopRepository(ShopRepository):

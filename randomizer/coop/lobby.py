@@ -2,6 +2,7 @@
 
 import base64
 import binascii
+import copy
 import hashlib
 import hmac
 import ipaddress
@@ -70,6 +71,25 @@ def installation_details(root):
     return digest.hexdigest(), files, raw_files
 
 
+class _Snapshot:
+    """Encode one detached snapshot once, on a sender rather than the UI."""
+    def __init__(self, snapshot):
+        self.snapshot = copy.deepcopy(snapshot)
+        self.data = None
+        self.lock = threading.Lock()
+
+    def encode(self):
+        with self.lock:
+            if self.data is None:
+                message = {'type': 'state', 'snapshot': pack(json.dumps(self.snapshot).encode())}
+                data = json.dumps(message, separators=(',', ':')).encode() + b'\n'
+                if len(data) > MAX_WIRE:
+                    raise ValueError('Co-op message exceeds size limit.')
+                self.data = data
+                self.snapshot = None
+            return self.data
+
+
 class Lobby:
     def __init__(self, root, role, name, count, *, address='', port=LOBBY_PORT,
                  game_port=1234, pairing_code='', bind_address=''):
@@ -103,6 +123,7 @@ class Lobby:
         self.players = [{'name': name, 'ip': '127.0.0.1', 'port': self.game_port}]
         self.slot = 0
         self.peers = {}
+        self.outbound = {}
         self.closed = threading.Event()
         self.lock = threading.RLock()
         self.listener = None
@@ -117,16 +138,62 @@ class Lobby:
         threading.Thread(target=self._run, daemon=True, name='DTACoopLobby').start()
 
     def close(self):
-        self.closed.set()
-        self.connected = False
-        self.network_release.set()
-        for connection in [self.listener, self.pairing, *list(self.peers.values())]:
+        with self.lock:
+            if self.closed.is_set():
+                return
+            self.closed.set()
+            self.connected = False
+            self.network_release.set()
+            connections = [self.listener, self.pairing, *self.peers.values()]
+            for outgoing in self.outbound.values():
+                try:
+                    outgoing.put_nowait(None)
+                except queue.Full:
+                    pass  # The active writer will notice closed after shutdown.
+        threading.Thread(target=self._close_sockets, args=(connections,),
+                         daemon=True, name='DTACoopClose').start()
+
+    @staticmethod
+    def _close_sockets(connections):
+        for connection in connections:
             if connection:
                 try:
                     connection.shutdown(socket.SHUT_RDWR)
                 except OSError:
                     pass
                 connection.close()
+
+    def _register_peer(self, slot, connection):
+        with self.lock:
+            if self.closed.is_set():
+                connection.close()
+                raise ConnectionAbortedError('Co-op connection cancelled.')
+            outgoing = queue.Queue(maxsize=32)
+            self.peers[slot] = connection
+            self.outbound[slot] = outgoing
+        threading.Thread(target=self._writer, args=(slot, connection, outgoing),
+                         daemon=True, name=f'DTACoopSend-{slot}').start()
+
+    def _writer(self, slot, connection, outgoing):
+        try:
+            while not self.closed.is_set():
+                data = outgoing.get()
+                if data is None or self.closed.is_set():
+                    return
+                if isinstance(data, _Snapshot):
+                    data = data.encode()
+                started = time.monotonic()
+                connection.sendall(data)
+                elapsed = time.monotonic() - started
+                if elapsed >= 0.25:
+                    self.events.put(('diagnostic', ('coop_slow_send', {
+                        'slot': slot, 'bytes': len(data), 'seconds': round(elapsed, 3),
+                        'queued': outgoing.qsize(),
+                    })))
+        except (OSError, ValueError, TypeError) as exc:
+            if not self.closed.is_set():
+                self.events.put(('error', f'Co-op send to player {slot + 1} failed: {exc}'))
+                self.close()
 
     @staticmethod
     def receive(stream):
@@ -146,10 +213,25 @@ class Lobby:
         data = json.dumps(message, separators=(',', ':')).encode() + b'\n'
         if len(data) > MAX_WIRE:
             raise ValueError('Co-op message exceeds size limit.')
+        self._enqueue(data, slot)
+
+    def send_snapshot(self, snapshot):
+        """Keep state ahead of later prepare/go messages in each peer's FIFO."""
+        self._enqueue(_Snapshot(snapshot))
+
+    def _enqueue(self, data, slot=None):
         with self.lock:
-            targets = [self.peers[slot]] if slot is not None else list(self.peers.values())
-            for connection in targets:
-                connection.sendall(data)
+            if self.closed.is_set():
+                raise ConnectionError('Co-op lobby is disconnected.')
+            targets = [self.outbound[slot]] if slot is not None else list(self.outbound.values())
+            for outgoing in targets:
+                try:
+                    outgoing.put_nowait(data)
+                except queue.Full:
+                    reason = 'Co-op peer cannot keep up with queued messages. Reconnect the lobby.'
+                    self.events.put(('error', reason))
+                    self.close()
+                    raise ConnectionError(reason) from None
 
     def _connect_to_host(self):
         deadline = time.monotonic() + 30
@@ -251,7 +333,7 @@ class Lobby:
                 phase = f'connecting to the host over ZeroTier (TCP {self.port})'
                 self.events.put(('status', f'Connecting to host (TCP {self.port})...'))
                 connection = self._connect_to_host()
-                self.peers[0] = connection
+                self._register_peer(0, connection)
                 connection.settimeout(15)
                 stream = connection.makefile('rb')
                 phase = 'waiting for the host greeting'
@@ -378,7 +460,7 @@ class Lobby:
         proof = hmac.new(self.pairing_code.encode(), ('host:' + nonce).encode(), hashlib.sha256).hexdigest()
         connection.sendall((json.dumps({'type': 'paired', 'proof': proof}) + '\n').encode())
         self.players.append({'name': name, 'ip': ip, 'port': port})
-        self.peers[slot] = connection
+        self._register_peer(slot, connection)
         self.events.put(('status', f'{len(self.players)}/{self.count} players ready'))
         connection.settimeout(None)
         threading.Thread(target=self._reader, args=(slot, stream), daemon=True).start()
