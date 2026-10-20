@@ -4,14 +4,15 @@ import hashlib
 
 from randomizer.dta.clones import unit_specific_buff_rules
 from randomizer.dta.maps import preserve_collateral_damage_coefficients
-from randomizer.dta.rules import PLAYABLE_FACTIONS
-from randomizer.maps.ini import IniLines, append_section_entry
+from randomizer.dta.rules import PLAYABLE_FACTIONS, ini_sections
+from randomizer.maps.ini import IniLines, append_section_entry, section_value_map
 from randomizer.maps.hooks import unique_section_key
 
 from .catalogue import inherited_sections, matches_player_count, merge, native_options, resolve_path
 from .compatibility import text_hash
 from .feature import require_enabled
 from .settings import safe_settings, supported_reward
+from .victory import adapt_team_outcomes
 
 
 def prepare_map(root, mission, rewards, difficulty, *, settings=None, credit_bonus=0, player_loadouts=None):
@@ -37,6 +38,7 @@ def prepare_map(root, mission, rewards, difficulty, *, settings=None, credit_bon
         from .production import player_production_rules
         sides, report = player_production_rules(root, mission, sections, player_loadouts)
         spawn_settings['_coop_player_sides'] = sides
+        adapt_team_outcomes(mission, sections)
     else:
         report = _shared_production_rules(mission, rewards, settings, sections)
     sections.setdefault('Basic', {}).update({'SkipScore': 'no', 'EndOfGame': 'no'})
@@ -59,13 +61,37 @@ def prepare_map(root, mission, rewards, difficulty, *, settings=None, credit_bon
         tag = unique_section_key(lines, ('Tags',), 'DTACR')
         append_section_entry(lines, 'Events', trigger, '1,13,0,1')
         append_section_entry(lines, 'Actions', trigger, f'{len(actions)},' + ','.join(actions))
-        append_section_entry(lines, 'Triggers', trigger, 'Spawn1,<none>,Co-op Starting Credits,0,1,1,1,0')
+        # Trigger owners require real HouseTypes. Unlike action 106's target,
+        # this field does not resolve virtual Spawn houses on maps that omit
+        # them from [Houses]. The engine indexes HouseTypes[-1] in that case.
+        append_section_entry(lines, 'Triggers', trigger, 'Neutral,<none>,Co-op Starting Credits,0,1,1,1,0')
         append_section_entry(lines, 'Tags', tag, f'0,Co-op Starting Credits,{trigger}')
     preserve_collateral_damage_coefficients(lines)
+    validate_scripting(root, lines)
     data = ('\r\n'.join(lines) + '\r\n').encode('cp1252')
     spawn_settings.update({'AIDifficulty': str(handicap), 'DifficultyName': name,
                            'CoachMode': 'Yes', 'WriteStatistics': 'Yes'})
     return data, spawn_settings, report, hashlib.sha256(data).hexdigest()
+
+
+def validate_scripting(root, lines):
+    """Reject unresolved trigger owners and truncated engine script records."""
+    installed = ini_sections(root / 'INI' / 'Rules.ini')
+    houses = {name.casefold() for name in (
+        *installed.get('Houses', {}).values(),
+        *section_value_map(lines, 'Houses').values(),
+    )}
+    houses.add('<none>')  # The engine explicitly defaults this owner to HouseTypes[0].
+    for section in ('Triggers', 'Events', 'Actions'):
+        for key, value in section_value_map(lines, section).items():
+            if len(value.encode('cp1252')) >= 512:
+                raise ValueError(f'Co-op [{section}] {key} exceeds the engine script buffer.')
+            if section == 'Triggers' and value.split(',')[0].strip().casefold() not in houses:
+                raise ValueError(f'Co-op trigger {key} has an unregistered owner.')
+            if section == 'Actions':
+                tokens = value.split(',')
+                if not tokens[0].isdigit() or len(tokens) != 1 + 8 * int(tokens[0]):
+                    raise ValueError(f'Co-op action {key} has an invalid action count.')
 
 
 def _shared_production_rules(mission, rewards, settings, sections):

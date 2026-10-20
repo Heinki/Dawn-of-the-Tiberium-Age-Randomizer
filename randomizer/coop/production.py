@@ -7,7 +7,10 @@ clones against that mask. Spawn identities, colors, AI countries and authored
 placements remain unchanged. Every peer receives the same resulting map.
 """
 
-from randomizer.dta.clones import HOUSE_MASK_FIELDS, unit_specific_buff_rules
+from randomizer.dta.clones import (
+    HOUSE_MASK_FIELDS, PRODUCTION_BUILDINGS, production_infrastructure_rewards,
+    unit_specific_buff_rules,
+)
 from randomizer.dta.rules import (
     ALWAYS_AVAILABLE_MOBILE_IDS, PLAYABLE_FACTIONS, catalogue_by_id,
     comma_items, effective_section, ini_sections, player_unit_rule_overlays,
@@ -39,7 +42,10 @@ def player_production_rules(root, mission, sections, loadouts):
         merge(combined, ini_sections(root / 'INI' / 'Enhance.ini'))
     merge(combined, player_unit_rule_overlays())
     merge(combined, sections)
-    side = effective_section(combined, faction).get('Side')
+    # Editors emit empty house fields on some maps (Barachiel). Resolve the
+    # native faction's installed side when the map supplies no value.
+    side = (effective_section(combined, faction).get('Side')
+            or effective_section(installed, faction).get('Side'))
     if not side:
         raise ValueError('Native cooperative faction has no registered side.')
     # HouseTypes are already registered by Rules.ini before map additions.
@@ -116,19 +122,40 @@ def player_production_rules(root, mission, sections, loadouts):
         context = {'player_house': '__COOP_PRODUCTION_ONLY__',
                    'production_house': house, 'acts_like': index,
                    'original_production_house': faction, 'shared_hostile_houses': []}
+        rewards = list(loadout['rewards'])
+        if randomize:
+            # Match solo's base essentials. Native campaigns can lock the
+            # factory/radar needed by bought technology and native MCVs.
+            mcv = ('GMCV', 'NMCV', 'AMCV', 'SMCV')[mission['coop_side']]
+            rewards.append({'unit': mcv, 'dta_production_access': True})
+            rewards.extend(production_infrastructure_rewards(
+                rewards, enabled=True, production_context=context, mission=mission,
+            ))
         rules, player = unit_specific_buff_rules(
-            mission, loadout['rewards'], access_randomized=randomize,
+            mission, rewards, access_randomized=randomize,
             production_context=context, source_sections=sections,
             human_only_production=True, isolated_production_mask=True,
             shop_global_buff_levels=loadout['settings'].get('shop_global_buff_levels'),
         )
         if player['map_objects_rewritten'] or player['player_taskforce_routes']:
             raise ValueError('Co-op rewards attempted to rewrite authored actors.')
+        if randomize:
+            # MCV production must use this faction's actual War Factory, even
+            # when a campaign disables radar. Include its personal clone too.
+            factories = list(PRODUCTION_BUILDINGS[faction.casefold()]['vehicles'])
+            factories.extend(item['output_type'] for item in player['applied']
+                             if item['unit'] in factories)
+            for item in player['applied']:
+                if item['unit'] == mcv:
+                    rules[item['output_type']]['BuiltAt'] = ','.join(factories)
         merge(sections, rules)
         player.update(slot=slot, credit_bonus=loadout['credit_bonus'])
         report['players'].append(player)
         for key in ('applied', 'skipped'):
             report[key].extend(dict(item, slot=slot) for item in player[key])
+    # Authored reinforcement MCVs retain their original producer identity.
+    # Personal countries must still build through their deployed native yard.
+    sections.setdefault('General', {})['MultiMCV'] = 'yes'
     return [index for index, _house in countries], report
 
 

@@ -127,6 +127,7 @@ class CoopController:
             for modifier_id, variable in getattr(self, 'shop_modifier_vars', {}).items():
                 if modifier_id not in SAFE_SHOP_MODIFIERS and variable.get():
                     variable.set(False)
+            self._refresh_coop_shop_modifiers()
         for name in ('primary_launch_button', 'compact_launch_button'):
             button = getattr(self, name, None)
             if button:
@@ -181,6 +182,28 @@ class CoopController:
             self._coop_disabled_widgets.clear()
         self._refresh_coop_shop_selections()
         self._refresh_coop_connection_fields()
+
+    def _refresh_coop_shop_modifiers(self):
+        """Show host rules while retaining pre-run personal economy choices."""
+        host = getattr(self, '_coop_host_shop_run', None) if self.coop_guest_connected() else None
+        run = getattr(self, 'shop_run', None)
+        active = bool(run and run.status is RunStatus.ACTIVE)
+        for key, button in getattr(self, 'shop_modifier_button_by_id', {}).items():
+            shared = bool(host and key in SHARED_SHOP_MODIFIERS)
+            if shared:
+                self.shop_modifier_vars[key].set(key in host.modifiers)
+            button.configure(state='disabled' if (
+                active or shared or key not in SAFE_SHOP_MODIFIERS
+            ) else 'normal')
+        if host and hasattr(self, 'shop_modifier_status_var'):
+            names = [self.shop_config.modifiers[key].display_name for key in host.modifiers]
+            shared_names = [self.shop_config.modifiers[key].display_name
+                            for key in sorted(SHARED_SHOP_MODIFIERS)]
+            self.shop_modifier_status_var.set(
+                'Host modifiers: ' + (', '.join(names) or 'none') + '. '
+                + 'Host controls ' + ', '.join(shared_names) + '. '
+                + ('Your modifiers are locked for this run.' if active else
+                   'Other economy modifiers are personal; choose them before joining.'))
 
     def on_coop_mode_changed(self, *_args):
         previous = self.coop_enabled()
@@ -448,6 +471,12 @@ class CoopController:
             self.refresh_coop_controls()
         return result
 
+    def _refresh_shop_setup(self):
+        result = super()._refresh_shop_setup()
+        if self.coop_enabled():
+            self._refresh_coop_shop_modifiers()
+        return result
+
     def refresh_setting_states(self):
         result = super().refresh_setting_states()
         if self.coop_enabled():
@@ -459,6 +488,12 @@ class CoopController:
                     widget.configure(state='disabled')
             for widget in getattr(self, 'arsenal_power_count_spinboxes', {}).values():
                 widget.configure(state='disabled')
+        return result
+
+    def refresh_shop_settings_controls(self):
+        result = super().refresh_shop_settings_controls()
+        if self.coop_enabled() and hasattr(self, '_coop_controls'):
+            self.refresh_coop_controls()
         return result
 
     def configured_manual_starting_rewards(self):
@@ -548,6 +583,9 @@ class CoopController:
         return super()._shop_entry_available(entry, run, stock=stock)
 
     def _shop_modifier_toggled(self, modifier_id):
+        if self.coop_guest_connected() and modifier_id in SHARED_SHOP_MODIFIERS:
+            self._refresh_coop_shop_modifiers()
+            return
         if self.coop_enabled() and modifier_id not in SAFE_SHOP_MODIFIERS:
             self.shop_modifier_vars[modifier_id].set(False)
             messagebox.showwarning('Experimental co-op', 'This gameplay modifier has no audited co-op implementation.', parent=self)
@@ -705,7 +743,11 @@ class CoopController:
         return super().save_archipelago_yaml()
 
     def on_new_seed(self):
-        if self.coop_guest_connected() or getattr(self, '_coop_pending_launch', None) or self._coop_games_running:
+        if self.coop_guest_connected():
+            if self.shop_mode_selected():
+                return self.start_shop_run()
+            return
+        if getattr(self, '_coop_pending_launch', None) or self._coop_games_running:
             return
         process = getattr(self, 'active_game_process', None)
         if self.coop_enabled() and process and process.poll() is None:
@@ -1395,6 +1437,7 @@ class CoopController:
         mode_changed = snapshot['mode'] != self.progression_mode_var.get()
         settings_changed = snapshot['difficulty'] != self.difficulty_var.get()
         shop_changed = run != getattr(self, '_coop_host_shop_run', None)
+        loadouts_changed = loadouts != self._coop_loadouts
         entering_shop = snapshot['mode'] == 'Shop Mode' and (
             not self.shop_mode_selected() or getattr(self, '_coop_host_shop_run', None) is None)
         active_run = run if snapshot['mode'] == 'Shop Mode' else None
@@ -1459,7 +1502,7 @@ class CoopController:
             if selection_changed:
                 self.selected_index.set(selected)
             self._apply_coop_selections(snapshot.get('selections', {}))
-            if state_changed or mode_changed or first_snapshot or shop_changed:
+            if state_changed or mode_changed or first_snapshot or shop_changed or loadouts_changed:
                 self._refresh_coop_state_views()
             elif settings_changed or selection_changed:
                 self.refresh_progress_view()
