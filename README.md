@@ -2,6 +2,11 @@
 
 # Dawn of the Tiberium Age Randomizer Launcher
 
+The Windows launcher supports optional in-place updates from GitHub Releases.
+Declining an update suppresses its popup for that version; the corner Update
+button remains available. See [launcher updates](UPDATING.md) for publishing,
+APWorld installation, and recovery details.
+
 This project is the randomizer launcher for DTA 16.0.2 and Vinifera. It reuses the proven progression, reward-planning, launcher UI, save/load, and Archipelago structure from the Mental Omega Randomizer, while using DTA missions, factions, units, powers, rules, maps, cameos, difficulty handling, and launch behavior.
 
 For APWorld installation, room generation, connection, and troubleshooting,

@@ -39,6 +39,7 @@ from ._dependencies import (
 )
 
 from .window import WindowController
+from .update_controller import UpdateController
 from .state_controller import StateController
 from .reward_controller import RewardController
 from .shop_controller import ShopController
@@ -56,6 +57,7 @@ from .coop_controller import CoopController
 
 
 class LauncherApp(
+    UpdateController,
     CoopController,
     WindowController,
     ShopController,
@@ -522,6 +524,7 @@ class LauncherApp(
                 error=True,
             )
         self.initial_load_complete = True
+        self.start_update_check()
         log_event(
             'launcher_ready',
             missions=len(self.missions),
