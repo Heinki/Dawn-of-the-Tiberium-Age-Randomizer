@@ -6,6 +6,11 @@
 /logs/
 /RandomizerLauncherData/
 /randomizer_state.json
+/final_fortress_state.json
+/final_fortress_state.lock
+/final_fortress_testing_state.json
+/final_fortress_testing_state.lock
+/final_fortress*.before_recovery.*.json
 /self_check.json
 
 # Local player configuration and legacy migration data

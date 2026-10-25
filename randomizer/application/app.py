@@ -54,9 +54,11 @@ from .unlock_view import UnlockViewController
 from .enemy_scaling import EnemyScalingController
 from .archipelago_controller import ArchipelagoController
 from .coop_controller import CoopController
+from .final_fortress_controller import FinalFortressController
 
 
 class LauncherApp(
+    FinalFortressController,
     UpdateController,
     CoopController,
     WindowController,
@@ -486,6 +488,7 @@ class LauncherApp(
         self.busy_depth = 0
         self.ui_queue = queue.Queue()
         self.initialize_shop_controller()
+        self.initialize_final_fortress_controller()
         self.cleanup_generated_root_maps()
         self.disable_generated_rules_for_client()
 

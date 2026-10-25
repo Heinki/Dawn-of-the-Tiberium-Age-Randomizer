@@ -15,6 +15,13 @@ class StaticConfigError(RuntimeError):
 
 
 REQUIRED_SECTIONS = {
+    'final_fortress.json': {
+        'game_id': str, 'settings': dict, 'map': dict, 'difficulties': dict,
+        'wave_pressure': dict, 'wave_rosters': dict, 'milestones': list,
+        'performance': dict, 'perks': list, 'challenges': list,
+        'camp_balance': dict, 'crate_rewards': list, 'wave_priorities': dict,
+        'capabilities': dict, 'wave_air_support': list,
+    },
     'default_player_config.json': {
         'defaults': dict,
     },
@@ -1399,6 +1406,12 @@ def validate_sections(relative_path, sections, path):
     """Validate required shapes plus one config family's detailed contract."""
     config_key = normalized_config_path(relative_path)
     _validate_required_sections(config_key, sections, path)
+    if config_key == 'final_fortress.json':
+        from randomizer.final_fortress.config import validate_config
+        try:
+            validate_config(sections)
+        except (ValueError, KeyError, TypeError) as exc:
+            _invalid(str(exc), path)
     validator = CONFIG_VALIDATORS.get(config_key)
     if validator is not None:
         validator(sections, path)

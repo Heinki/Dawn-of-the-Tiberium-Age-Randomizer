@@ -443,7 +443,7 @@ def _build_right_panel(self, main_frame):
         'buffs only, target content present in that mission, and never permanently unlock units or powers.',
     )
 
-    ttk.Label(options_row, text='Progression').grid(row=10, column=0, sticky='w', pady=(6, 0), padx=(0, 8))
+    ttk.Label(options_row, text='Game Mode').grid(row=10, column=0, sticky='w', pady=(6, 0), padx=(0, 8))
     self.progression_mode_combo = ttk.Combobox(
         options_row,
         state='readonly',
@@ -452,7 +452,7 @@ def _build_right_panel(self, main_frame):
         width=12,
     )
     self.progression_mode_combo.grid(row=10, column=1, sticky='ew', pady=(6, 0))
-    self.progression_mode_combo.bind('<<ComboboxSelected>>', self.on_progression_mode_changed, add='+')
+    self.progression_mode_combo.bind('<<ComboboxSelected>>', self.on_game_mode_changed, add='+')
     WidgetTooltip(
         self.progression_mode_combo,
         'Classic follows the installed campaign order and opens one mission at a time. '
@@ -520,7 +520,7 @@ def _build_right_panel(self, main_frame):
         wraplength=720,
     ).grid(row=0, column=0, columnspan=2, sticky='ew', pady=(0, 12))
 
-    ttk.Label(shop_settings_frame, text='Progression').grid(
+    ttk.Label(shop_settings_frame, text='Game Mode').grid(
         row=1, column=0, sticky='w', padx=(0, 12)
     )
     self.shop_progression_mode_combo = ttk.Combobox(
@@ -532,7 +532,7 @@ def _build_right_panel(self, main_frame):
     )
     self.shop_progression_mode_combo.grid(row=1, column=1, sticky='ew')
     self.shop_progression_mode_combo.bind(
-        '<<ComboboxSelected>>', self.on_progression_mode_changed, add='+'
+        '<<ComboboxSelected>>', self.on_game_mode_changed, add='+'
     )
     self.shop_progression_mode_combo.bind(
         '<MouseWheel>', self.on_settings_control_mousewheel, add='+'

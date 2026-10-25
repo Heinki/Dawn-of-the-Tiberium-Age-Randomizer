@@ -665,13 +665,34 @@ def _build_gameplay_settings(self, settings_frame):
     )
     self.settings_intro_label.grid(row=1, column=0, sticky='ew', pady=(8, 8))
 
+    fortress_mode_settings = ttk.LabelFrame(
+        settings_frame, text='Game Mode', padding=8
+    )
+    self.fortress_mode_settings_frame = fortress_mode_settings
+    fortress_mode_settings.columnconfigure(0, weight=1)
+    self.fortress_settings_mode_combo = ttk.Combobox(
+        fortress_mode_settings,
+        textvariable=self.game_mode_var,
+        values=self.game_mode_choices,
+        state='readonly',
+    )
+    self.fortress_settings_mode_combo.grid(row=0, column=0, sticky='ew')
+    self.fortress_settings_mode_combo.bind(
+        '<<ComboboxSelected>>', self.on_game_mode_changed
+    )
+    self.fortress_settings_mode_combo.bind(
+        '<MouseWheel>', self.on_settings_control_mousewheel, add='+'
+    )
+
+    self.mission_appearance_column = ttk.Frame(settings_frame)
+    self.mission_appearance_column.columnconfigure(0, weight=1)
     map_colors_frame = ttk.LabelFrame(
-        settings_frame,
+        self.mission_appearance_column,
         text='Mission Appearance',
         padding=(8, 8, 8, 8),
     )
     self.map_colors_frame = map_colors_frame
-    map_colors_frame.grid(row=2, column=0, sticky='ew')
+    map_colors_frame.grid(row=0, column=0, sticky='ew')
     map_colors_frame.columnconfigure(1, weight=1)
     ttk.Label(map_colors_frame, text='Player color').grid(
         row=0, column=0, sticky='w', padx=(0, 8)
@@ -695,7 +716,7 @@ def _build_gameplay_settings(self, settings_frame):
     self.rainbowizer_check.grid(
         row=1, column=0, columnspan=2, sticky='w', pady=(5, 0)
     )
-    self.build_coop_controls(map_colors_frame, 2)
+    self.build_coop_controls(self.mission_appearance_column, 1)
     WidgetTooltip(
         self.rainbowizer_check,
         'Assigns deterministic random colors to non-neutral allied and enemy AI houses. '

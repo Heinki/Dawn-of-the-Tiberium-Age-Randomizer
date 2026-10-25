@@ -185,7 +185,7 @@ def power_unlock_rewards():
 def ensure_power_action_types(path=None):
     """Install stable randomizer ActionTypes in DTA's global Action.ini."""
     path = path or GAME_ROOT / 'INI' / 'Action.ini'
-    raw = path.read_text(encoding='cp1252')
+    raw = path.read_bytes().decode('cp1252')
     newline = '\r\n' if '\r\n' in raw else '\n'
     trailing_newline = raw.endswith(('\r', '\n'))
     lines = raw.splitlines()
@@ -269,7 +269,7 @@ def _without_managed_blocks(lines, marker):
 
 def _write_managed_ini_types(path, list_entries, sections, marker):
     """Replace isolated randomizer type blocks without touching native data."""
-    raw = path.read_text(encoding='cp1252')
+    raw = path.read_bytes().decode('cp1252')
     newline = '\r\n' if '\r\n' in raw else '\n'
     trailing_newline = raw.endswith(('\r', '\n'))
     lines = _without_managed_blocks(raw.splitlines(), marker)
@@ -323,9 +323,8 @@ def _write_managed_ini_types(path, list_entries, sections, marker):
         lines[insertion_index:insertion_index] = block
 
     if sections:
-        if lines and lines[-1].strip():
-            lines.append('')
         lines.append(f'; BEGIN {marker} Sections')
+        lines.append('')
         for section, values in sections.items():
             lines.append(f'[{section}]')
             lines.extend(
@@ -799,11 +798,26 @@ def player_power_rules(
     reserved_rules=None,
     production_context=None,
     rule_overlays=None,
+    scenario_sections=None,
+    installed_sections=None,
+    player_house_heap_id=None,
 ):
-    """Clone earned powers and grant only the exact scenario player house."""
-    installed = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
+    """Clone earned powers and grant only the exact scenario player house.
+
+    Prepared skirmish modes may supply their in-memory scenario and installed
+    rules, using the same player reward adapters as authored campaign maps.
+    """
+    installed = (
+        installed_sections
+        if installed_sections is not None
+        else ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
+    )
     art = ini_sections(GAME_ROOT / 'INI' / 'Art.ini')
-    authored = ini_sections(mission_source_path(mission.get('scenario')))
+    authored = (
+        scenario_sections
+        if scenario_sections is not None
+        else ini_sections(mission_source_path(mission.get('scenario')))
+    )
     authored_paradrop_taskforce = next((
         section
         for section in authored
@@ -1100,12 +1114,14 @@ def player_power_rules(
                 for key, value in inherited_values.items()
                 if key in PARATROOPER_BUFF_FIELDS
             )
-            house_heap_id = next((
-                int(key)
-                for key, value in authored.get('Houses', {}).items()
-                if str(key).isdigit()
-                and str(value).strip().casefold() == player_house.casefold()
-            ), None)
+            house_heap_id = player_house_heap_id
+            if house_heap_id is None:
+                house_heap_id = next((
+                    int(key)
+                    for key, value in authored.get('Houses', {}).items()
+                    if str(key).isdigit()
+                    and str(value).strip().casefold() == player_house.casefold()
+                ), None)
             if house_heap_id is not None:
                 # Vinifera searches for PARADROPINF_<HouseHeapID>. A
                 # predeclared player-only team bypasses its fallback E1/BADGER

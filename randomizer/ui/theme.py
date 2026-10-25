@@ -183,7 +183,26 @@ def apply_color_mode(self):
         selectforeground=[('readonly', selected_foreground)],
     )
     style.configure('TNotebook', background=background, bordercolor=border)
-    style.configure('TNotebook.Tab', background=panel, foreground=foreground)
+    style.configure(
+        'TNotebook.Tab',
+        background=panel,
+        foreground=foreground,
+        padding=(8, 6),
+    )
+    style.map(
+        'TNotebook.Tab',
+        background=[
+            ('selected', selected),
+            ('active', palette['canvas']),
+            ('disabled', panel),
+        ],
+        foreground=[
+            ('selected', selected_foreground),
+            ('active', foreground),
+            ('disabled', palette['muted']),
+        ],
+        padding=[('selected', (8, 6)), ('active', (8, 6))],
+    )
     style.configure('Randomizer.TNotebook', background=background, bordercolor=border, tabposition='n')
     style.configure(
         'Randomizer.TNotebook.Tab',

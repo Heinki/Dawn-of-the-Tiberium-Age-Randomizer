@@ -92,6 +92,8 @@ class _Snapshot:
 
 
 class Lobby:
+    mode = 'campaign'
+    allow_auto_count = False
     def __init__(self, root, role, name, count, *, address='', port=LOBBY_PORT,
                  game_port=1234, pairing_code='', bind_address=''):
         require_enabled()
@@ -353,12 +355,20 @@ class Lobby:
                 hello = self.receive(stream)
                 if hello.get('protocol') != PROTOCOL:
                     raise ValueError('Co-op protocol differs. Update every launcher to the same build.')
+                if hello.get('mode', 'campaign') != self.mode:
+                    raise ValueError('Host and guest must select the same game mode.')
+                if self.allow_auto_count:
+                    count = hello.get('count')
+                    if type(count) is not int or count not in (2, 3):
+                        raise ValueError('Host supplied an invalid Fortress player count.')
+                    self.count = count
                 if hello.get('fingerprint_policy') != FINGERPRINT_POLICY:
                     raise ValueError('DTA compatibility check differs. Update both launchers to the same build.')
                 nonce = hello['nonce']
                 proof = hmac.new(self.pairing_code.encode(), nonce.encode(), hashlib.sha256).hexdigest()
                 phase = 'checking DTA runtime and pairing code with the host'
                 self.send({'type': 'hello', 'protocol': PROTOCOL, 'name': self.name,
+                           'mode': self.mode,
                            'count': self.count, 'port': self.game_port,
                            'fingerprint': fingerprint, 'files': self.runtime_files, 'proof': proof,
                            'fingerprint_policy': FINGERPRINT_POLICY,
@@ -418,6 +428,8 @@ class Lobby:
         connection.settimeout(15)
         nonce = secrets.token_hex(24)
         connection.sendall((json.dumps({'nonce': nonce, 'protocol': PROTOCOL, 'fingerprint': fingerprint,
+                                       'mode': self.mode,
+                                       'count': self.count,
                                        'files': self.runtime_files,
                                        'fingerprint_policy': FINGERPRINT_POLICY}) + '\n').encode())
         stream = connection.makefile('rb')
@@ -440,7 +452,9 @@ class Lobby:
             raise ValueError('Pairing code differs. Guest must paste the host pairing code.')
         reason = None
         detail = ''
-        if hello.get('protocol') != PROTOCOL or hello.get('fingerprint_policy') != FINGERPRINT_POLICY:
+        if hello.get('mode', 'campaign') != self.mode:
+            reason, detail = 'mode', 'Host and guest must select the same game mode.'
+        elif hello.get('protocol') != PROTOCOL or hello.get('fingerprint_policy') != FINGERPRINT_POLICY:
             reason, detail = 'protocol', 'Co-op protocol differs. Update both launchers.'
         elif hello.get('count') != self.count:
             reason, detail = 'count', 'Player count differs. Choose the same count on both PCs.'

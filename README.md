@@ -22,6 +22,7 @@ IP and pairing code by default and uses the standard lobby/game ports automatica
 
 ## Current DTA integration
 
+- Includes the independent [Final Fortress survival mode](FINAL_FORTRESS_DTA.md), with MO's workspace layout, DTA-native map generation, local Defensive Points and two/three-player co-op. The guide records supported features and remaining native review.
 - Reads all installed campaign entries from `INI/Battle.ini`, plus installed DTA bonus missions such as the 12th Shadow Exodus mission.
 - Groups missions by the installed DTA campaigns and its STAND-ALONE MISSIONS category.
 - Uses DTA-specific mission reward multipliers: stand-alone and non-finale CR Route A/B missions grant x2 rewards; finales, the CR bonus mission, and every CR Route C mission grant x3; all other missions grant x1.
