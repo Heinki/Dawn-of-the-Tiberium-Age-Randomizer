@@ -65,7 +65,8 @@ def wave_rosters(config, difficulty):
     return config['wave_rosters']
 
 
-def validate_config(config):
+def validate_static_config(config):
+    """Validate the configuration contract without requiring a DTA installation."""
     required = {
         'game_id',
         'settings',
@@ -179,6 +180,12 @@ def validate_config(config):
             raise ValueError('Crate rosters must cover all factions.')
         for units in reward['units_by_country'].values():
             _units(units)
+    return config
+
+
+def validate_config(config):
+    """Validate the static contract and type IDs against the installed DTA rules."""
+    validate_static_config(config)
     from randomizer.dta.rules import installed_effective_sections
 
     installed = installed_effective_sections()

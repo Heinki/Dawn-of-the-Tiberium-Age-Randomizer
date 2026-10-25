@@ -1407,9 +1407,9 @@ def validate_sections(relative_path, sections, path):
     config_key = normalized_config_path(relative_path)
     _validate_required_sections(config_key, sections, path)
     if config_key == 'final_fortress.json':
-        from randomizer.final_fortress.config import validate_config
+        from randomizer.final_fortress.config import validate_static_config
         try:
-            validate_config(sections)
+            validate_static_config(sections)
         except (ValueError, KeyError, TypeError) as exc:
             _invalid(str(exc), path)
     validator = CONFIG_VALIDATORS.get(config_key)
