@@ -105,8 +105,9 @@ def arsenal_unit_type(unit_id, target=None):
 
 
 def _template_tech_levels():
-    # DTA rewards come from installed Rules.ini rather than MO roster snapshots.
-    return {}
+    # Use installed DTA technology bands for each configured roster tier.
+    return {unit_id: target.get('tech_level', 1)
+            for unit_id, target in BUFF_TARGETS.items()}
 
 
 def _root_unit_for_reward(reward, tech_ids):

@@ -152,10 +152,7 @@ class FinalFortressController(FortressCoopController):
         self.refresh_fortress_settings_controls()
         if self.final_fortress_mode_selected() and hasattr(self, 'final_fortress_tab'):
             self.subtitle_label.configure(textvariable=self.final_fortress_header_var)
-            self.right_frame.grid_remove()
-            self.workspace_tabs.grid_configure(columnspan=2, padx=0)
-            self.settings_toggle_button.grid_remove()
-            self.compact_action_row.grid_remove()
+            self.sync_workspace_layout()
             self.copy_seed_button.grid_remove()
             self.sync_debug_completion_controls()
             if self.workspace_tabs.select() == str(self.settings_tab):
@@ -407,6 +404,7 @@ class FinalFortressController(FortressCoopController):
         from randomizer.final_fortress.engine import prepare_game
 
         preferences = dict(self.final_fortress_state['preferences'])
+        preferences['player_color'] = self.selected_fortress_color()
         speed = self.get_selected_game_speed_value()
         self._final_fortress_preparing = True
         self.refresh_final_fortress()
@@ -424,6 +422,7 @@ class FinalFortressController(FortressCoopController):
                 difficulty=preferences['difficulty'],
                 seed='DFF-' + secrets.token_hex(8),
                 player_country=preferences['player_country'],
+                player_color=preferences['player_color'],
                 wave_multiplier=preferences['wave_multiplier'],
             )
             pending['run_id'] = run_id

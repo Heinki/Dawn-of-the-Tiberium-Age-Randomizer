@@ -207,12 +207,4 @@ After changing mission, reward, or unit definitions, run
 and generation snapshots. Building only needs checked-in files; DTA is required
 when regenerating snapshots.
 
-Run the generation regression checks with Archipelago's Python environment:
-
-```sh
-/path/to/Archipelago/.venv/bin/python tools/check_archipelago_generation.py --ap-root /path/to/Archipelago
-```
-
-These checks cover settings-only YAML, deterministic seed generation, all four
-progression modes, all three reward modes, edited settings, legacy input,
-launcher/server manifest parity, and real Archipelago item placement.
+Review the generated YAML, packaged catalogue and live server handshake after rebuilding.

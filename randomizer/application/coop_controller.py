@@ -1,5 +1,6 @@
 """Experimental host-authoritative native co-op Grid/Shop integration."""
 
+from randomizer.ui.viewport import ScrollableViewport, fit_dialog
 import copy
 import hashlib
 import json
@@ -916,8 +917,9 @@ class CoopController:
         self._coop_dialog = dialog
         dialog.title('ZeroTier co-op connection')
         dialog.transient(self)
-        frame = ttk.Frame(dialog, padding=12)
-        frame.pack(fill='both', expand=True)
+        viewport = ScrollableViewport(dialog, padding=12)
+        viewport.pack(fill='both', expand=True)
+        frame = viewport.content
         if not hasattr(self, '_coop_role'):
             self._coop_role = tk.StringVar(value='Host')
             self._coop_name = tk.StringVar(value=self.config.get('player_name', 'Commander')[:15])
@@ -959,6 +961,8 @@ class CoopController:
             row=8, column=0, columnspan=2, sticky='w', pady=(8, 0))
         dialog.protocol('WM_DELETE_WINDOW', self._close_coop_dialog)
         self._refresh_coop_connection_fields()
+        viewport.bind_controls()
+        fit_dialog(dialog, frame)
 
     def _hide_coop_details(self):
         if hasattr(self, '_coop_show_details'):
@@ -1015,8 +1019,9 @@ class CoopController:
         self._coop_log_dialog = dialog
         dialog.title('Co-op connection log')
         dialog.transient(self)
-        frame = ttk.Frame(dialog, padding=12)
-        frame.pack(fill='both', expand=True)
+        viewport = ScrollableViewport(dialog, padding=12)
+        viewport.pack(fill='both', expand=True)
+        frame = viewport.content
         ttk.Label(frame, text=f'Persistent log: {LAUNCHER_LOG}', wraplength=700).pack(anchor='w')
         text_frame = ttk.Frame(frame)
         text_frame.pack(fill='both', expand=True, pady=8)
@@ -1027,6 +1032,8 @@ class CoopController:
         self._coop_log_text.pack(side='left', fill='both', expand=True)
         ttk.Button(frame, text='Copy connection log', command=self._copy_coop_log).pack(anchor='w')
         self._refresh_coop_log()
+        viewport.bind_controls()
+        fit_dialog(dialog, frame)
 
     def _copy_coop_log(self):
         self.clipboard_clear()

@@ -80,6 +80,27 @@ def migrate_loaded_config(loaded):
         changed = True
     if not isinstance(generation, dict):
         return changed
+    # Earlier DTA defaults serialized an unusable empty Arsenal. Repair that
+    # legacy state once, while retaining configured rosters and faction choices.
+    try:
+        arsenal_version = int(generation.get('arsenal_defaults_version', 0))
+    except (TypeError, ValueError):
+        arsenal_version = 0
+    if arsenal_version < 1:
+        arsenal = generation.get('arsenal')
+        if isinstance(arsenal, dict):
+            sizes = arsenal.get('roster_sizes', {})
+            powers = arsenal.get('power_counts', {})
+            if (isinstance(sizes, dict) and isinstance(powers, dict)
+                    and all(isinstance(tier, dict) for tier in sizes.values())):
+                counts = [value for tier in sizes.values() for value in tier.values()]
+                counts.extend(powers.values())
+                if counts and all(value in (0, '0') for value in counts):
+                    defaults = DEFAULT_CONFIG['generation']['arsenal']
+                    arsenal['roster_sizes'] = deep_copy(defaults['roster_sizes'])
+                    arsenal['power_counts'] = deep_copy(defaults['power_counts'])
+        generation['arsenal_defaults_version'] = 1
+        changed = True
     if generation.get('reward_mode') == 'Chaos (Experimental)':
         generation['reward_mode'] = 'Chaos'
         changed = True

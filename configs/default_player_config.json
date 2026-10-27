@@ -11,6 +11,10 @@
       "hide_reward_details": false,
       "hide_locked_grid_missions": false,
       "shop_mode_rules_acknowledged": false,
+      "include_skirmishes": false,
+      "classic_shop": false,
+      "classic_shop_campaign": "All Campaigns",
+      "final_fortress_color": "Default",
       "seed": "",
       "campaign_filter": "All Campaigns",
       "shop_faction_pool": "All Factions",
@@ -43,28 +47,28 @@
           ],
           "roster_sizes": {
             "tier_1": {
-              "infantry": 0,
-              "vehicles": 0,
+              "infantry": 3,
+              "vehicles": 2,
               "aircraft": 0,
               "naval": 0
             },
             "tier_2": {
-              "infantry": 0,
-              "vehicles": 0,
-              "aircraft": 0,
-              "naval": 0
+              "infantry": 3,
+              "vehicles": 3,
+              "aircraft": 1,
+              "naval": 1
             },
             "tier_3": {
-              "infantry": 0,
-              "vehicles": 0,
-              "aircraft": 0,
-              "naval": 0
+              "infantry": 2,
+              "vehicles": 2,
+              "aircraft": 1,
+              "naval": 1
             }
           },
           "power_counts": {
-            "offensive": 0,
+            "offensive": 1,
             "secondary": 0,
-            "aid": 0
+            "aid": 1
           }
         },
         "access_limits": {
@@ -130,7 +134,15 @@
           "area",
           "amphibious"
         ],
-        "enabled_power_buff_types": ["recharge", "damage", "area", "payload", "cost", "production", "capacity"],
+        "enabled_power_buff_types": [
+          "recharge",
+          "damage",
+          "area",
+          "payload",
+          "cost",
+          "production",
+          "capacity"
+        ],
         "reward_weights": {
           "main": {
             "unit_unlocks": 100,
@@ -186,7 +198,9 @@
           "reward_enabled": false,
           "rewards_per_completed_objective": 0,
           "rewards_per_completed_mission": 0,
-          "allowed_buff_ids": ["*"],
+          "allowed_buff_ids": [
+            "*"
+          ],
           "caps": {
             "enemy_armor": 5,
             "enemy_production": 5,
@@ -196,7 +210,8 @@
           }
         },
         "failure_assistance": false,
-        "experimental_house_buffs": false
+        "experimental_house_buffs": false,
+        "arsenal_defaults_version": 1
       }
     }
   }

@@ -116,6 +116,7 @@ def normalize_state(document):
         difficulty=plan['difficulty'],
         seed=plan['seed'],
         player_country=plan['player_country'],
+        player_color=plan.get('player_color'),
         wave_multiplier=plan['wave_multiplier'],
         selected_perks=plan['selected_perks'],
         perk_ranks=plan['perk_ranks'],

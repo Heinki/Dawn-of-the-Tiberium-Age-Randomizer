@@ -57,7 +57,11 @@ from .coop_controller import CoopController
 from .final_fortress_controller import FinalFortressController
 
 
+from .progression_battles import ProgressionBattlesController
+
+
 class LauncherApp(
+    ProgressionBattlesController,
     FinalFortressController,
     UpdateController,
     CoopController,
@@ -87,14 +91,20 @@ class LauncherApp(
                 pass
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
-        window_width = min(1600, max(1100, screen_width - 160))
-        window_height = min(1000, max(700, screen_height - 160))
+        minimum_width = min(480, max(1, screen_width - 80))
+        minimum_height = min(360, max(1, screen_height - 100))
+        window_width = min(
+            1600, max(minimum_width, screen_width - 160)
+        )
+        window_height = min(
+            1000, max(minimum_height, screen_height - 120)
+        )
         window_x = max(0, (screen_width - window_width) // 2)
         window_y = max(0, (screen_height - window_height) // 2)
         self.geometry(
             f'{window_width}x{window_height}+{window_x}+{window_y}'
         )
-        self.minsize(1100, 700)
+        self.minsize(minimum_width, minimum_height)
         self.resizable(True, True)
         self.protocol('WM_DELETE_WINDOW', self.close_launcher)
 
@@ -537,8 +547,11 @@ class LauncherApp(
 
     def handle_initial_load_error(self, exc, detail):
         self.initial_load_complete = True
+        self._mission_load_error = str(exc)
         self.append_log(f'Launcher startup failed: {exc}', error=True)
         log_event('launcher_startup_failed', error=str(exc), traceback=detail)
+        if not self.log_visible_var.get():
+            self.toggle_log()
 
 
 def main():

@@ -170,7 +170,7 @@ class ShopController(ShopPolishController):
         self.shop_repository = self.create_shop_repository()
         self.shop_service = ShopProgressionService(self.shop_repository)
         self.shop_profile, self.shop_run = self.shop_repository.load()
-        self.shop_stage_var = tk.StringVar(value='Stage — / 10')
+        self.shop_stage_var = tk.StringVar(value='Stage —')
         self.shop_status_var = tk.StringVar(value='Run Status: Not Started')
         self.shop_run_coins_var = tk.StringVar(value='Run Ore: 0')
         self.shop_meta_coins_var = tk.StringVar(value='Permanent Gems: 0')
@@ -1052,7 +1052,7 @@ class ShopController(ShopPolishController):
                 button.pack_forget()
         if run is None:
             self.shop_stage_var.set(
-                f'Stage — / {self.shop_config.run_length}'
+                f'Stage — / {self.next_shop_run_length()}' if self.next_shop_run_length() else 'Campaign: ALL missions'
             )
             self.shop_status_var.set('Run Status: Not Started')
             self.shop_run_coins_var.set('Run Ore: 0')
@@ -1530,6 +1530,8 @@ class ShopController(ShopPolishController):
         self.refresh_shop_mode()
 
     def _repair_shop_mission_offers(self, run):
+        if run is not None and run.reward_settings.get('classic_mission_order'):
+            return run
         if (
             run is None
             or run.status is not RunStatus.ACTIVE
@@ -1555,6 +1557,7 @@ class ShopController(ShopPolishController):
         offers = generate_mission_offers(
             self._shop_run_mission_pool(run),
             run_seed=run.seed,
+            classic_order=run.reward_settings.get('classic_mission_order', ()),
             stage=run.stage,
             run_length=run.run_length,
             completed_codes=run.completed_missions,
@@ -1581,6 +1584,9 @@ class ShopController(ShopPolishController):
         return repaired
 
     def reroll_shop_mission(self, index):
+        if self.shop_run and self.shop_run.reward_settings.get('classic_mission_order'):
+            self._set_shop_message('Classic Shop follows the saved campaign order.')
+            return
         if self.shop_launch_active():
             self._set_shop_message('Wait for current mission process to close.')
             return
@@ -1600,6 +1606,7 @@ class ShopController(ShopPolishController):
             replacement = generate_mission_offers(
                 mission_pool,
                 run_seed=run.seed,
+                classic_order=run.reward_settings.get('classic_mission_order', ()),
                 stage=run.stage,
                 run_length=run.run_length,
                 completed_codes=kept_codes if run.allow_repeats else run.completed_missions + kept_codes,
@@ -1864,6 +1871,7 @@ class ShopController(ShopPolishController):
                 next_offers = generate_mission_offers(
                     self._shop_launch_mission_pool,
                     run_seed=run.seed,
+                    classic_order=run.reward_settings.get('classic_mission_order', ()),
                     stage=run.stage + 1,
                     run_length=run.run_length + (1 if run.endless else 0),
                     completed_codes=run.completed_missions + (code,),
@@ -1918,9 +1926,11 @@ class ShopController(ShopPolishController):
                 revival_offers = generate_mission_offers(
                     self._shop_launch_mission_pool,
                     run_seed=run.seed,
+                    classic_order=run.reward_settings.get('classic_mission_order', ()),
                     stage=run.stage,
                     run_length=run.run_length,
-                    completed_codes=run.completed_missions + (code,),
+                    completed_codes=(run.completed_missions if run.reward_settings.get('classic_mission_order')
+                                     else run.completed_missions + (code,)),
                     repeat_completed=run.allow_repeats,
                     unrestricted=run.allow_repeats,
                     reroll_count=(
@@ -2119,7 +2129,7 @@ class ShopController(ShopPolishController):
             return True
         if not messagebox.askokcancel(
             'Shop Mode Rules',
-            f'One Shop run contains {self.shop_config.run_length} stages. '
+            f'This Shop run contains {self.next_shop_run_length()} stages. '
             'At each stage, choose one '
             'mission. That selected mission gets one attempt.\n\nDo not save, '
             'load, or restart a mission. Any '
@@ -2137,6 +2147,9 @@ class ShopController(ShopPolishController):
         return True
 
     def start_shop_endless(self):
+        if self.shop_run and self.shop_run.reward_settings.get('classic_mission_order'):
+            self._set_shop_message('Classic campaign complete. Start a new run to play again.')
+            return
         run = self.shop_run
         if (run is None or run.status is not RunStatus.COMPLETED or
                 run.ap_identity or self.archipelago_run_active() or
@@ -2268,7 +2281,12 @@ class ShopController(ShopPolishController):
             )
         try:
             mission_pool = self._shop_run_mission_pool()
-            if len(mission_pool) < self.shop_config.run_length and not getattr(self, 'coop_enabled', lambda: False)():
+            classic_order = self.classic_shop_order(mission_pool, modifiers)
+            if classic_order:
+                settings['classic_mission_order'] = list(classic_order)
+            run_config = (replace(self.shop_config, run_length=len(classic_order))
+                          if classic_order else self.shop_config)
+            if not classic_order and len(mission_pool) < self.shop_config.run_length and not getattr(self, 'coop_enabled', lambda: False)():
                 raise ShopTransitionError(
                     f'Shop Mode needs at least {self.shop_config.run_length} '
                     'eligible missions under current filters'
@@ -2280,18 +2298,20 @@ class ShopController(ShopPolishController):
             offers = generate_mission_offers(
                 mission_pool,
                 run_seed=seed,
+                classic_order=classic_order,
                 stage=1,
                 unrestricted=repeat_missions,
                 offer_count=modifier_mission_offer_count(modifiers),
             )
             expected_offer_count = modifier_mission_offer_count(modifiers)
-            if len(offers) != expected_offer_count:
+            if len(offers) != (1 if classic_order else expected_offer_count):
                 raise ShopTransitionError(
                     'Shop Mode needs at least '
                     f'{expected_offer_count} eligible Act 1 '
                     'missions for its protected opening'
                 )
             self.shop_service.start_run(
+                config=run_config,
                 run_id=uuid.uuid4().hex,
                 seed=seed,
                 mission_offers=offers,
@@ -2301,7 +2321,7 @@ class ShopController(ShopPolishController):
                 eligible_mission_codes=(
                     mission.get('code') for mission in mission_pool
                 ),
-                allow_repeats=repeat_missions,
+                allow_repeats=False if classic_order else repeat_missions,
                 starter_tech_ids=starter_tech_ids,
                 starting_unit_ids=starting_units,
                 starting_defense_ids=starting_defenses,

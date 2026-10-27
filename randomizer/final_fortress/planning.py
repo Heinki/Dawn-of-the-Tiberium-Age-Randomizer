@@ -58,6 +58,7 @@ def build_run_plan(
     perk_ranks=None,
     coop_players=(),
     fundraising_ranks=None,
+    player_color=None,
 ):
     validate_config(config)
     validate_wave_multiplier(wave_multiplier)
@@ -108,6 +109,8 @@ def build_run_plan(
     if income[0] != effects['fundraising_stacks']:
         raise ValueError('Host Fundraising differs from enabled loadout.')
     enemies = random.Random(seed + ':dta:enemies').choices(SIDE_COUNTRIES, k=3)
+    if player_color is not None and (type(player_color) is not int or not 0 <= player_color < 64):
+        raise ValueError('Invalid Final Fortress player color.')
     plan = {
         'game_id': 'dta',
         'mode_id': MODE_ID,
@@ -135,6 +138,8 @@ def build_run_plan(
         'allied_waypoints': config['map']['allied_waypoints'][: friend_count - 1],
         'capabilities': deepcopy(config['capabilities']),
     }
+    if player_color is not None:
+        plan['player_color'] = player_color
     if coop_players:
         plan['coop_players'] = list(coop_players)
     plan['wave_schedule'] = build_wave_schedule(

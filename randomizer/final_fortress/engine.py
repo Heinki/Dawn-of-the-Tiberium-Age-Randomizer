@@ -1585,6 +1585,8 @@ def spawn_data(plan, map_data, *, game_speed=2, slot=0, endpoints=None):
                 'HouseAlly' + word: str(j)
                 for word, j in zip(ordinals, (j for j in group if j != i))
             }
+    from .colors import remap_colors
+    remap_colors(sections, plan)
     return (
         '\r\n'.join(
             line

@@ -136,6 +136,7 @@ def player_production_rules(root, mission, sections, loadouts):
             production_context=context, source_sections=sections,
             human_only_production=True, isolated_production_mask=True,
             shop_global_buff_levels=loadout['settings'].get('shop_global_buff_levels'),
+            allow_foreign_factory_access=(loadout['settings'].get('_skirmish_reward_mode') == 'Chaos'),
         )
         if player['map_objects_rewritten'] or player['player_taskforce_routes']:
             raise ValueError('Co-op rewards attempted to rewrite authored actors.')

@@ -118,7 +118,7 @@ class SeedController(SeedGeneration):
                     error=True,
                 )
                 return
-            if GAME_ID != 'dta' and not any(
+            if not any(
                 count
                 for tier in arsenal_settings['roster_sizes'].values()
                 for count in tier.values()
@@ -222,6 +222,7 @@ class SeedController(SeedGeneration):
             'progression_mode': self.progression_mode_var.get(),
             'two_start_positions': bool(self.grid_two_starts_var.get()),
             'mission_pool_settings': {
+                'include_skirmishes': bool(self.include_skirmishes_var.get()),
                 'include_no_build_missions': bool(self.include_no_build_missions_var.get()),
                 'include_no_build_production_missions': bool(
                     self.include_no_build_production_missions_var.get()

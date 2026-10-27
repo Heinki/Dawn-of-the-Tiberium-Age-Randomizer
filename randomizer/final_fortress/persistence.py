@@ -260,6 +260,7 @@ class FinalFortressRepository:
         wave_multiplier=None,
         coop_players=(),
         fundraising_ranks=None,
+        player_color=None,
     ):
         """Commit the exact run snapshot before starting its game process."""
         snapshot = deepcopy(config)
@@ -278,6 +279,7 @@ class FinalFortressRepository:
                 difficulty=difficulty,
                 seed=seed,
                 player_country=player_country,
+                player_color=player_color,
                 selected_perks=[
                     key
                     for key in state['selected_perks']

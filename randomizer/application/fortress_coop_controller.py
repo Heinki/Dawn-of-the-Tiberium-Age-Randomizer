@@ -1,5 +1,6 @@
 """Settings-only Fortress lobby over DTA's authenticated, all-peer UDP transport."""
 
+from randomizer.ui.viewport import ScrollableViewport, fit_dialog
 import json
 import queue
 import secrets
@@ -110,9 +111,10 @@ class FortressCoopController(FortressCoopLaunchController):
         self._fortress_connection_window = window
         window.title('Final Fortress co-op')
         window.transient(self)
-        window.resizable(False, False)
-        frame = ttk.Frame(window, padding=16)
-        frame.grid()
+        window.resizable(True, True)
+        viewport = ScrollableViewport(window, padding=16)
+        viewport.pack(fill='both', expand=True)
+        frame = viewport.content
         frame.columnconfigure(1, weight=1)
         role = tk.StringVar(value='Host')
         name = tk.StringVar(value='Commander')
@@ -173,6 +175,8 @@ class FortressCoopController(FortressCoopLaunchController):
         ttk.Button(frame, text='Disconnect', command=self.disconnect_fortress_coop).grid(
             row=5, column=1, sticky='e'
         )
+        viewport.bind_controls()
+        fit_dialog(window, frame)
 
     def publish_fortress_income(self):
         lobby = getattr(self, '_fortress_lobby', None)

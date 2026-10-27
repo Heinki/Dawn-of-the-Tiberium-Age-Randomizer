@@ -6,6 +6,7 @@ from randomizer.ui.config import GAME_SPEEDS
 
 from .pressure import wave_size
 from .reporting import reward_report
+from randomizer.ui.viewport import ScrollableViewport
 
 
 def _tree_scrollbars(parent, tree, row=0):
@@ -20,68 +21,6 @@ def _details_scrollbar(parent, text):
     scrollbar.grid(row=0, column=1, sticky='ns')
     text.configure(yscrollcommand=scrollbar.set)
 
-class _FortressViewport(ttk.Frame):
-    """Fill available space and scroll overflowing controls on short displays."""
-
-    def __init__(self, parent, background):
-        super().__init__(parent)
-        self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=1)
-        self.canvas = tk.Canvas(self, width=1, height=1, highlightthickness=0,
-                                borderwidth=0, background=background)
-        scrollbar = ttk.Scrollbar(self, command=self.canvas.yview)
-        self.canvas.configure(yscrollcommand=scrollbar.set, yscrollincrement=24)
-        self.canvas.grid(row=0, column=0, sticky='nsew')
-        scrollbar.grid(row=0, column=1, sticky='ns')
-        self.content = ttk.Frame(self.canvas)
-        self.window = self.canvas.create_window((0, 0), window=self.content, anchor='nw')
-        self._pending = None
-        self.layout = None
-        self.canvas.bind('<Configure>', self._configure)
-        self.content.bind('<Configure>', self._schedule_resize)
-
-    def _configure(self, event):
-        self.canvas.itemconfigure(self.window, width=max(1, event.width))
-        if self.layout is not None:
-            self.layout(event.width)
-        self._schedule_resize()
-
-    def _schedule_resize(self, _event=None):
-        if self._pending is None:
-            self._pending = self.after_idle(self._resize)
-
-    def _resize(self):
-        self._pending = None
-        height = max(self.canvas.winfo_height(), self.content.winfo_reqheight())
-        self.canvas.itemconfigure(self.window, height=height)
-        self.canvas.configure(scrollregion=self.canvas.bbox('all'))
-
-    def bind_controls(self):
-        # Use a local bind tag so other modes and nested scrollable widgets keep
-        # their own wheel handling. Prepend it to protect readonly comboboxes.
-        tag = f'FortressScroll:{self}'
-        for sequence in ('<MouseWheel>', '<Button-4>', '<Button-5>'):
-            self.bind_class(tag, sequence, self._mousewheel)
-
-        def visit(widget):
-            if isinstance(widget, (ttk.Treeview, tk.Text, ttk.Scrollbar)):
-                return
-            widget.bindtags((tag, *widget.bindtags()))
-            for child in widget.winfo_children():
-                visit(child)
-
-        visit(self)
-
-    def _mousewheel(self, event):
-        delta = getattr(event, 'delta', 0)
-        number = getattr(event, 'num', 0)
-        if not delta and number not in (4, 5):
-            return
-        steps = max(1, abs(int(delta / 120)))
-        self.canvas.yview_scroll(-steps if delta > 0 or number == 4 else steps, 'units')
-        return 'break'
-
-
 def build_final_fortress_tab(app, notebook):
     tab = ttk.Frame(notebook, padding=8)
     app.final_fortress_tab = tab
@@ -89,7 +28,7 @@ def build_final_fortress_tab(app, notebook):
     tab.columnconfigure(0, weight=1)
     tab.rowconfigure(0, weight=1)
     palette = app.ui_palette()
-    viewport = _FortressViewport(tab, palette['background'])
+    viewport = ScrollableViewport(tab, palette['background'])
     app.final_fortress_canvas = viewport.canvas
     viewport.grid(row=0, column=0, sticky='nsew')
     content = viewport.content
@@ -128,6 +67,7 @@ def build_final_fortress_tab(app, notebook):
 
     progression = ttk.Notebook(content)
     app.final_fortress_progression_tabs = progression
+    app.build_fortress_color_control(title)
     progression.grid(row=1, column=0, sticky='nsew', pady=(12, 0))
     perks = ttk.Frame(progression, padding=12)
     challenges = ttk.Frame(progression, padding=12)
@@ -137,7 +77,7 @@ def build_final_fortress_tab(app, notebook):
     perks.rowconfigure(1, weight=1)
     ttk.Label(perks, textvariable=app.final_fortress_gems_var).grid(
         row=0, column=0, sticky='w', pady=(0, 8))
-    panes = tk.PanedWindow(perks, orient='horizontal', sashwidth=6,
+    panes = tk.PanedWindow(perks, orient='horizontal', sashwidth=6, width=1, height=320,
                            borderwidth=0, background=palette['background'])
     panes.grid(row=1, column=0, sticky='nsew')
     listing = ttk.Frame(panes)
@@ -189,7 +129,7 @@ def build_final_fortress_tab(app, notebook):
     app.final_fortress_toggle_perk_button.pack(side='left')
     challenges.columnconfigure(0, weight=1)
     challenges.rowconfigure(0, weight=1)
-    challenge_panes = tk.PanedWindow(challenges, orient='horizontal', sashwidth=6,
+    challenge_panes = tk.PanedWindow(challenges, orient='horizontal', sashwidth=6, width=1, height=320,
                                      borderwidth=0, background=palette['background'])
     app.final_fortress_panes = (panes, challenge_panes)
     challenge_panes.grid(row=0, column=0, sticky='nsew')
@@ -265,15 +205,20 @@ def build_final_fortress_tab(app, notebook):
     result_heading = ttk.Label(results, textvariable=app.final_fortress_result_var,
                                font=('Segoe UI', 12, 'bold'), justify='left')
     result_heading.grid(row=0, column=0, sticky='ew', pady=(0, 8))
-    app.final_fortress_results_tree = ttk.Treeview(results,
+    result_listing = ttk.Frame(results, width=1, height=220)
+    result_listing.grid(row=1, column=0, sticky='nsew')
+    result_listing.columnconfigure(0, weight=1)
+    result_listing.rowconfigure(0, weight=1)
+    result_listing.grid_propagate(False)
+    app.final_fortress_results_tree = ttk.Treeview(result_listing,
         columns=('source', 'gems', 'detail'), show='headings', height=6)
     for key, title_text, width in (('source', 'Reward source', 240), ('gems', 'Defensive Points', 140),
                                  ('detail', 'Result / crate reward', 450)):
         app.final_fortress_results_tree.heading(key, text=title_text)
         app.final_fortress_results_tree.column(key, width=width, minwidth=width,
                                               stretch=key == 'detail')
-    app.final_fortress_results_tree.grid(row=1, column=0, sticky='nsew')
-    _tree_scrollbars(results, app.final_fortress_results_tree, row=1)
+    app.final_fortress_results_tree.grid(row=0, column=0, sticky='nsew')
+    _tree_scrollbars(result_listing, app.final_fortress_results_tree)
 
     setup = ttk.Frame(progression, padding=12)
     progression.insert(0, setup, text='Defense setup')
@@ -303,8 +248,8 @@ def build_final_fortress_tab(app, notebook):
         if handler is not None:
             combo.bind('<<ComboboxSelected>>', handler)
 
-    launch = ttk.Frame(tab)
-    launch.grid(row=1, column=0, sticky='ew', pady=(8, 0))
+    launch = ttk.Frame(content)
+    launch.grid(row=2, column=0, sticky='ew', pady=(8, 0))
     launch.columnconfigure(0, weight=1)
     status = ttk.Label(launch, textvariable=app.final_fortress_status_var, justify='left')
     status.grid(row=0, column=0, sticky='ew', padx=(0, 12))
@@ -314,8 +259,9 @@ def build_final_fortress_tab(app, notebook):
     app.final_fortress_launch_button.grid(row=0, column=1, sticky='e')
 
     def layout(width):
-        compact = width < 1100
-        two_columns = width >= 700
+        scale = app.winfo_fpixels('1i') / 96
+        compact = width < 1100 * scale
+        two_columns = width >= 700 * scale
         if profiles is not None:
             profiles.grid_configure(row=1 if compact else 0,
                                     column=0 if compact else 1,
@@ -336,7 +282,7 @@ def build_final_fortress_tab(app, notebook):
         for pane in (panes, challenge_panes):
             if str(pane.cget('orient')) != orient:
                 pane.configure(orient=orient)
-        button_columns = 3 if compact else 5
+        button_columns = 1 if width < 480 * scale else 3 if compact else 5
         for index, button in enumerate(challenge_buttons):
             button.grid(row=index // button_columns, column=index % button_columns,
                         sticky='w', padx=(0, 8), pady=(0, 4))
@@ -362,8 +308,10 @@ def show_final_fortress_help(app, page):
     app._final_fortress_help_window = window
     window.title(f'Final Fortress — {page}')
     window.transient(app)
-    window.geometry('740x420')
-    window.minsize(480, 300)
+    width = min(740, max(1, app.winfo_screenwidth() - 80))
+    height = min(420, max(1, app.winfo_screenheight() - 100))
+    window.geometry(f'{width}x{height}')
+    window.minsize(min(480, width), min(300, height))
     window.columnconfigure(0, weight=1)
     window.rowconfigure(0, weight=1)
     frame = ttk.Frame(window, padding=16)

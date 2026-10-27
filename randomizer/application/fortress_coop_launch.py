@@ -25,6 +25,7 @@ class FortressCoopLaunchController:
             return
         state = self.final_fortress_repository.load()
         preferences = dict(state['preferences'])
+        preferences['player_color'] = self.selected_fortress_color()
         pending = {
             'token': secrets.token_hex(24),
             'deadline': time.monotonic() + 180,
@@ -52,6 +53,7 @@ class FortressCoopLaunchController:
                 difficulty=preferences['difficulty'],
                 seed='DFF-' + secrets.token_hex(8),
                 player_country=preferences['player_country'],
+                player_color=preferences['player_color'],
                 wave_multiplier=preferences['wave_multiplier'],
                 coop_players=[p['name'] for p in endpoints],
                 fundraising_ranks=[self._fortress_ranks[i] for i in range(lobby.count)],
