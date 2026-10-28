@@ -26,7 +26,10 @@ construction yards and their fixed defenses are protected; expansion yards,
 factories, power plants and other ordinary buildings remain destructible.
 Runs without a starting refinery receive no harvester. The Starting buildings
 perk supplies one faction harvester per friendly house at refinery rank and
-above. Preplaced refineries do not grant a duplicate collector. Starting defenses
+above. Preplaced refineries do not grant a duplicate collector. Their placement-only
+types are hidden from human and AI construction and satisfy the same technology
+prerequisites as ordinary friendly refineries. Newly built refineries still supply
+their native collector. Starting defenses
 add two emplacements of one new type per rank, with faction-specific limits:
 
 - GDI: Guard Tower and Advanced Guard Tower; maximum rank 2, four emplacements.

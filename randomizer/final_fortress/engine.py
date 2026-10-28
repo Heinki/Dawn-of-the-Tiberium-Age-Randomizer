@@ -1149,8 +1149,26 @@ def build_map(game_root, run, rules=None, *, power_runtime=None):
             # A preplaced refinery is supplied exactly one explicit native harvester.
             if kind in ('TDPROC', 'RAPROC'):
                 placed = writer.key()
-                writer.sections[placed] = dict(writer.sections[alias], FreeUnit='none')
+                writer.sections[placed] = dict(
+                    writer.sections[alias],
+                    FreeUnit='none',
+                    TechLevel='-1',
+                    BuildLimit='0',
+                    AIBuildThis='no',
+                )
                 writer.register('BuildingTypes', placed)
+                # Direct refinery prerequisites must accept either the ordinary
+                # buildable copy or any friendly house's placement-only copy.
+                group = 'DFFREFINERY_' + kind
+                values = writer.sections.get('PrerequisiteGroups', {}).get(group, alias)
+                writer.put('PrerequisiteGroups', group, values + ',' + placed)
+                for target, row in list(writer.sections.items()):
+                    prerequisites = comma_items(row.get('Prerequisite'))
+                    if alias in prerequisites:
+                        writer.put(
+                            target, 'Prerequisite',
+                            ','.join(group if v == alias else v for v in prerequisites),
+                        )
                 for target, row in list(writer.sections.items()):
                     docks = list(comma_items(row.get('Dock')))
                     if alias in docks:
