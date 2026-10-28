@@ -1,13 +1,15 @@
 # Neutral objective candidates
 
 These civilian/neutral building assets are present in this DTA installation's
-`INI/Rules.ini` and `INI/Art.ini`. The selected objective is **Executive Building
-(`V37`)**, using its native headquarters appearance. Its SHP and bib assets are
-present in the installed MIX archives. The 2×2 foundation fits the reviewed
-objective placement. Fortress health stays at 7,000 before durability upgrades,
-independent of V37's native 3,000 HP. It remains visible on radar, cannot be sold
+`INI/Rules.ini` and `INI/Art.ini`. The selected objective is **Civilian Armory
+(`ARMORY`)**, using its native military appearance and animations. Its SHP asset
+is present in the installed MIX archives. The 2×2 foundation fits the reviewed
+objective placement. Its native training function is disabled with `Armory=no`
+and `Ammo=0`. Fortress health stays at 7,000 before durability upgrades,
+independent of ARMORY's native 8,000 HP. It remains visible on radar, cannot be sold
 or captured, and retains the existing objective loss and reserve-shield logic.
-The other candidates below remain reference alternatives.
+V37 was replaced because its desert-only art does not render correctly on this
+temperate map. The other candidates below remain reference alternatives.
 
 | Native ID | Installed name | Why it could work |
 | --- | --- | --- |
@@ -17,7 +19,7 @@ The other candidates below remain reference alternatives.
 | `STEX` | Stock Exchange | Prominent 3×3 landmark with an easily recognizable silhouette. |
 | `CHOSP` | Civilian Hospital | Clear civilian protection objective with a 2×3 foundation. |
 | `ARCO` | Arcology | Large landmark; its visible art needs generous clearance despite its small configured foundation. |
-| `V37` | Westwood Executive Building | Distinctive headquarters-style civilian landmark with a 2×2 foundation. |
+| `V37` | Westwood Executive Building | Rejected: desert-only art on a temperate map. |
 | `CITY09` | Abandoned Warehouse | Industrial stronghold appearance without a faction-specific tech-building identity. |
 
 Before switching to another candidate, validate its art and footprint beside the starting base. Keep

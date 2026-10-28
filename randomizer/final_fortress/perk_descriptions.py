@@ -211,6 +211,44 @@ def rank_descriptions(perk, country, config=None):
                 f'+{effect["unique_limit_stacks"]} to positive live-unit limits on eligible '
                 'heroes and unlocked specials; does not unlock additional unit types'
             )
+        if effect.get('infrastructure_health_percent'):
+            parts.append(
+                f'+{effect["infrastructure_health_percent"]}% health for friendly construction '
+                'yards, production buildings, refineries, generators and silos, including future '
+                'construction; objective, defenses and support structures are excluded'
+            )
+        if effect.get('transport_capacity_stacks'):
+            from randomizer.config.tuning import REWARD_PLANNING
+
+            count = min(effect['transport_capacity_stacks'],
+                        REWARD_PLANNING['buff_stack_limits']['passenger_capacity'])
+            parts.append(
+                f'+{count} passenger {"slot" if count == 1 else "slots"} on eligible APCs, Chinooks and landing craft; '
+                'no units or passengers granted; gunner and sealed transports are excluded'
+            )
+        for key, buff in (('targeting_stacks', 'range'), ('ammo_stacks', 'ammo')):
+            if effect.get(key):
+                from randomizer.config.tuning import stacking_amount
+                from .utilities import capped_stacks
+
+                amount = stacking_amount(buff, capped_stacks(buff, effect[key]))
+                if buff == 'range':
+                    unit = 'cell' if amount == 1 else 'cells'
+                    parts.append(f'+{amount:g} {unit} of weapon range for eligible mobile units')
+                else:
+                    unit = 'round' if amount == 1 else 'rounds'
+                    parts.append(f'+{amount:g} extra {unit} for eligible finite-ammunition units')
+        if effect.get('support_technology_by_country'):
+            table = effect['support_technology_by_country']
+            parts.append(
+                'Specialist production access: '
+                + (', '.join(name(kind) for kind in table[country]) if country else
+                   'GDI Mobile Sensor Array; Nod Mobile Repair Vehicle and Stealth Generator; '
+                   'Allied Gap Generator; Soviet Shore Artillery')
+                + '. Requires radar and a faction war factory for vehicles or construction '
+                'yard for buildings; native costs, power demand and build limits remain. '
+                'No starting units or buildings granted'
+            )
         if effect.get('special_units_by_country'):
             table = effect['special_units_by_country']
             parts.append(

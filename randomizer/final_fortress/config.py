@@ -201,6 +201,20 @@ def validate_config(config):
                 validate_native_units(child)
 
     validate_native_units(config)
+    from .perks import ranks
+    from randomizer.dta.rules import catalogue_by_id
+
+    catalogue = catalogue_by_id()
+    for perk in config['perks']:
+        for rank in ranks(perk):
+            for country, kinds in rank['effects'].get('support_technology_by_country', {}).items():
+                for kind in kinds:
+                    record = catalogue.get(kind)
+                    if (
+                        not record or country not in record['playable_owners']
+                        or record['category'] not in {'vehicles', 'buildings', 'defenses'}
+                    ):
+                        raise ValueError(f'Unsupported {country} specialist support type: {kind}.')
     return config
 
 

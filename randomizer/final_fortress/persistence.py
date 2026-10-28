@@ -90,37 +90,6 @@ class FinalFortressRepository:
 
         return self._update(change)[0]
 
-    def initialize_all_unlocks(self, config):
-        """Keep testing unlocks current without resetting selections or run receipts."""
-        from .profiles import (
-            PROFILE_PATHS,
-            STANDARD_PROFILE,
-            all_unlocks_state,
-        )
-
-        validate_config(config)
-        if self.path.resolve() == PROFILE_PATHS[STANDARD_PROFILE].resolve():
-            raise ValueError('Use a separate profile for testing unlocks.')
-
-        def change(state):
-            if self.path.exists():
-                from .perks import ranks
-
-                changed = False
-                for perk in config['perks']:
-                    key, maximum = perk['id'], len(ranks(perk))
-                    if key not in state['owned_perks']:
-                        state['owned_perks'].append(key)
-                        state['selected_perks'].append(key)
-                        changed = True
-                    if state['perk_ranks'].get(key, 0) != maximum:
-                        state['perk_ranks'][key] = maximum
-                        changed = True
-                return None if changed else False
-            state.update(all_unlocks_state(config))
-
-        return self._update(change)[0]
-
     def _update(self, change):
         with self._locked():
             state = self._read()
@@ -167,6 +136,8 @@ class FinalFortressRepository:
         def change(state):
             from .perks import next_price, owned_rank
 
+            if state['run'] is not None and state['run']['status'] == 'active':
+                raise ValueError('Permanent perk purchases are locked during an active Final Fortress run.')
             rank = owned_rank(state, perk_id)
             price = next_price(perk, rank, state['preferences']['player_country'])
             if price is None:
@@ -181,6 +152,37 @@ class FinalFortressRepository:
                 state['owned_perks'].append(perk_id)
             if perk_id not in state['selected_perks']:
                 state['selected_perks'].append(perk_id)
+
+        return self._update(change)[0]
+
+    def refund_perk(self, config, perk_id):
+        """Refund the highest purchased rank at its full Defensive Points cost."""
+        validate_config(config)
+        perk = next((entry for entry in config['perks'] if entry['id'] == perk_id), None)
+        if perk is None:
+            raise ValueError('Unknown Final Fortress perk.')
+
+        def change(state):
+            from .perks import owned_rank, ranks
+
+            if state['run'] is not None and state['run']['status'] == 'active':
+                raise ValueError('Permanent perk refunds are locked during an active Final Fortress run.')
+            rank = owned_rank(state, perk_id)
+            if rank == 0:
+                raise ValueError('Purchase this permanent perk before refunding it.')
+            # Ownership survives faction changes. Refund from the full rank
+            # table, including ranks above the current faction's usable cap.
+            entries = ranks(perk)
+            if rank > len(entries):
+                raise ValueError('This perk has an unsupported saved rank.')
+            state['gems'] += entries[rank - 1]['gem_cost']
+            if rank > 1:
+                state['perk_ranks'][perk_id] = rank - 1
+            else:
+                del state['perk_ranks'][perk_id]
+                state['owned_perks'].remove(perk_id)
+                if perk_id in state['selected_perks']:
+                    state['selected_perks'].remove(perk_id)
 
         return self._update(change)[0]
 

@@ -479,6 +479,7 @@ def _player_rules(writer, plan):
     """Shared friendly private types include every human/helper country mask."""
     from randomizer.dta.rules import techno_catalogue
     from .catalogue import tier
+    from .utilities import unit_updates, weapon_updates
 
     effects = plan['effects']
     faction = plan['player_country']
@@ -486,8 +487,23 @@ def _player_rules(writer, plan):
     aliases = {}
     original_types = {v: c for c in TYPE_LISTS for v in writer.rules[c].values()}
     records = {r['id']: r for r in techno_catalogue()}
+    duplicates = {
+        kind: record['duplicate_of'] for kind, record in records.items()
+        if record.get('duplicate_of') and record['buildable']
+    }
+    sources = {}
+    for kind, canonical in duplicates.items():
+        # The catalogue shares E1A/E1S and E3A/E3S reward identities. Prefer
+        # the faction's native variant so Soviet speech remains Soviet.
+        required = comma_items(writer.rules[kind].get('RequiredHouses'))
+        canonical_required = comma_items(writer.rules[canonical].get('RequiredHouses'))
+        if faction in required and canonical_required and faction not in canonical_required:
+            sources[canonical] = kind
     for kind, category in original_types.items():
-        row = writer.rules[kind]
+        if kind in duplicates:
+            continue
+        source_kind = sources.get(kind, kind)
+        row = writer.rules[source_kind]
         record = records.get(kind)
         if record is not None and faction not in record['playable_owners']:
             continue
@@ -533,6 +549,10 @@ def _player_rules(writer, plan):
         if percent:
             stats['Strength'] = str(round(float(row.get('Strength', 1)) * (100 + percent) / 100))
         defense = bool(record and record['category'] == 'defenses')
+        stats.update(unit_updates(
+            kind, {**row, **stats}, effects, building=category == 'BuildingTypes',
+            defense=defense,
+        ))
         if effects['healing_stacks'] and record and record.get('strength', 0) > 0:
             native_healing = row.get('SelfHealing', '').casefold() in ('yes', 'true', '1') or any(
                 'SELF_HEAL' in row.get(field, '').upper()
@@ -569,8 +589,10 @@ def _player_rules(writer, plan):
         # Native AI's first-ownable building lookup checks the actual country,
         # so helper country IDs must be explicit even with shared ActsLike.
         alias = _private_type(
-            writer, kind, suffix='FR', owners=list(FRIENDLY_ALIASES), stats=stats, cache=aliases
+            writer, source_kind, suffix='FR', owners=list(FRIENDLY_ALIASES), stats=stats,
+            cache=aliases,
         )
+        aliases[kind] = alias
         private = writer.sections[alias]
         # A mobile type may already have created its deployed building clone.
         # Apply this building's own limits and economy even when it was cached.
@@ -593,7 +615,46 @@ def _player_rules(writer, plan):
             factories = production[factory_group]
             private['BuiltAt'] = ','.join(factories)
             private['Prerequisite'] = ','.join(factories)
-        # Native originals remain usable by enemies; humans see only private copies.
+        if kind in effects.get('support_technology', ()):
+            private['TechLevel'] = '1'
+            if category == 'BuildingTypes':
+                yard = {'GDI': 'GFACT', 'Nod': 'NFACT', 'Allies': 'AFACT', 'Soviet': 'SFACT'}[faction]
+                private['Prerequisite'] = yard + ',RADAR'
+            else:
+                from randomizer.dta.clones import PRODUCTION_BUILDINGS
+
+                factories = PRODUCTION_BUILDINGS[faction.casefold()]['vehicles']
+                private['BuiltAt'] = ','.join(factories)
+                private['Prerequisite'] = ','.join([*factories, 'RADAR'])
+        for field in ('Primary', 'Secondary', 'Elite', 'ElitePrimary', 'EliteSecondary'):
+            weapon = row.get(field)
+            if not weapon or weapon not in writer.rules:
+                continue
+            bonus = effects['defense_percent'] if defense else percent
+            values = deepcopy(writer.rules[weapon])
+            utility = weapon_updates(kind, weapon, values, effects)
+            if not bonus and not utility:
+                continue
+            new = writer.key()
+            factor = 1 + bonus / 100
+            if float(values.get('Damage', '0')) > 0:
+                values['Damage'] = str(round(float(values['Damage']) * factor))
+            if float(values.get('ROF', '0')) > 0:
+                values['ROF'] = str(max(1, round(float(values['ROF']) / factor)))
+            if defense and float(values.get('Range', '0')) > 0:
+                values['Range'] = f'{min(30,float(values["Range"])*factor):g}'
+            values.update(utility)
+            writer.sections[new] = values
+            private[field] = new
+    for kind, canonical in duplicates.items():
+        if canonical in aliases:
+            # Starting troops, paradrops and native helper AI recipes may use
+            # either identity, but they must all resolve to the same clone.
+            aliases[kind] = aliases[canonical]
+    # Native originals remain usable by enemies; humans see only private copies.
+    # Block every alias too, rather than exposing an unmodified second entry.
+    for kind in aliases:
+        row = writer.rules[kind]
         forbidden = list(comma_items(row.get('ForbiddenHouses')))
         for friendly in FRIENDLY_ALIASES:
             if friendly not in forbidden:
@@ -603,24 +664,6 @@ def _player_rules(writer, plan):
         writer.put(kind, 'Owner', ','.join(
             v for v in comma_items(source.get('Owner')) if v not in FRIENDLY_ALIASES
         ))
-        for field in ('Primary', 'Secondary', 'Elite', 'ElitePrimary', 'EliteSecondary'):
-            weapon = row.get(field)
-            if not weapon or weapon not in writer.rules:
-                continue
-            bonus = effects['defense_percent'] if defense else percent
-            if not bonus:
-                continue
-            new = writer.key()
-            values = deepcopy(writer.rules[weapon])
-            factor = 1 + bonus / 100
-            if float(values.get('Damage', '0')) > 0:
-                values['Damage'] = str(round(float(values['Damage']) * factor))
-            if float(values.get('ROF', '0')) > 0:
-                values['ROF'] = str(max(1, round(float(values['ROF']) / factor)))
-            if defense and float(values.get('Range', '0')) > 0:
-                values['Range'] = f'{min(30,float(values["Range"])*factor):g}'
-            writer.sections[new] = values
-            private[field] = new
     # PrerequisiteGroups implement OR without losing ordinary expansion yards.
     for kind, alias in aliases.items():
         row = writer.sections[alias]
@@ -1009,7 +1052,7 @@ def build_map(game_root, run, rules=None, *, power_runtime=None):
     clocks = _countdowns(writer, plan, finished)
     startup = [
         _action(4, team=markers['started']),
-        writer.message('Defend the Executive Building headquarters for 60 minutes.'),
+        writer.message('Defend the headquarters for 60 minutes.'),
     ]
     occupied_points = section_value_map(lines, 'Waypoints')
 
@@ -1031,6 +1074,8 @@ def build_map(game_root, run, rules=None, *, power_runtime=None):
         Power='0',
         TechLevel='-1',
         BuildLimit='0',
+        Armory='no',
+        Ammo='0',
         Strength=str(
             round(float(objective_definition.get('base_strength', objective['Strength']))
                   * (1 + plan['effects']['lab_health_percent'] / 100))

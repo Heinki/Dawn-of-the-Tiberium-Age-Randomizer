@@ -140,7 +140,9 @@ def normalize_state(document):
         guest = slot > 0
     elif 'coop_player' in run:
         raise ValueError('Solo run cannot have a co-op seat.')
-    if not guest and any(
+    # Finished runs are historical receipts. Their frozen loadouts remain
+    # valid when the player refunds or reallocates ranks for the next run.
+    if not guest and run['status'] == 'active' and any(
         rank > state['perk_ranks'].get(key, 0) for key, rank in plan['perk_ranks'].items()
     ):
         raise ValueError('Run contains unpurchased perks.')

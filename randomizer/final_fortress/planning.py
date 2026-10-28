@@ -12,16 +12,21 @@ from .waves import build_wave_schedule
 from .wave_priority import apply_priorities
 from .pressure import size_composition
 
-PLAN_VERSION = 1
+PLAN_VERSION = 3
 
 
-def _starting_economy(effects, country):
-    """Always supply one collector and only the power the actual grants need."""
+def _starting_economy(effects, country, plan_version):
+    """Supply a collector with a refinery, and power for actual building grants."""
     from math import ceil
     from randomizer.dta.rules import installed_effective_sections
 
     harvester = 'TDHARV' if country in ('GDI', 'Nod') else 'RAHARV'
-    if not effects['starting_harvesters']:
+    # Version 1 receipts include an unconditional collector and must rebuild
+    # unchanged. New runs only need one when a starting refinery is enabled.
+    refinery = 'TDPROC' if country in ('GDI', 'Nod') else 'RAPROC'
+    if not effects['starting_harvesters'] and (
+        plan_version == 1 or refinery in effects['starting_buildings']
+    ):
         effects['starting_harvesters'] = [{'type': harvester, 'count': 1}]
     rules = installed_effective_sections()
     kinds = [*effects['starting_buildings'], *effects['defense_types']]
@@ -63,7 +68,7 @@ def build_run_plan(
     validate_config(config)
     validate_wave_multiplier(wave_multiplier)
     text(seed, 'Seed')
-    if type(plan_version) is not int or plan_version != PLAN_VERSION:
+    if type(plan_version) is not int or plan_version not in (1, 2, PLAN_VERSION):
         raise ValueError('Unsupported DTA Fortress plan version.')
     if difficulty not in DIFFICULTY_IDS or player_country not in SIDE_COUNTRIES:
         raise ValueError('Choose a DTA faction and difficulty.')
@@ -95,8 +100,9 @@ def build_run_plan(
         include_economy=True,
         include_generator_power=True,
         share_starting_power=True,
+        include_expansion=plan_version >= 3,
     )
-    _starting_economy(effects, player_country)
+    _starting_economy(effects, player_country, plan_version)
     human_count = len(coop_players) or 1
     friend_count = human_count + min(effects['allied_helpers'], 3 - human_count)
     income = (

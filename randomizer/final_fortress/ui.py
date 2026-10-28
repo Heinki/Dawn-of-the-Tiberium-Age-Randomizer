@@ -39,17 +39,6 @@ def build_final_fortress_tab(app, notebook):
     title.columnconfigure(0, weight=1)
     ttk.Label(title, text='Final Fortress', font=('Segoe UI', 18, 'bold')).grid(
         row=0, column=0, sticky='w')
-    from .profiles import PROFILE_PATHS
-    profiles = None
-    if len(PROFILE_PATHS) > 1:
-        profiles = ttk.Frame(title)
-        profiles.grid(row=0, column=1, sticky='e', padx=(12, 16))
-        ttk.Label(profiles, text='Profile').pack(side='left', padx=(0, 8))
-        app.final_fortress_profile_combo = ttk.Combobox(
-            profiles, textvariable=app.final_fortress_profile_var, values=tuple(PROFILE_PATHS),
-            state='readonly', width=24)
-        app.final_fortress_profile_combo.pack(side='left')
-        app.final_fortress_profile_combo.bind('<<ComboboxSelected>>', app.on_final_fortress_profile_changed)
     help_choice = tk.StringVar(value='Help')
     help_button = ttk.Combobox(title, textvariable=help_choice, state='readonly',
                                values=('How to play', 'Wave forecast'), width=18)
@@ -75,8 +64,15 @@ def build_final_fortress_tab(app, notebook):
     progression.add(challenges, text='Challenge')
     perks.columnconfigure(0, weight=1)
     perks.rowconfigure(1, weight=1)
-    ttk.Label(perks, textvariable=app.final_fortress_gems_var).grid(
-        row=0, column=0, sticky='w', pady=(0, 8))
+    perk_header = ttk.Frame(perks)
+    perk_header.grid(row=0, column=0, sticky='ew', pady=(0, 8))
+    perk_header.columnconfigure(0, weight=1)
+    ttk.Label(perk_header, textvariable=app.final_fortress_gems_var).grid(
+        row=0, column=0, sticky='w')
+    app.final_fortress_perk_hint = ttk.Label(
+        perk_header, text='◀ Refund rank at full cost · ▶ Buy next rank · Left/Right keys',
+        style='Muted.TLabel', justify='left')
+    app.final_fortress_perk_hint.grid(row=1, column=0, sticky='ew', pady=(4, 0))
     panes = tk.PanedWindow(perks, orient='horizontal', sashwidth=6, width=1, height=320,
                            borderwidth=0, background=palette['background'])
     panes.grid(row=1, column=0, sticky='nsew')
@@ -86,27 +82,34 @@ def build_final_fortress_tab(app, notebook):
     panes.add(listing, minsize=120)
     app.final_fortress_perks_tree = ttk.Treeview(
         listing,
-        columns=('name', 'cost', 'status', 'effect'),
-        displaycolumns=('name', 'cost', 'status'),
+        columns=('name', 'decrease', 'rank', 'increase', 'status', 'cost', 'effect'),
+        displaycolumns=('name', 'decrease', 'rank', 'increase', 'status', 'cost'),
         show='headings',
         selectmode='browse',
         height=8,
     )
     for column, label, width in (
         ('name', 'Perk', 180),
+        ('decrease', '', 38),
+        ('rank', 'Rank', 65),
+        ('increase', '', 38),
+        ('status', 'Status', 145),
         ('cost', 'Next rank cost', 190),
-        ('status', 'Rank / status', 145),
         ('effect', 'Effect', 450),
     ):
         app.final_fortress_perks_tree.heading(column, text=label)
         app.final_fortress_perks_tree.column(
             column, width=width, minwidth=width, stretch=column == 'name'
         )
+    for column in ('decrease', 'rank', 'increase'):
+        app.final_fortress_perks_tree.column(column, anchor='center')
     app.final_fortress_perks_tree.grid(row=0, column=0, sticky='nsew')
-    perk_scrollbar = ttk.Scrollbar(listing, command=app.final_fortress_perks_tree.yview)
-    perk_scrollbar.grid(row=0, column=1, sticky='ns')
-    app.final_fortress_perks_tree.configure(yscrollcommand=perk_scrollbar.set)
+    _tree_scrollbars(listing, app.final_fortress_perks_tree)
     app.final_fortress_perks_tree.bind('<<TreeviewSelect>>', app.select_final_fortress_perk)
+    app.final_fortress_perks_tree.bind('<Button-1>', app.on_final_fortress_perk_click)
+    app.final_fortress_perks_tree.bind('<Double-1>', app.on_final_fortress_perk_click)
+    app.final_fortress_perks_tree.bind('<Left>', lambda _event: app.refund_final_fortress_perk())
+    app.final_fortress_perks_tree.bind('<Right>', lambda _event: app.buy_final_fortress_perk())
     app.final_fortress_perks_tree.bind('<Return>', lambda _event: app.buy_final_fortress_perk())
     details = ttk.LabelFrame(panes, text='Rank effects', padding=(10, 4))
     details.columnconfigure(0, weight=1)
@@ -120,13 +123,18 @@ def build_final_fortress_tab(app, notebook):
     app.final_fortress_perk_details.grid(row=0, column=0, sticky='nsew')
     _details_scrollbar(details, app.final_fortress_perk_details)
     buttons = ttk.Frame(perks)
-    buttons.grid(row=2, column=0, sticky='e', pady=(8, 0))
+    buttons.grid(row=2, column=0, sticky='ew', pady=(8, 0))
+    app.final_fortress_refund_perk_button = ttk.Button(
+        buttons, text='Refund rank', command=app.refund_final_fortress_perk)
     app.final_fortress_buy_perk_button = ttk.Button(
         buttons, text='Buy / upgrade', command=app.buy_final_fortress_perk)
-    app.final_fortress_buy_perk_button.pack(side='left', padx=(0, 8))
     app.final_fortress_toggle_perk_button = ttk.Button(
         buttons, text='Enable / disable', command=app.toggle_final_fortress_perk)
-    app.final_fortress_toggle_perk_button.pack(side='left')
+    perk_buttons = (
+        app.final_fortress_refund_perk_button,
+        app.final_fortress_buy_perk_button,
+        app.final_fortress_toggle_perk_button,
+    )
     challenges.columnconfigure(0, weight=1)
     challenges.rowconfigure(0, weight=1)
     challenge_panes = tk.PanedWindow(challenges, orient='horizontal', sashwidth=6, width=1, height=320,
@@ -262,13 +270,11 @@ def build_final_fortress_tab(app, notebook):
         scale = app.winfo_fpixels('1i') / 96
         compact = width < 1100 * scale
         two_columns = width >= 700 * scale
-        if profiles is not None:
-            profiles.grid_configure(row=1 if compact else 0,
-                                    column=0 if compact else 1,
-                                    columnspan=2 if compact else 1,
-                                    sticky='w' if compact else 'e',
-                                    padx=0 if compact else (12, 16),
-                                    pady=(6, 0) if compact else 0)
+        app.final_fortress_perk_hint.configure(wraplength=max(1, width - 56))
+        perk_button_columns = 1 if width < 480 * scale else len(perk_buttons)
+        for index, button in enumerate(perk_buttons):
+            button.grid(row=index // perk_button_columns, column=index % perk_button_columns,
+                        sticky='w', padx=(0, 8), pady=(0, 4))
         if feature.COOP_FEATURE_ENABLED:
             coop_status.configure(wraplength=max(1, width - 16))
         setup.columnconfigure(3, weight=1 if two_columns else 0)

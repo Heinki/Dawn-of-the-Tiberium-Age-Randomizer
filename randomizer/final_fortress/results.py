@@ -5,6 +5,7 @@ from pathlib import Path
 import re
 
 from .engine import marker_names
+from .colors import score_scheme
 
 _CREATED = re.compile(r"Creating a new team named '([^']+)'\.")
 FRIENDLY_ACTORS = ('FFPLAYER', 'FFALLY1', 'FFALLY2')
@@ -179,13 +180,16 @@ class FinalFortressResultWatch:
         if lines and not lines[-1].endswith(('\r', '\n')):
             self._remainder = lines.pop()[-65536:]
         for line in lines:
-            if not self._in_scores and 'DFF_' not in line and 'Sending game results.' not in line:
-                continue
+            # Vinifera prints the score table directly from MultiScore. The
+            # older "Sending game results." preamble is not emitted by DTA.
+            # START still binds every score record to this particular run.
+            result_row = re.fullmatch(r'([^:\r\n]+): (Winner|Loser)\s*', line)
             if self.started and 'Sending game results.' in line:
                 self._in_scores = True
                 self._local_record = False
+            if self.started and result_row:
+                self._in_scores = True
             if self._in_scores and not self._scores_read:
-                result_row = re.fullmatch(r'([^:]+): (Winner|Loser)\s*', line)
                 if (self.plan or {}).get('coalition_scores'):
                     self._read_coalition_score(line, result_row)
                 elif result_row:
@@ -271,8 +275,10 @@ class FinalFortressResultWatch:
             return
         record, self._score_record = self._score_record, None
         for actor in self.plan['coalition_scores']:
+            # Helpers share the native name "Computer". Match the actual
+            # remapped scheme as well, including for humans with that name.
             if (
-                record.get('Scheme') == actor['scheme']
+                record.get('Scheme') == score_scheme(self.plan, actor)
                 and 'Kills' in record
                 and (actor['name'] is None or record['name'] == actor['name'])
             ):

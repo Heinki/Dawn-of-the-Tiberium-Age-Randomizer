@@ -24,7 +24,7 @@
         6
       ],
       "protected_building": {
-        "type": "V37",
+        "type": "ARMORY",
         "position": {
           "x": 72,
           "y": 102
@@ -6806,7 +6806,7 @@
       {
         "id": "starting_buildings",
         "display_name": "Starting buildings",
-        "description": "Start with progressively more faction production buildings. Every friendly house already receives one harvester; only the extra generators needed by the enabled starting structures are supplied.",
+        "description": "Start with progressively more faction production buildings. Starting refineries include one faction harvester. Only the extra generators needed by the enabled starting structures are supplied.",
         "gem_cost": 50,
         "effects": {
           "buildings_by_country": {
@@ -9473,6 +9473,142 @@
             "gem_cost": 550,
             "effects": {
               "unique_limit_stacks": 3
+            }
+          }
+        ]
+      },
+      {
+        "id": "specialist_support",
+        "display_name": "Specialist support technology",
+        "description": "Unlock faction support technology: GDI Mobile Sensor Array; Nod Mobile Repair Vehicle and Stealth Generator; Allied Gap Generator; Soviet Shore Artillery. Requires radar and the normal faction war factory or construction yard. Native costs, power consumption and build limits remain. No starting grants.",
+        "gem_cost": 250,
+        "effects": {
+          "support_technology_by_country": {
+            "GDI": [
+              "MSA"
+            ],
+            "Nod": [
+              "MRV",
+              "SGEN"
+            ],
+            "Allies": [
+              "RAGAP"
+            ],
+            "Soviet": [
+              "RAPARTY"
+            ]
+          }
+        },
+        "ranks": [
+          {
+            "gem_cost": 250,
+            "effects": {
+              "support_technology_by_country": {
+                "GDI": [
+                  "MSA"
+                ],
+                "Nod": [
+                  "MRV",
+                  "SGEN"
+                ],
+                "Allies": [
+                  "RAGAP"
+                ],
+                "Soviet": [
+                  "RAPARTY"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "targeting_ammunition",
+        "display_name": "Targeting and ammunition",
+        "description": "Three ranks add +0.5 / +1 / +1.5 cells of weapon range and +1 / +2 / +3 ammunition to eligible friendly mobile units, using existing DTA buff limits. Finite-ammunition units gain ammo; Demolition Truck range and defensive buildings are excluded.",
+        "gem_cost": 100,
+        "effects": {
+          "targeting_stacks": 1,
+          "ammo_stacks": 1
+        },
+        "ranks": [
+          {
+            "gem_cost": 100,
+            "effects": {
+              "targeting_stacks": 1,
+              "ammo_stacks": 1
+            }
+          },
+          {
+            "gem_cost": 220,
+            "effects": {
+              "targeting_stacks": 2,
+              "ammo_stacks": 2
+            }
+          },
+          {
+            "gem_cost": 400,
+            "effects": {
+              "targeting_stacks": 3,
+              "ammo_stacks": 3
+            }
+          }
+        ]
+      },
+      {
+        "id": "fortified_infrastructure",
+        "display_name": "Fortified infrastructure",
+        "description": "Add +15% / +30% / +45% health to friendly construction yards, factories, barracks, airfields, shipyards, refineries, generators and silos, including future construction. Objective durability is separate; defenses and support structures are excluded.",
+        "gem_cost": 100,
+        "effects": {
+          "infrastructure_health_percent": 15
+        },
+        "ranks": [
+          {
+            "gem_cost": 100,
+            "effects": {
+              "infrastructure_health_percent": 15
+            }
+          },
+          {
+            "gem_cost": 220,
+            "effects": {
+              "infrastructure_health_percent": 30
+            }
+          },
+          {
+            "gem_cost": 400,
+            "effects": {
+              "infrastructure_health_percent": 45
+            }
+          }
+        ]
+      },
+      {
+        "id": "transport_capacity",
+        "display_name": "Transport capacity",
+        "description": "Add +1 / +2 / +3 passenger slots to catalogue-eligible APCs, Chinooks and landing craft. Gunner and sealed transports remain excluded. Does not unlock units, grant starting transports or add passengers.",
+        "gem_cost": 80,
+        "effects": {
+          "transport_capacity_stacks": 1
+        },
+        "ranks": [
+          {
+            "gem_cost": 80,
+            "effects": {
+              "transport_capacity_stacks": 1
+            }
+          },
+          {
+            "gem_cost": 160,
+            "effects": {
+              "transport_capacity_stacks": 2
+            }
+          },
+          {
+            "gem_cost": 280,
+            "effects": {
+              "transport_capacity_stacks": 3
             }
           }
         ]

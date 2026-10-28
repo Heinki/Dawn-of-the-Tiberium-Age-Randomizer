@@ -20,6 +20,10 @@ def rank_limit(perk_id):
         'cheaper_production': 5,
         'special_building_limit': 3,
         'fundraising': 4,
+        'specialist_support': 1,
+        'targeting_ammunition': 3,
+        'fortified_infrastructure': 3,
+        'transport_capacity': 3,
     }.get(perk_id, 6)
 
 
@@ -101,6 +105,11 @@ def validate_perk(perk):
             'unit_discount_percent',
             'special_building_limit_stacks',
             'fundraising_stacks',
+            'support_technology_by_country',
+            'targeting_stacks',
+            'ammo_stacks',
+            'infrastructure_health_percent',
+            'transport_capacity_stacks',
         }
         if not effects or set(effects) - supported:
             raise ValueError('Unsupported or empty perk effects.')
@@ -126,6 +135,10 @@ def validate_perk(perk):
             ('unit_discount_percent', 25),
             ('special_building_limit_stacks', 3),
             ('fundraising_stacks', 4),
+            ('targeting_stacks', 3),
+            ('ammo_stacks', 3),
+            ('infrastructure_health_percent', 45),
+            ('transport_capacity_stacks', 3),
         ):
             if key in effects:
                 integer(effects[key], key)
@@ -148,6 +161,7 @@ def validate_perk(perk):
             'superweapons_by_country',
             'special_units_by_country',
             'lab_reserve_units_by_country',
+            'support_technology_by_country',
         ):
             if key not in effects:
                 continue
@@ -180,12 +194,15 @@ def validate_perk(perk):
                         'support_powers_by_country': 5,
                         'power_buildings_by_country': 24,
                         'special_units_by_country': 6,
+                        'support_technology_by_country': 2,
                     }.get(key, 5)
                     minimum = 0 if key == 'power_buildings_by_country' else 1
                     if not isinstance(values, list) or not minimum <= len(values) <= maximum:
                         raise ValueError(f'{key} requires {minimum} to {maximum} native types.')
                     for value in values:
                         _techno(value)
+                    if key == 'support_technology_by_country' and len(set(values)) != len(values):
+                        raise ValueError('Specialist support types must be unique per faction.')
                     if key == 'special_units_by_country':
                         if len(values) != index + 1 or len(set(values)) != len(values):
                             raise ValueError(
@@ -246,6 +263,7 @@ def resolve_effects(
     include_generator_power=False,
     include_economy=False,
     share_starting_power=False,
+    include_expansion=False,
 ):
     effects = {
         'starting_credits': 0,
@@ -289,6 +307,13 @@ def resolve_effects(
     )
     if include_economy:
         effects.update({field: 0 for field in economy_fields})
+    expansion_fields = (
+        'targeting_stacks', 'ammo_stacks', 'infrastructure_health_percent',
+        'transport_capacity_stacks',
+    )
+    if include_expansion:
+        effects.update({field: 0 for field in expansion_fields})
+        effects['support_technology'] = []
     catalogue = {entry['id']: entry for entry in config['perks']}
     fallback = []
     shared_power = Counter()
@@ -298,6 +323,12 @@ def resolve_effects(
         if type(rank) is not int or not 1 <= rank <= len(entries):
             raise ValueError(f'Invalid purchased perk rank: {key}.')
         current = entries[min(rank, len(ranks(catalogue[key], country))) - 1]['effects']
+        if include_expansion:
+            for field in expansion_fields:
+                effects[field] = max(effects[field], current.get(field, 0))
+            effects['support_technology'].extend(
+                current.get('support_technology_by_country', {}).get(country, [])
+            )
         if include_economy:
             for field in economy_fields:
                 effects[field] = max(effects[field], current.get(field, 0))

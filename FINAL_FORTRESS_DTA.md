@@ -9,14 +9,24 @@ and launcher appearance; campaign seed, mission and reward settings are hidden.
 Fortress uses its own purchases, preferences, run snapshots and Defensive Points.
 Campaign, Grid, Shop and Archipelago saves are independent.
 
-Defend the Executive Building headquarters (`V37`) beside the initial MCV on **King of the Hills
+Permanent perks use the Shop-style arrow controls: **◀** refunds the highest
+purchased rank at its full Defensive Points cost, and **▶** buys the next rank.
+The same actions are available through Left/Right keys and the Refund rank and
+Buy / upgrade buttons. Refunded points can be spent on another perk immediately.
+Purchases and refunds are locked during an active run. Disabling a perk retains
+its purchased ranks without refunding points. Refunds also work on ranks retained
+above the current faction's usable limit. Finished run snapshots and reward
+receipts remain unchanged when points are reallocated for a later run.
+
+Defend the Civilian Armory headquarters (`ARMORY`) beside the initial MCV on **King of the Hills
 Extreme** for 60 simulation minutes. Choose GDI, Nod, Allies or Soviet, one of
 the seven DTA difficulty grades, and a wave multiplier from x1 through x10.
 Normal skirmish AI continues alongside scripted waves. Only starting enemy
 construction yards and their fixed defenses are protected; expansion yards,
 factories, power plants and other ordinary buildings remain destructible.
-Every friendly house starts with one faction harvester, including runs without
-perks. Preplaced refineries do not grant a duplicate collector. Starting defenses
+Runs without a starting refinery receive no harvester. The Starting buildings
+perk supplies one faction harvester per friendly house at refinery rank and
+above. Preplaced refineries do not grant a duplicate collector. Starting defenses
 add two emplacements of one new type per rank, with faction-specific limits:
 
 - GDI: Guard Tower and Advanced Guard Tower; maximum rank 2, four emplacements.
@@ -29,11 +39,11 @@ The UI shows the chosen faction's ranks and limit. Higher purchased ranks are
 retained when switching to a faction with fewer types; purchases beyond that
 faction's limit are disabled. Existing rank 3/4 purchases remain valid. Profiles
 already refunded by the earlier two-rank version keep those refunds and can buy
-the newly available ranks. The debug profile owns every rank.
+the newly available ranks.
 Each enemy starts with four fixed emplacements covering all its available types.
 Extra friendly generators cover only the actual starting power shortfall,
-accounting for More power ranks. The headquarters uses V37's native 2×2 art and
-bib, while retaining the Fortress base health of 7,000 and existing objective
+accounting for More power ranks. The headquarters uses ARMORY's native 2×2 art,
+with its training function disabled, while retaining the Fortress base health of 7,000 and existing objective
 ownership, durability upgrades, reserve shield and defeat behavior.
 
 Six guarded crates exist at startup. First collection pays 10 Defensive Points
@@ -54,6 +64,11 @@ escrow correction. Unfinished quits grant no kill bonus.
   house aliases, not MO countries or Ares rules. Friendly production, costs,
   unit buffs and generators use private types. Enemy recipes and tier buffs use
   separate private identities, including when both sides share a faction.
+- Buildable catalogue aliases share one friendly production clone. Soviet Rifle
+  Infantry and Rocket Soldiers retain their native Soviet voices without adding
+  duplicate sidebar entries. Starting troops, paradrops and helper AI recipes
+  route both native identities to that same clone; native originals remain
+  unavailable to friendly production.
 - Enemy MCVs deploy into their protected starting yards through DTA's normal
   deployment path, initializing native base plans. Allied AI MCVs also deploy
   automatically. Computer houses receive explicit production, autocreate,
@@ -120,11 +135,27 @@ escrow correction. Unfinished quits grant no kill bonus.
   effect helpers are cleared before preparation and after Fortress releases its
   runtime, using the same cleanup as other randomizer modes.
 
-The current catalogue exposes **27 perks and 27 Challenges**. Building-income
+The current catalogue exposes **31 perks and 27 Challenges**. Building-income
 upgrades, emergency objective repair and veteran defenses are intentionally
 excluded. DTA's available power catalogue replaces MO's support/superweapon rank
 lists; the two power unlock perks each have one rank. Aircraft handling and the
 shared co-op countdown overlay retain the DTA adaptations described above.
+
+Four additional perk lines use the existing purchases, enable/disable controls
+and full-cost rank refunds:
+
+| Perk | Ranks and Defensive Points cost per rank | Effect |
+| --- | --- | --- |
+| Specialist support technology | 1 rank: 250 | GDI Mobile Sensor Array; Nod Mobile Repair Vehicle and Stealth Generator; Allied Gap Generator; Soviet Shore Artillery. Vehicles require the faction war factory and radar; buildings require the faction construction yard and radar. Native credit costs, power demand and limits remain. |
+| Targeting and ammunition | 3 ranks: 100 / 220 / 400 | +0.5 / +1 / +1.5 cells of weapon range and +1 / +2 / +3 ammunition on catalogue-eligible friendly mobile types. Existing DTA buff caps and projectile travel margins apply. Demolition Truck range, defensive-building range and infinite ammunition are excluded. |
+| Fortified infrastructure | 3 ranks: 100 / 220 / 400 | +15% / +30% / +45% maximum health on friendly construction yards, production buildings, refineries, generators and silos, including future construction. Objective, defenses and support structures retain their separate health rules. |
+| Transport capacity | 3 ranks: 80 / 160 / 280 | +1 / +2 / +3 passenger slots on eligible APCs, Chinooks and landing craft. Gunner and sealed transports are excluded. |
+
+These perks grant no starting units, buildings or passengers. Friendly human and
+helper houses share their private production types; enemy copies retain native
+values. The Mobile Sensor Array retains its linked deployed sensor structure
+and can undeploy back into its private mobile type. Specialist access does not
+assign a hero limit to ordinarily unlimited support vehicles.
 
 Possible replacements for the objective's visual are listed in
 [Neutral objective candidates](FINAL_FORTRESS_OBJECTIVES.md). The current building
@@ -157,18 +188,20 @@ Reconnect the whole lobby between games; there is no mid-game joining.
 ## Persistence and review status
 
 Ordinary progression uses `final_fortress_state.json` and its OS lock in DTA's
-APP_DIR. Plans and saves have DTA-owned version 1 and reject another game's
-state. Recovery scans DTA's rotating DEBUG logs, requires this run's START and
+APP_DIR. Saves use DTA-owned schema version 1; new plans use version 3, while
+version 1 and 2 receipts retain their frozen effects and starting economy. Other games' state is
+rejected. Recovery scans DTA's rotating DEBUG logs, requires this run's START and
 terminal markers, backs up changed saves and credits only missing receipts.
 Generic Winner rows and elapsed launcher time never award completion.
 
-Both source and compiled launchers expose **Standard** and **Debug (all unlocks)**
-in the Profile selector at the top of Final Fortress. Selecting Debug creates a
-separate `final_fortress_testing_state.json`, purchasing and enabling every perk
-at its maximum rank. Challenges remain individually selectable. Later catalogue
-additions receive their maximum ranks when the profile is selected again;
-existing selections and run receipts are retained. Standard progression uses its
-own file and is never overwritten by debug unlocks.
+Final Fortress exposes only ordinary progression. The debug profile, profile
+selector and all-unlocks initializer have been removed.
+
+Final scores are read from Vinifera's native Winner/Loser records without
+requiring the older `Sending game results.` preamble. Human names and actual
+remapped color schemes identify friendly houses, including helpers when the
+commander selects their original color. The full friendly table must be read
+before kill rewards are credited and automatic game closure is scheduled.
 
 Source compilation, production configuration validation and inspection of
 prepared native map/spawn artifacts cover this implementation. Packed overlay

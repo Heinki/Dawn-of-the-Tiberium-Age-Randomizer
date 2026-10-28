@@ -12,7 +12,6 @@ from randomizer.final_fortress.persistence import (
     FinalFortressRepository,
     FinalFortressPersistenceError,
 )
-from randomizer.final_fortress.profiles import PROFILE_PATHS, STANDARD_PROFILE, ALL_UNLOCKS_PROFILE
 from randomizer.final_fortress.challenges import label, description, maximum
 from randomizer.final_fortress.ui import refresh_results, show_final_fortress_help
 from randomizer.final_fortress.results import FinalFortressResultWatch
@@ -25,7 +24,6 @@ class FinalFortressController(FortressCoopController):
         self._final_fortress_preparing = False
         self._final_fortress_watch = None
         self._final_fortress_saved_tabs = None
-        self._final_fortress_profile = STANDARD_PROFILE
         self._fortress_lobby = None
         self._fortress_pending = None
         self._fortress_ranks = {}
@@ -36,7 +34,6 @@ class FinalFortressController(FortressCoopController):
         self.fortress_coop_status_var = tk.StringVar(value='Disconnected')
         self.game_mode_choices = (*PROGRESSION_MODES, DISPLAY_NAME)
         self.game_mode_var = tk.StringVar(value=self.progression_mode_var.get())
-        self.final_fortress_profile_var = tk.StringVar(value=STANDARD_PROFILE)
         self.final_fortress_country_choices = {v: k for k, v in COUNTRY_LABELS.items()}
         self.final_fortress_difficulty_choices = {k.title(): k for k in DIFFICULTY_IDS}
         self.final_fortress_wave_multiplier_choices = {f'x{n}': n for n in WAVE_MULTIPLIERS}
@@ -236,20 +233,34 @@ class FinalFortressController(FortressCoopController):
         from randomizer.final_fortress.perks import ranks, owned_rank, next_price
 
         tree = self.final_fortress_perks_tree
+        perks_locked = self.final_fortress_perks_locked()
+        self.final_fortress_perk_hint.configure(
+            text=(
+                'Perk changes are locked during an active run or while joining a host.'
+                if perks_locked else
+                '◀ Refund rank at full cost · ▶ Buy next rank · Left/Right keys'
+            )
+        )
         for perk in config['perks']:
             country = preferences['player_country']
             max_rank = len(ranks(perk, country))
-            rank = min(owned_rank(state, perk['id']), max_rank)
-            price = next_price(perk, rank, country)
+            purchased_rank = owned_rank(state, perk['id'])
+            rank = min(purchased_rank, max_rank)
+            price = next_price(perk, purchased_rank, country)
             status = (
                 'Enabled'
                 if perk['id'] in state['selected_perks']
                 else 'Disabled' if rank else 'Not purchased'
             )
+            if purchased_rank > max_rank:
+                status += f' · {purchased_rank} owned'
             values = (
                 perk['display_name'],
+                '◀' if purchased_rank and not perks_locked else '',
+                f'{rank}/{max_rank}',
+                '▶' if not perks_locked and price is not None and state['gems'] >= price else '',
+                status,
                 f'{price} Defensive Points' if price is not None else 'MAX',
-                f'{rank}/{max_rank} · {status}',
                 perk['description'],
             )
             if tree.exists(perk['id']):
@@ -314,12 +325,14 @@ class FinalFortressController(FortressCoopController):
 
     def fortress_help_text(self):
         return (
-            'Defend the Executive Building (V37) headquarters beside your initial MCV for 60 simulation minutes. Every friendly house starts with one faction harvester. Starting defenses add two emplacements of each unlocked type: GDI has two types, Nod and Soviet three, Allies four. Higher purchased ranks remain available when switching factions. Extra generators cover only the actual starting demand. Objective destruction means defeat. Ordinary skirmish AI remains active. Enemy MCVs deploy into protected starting yards; fixed turrets are immune and expansions remain destructible.\n\n'
+            'Defend the Civilian Armory (ARMORY) headquarters beside your initial MCV for 60 simulation minutes. A starting refinery includes one faction harvester; runs without a starting refinery receive none. Starting defenses add two emplacements of each unlocked type: GDI has two types, Nod and Soviet three, Allies four. Higher purchased ranks remain available when switching factions. Extra generators cover only the actual starting demand. Objective destruction means defeat. Ordinary skirmish AI remains active. Enemy MCVs deploy into protected starting yards; fixed turrets are immune and expansions remain destructible.\n\n'
             'Waves begin at minute 5 on one front, minute 10 on two, minute 15 on three. Difficulty and x1–x10 scale scripted troops. Five minutes separate complete deliveries. Enemy reservations: 480 units in groups of 20; allied reinforcements: 150 in shared groups of 15. Living survivors retain their reservations. Helpers receive attack orders.\n\n'
             'Six guarded crates exist from the start. First pickup grants 10 Defensive Points to every human. Human collectors receive their frozen payload; enemy/helper pickup sends it to the host. Contents: 40% 2,500 credits; 30% ten Tier 1 units; 20% five Tier 2 units; 10% one faction special. Guard deaths award nothing.\n\n'
             'Survival awards: 25 points at minute 25, 25 at minute 45, 50 on victory. Earned points survive defeat or quit. Verified victory/defeat also awards five points per 50 corrected friendly native kill-score points, capped at 500 at 5,000. Native scores may include captures. Unfinished quits have no kill bonus.\n\n'
             'Settings contains Final Fortress co-op for two or three humans. Host chooses shared settings/perks; Fundraising remains personal. Every peer verifies identical map bytes before launch. Each machine keeps its own wallet and purchases. Helpers fill only unused friendly seats. No mid-game joining or reconnect.\n\n'
-            'Perks show cumulative faction-specific ranks. Challenge affects enemies only. Double-click or Space toggles selected rows; inline arrows adjust stacks. Drag, Shift/Ctrl/Alt selection, Ctrl+A, bulk enable/disable and Max stacks are supported. Max stacks never enables modifiers.\n\n'
+            'Specialist support technology unlocks faction support units/buildings through the normal war factory or construction yard plus radar. Targeting and ammunition improves only eligible mobile types. Fortified infrastructure adds up to 45% health to production/economy buildings, separately from objective durability. Transport capacity adds up to three passenger slots without granting units or passengers. These perks share friendly private types with helpers and do not buff enemy copies.\n\n'
+            'Permanent perks: the left arrow refunds the highest purchased rank at its full Defensive Points cost; the right arrow buys the next rank. Refunded points can be spent on another perk. Left/Right keys and the Refund rank / Buy buttons also work. Purchases and refunds are locked during an active run. Higher ranks retained from another faction can also be refunded. Disabling a perk keeps its purchased ranks and does not refund points.\n\n'
+            'Perks show cumulative faction-specific ranks. Challenge affects enemies only. Double-click or Space toggles selected Challenge rows; inline arrows adjust stacks. Drag, Shift/Ctrl/Alt selection, Ctrl+A, bulk enable/disable and Max stacks are supported. Max stacks never enables modifiers.\n\n'
             + self.final_fortress_config['capabilities']['unsupported']
         )
 
@@ -336,30 +349,6 @@ class FinalFortressController(FortressCoopController):
             messagebox.showerror(DISPLAY_NAME, str(exc), parent=self)
         self.publish_fortress_income()
 
-    def on_final_fortress_profile_changed(self, _event=None):
-        selected = self.final_fortress_profile_var.get()
-        if selected not in PROFILE_PATHS or self.fortress_busy() or self._fortress_lobby:
-            self.final_fortress_profile_var.set(self._final_fortress_profile)
-            return
-        try:
-            repository = FinalFortressRepository(PROFILE_PATHS[selected])
-            if selected == ALL_UNLOCKS_PROFILE:
-                repository.initialize_all_unlocks(self.final_fortress_config)
-            else:
-                repository.reconcile_perk_ranks(self.final_fortress_config)
-            repository.load()
-        except (ValueError, FinalFortressPersistenceError) as exc:
-            self.final_fortress_profile_var.set(self._final_fortress_profile)
-            messagebox.showerror(DISPLAY_NAME, str(exc), parent=self)
-            return
-        self.final_fortress_repository = repository
-        self._final_fortress_profile = selected
-        self._final_fortress_result_content = None
-        self._final_fortress_results_shown = None
-        self.refresh_final_fortress()
-        if selected == ALL_UNLOCKS_PROFILE:
-            self.final_fortress_progression_tabs.select(0)
-
     def on_final_fortress_map_changed(self, _event=None):
         self._final_fortress_action(
             lambda: self.final_fortress_repository.set_map(
@@ -374,14 +363,66 @@ class FinalFortressController(FortressCoopController):
             )
         )
 
+    def final_fortress_perks_locked(self):
+        state = self.final_fortress_state
+        return bool(
+            state is None
+            or self.fortress_busy()
+            or self.fortress_coop_guest()
+            or (state['run'] is not None and state['run']['status'] == 'active')
+        )
+
+    def on_final_fortress_perk_click(self, event):
+        tree = self.final_fortress_perks_tree
+        if tree.identify_region(event.x, event.y) != 'cell':
+            return
+        key = tree.identify_row(event.y)
+        column = tree.column(tree.identify_column(event.x), 'id')
+        if not key or column not in ('decrease', 'increase'):
+            return
+        tree.selection_set(key)
+        tree.focus(key)
+        tree.focus_set()
+        if tree.set(key, column):
+            if column == 'decrease':
+                self.refund_final_fortress_perk()
+            else:
+                self.buy_final_fortress_perk()
+        return 'break'
+
     def buy_final_fortress_perk(self):
+        from randomizer.final_fortress.perks import next_price, owned_rank
+
+        if self.final_fortress_perks_locked():
+            return 'break'
         selection = self.final_fortress_perks_tree.selection()
         if selection:
+            perk = next(
+                entry for entry in self.final_fortress_config['perks'] if entry['id'] == selection[0]
+            )
+            state = self.final_fortress_state
+            price = next_price(perk, owned_rank(state, selection[0]),
+                               state['preferences']['player_country'])
+            if price is None or state['gems'] < price:
+                return 'break'
             self._final_fortress_action(
                 lambda: self.final_fortress_repository.purchase_perk(
                     self.final_fortress_config, selection[0]
                 )
             )
+        return 'break'
+
+    def refund_final_fortress_perk(self):
+        if self.final_fortress_perks_locked():
+            return 'break'
+        selection = self.final_fortress_perks_tree.selection()
+        if selection and selection[0] in self.final_fortress_state['owned_perks']:
+            self._final_fortress_action(
+                lambda: self.final_fortress_repository.refund_perk(
+                    self.final_fortress_config, selection[0]
+                )
+            )
+        return 'break'
 
     def _recover_final_fortress_result(self):
         if self.fortress_busy():
@@ -600,6 +641,7 @@ class FinalFortressController(FortressCoopController):
         state = self.final_fortress_state
         if not selection or state is None:
             show_perk_details(self, 'Select a perk to see its ranks.')
+            self.final_fortress_refund_perk_button.configure(state='disabled')
             self.final_fortress_buy_perk_button.configure(state='disabled')
             self.final_fortress_toggle_perk_button.configure(state='disabled')
             return
@@ -607,16 +649,23 @@ class FinalFortressController(FortressCoopController):
             entry for entry in self.final_fortress_config['perks'] if entry['id'] == selection[0]
         )
         country = state['preferences']['player_country']
-        rank = min(owned_rank(state, perk['id']), len(ranks(perk, country)))
+        rank = owned_rank(state, perk['id'])
         price = next_price(perk, rank, country)
-        process = getattr(self, 'active_game_process', None)
-        busy = (
-            self._final_fortress_preparing
-            or self.fortress_coop_guest()
-            or (process is not None and process.poll() is None)
-        )
+        busy = self.final_fortress_perks_locked()
         enabled = perk['id'] in state['selected_perks']
-        show_perk_details(self, rank_descriptions(perk, country, self.final_fortress_config))
+        details = rank_descriptions(perk, country, self.final_fortress_config)
+        if 0 < rank <= len(ranks(perk)):
+            refund = ranks(perk)[rank - 1]['gem_cost']
+            details = f'Refund purchased rank {rank}: {refund} Defensive Points.\n\n' + details
+        if rank > len(ranks(perk, country)):
+            details = (
+                f'{rank} ranks owned; this faction uses at most {len(ranks(perk, country))}. '
+                'Refunding removes the highest purchased rank first.\n\n' + details
+            )
+        show_perk_details(self, details)
+        self.final_fortress_refund_perk_button.configure(
+            state='normal' if rank and not busy else 'disabled',
+        )
         self.final_fortress_buy_perk_button.configure(
             text='Maximum rank' if price is None else 'Upgrade' if rank else 'Buy',
             state='disabled' if busy or price is None or state['gems'] < price else 'normal',
@@ -627,6 +676,8 @@ class FinalFortressController(FortressCoopController):
         )
 
     def toggle_final_fortress_perk(self):
+        if self.final_fortress_perks_locked():
+            return
         selection = self.final_fortress_perks_tree.selection()
         if selection:
             key = selection[0]
