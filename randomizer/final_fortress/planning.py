@@ -12,7 +12,7 @@ from .waves import build_wave_schedule
 from .wave_priority import apply_priorities
 from .pressure import size_composition
 
-PLAN_VERSION = 3
+PLAN_VERSION = 4
 
 
 def _starting_economy(effects, country, plan_version):
@@ -28,7 +28,8 @@ def _starting_economy(effects, country, plan_version):
         plan_version == 1 or refinery in effects['starting_buildings']
     ):
         effects['starting_harvesters'] = [{'type': harvester, 'count': 1}]
-    rules = installed_effective_sections()
+    # Keep historical receipts reproducible; new runs match Enhanced gameplay.
+    rules = installed_effective_sections(enhanced=plan_version >= 4)
     kinds = [*effects['starting_buildings'], *effects['defense_types']]
     demand = sum(max(0, -float(rules[k].get('Power', '0'))) for k in kinds)
     multiplier = 1 + effects['generator_power_percent'] / 100
@@ -68,7 +69,7 @@ def build_run_plan(
     validate_config(config)
     validate_wave_multiplier(wave_multiplier)
     text(seed, 'Seed')
-    if type(plan_version) is not int or plan_version not in (1, 2, PLAN_VERSION):
+    if type(plan_version) is not int or plan_version not in (1, 2, 3, PLAN_VERSION):
         raise ValueError('Unsupported DTA Fortress plan version.')
     if difficulty not in DIFFICULTY_IDS or player_country not in SIDE_COUNTRIES:
         raise ValueError('Choose a DTA faction and difficulty.')

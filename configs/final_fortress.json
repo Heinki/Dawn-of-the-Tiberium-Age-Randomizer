@@ -7573,7 +7573,7 @@
       {
         "id": "special_unit_access",
         "display_name": "Special unit access",
-        "description": "Unlock one additional faction special unit for production per rank. Uses the ordinary faction war factory; unique-unit limits still apply.",
+        "description": "Unlock one additional faction special unit for production per rank. Allies unlock Tanya, Enforcer, then Battle Rig. Uses the ordinary faction war factory; unique-unit limits still apply.",
         "gem_cost": 300,
         "effects": {
           "special_units_by_country": {
@@ -7651,7 +7651,7 @@
                 "Allies": [
                   "TANYA",
                   "BFRT",
-                  "PTNK"
+                  "BRIG"
                 ],
                 "Soviet": [
                   "VOLKOV",

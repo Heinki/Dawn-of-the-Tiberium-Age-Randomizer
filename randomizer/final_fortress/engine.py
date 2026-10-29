@@ -990,7 +990,9 @@ def _delivery_chain(
 def build_map(game_root, run, rules=None, *, power_runtime=None):
     root = Path(game_root)
     plan = run['plan']
-    rules = rules or installed_effective_sections()
+    # Private types must inherit Enhance.ini too, or flattened Classic fields
+    # override the Enhanced rules selected by spawn.ini's Firestorm setting.
+    rules = rules or installed_effective_sections(enhanced=True)
     info = inspect_map(root, plan['map'])
     if info['sha256'] != plan['map']['source_sha256']:
         raise ValueError('Fortress source map changed; reviewed layout needs updating.')
@@ -1542,6 +1544,7 @@ def build_map(game_root, run, rules=None, *, power_runtime=None):
     }
     pave_spawn_areas(lines, cells)
     writer.put('Basic', 'Name', 'Final Fortress - King of the Hills Extreme')
+    writer.put('Basic', 'RequiredAddOn', '1')
     writer.put('Basic', 'MultiplayerOnly', 'yes')
     writer.put('Basic', 'IgnoreGlobalAITriggers', 'no')
     writer.put('Basic', 'SkipScore', 'no')

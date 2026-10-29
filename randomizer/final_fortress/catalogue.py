@@ -22,7 +22,7 @@ def validate_name(value):
 
 
 def installed_rules_registry(synchronous=False):
-    return {}, installed_effective_sections()
+    return {}, installed_effective_sections(enhanced=True)
 
 
 def tier(record):

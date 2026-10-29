@@ -188,7 +188,7 @@ def validate_config(config):
     validate_static_config(config)
     from randomizer.dta.rules import installed_effective_sections
 
-    installed = installed_effective_sections()
+    installed = installed_effective_sections(enhanced=True)
 
     def validate_native_units(value):
         if isinstance(value, dict):
