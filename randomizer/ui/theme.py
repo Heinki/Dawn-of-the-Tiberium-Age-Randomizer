@@ -217,19 +217,33 @@ def apply_color_mode(self):
         foreground=[('selected', selected_foreground), ('active', foreground)],
         padding=[('selected', (16, 7)), ('active', (16, 7))],
     )
-    style.configure('Unlocks.TNotebook', background=background, bordercolor=border, tabposition='n')
+    style.configure('Info.TNotebook', background=background, bordercolor=border, tabposition='nw')
+    style.configure(
+        'Info.TNotebook.Tab',
+        background=panel,
+        foreground=foreground,
+        padding=(7, 5),
+        font=('Segoe UI', 9, 'bold'),
+    )
+    style.map(
+        'Info.TNotebook.Tab',
+        background=[('selected', selected), ('active', palette['canvas'])],
+        foreground=[('selected', selected_foreground), ('active', foreground)],
+        padding=[('selected', (7, 5)), ('active', (7, 5))],
+    )
+    style.configure('Unlocks.TNotebook', background=background, bordercolor=border, tabposition='nw')
     style.configure(
         'Unlocks.TNotebook.Tab',
         background=panel,
         foreground=foreground,
-        padding=(7, 7),
+        padding=(4, 5),
         font=('Segoe UI', 9, 'bold'),
     )
     style.map(
         'Unlocks.TNotebook.Tab',
         background=[('selected', selected), ('active', palette['canvas'])],
         foreground=[('selected', selected_foreground), ('active', foreground)],
-        padding=[('selected', (7, 7)), ('active', (7, 7))],
+        padding=[('selected', (4, 5)), ('active', (4, 5))],
     )
     style.configure(
         'Treeview',
