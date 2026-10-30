@@ -25,6 +25,9 @@ jobs:
           cache-dependency-path: requirements-build.txt
       - name: Install pinned build dependencies
         run: python -m pip install --disable-pip-version-check -r requirements-build.txt
+      - name: Validate committed APWorld
+        shell: powershell
+        run: .\check_release_files.ps1
       - name: Compile source
         run: python -m compileall -q .
       - name: Build and verify complete release bundle

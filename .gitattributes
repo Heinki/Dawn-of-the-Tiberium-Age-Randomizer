@@ -1,0 +1,4 @@
+# APWorld packaging includes these files verbatim. Preserve their checked-in
+# bytes on Windows and Linux so release validation sees the same payload.
+Archipelago/APWorld/** -text
+configs/** -text

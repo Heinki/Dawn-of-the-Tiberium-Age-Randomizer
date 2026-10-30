@@ -69,11 +69,28 @@ try {
     $committedHash = (
         Get-FileHash -LiteralPath $apworldPath -Algorithm SHA256
     ).Hash.ToLowerInvariant()
-    $generatedHash = (
-        Get-FileHash -LiteralPath $generatedApworld -Algorithm SHA256
-    ).Hash.ToLowerInvariant()
-    if ($committedHash -ne $generatedHash) {
-        throw "Committed APWorld does not match deterministic source build."
+    # ZIP platform headers and compression differ between Windows and Linux.
+    # Require identical packaged paths and bytes, independent of the container.
+    $compareArchives = @'
+import sys
+from zipfile import ZipFile
+
+with ZipFile(sys.argv[1]) as committed, ZipFile(sys.argv[2]) as generated:
+    committed_names = committed.namelist()
+    generated_names = generated.namelist()
+    if (len(set(committed_names)) != len(committed_names)
+            or len(set(generated_names)) != len(generated_names)):
+        raise SystemExit('APWorld contains duplicate archive paths.')
+    if set(committed_names) != set(generated_names):
+        raise SystemExit('Committed APWorld file list differs from the source build.')
+    for name in sorted(generated_names):
+        if committed.read(name) != generated.read(name):
+            raise SystemExit('Committed APWorld content differs from source: ' + name)
+print('Committed APWorld contents match the source build.')
+'@
+    & python -c $compareArchives $apworldPath $generatedApworld
+    if ($LASTEXITCODE -ne 0) {
+        throw "Committed APWorld does not match the source build."
     }
 }
 finally {
