@@ -67,6 +67,34 @@ def _serialize(sections):
                        for line in (f'[{section}]', *(f'{key}={value}' for key, value in values.items() if value is not None), ''))
 
 
+def _dta_naval_options(root, source, rows):
+    """Apply the native lobby's map-specific naval option and AI overlay."""
+    from randomizer.coop.catalogue import inherited_sections, merge, resolve_path, truth
+    from randomizer.dta.rules import ini_sections
+
+    catalogue = ini_sections(root / 'INI' / 'MPMaps.ini')
+    relative = source.relative_to(root.resolve()).with_suffix('').as_posix().casefold()
+    metadata = next((dict(values) for name, values in catalogue.items()
+                     if name.replace('\\', '/').casefold() == relative), {})
+    seen = set()
+    while metadata.get('BaseSection'):
+        parent = metadata.pop('BaseSection')
+        if parent in seen or parent not in catalogue:
+            raise ValueError('Invalid Skirmish catalogue BaseSection.')
+        seen.add(parent)
+        metadata = {**catalogue[parent], **metadata}
+    forced = dict(item.strip().split(':', 1) for item in metadata.get('ForcedOptions', '').split(',')
+                  if ':' in item)
+    control = ini_sections(root / 'Resources' / 'SkirmishLobby.ini')['chkNaval']
+    enabled = truth(rows.get('ForcedOptions', {}).get(
+        'chkNaval', forced.get('Naval', control.get('Checked', 'false'))))
+    if enabled:
+        merge(rows, inherited_sections(root, resolve_path(root, control['CustomIniPath'])))
+    extra = metadata.get('ExtraININame')
+    if extra:
+        merge(rows, inherited_sections(root, resolve_path(root, 'INI/Map Code/' + extra)))
+
+
 def prepare_game(root, definition, rewards, settings, *, country, color, opponents,
                  difficulty, seed, game_speed, randomize_access):
     root = Path(root)
@@ -86,6 +114,7 @@ def prepare_game(root, definition, rewards, settings, *, country, color, opponen
         from randomizer.coop.catalogue import inherited_sections
         rows = inherited_sections(root, source)
         rows.pop('INISystem', None)
+        _dta_naval_options(root, source, rows)
         mode = 'Medium' if difficulty == 'Normal' else difficulty
         overlay = inherited_sections(root, root / 'INI' / 'Map Code' / f'Difficulty {mode}.ini')
         for section, values in overlay.items():
@@ -94,7 +123,8 @@ def prepare_game(root, definition, rewards, settings, *, country, color, opponen
                                  str(source.relative_to(root.resolve())))
     else:
         rows, side = _ra2_rewards(rows, rewards, settings, country, randomize_access)
-    rows.setdefault('Basic', {}).update(Name=definition['name'], MultiplayerOnly='yes', IgnoreGlobalAITriggers='no')
+    rows.setdefault('Basic', {}).update(Name=definition['name'], MultiplayerOnly='yes')
+    rows['Basic'].setdefault('IgnoreGlobalAITriggers', 'no')
     rows['Basic'].pop('Player', None)
     data = _serialize(rows)
     game_id = random.SystemRandom().randrange(1, 2**31 - 1)
@@ -135,7 +165,8 @@ def _dta_rewards(root, rows, rewards, settings, country, randomized, scenario):
     from randomizer.dta.powers import player_power_rules, ensure_power_runtime_types
     mission = {'code': '__SKIRMISH__', 'scenario': scenario, 'side': country,
                'coop_player_count': 1, 'coop_side': PLAYABLE_FACTIONS.index(country),
-               'coop_allies': [], 'coop_enemies': [], 'required_addon': False}
+               'coop_allies': [], 'coop_enemies': [], 'required_addon': True,
+               'skirmish': True, 'skirmish_tech_level': 7}
     starter_access = set(settings.get('_skirmish_access', ()))
     starter_access.update(settings.get('_skirmish_starter_units', ()))
     starter_access.update(settings.get('_skirmish_starter_defenses', ()))
@@ -150,7 +181,7 @@ def _dta_rewards(root, rows, rewards, settings, country, randomized, scenario):
     # Existing adapter allocates an unused, engine-registered HouseType mask.
     sides, report = player_production_rules(root, mission, rows, [{
         'rewards': rewards, 'settings': settings, 'randomize_access': randomized, 'credit_bonus': 0}])
-    installed = installed_effective_sections(False)
+    installed = installed_effective_sections(True)
     house = installed['Houses'][str(sides[0])]
     context = {'player_house': 'Spawn1', 'production_house': house, 'acts_like': sides[0],
                'original_production_house': country, 'shared_hostile_houses': []}

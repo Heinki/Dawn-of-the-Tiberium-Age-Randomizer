@@ -1197,6 +1197,7 @@ def build_map(game_root, run, rules=None, *, power_runtime=None):
             stats={
                 'Name': 'Fortress survival controller',
                 'Immune': 'yes',
+                'Repairable': 'no',
                 'LegalTarget': 'no',
                 'AILegalTarget': 'no',
                 'Insignificant': 'no',
@@ -1276,6 +1277,8 @@ def build_map(game_root, run, rules=None, *, power_runtime=None):
             owners=[ALIASES[enemy + 1]],
             stats={
                 'Immune': 'yes',
+                # DTA's C4 sabotage bypasses Immune and LegalTarget.
+                'Repairable': 'no',
                 'LegalTarget': 'no',
                 'AILegalTarget': 'no',
                 'Capturable': 'no',
@@ -1341,6 +1344,7 @@ def build_map(game_root, run, rules=None, *, power_runtime=None):
                     owners=[ALIASES[enemy + 1]],
                     stats={
                         'Immune': 'yes',
+                        'Repairable': 'no',
                         'LegalTarget': 'no',
                         'AILegalTarget': 'no',
                         'Capturable': 'no',

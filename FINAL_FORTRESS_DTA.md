@@ -24,9 +24,13 @@ the seven DTA difficulty grades, and a wave multiplier from x1 through x10.
 Normal skirmish AI continues alongside scripted waves. Only starting enemy
 construction yards and their fixed defenses are protected; expansion yards,
 factories, power plants and other ordinary buildings remain destructible.
+Protected yards and fixed defenses also disable repairability, which DTA uses
+to deny C4 placement even when a player forces the attack command.
 Runs without a starting refinery receive no harvester. The Starting buildings
 perk supplies one faction harvester per friendly house at refinery rank and
-above. Preplaced refineries do not grant a duplicate collector. Their placement-only
+above. Soviet radar ranks grant the Soviet Radar Dome (`SDOME`); Allied ranks
+grant the Allied Radar Dome (`RADOME`). Preplaced refineries do not grant a
+duplicate collector. Their placement-only
 types are hidden from human and AI construction and satisfy the same technology
 prerequisites as ordinary friendly refineries. Newly built refineries still supply
 their native collector. Starting defenses

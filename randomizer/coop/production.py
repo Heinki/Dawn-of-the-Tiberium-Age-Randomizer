@@ -130,6 +130,7 @@ def player_production_rules(root, mission, sections, loadouts):
             rewards.append({'unit': mcv, 'dta_production_access': True})
             rewards.extend(production_infrastructure_rewards(
                 rewards, enabled=True, production_context=context, mission=mission,
+                source_sections=combined,
             ))
         rules, player = unit_specific_buff_rules(
             mission, rewards, access_randomized=randomize,

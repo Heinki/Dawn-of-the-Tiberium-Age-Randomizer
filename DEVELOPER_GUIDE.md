@@ -96,6 +96,14 @@ Ore/Gems and creates the next offer; mission process exit without victory ends
 the run. Shop loadouts feed the same access, clone, power, starting-credit, and
 hostile-house scaling stages as normal progression.
 
+Progression Skirmish applies the installed lobby's naval default and each map's
+`MPMaps.ini` forced naval option, plus its extra AI map code. Naval infrastructure
+eligibility uses those effective rules and the multiplayer tech level instead of
+a campaign player House record. Skirmish clones use Enhanced rules to match
+`Firestorm=Yes`. Its result watcher reads complete native Winner/Loser score
+records from the fresh scenario; DTA does not emit the older
+`Sending game results.` preamble. A verified result survives score-screen dismissal.
+
 Shop unit prices are explicit per target in `configs/shop_mode.json`. Native
 DTA build cost supplies the baseline Mental Omega price band; reviewed utility
 and high-impact targets may override it. TechLevel remains catalogue metadata,

@@ -281,6 +281,7 @@ def production_infrastructure_rewards(
     enabled,
     production_context,
     mission=None,
+    source_sections=None,
 ):
     """Provide base essentials and factories needed by earned unit access.
 
@@ -334,7 +335,8 @@ def production_infrastructure_rewards(
                 production_type != 'naval'
                 or mission is None
                 or _naval_factory_naturally_available(
-                    mission, building_id, production_context
+                    mission, building_id, production_context,
+                    source_sections=source_sections,
                 )
             )
         ):
@@ -364,16 +366,26 @@ def _naval_factory_naturally_available(
     mission,
     building_id,
     production_context,
+    *,
+    source_sections=None,
 ):
     """Return whether the authored mission enables this player's naval yard."""
-    source = mission_source_path(mission.get('scenario'))
-    installed = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
-    if mission.get('required_addon'):
-        enhance_path = GAME_ROOT / 'INI' / 'Enhance.ini'
-        if enhance_path.is_file():
-            installed = _merged_sections(installed, ini_sections(enhance_path))
-    authored = ini_sections(source)
-    combined = _merged_sections(installed, authored)
+    if mission.get('skirmish'):
+        # Skirmish has no authored player House/TechLevel. Use the effective
+        # lobby overlays and spawn tech level before personal masks are added.
+        if source_sections is None:
+            return False
+        authored = {}
+        combined = source_sections
+    else:
+        source = mission_source_path(mission.get('scenario'))
+        installed = ini_sections(GAME_ROOT / 'INI' / 'Rules.ini')
+        if mission.get('required_addon'):
+            enhance_path = GAME_ROOT / 'INI' / 'Enhance.ini'
+            if enhance_path.is_file():
+                installed = _merged_sections(installed, ini_sections(enhance_path))
+        authored = ini_sections(source)
+        combined = _merged_sections(installed, authored)
     values = effective_section(combined, building_id)
     if str(values.get('Factory') or '').casefold() != 'unittype':
         return False
@@ -386,7 +398,8 @@ def _naval_factory_naturally_available(
     )
     try:
         player_tech_level = int(float(
-            authored.get(player_house, {}).get('TechLevel', -1)
+            mission.get('skirmish_tech_level', -1) if mission.get('skirmish')
+            else authored.get(player_house, {}).get('TechLevel', -1)
         ))
         factory_tech_level = int(float(values.get('TechLevel', -1)))
     except (TypeError, ValueError):

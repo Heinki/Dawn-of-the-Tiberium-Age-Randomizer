@@ -125,11 +125,16 @@ class SkirmishResultWatch:
                 name, outcome = self._pending
                 self._scores.setdefault(name, []).append(outcome)
                 self._pending = None
-                if self._completion and not self._quit and not self._unarmed:
+                # DTA prints MultiScore records directly, without the older
+                # Sending game results / SawCompletion preamble. The fresh
+                # scenario and complete native records bind this attempt.
+                if (self._completion or GAME == 'dta') and not self._quit and not self._unarmed:
                     if self._scores.get('Commander') == ['Loser']:
                         self.result = 'defeat'
                     elif self._scores == {'Commander': ['Winner'], 'Computer': ['Loser']}:
                         self.result = 'victory'
+                    if self.result:
+                        return  # Score-screen dismissal cannot change a result.
 
     def poll(self, *, final=False):
         if self.result or self._unarmed:
