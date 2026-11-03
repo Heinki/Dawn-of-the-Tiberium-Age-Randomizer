@@ -98,6 +98,13 @@ new room is safe; replacing it cannot alter an existing room.
 6. Enter the room password when one is required.
 7. Select **Connect**.
 
+You can reuse the same slot name in a newly generated room. Enter that room's
+current server and port, then select **Connect**; deleting settings is not
+required. Saved progress resumes only when the room seed, team, and slot match.
+A different room starts with its own server state, without carrying over old
+checks, items, or goal completion. If the room changes during an automatic
+reconnect, disconnect and select **Connect** to join the new session.
+
 Do not paste the browser room URL into the server field. Hosted rooms use the
 bare `archipelago.gg` host plus the separate game-server port. The launcher
 automatically uses secure WebSocket (`wss://`) for hosted rooms. Custom and
