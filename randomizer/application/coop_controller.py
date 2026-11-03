@@ -1075,11 +1075,13 @@ class CoopController:
 
     def _coop_safe_message(self, value):
         private = [getattr(self, name).get() for name in
-                   ('_coop_address', '_coop_pairing', '_coop_host_pairing') if hasattr(self, name)]
-        lobby = self._coop_lobby
-        if lobby:
-            private.extend((lobby.address, lobby.pairing_code))
-            private.extend(player['ip'] for player in lobby.players)
+                   ('_coop_address', '_coop_pairing', '_coop_host_pairing',
+                    '_fortress_address', '_fortress_pairing') if hasattr(self, name)]
+        for name in ('_coop_lobby', '_fortress_lobby'):
+            lobby = getattr(self, name, None)
+            if lobby:
+                private.extend((lobby.address, lobby.pairing_code))
+                private.extend(player['ip'] for player in lobby.players)
         return redact_connection_details(value, *private)
 
     def connect_coop(self):

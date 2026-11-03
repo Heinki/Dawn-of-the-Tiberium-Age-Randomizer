@@ -6,6 +6,7 @@ import queue
 import secrets
 import tkinter as tk
 from tkinter import ttk, messagebox
+from randomizer.core.diagnostics import event as log_event
 from randomizer.core.paths import GAME_ROOT
 from randomizer.coop.lobby import Lobby, pack, unpack
 from randomizer.coop.interfaces import zerotier_ipv4_addresses
@@ -116,15 +117,23 @@ class FortressCoopController(FortressCoopLaunchController):
         viewport.pack(fill='both', expand=True)
         frame = viewport.content
         frame.columnconfigure(1, weight=1)
-        role = tk.StringVar(value='Host')
-        name = tk.StringVar(value='Commander')
-        address = tk.StringVar()
-        code = tk.StringVar(value=secrets.token_hex(4))
+        if not hasattr(self, '_fortress_role'):
+            self._fortress_role = tk.StringVar(value='Host')
+            self._fortress_name = tk.StringVar(
+                value=self.config.get('player_name', 'Commander')[:15]
+            )
+            self._fortress_address = tk.StringVar()
+            self._fortress_pairing = tk.StringVar(value=secrets.token_hex(12))
+            self._fortress_host_addresses = tk.StringVar()
+        role = self._fortress_role
+        name = self._fortress_name
+        address = self._fortress_address
+        code = self._fortress_pairing
         for row, (text, variable) in enumerate(
             (
                 ('Role', role),
                 ('Player name', name),
-                ('Host ZeroTier IPv4', address),
+                ('Host ZeroTier IPv4 (Join only)', address),
                 ('Pairing code', code),
             )
         ):
@@ -142,12 +151,14 @@ class FortressCoopController(FortressCoopLaunchController):
             if self._fortress_lobby or self.fortress_busy():
                 return
             try:
+                if self.busy_depth or getattr(self, '_coop_lobby', None):
+                    raise ValueError('Finish preparation and disconnect campaign co-op first.')
                 validate_name(name.get())
                 count = int(self._fortress_coop_count_var.get())
                 if count not in (2, 3):
                     raise ValueError('Choose two or three players in Settings.')
                 host = role.get() == 'Host'
-                bind = zerotier_ipv4_addresses()[0] if host else ''
+                addresses = zerotier_ipv4_addresses() if host else ()
                 lobby = FortressLobby(
                     GAME_ROOT,
                     'host' if host else 'guest',
@@ -155,25 +166,54 @@ class FortressCoopController(FortressCoopLaunchController):
                     count,
                     address=address.get(),
                     pairing_code=code.get(),
-                    bind_address=bind,
                 )
                 self._fortress_lobby = lobby
                 self._fortress_ranks = {}
+                self._record_coop_log(
+                    f'Final Fortress starting: role={lobby.role}, players={lobby.count}, TCP {lobby.port}.'
+                )
                 lobby.start()
-                if host:
-                    address.set(bind)
+                self._fortress_host_addresses.set(
+                    'Host ZeroTier IPv4: ' + ', '.join(addresses) if host else ''
+                )
                 self.fortress_coop_status_var.set('Connecting…')
                 self.refresh_fortress_settings_controls()
-                self.after(100, self._poll_fortress_lobby)
+                self.after(100, lambda: self._poll_fortress_lobby(lobby))
             except (ValueError, OSError) as exc:
-                messagebox.showerror('Final Fortress co-op', str(exc), parent=window)
+                detail = self._coop_safe_message(exc)
+                self._record_coop_log('Fortress connection failed: ' + detail, error=True)
+                status = 'Connection failed: ' + detail
+                if self._fortress_lobby:
+                    self.disconnect_fortress_coop(status=status)
+                else:
+                    self.fortress_coop_status_var.set(status)
+                messagebox.showerror('Final Fortress co-op', detail, parent=window)
 
-        ttk.Label(frame, textvariable=self.fortress_coop_status_var, wraplength=400).grid(
-            row=4, column=0, columnspan=2, sticky='w', pady=8
+        def copy_pairing_code():
+            self.clipboard_clear()
+            self.clipboard_append(code.get())
+
+        ttk.Label(
+            frame,
+            text='Use distinct player names. Joiners must paste the host pairing code. '
+                 'Host shares one reachable ZeroTier IPv4 from the list below.',
+            wraplength=400,
+        ).grid(row=4, column=0, columnspan=2, sticky='w', pady=8)
+        ttk.Label(frame, textvariable=self._fortress_host_addresses, wraplength=400).grid(
+            row=5, column=0, columnspan=2, sticky='w'
         )
-        ttk.Button(frame, text='Connect', command=connect).grid(row=5, column=0, sticky='w')
+        ttk.Label(frame, textvariable=self.fortress_coop_status_var, wraplength=400).grid(
+            row=6, column=0, columnspan=2, sticky='w', pady=8
+        )
+        ttk.Button(frame, text='Connect', command=connect).grid(row=7, column=0, sticky='w')
         ttk.Button(frame, text='Disconnect', command=self.disconnect_fortress_coop).grid(
-            row=5, column=1, sticky='e'
+            row=7, column=1, sticky='e'
+        )
+        ttk.Button(frame, text='Copy pairing code', command=copy_pairing_code).grid(
+            row=8, column=0, sticky='w', pady=(8, 0)
+        )
+        ttk.Button(frame, text='Show connection log', command=self._show_coop_log).grid(
+            row=8, column=1, sticky='e', pady=(8, 0)
         )
         viewport.bind_controls()
         fit_dialog(window, frame)
@@ -192,9 +232,9 @@ class FortressCoopController(FortressCoopLaunchController):
         if lobby.role == 'guest':
             lobby.send({'type': 'fortress_income', 'rank': rank})
 
-    def _poll_fortress_lobby(self):
+    def _poll_fortress_lobby(self, expected_lobby=None):
         lobby = self._fortress_lobby
-        if not lobby:
+        if not lobby or (expected_lobby is not None and lobby is not expected_lobby):
             return
         try:
             for _ in range(40):
@@ -204,16 +244,24 @@ class FortressCoopController(FortressCoopLaunchController):
                     break
                 if kind == 'connected':
                     self._fortress_coop_count_var.set(str(lobby.count))
+                    self._record_coop_log(
+                        f'Final Fortress connected: {len(value)} players; all-pairs game UDP check passed.'
+                    )
                     self.fortress_coop_status_var.set(
                         'Connected: ' + ', '.join(p['name'] for p in value)
                     )
                     self.publish_fortress_income()
                 elif kind == 'status':
-                    self.fortress_coop_status_var.set(value)
+                    self._record_coop_log('Fortress: ' + value, error=value.startswith('Guest rejected:'))
+                    self.fortress_coop_status_var.set(self._coop_safe_message(value))
+                elif kind == 'diagnostic':
+                    name, details = value
+                    log_event(name, mode='final_fortress', **details)
+                    self._record_coop_log(name + ': ' + json.dumps(details, sort_keys=True, indent=2))
                 elif kind == 'error':
-                    self.append_log('Fortress connection: ' + str(value), error=True)
-                    self.cancel_fortress_preparation(str(value))
-                    self.disconnect_fortress_coop()
+                    detail = self._coop_safe_message(value)
+                    self._record_coop_log('Fortress connection failed: ' + detail, error=True)
+                    self.disconnect_fortress_coop(status='Connection failed: ' + detail)
                     return
                 elif kind == 'message':
                     slot, message = value
@@ -222,13 +270,16 @@ class FortressCoopController(FortressCoopLaunchController):
             if pending and __import__('time').monotonic() > pending['deadline']:
                 self.cancel_fortress_preparation('Fortress preparation timed out.')
         except (ValueError, OSError, KeyError, TypeError) as exc:
-            self.cancel_fortress_preparation(str(exc))
-            self.disconnect_fortress_coop()
-            self.append_log(str(exc), error=True)
+            detail = self._coop_safe_message(exc)
+            self._record_coop_log('Fortress connection failed: ' + detail, error=True)
+            self.disconnect_fortress_coop(status='Connection failed: ' + detail)
+            return
+        if lobby.closed.is_set() and lobby.events.empty():
+            self.disconnect_fortress_coop(status='Connection closed. See connection log.')
             return
         self.refresh_fortress_settings_controls()
-        if self._fortress_lobby:
-            self.after(200, self._poll_fortress_lobby)
+        if self._fortress_lobby is lobby:
+            self.after(200, lambda: self._poll_fortress_lobby(lobby))
 
     def handle_fortress_message(self, lobby, slot, message):
         kind = message.get('type')
@@ -248,7 +299,7 @@ class FortressCoopController(FortressCoopLaunchController):
         elif kind == 'fortress_cancel':
             self.cancel_fortress_preparation('Peer cancelled preparation.', broadcast=False)
 
-    def disconnect_fortress_coop(self):
+    def disconnect_fortress_coop(self, *, status='Disconnected'):
         lobby = getattr(self, '_fortress_lobby', None)
         if lobby:
             if self._final_fortress_watch is None:
@@ -258,5 +309,5 @@ class FortressCoopController(FortressCoopLaunchController):
         self._fortress_ranks = {}
         if hasattr(self, 'final_fortress_coop_var'):
             self.final_fortress_coop_var.set(False)
-            self.fortress_coop_status_var.set('Disconnected')
+            self.fortress_coop_status_var.set(status)
             self.refresh_fortress_settings_controls()

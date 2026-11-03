@@ -212,15 +212,21 @@ class ProgressionBattlesController:
     def load_missions(self, *args, **kwargs):
         from randomizer.skirmish_progression import mission_catalogue
         missions = list(super().load_missions(*args, **kwargs))
+        if self.coop_enabled():
+            self._skirmish_catalogue = ()
+            return missions
         catalogue = mission_catalogue(GAME_ROOT)
         self._skirmish_catalogue = catalogue
         return missions + catalogue
 
     def apply_missions(self, missions):
         missions = list(missions)
-        known = {mission['code'] for mission in missions}
-        missions.extend(mission for mission in getattr(self, '_skirmish_catalogue', ())
-                        if mission['code'] not in known)
+        if self.coop_enabled():
+            missions = [mission for mission in missions if not mission.get('skirmish')]
+        else:
+            known = {mission['code'] for mission in missions}
+            missions.extend(mission for mission in getattr(self, '_skirmish_catalogue', ())
+                            if mission['code'] not in known)
         result = super().apply_missions(missions)
         self.refresh_classic_shop_summary()
         self.refresh_skirmish_pool_controls()
