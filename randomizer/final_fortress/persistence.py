@@ -271,13 +271,19 @@ class FinalFortressRepository:
         def change(state):
             if state['run'] is not None and state['run']['status'] == 'active':
                 raise ValueError('Finish or abandon the active Final Fortress run first.')
+            from .maps import select_map
+
+            run_config = (
+                select_map(snapshot, state['preferences']['map_id'] or snapshot['map']['id'])
+                if 'maps' in snapshot else snapshot
+            )
             multiplier = (
                 state['preferences']['wave_multiplier']
                 if wave_multiplier is None
                 else wave_multiplier
             )
             plan = build_run_plan(
-                snapshot,
+                run_config,
                 difficulty=difficulty,
                 seed=seed,
                 player_country=player_country,
@@ -301,7 +307,7 @@ class FinalFortressRepository:
             state['run'] = {
                 'id': uuid.uuid4().hex,
                 'status': 'active',
-                'config': snapshot,
+                'config': run_config,
                 'plan': plan,
                 'claimed_events': [],
             }

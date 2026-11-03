@@ -18,8 +18,12 @@ its purchased ranks without refunding points. Refunds also work on ranks retaine
 above the current faction's usable limit. Finished run snapshots and reward
 receipts remain unchanged when points are reallocated for a later run.
 
-Defend the Civilian Armory headquarters (`ARMORY`) beside the initial MCV on **King of the Hills
-Extreme** for 60 simulation minutes. Choose GDI, Nod, Allies or Soviet, one of
+Defend the Civilian Armory headquarters (`ARMORY`) beside the initial MCV for
+60 simulation minutes. Choose **King of the Hills Extreme**, **Cliffs of Lunacy**,
+**Cliffs of Insanity**, **Hardpoints**, **Radial Range**, or **Castle Rock** from
+the Map dropdown. The selection persists between launches and is frozen into
+each solo or co-op run. [Map layouts](FINAL_FORTRESS_MAPS.md) describe the starts
+and the installed-map review. Choose GDI, Nod, Allies or Soviet, one of
 the seven DTA difficulty grades, and a wave multiplier from x1 through x10.
 Normal skirmish AI continues alongside scripted waves. Only starting enemy
 construction yards and their fixed defenses are protected; expansion yards,
@@ -135,8 +139,8 @@ escrow correction. Unfinished quits grant no kill bonus.
 - Arrival aprons use DTA pavement and its installed passable NOBUILD overlay,
   without MO terrain IDs or invisible Ares buildings. Full native foundations,
   source structures, scenery, height, resources and playable bounds are checked
-  before launch. All six formations maintain 32-cell friendly and 40-cell
-  hostile clearance; camp centers are at least 32 cells apart. Original maps
+  before launch. Camp formations use each map's reviewed friendly/hostile clearance and
+  inter-camp spacing; the original map retains its 32/40/32-cell limits. Original maps
   remain untouched. At preparation, the existing DTA power installer registers
   stable Action.ini entries and managed Rules.ini/Art.ini effect helpers. Managed
   effect helpers are cleared before preparation and after Fortress releases its

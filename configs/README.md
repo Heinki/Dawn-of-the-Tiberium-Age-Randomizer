@@ -94,3 +94,22 @@ Validate the full bundle with:
 ```powershell
 python RandomizerLauncher\launcher_gui.py --self-check
 ```
+
+## Final Fortress maps
+
+`final_fortress.json` retains `map` as the default and frozen-run layout. Its
+optional `maps` list adds reviewed alternatives. Selecting a map produces a
+self-contained configuration containing only that map; historical single-map
+run snapshots remain valid. Every entry freezes its installed source SHA-256,
+six base layouts, the headquarters, arrival aprons, sixteen army cells per base,
+and six guarded crate formations. Source maps remain unchanged.
+
+`start_positions` supplies six reviewed waypoint overrides in the generated
+copy, including extra friendly starts on Castle Rock. `camp_clearance` defines
+minimum friendly, hostile, and inter-camp cell distances for that map; omitted
+values retain the original 32/40/32 limits. `clear_source_scripts` removes the
+source's triggers, events, actions, tags, cell tags, and local variables from
+the generated copy while retaining scenery and ambient units without their
+source gameplay tags. Fortress supplies its own survival scripting.
+
+See [Fortress map layouts](../FINAL_FORTRESS_MAPS.md) for the current catalogue.

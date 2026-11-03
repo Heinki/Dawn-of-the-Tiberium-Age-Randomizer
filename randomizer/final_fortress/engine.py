@@ -1547,7 +1547,8 @@ def build_map(game_root, run, rules=None, *, power_runtime=None):
         for dy in range(-1, 2)
     }
     pave_spawn_areas(lines, cells)
-    writer.put('Basic', 'Name', 'Final Fortress - King of the Hills Extreme')
+    writer.put('Basic', 'Name', 'Final Fortress - ' + plan['map']['display_name'])
+    writer.put('Basic', 'MaxPlayer', '8')
     writer.put('Basic', 'RequiredAddOn', '1')
     writer.put('Basic', 'MultiplayerOnly', 'yes')
     writer.put('Basic', 'IgnoreGlobalAITriggers', 'no')

@@ -7,6 +7,7 @@ from randomizer.maps.ini import find_section_bounds, section_value_map
 
 # DTA Temperat.ini TileSet0085: Pavement LAT, native registration order.
 PAVEMENT_TILE = 1955
+PAVEMENT_BY_THEATER = {'temperate': PAVEMENT_TILE, 'desert': 1366}
 CELL = struct.Struct('<HHIBBB')
 
 
@@ -104,8 +105,10 @@ def pave_spawn_areas(lines, cells):
     Original compressed blocks survive verbatim unless an arrival touches
     them. Only generated map bytes change; installed maps remain untouched.
     """
-    if section_value_map(lines, 'Map').get('theater', '').casefold() != 'temperate':
-        raise ValueError('Fortress spawn pavement requires temperate terrain.')
+    theater = section_value_map(lines, 'Map').get('theater', '').casefold()
+    if theater not in PAVEMENT_BY_THEATER:
+        raise ValueError('Unsupported Fortress pavement theater: ' + theater)
+    pavement = PAVEMENT_BY_THEATER[theater]
     packed = base64.b64decode(
         ''.join(section_value_map(lines, 'IsoMapPack5').values()), validate=True
     )
@@ -132,10 +135,10 @@ def pave_spawn_areas(lines, cells):
     for offset in range(0, len(raw), CELL.size):
         x, y, tile, subtile, height, extra = CELL.unpack_from(raw, offset)
         if (x, y) in cells:
-            CELL.pack_into(changed, offset, x, y, PAVEMENT_TILE, 0, height, extra)
+            CELL.pack_into(changed, offset, x, y, pavement, 0, height, extra)
             remaining.discard((x, y))
     for x, y in sorted(remaining):
-        changed.extend(CELL.pack(x, y, PAVEMENT_TILE, 0, 0, 0))
+        changed.extend(CELL.pack(x, y, pavement, 0, 0, 0))
     changed.extend(sentinel)
     encoded = bytearray()
     for offset in range(0, len(changed), 8192):

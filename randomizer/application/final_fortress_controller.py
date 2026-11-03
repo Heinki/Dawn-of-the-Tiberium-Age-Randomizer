@@ -7,7 +7,7 @@ from randomizer.core.paths import DEBUG_LOG, GAME_ROOT
 from randomizer.final_fortress import DISPLAY_NAME
 from randomizer.final_fortress.catalogue import COUNTRY_LABELS
 from randomizer.final_fortress.config import DIFFICULTY_IDS, WAVE_MULTIPLIERS, load_config
-from randomizer.final_fortress.maps import select_map, inspect_map
+from randomizer.final_fortress.maps import map_definitions, select_map, inspect_map
 from randomizer.final_fortress.persistence import (
     FinalFortressRepository,
     FinalFortressPersistenceError,
@@ -55,7 +55,9 @@ class FinalFortressController(FortressCoopController):
         try:
             self.final_fortress_config = load_config()
             self.final_fortress_map_catalogue = self.final_fortress_config
-            self.final_fortress_map_choices = (self.final_fortress_config['map']['display_name'],)
+            self.final_fortress_map_choices = tuple(
+                m['display_name'] for m in map_definitions(self.final_fortress_map_catalogue)
+            )
             self.final_fortress_state = self.final_fortress_repository.reconcile_perk_ranks(
                 self.final_fortress_config
             )
@@ -222,6 +224,13 @@ class FinalFortressController(FortressCoopController):
             return
         self.final_fortress_state = state
         preferences = state['preferences']
+        catalogue = self.final_fortress_map_catalogue
+        map_id = preferences['map_id'] or catalogue['map']['id']
+        run = state['run']
+        if run and run['status'] == 'active' and run.get('coop_player', 0) > 0:
+            self.final_fortress_config = run['config']
+        else:
+            self.final_fortress_config = select_map(catalogue, map_id)
         config = self.final_fortress_config
         self.final_fortress_map_var.set(config['map']['display_name'])
         self.final_fortress_country_var.set(COUNTRY_LABELS.get(preferences['player_country'], ''))
@@ -350,9 +359,13 @@ class FinalFortressController(FortressCoopController):
         self.publish_fortress_income()
 
     def on_final_fortress_map_changed(self, _event=None):
+        chosen = next(
+            m for m in map_definitions(self.final_fortress_map_catalogue)
+            if m['display_name'] == self.final_fortress_map_var.get()
+        )
         self._final_fortress_action(
             lambda: self.final_fortress_repository.set_map(
-                self.final_fortress_config, self.final_fortress_config['map']['id']
+                self.final_fortress_map_catalogue, chosen['id']
             )
         )
 
