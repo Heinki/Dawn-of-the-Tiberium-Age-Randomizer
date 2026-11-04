@@ -20,8 +20,44 @@ class FinalFortressPersistenceError(RuntimeError):
 
 
 class FinalFortressRepository:
-    def __init__(self, path=None):
-        self.path = Path(path) if path is not None else APP_DIR / 'final_fortress_state.json'
+    def __init__(self, path=None, *, testing=False):
+        if testing:
+            from .feature import require_testing_profile
+
+            require_testing_profile()
+            testing_path = APP_DIR / 'final_fortress_testing_state.json'
+            if path is not None and Path(path).resolve() != testing_path.resolve():
+                raise ValueError('All-perks initialization requires the separate testing save.')
+            self.path = testing_path
+        else:
+            self.path = Path(path) if path is not None else APP_DIR / 'final_fortress_state.json'
+        self.testing = testing
+
+    def initialize_testing_profile(self, config):
+        """Unlock the current catalogue without changing ordinary progression."""
+        from .feature import require_testing_profile
+        from .perks import ranks
+
+        require_testing_profile()
+        if not self.testing or self.path.resolve() != (APP_DIR / 'final_fortress_testing_state.json').resolve():
+            raise ValueError('All-perks initialization requires the separate testing save.')
+        validate_config(config)
+
+        def change(state):
+            before = deepcopy(state)
+            for perk in config['perks']:
+                key = perk['id']
+                if key not in state['owned_perks']:
+                    state['owned_perks'].append(key)
+                    state['selected_perks'].append(key)
+                state['perk_ranks'][key] = len(ranks(perk))
+            state['gems'] = max(state['gems'], 1_000_000)
+            if state['preferences']['player_country'] is None:
+                state['preferences']['player_country'] = 'GDI'
+            state['preferences']['workspace_selected'] = True
+            return state != before
+
+        return self._update(change)[0]
 
     @contextmanager
     def _locked(self):

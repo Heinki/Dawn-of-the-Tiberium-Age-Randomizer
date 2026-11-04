@@ -24,6 +24,13 @@ def rank_limit(perk_id):
         'targeting_ammunition': 3,
         'fortified_infrastructure': 3,
         'transport_capacity': 3,
+        'fortified_emplacements': 3,
+        'expedition_salvage': 3,
+        'priority_reinforcements': 3,
+        'hazard_training': 1,
+        'advanced_spoils': 3,
+        'veteran_spoils': 2,
+        'forward_outposts': 6,
     }.get(perk_id, 6)
 
 
@@ -110,6 +117,13 @@ def validate_perk(perk):
             'ammo_stacks',
             'infrastructure_health_percent',
             'transport_capacity_stacks',
+            'defense_health_percent',
+            'camp_salvage_credits',
+            'reinforcement_interval_reduction_seconds',
+            'hazard_training',
+            'camp_reward_units_by_country',
+            'camp_veterancy',
+            'outpost_rank',
         }
         if not effects or set(effects) - supported:
             raise ValueError('Unsupported or empty perk effects.')
@@ -139,6 +153,11 @@ def validate_perk(perk):
             ('ammo_stacks', 3),
             ('infrastructure_health_percent', 45),
             ('transport_capacity_stacks', 3),
+            ('defense_health_percent', 45),
+            ('camp_salvage_credits', 3000),
+            ('reinforcement_interval_reduction_seconds', 45),
+            ('camp_veterancy', 2),
+            ('outpost_rank', 6),
         ):
             if key in effects:
                 integer(effects[key], key)
@@ -162,6 +181,7 @@ def validate_perk(perk):
             'special_units_by_country',
             'lab_reserve_units_by_country',
             'support_technology_by_country',
+            'camp_reward_units_by_country',
         ):
             if key not in effects:
                 continue
@@ -174,8 +194,14 @@ def validate_perk(perk):
                     'harvesters_by_country',
                     'fallback_units_by_country',
                     'lab_reserve_units_by_country',
+                    'camp_reward_units_by_country',
                 ):
                     _units(values)
+                    if key == 'camp_reward_units_by_country' and (
+                        not 1 <= len(values) <= 6
+                        or len({unit['type'] for unit in values}) != len(values)
+                    ):
+                        raise ValueError('Advanced camp rewards require one to six unique unit types.')
                     if key == 'lab_reserve_units_by_country':
                         if (
                             not values
@@ -244,6 +270,8 @@ def validate_perk(perk):
                     raise ValueError('Player unit tier buffs cannot exceed 30%.')
         if 'reveal_map' in effects and type(effects['reveal_map']) is not bool:
             raise ValueError('Reveal map must be boolean.')
+        if 'hazard_training' in effects and type(effects['hazard_training']) is not bool:
+            raise ValueError('Hazard training must be boolean.')
 
 
 def resolve_effects(
@@ -264,6 +292,7 @@ def resolve_effects(
     include_economy=False,
     share_starting_power=False,
     include_expansion=False,
+    include_expeditions=False,
 ):
     effects = {
         'starting_credits': 0,
@@ -314,6 +343,13 @@ def resolve_effects(
     if include_expansion:
         effects.update({field: 0 for field in expansion_fields})
         effects['support_technology'] = []
+    expedition_fields = (
+        'defense_health_percent', 'camp_salvage_credits',
+        'reinforcement_interval_reduction_seconds', 'camp_veterancy', 'outpost_rank',
+    )
+    if include_expeditions:
+        effects.update({field: 0 for field in expedition_fields})
+        effects.update(hazard_training=False, camp_reward_units=[])
     catalogue = {entry['id']: entry for entry in config['perks']}
     fallback = []
     shared_power = Counter()
@@ -323,6 +359,16 @@ def resolve_effects(
         if type(rank) is not int or not 1 <= rank <= len(entries):
             raise ValueError(f'Invalid purchased perk rank: {key}.')
         current = entries[min(rank, len(ranks(catalogue[key], country))) - 1]['effects']
+        if include_expeditions:
+            for field in expedition_fields:
+                effects[field] = max(effects[field], current.get(field, 0))
+            effects['hazard_training'] |= current.get('hazard_training', False)
+            if 'camp_reward_units_by_country' in current:
+                if effects['camp_reward_units']:
+                    raise ValueError('Choose only one advanced camp reward perk.')
+                effects['camp_reward_units'] = deepcopy(
+                    current['camp_reward_units_by_country'][country]
+                )
         if include_expansion:
             for field in expansion_fields:
                 effects[field] = max(effects[field], current.get(field, 0))

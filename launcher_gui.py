@@ -57,6 +57,7 @@ def run_self_check():
         from randomizer.core.version import APP_VERSION
         from randomizer.missions.catalogue import campaign_mission_counts, parse_missions
         from randomizer.shop.catalogue import shop_catalogue
+        from randomizer.final_fortress.feature import testing_profile_enabled
 
         static_paths = validate_static_configs(REQUIRED_STATIC_CONFIGS)
         missions = parse_missions(BATTLE_CLIENT_INI)
@@ -70,6 +71,7 @@ def run_self_check():
             'battle_ini_exists': BATTLE_CLIENT_INI.is_file(),
             'window_icon_exists': WINDOW_ICON_PATH.is_file(),
             'static_configs_valid': len(static_paths) == len(REQUIRED_STATIC_CONFIGS),
+            'final_fortress_testing_enabled': testing_profile_enabled(),
             'mission_count': len(missions),
             'mission_counts_by_campaign': campaign_mission_counts(missions),
             'shop_catalogue_entries': len(entries),

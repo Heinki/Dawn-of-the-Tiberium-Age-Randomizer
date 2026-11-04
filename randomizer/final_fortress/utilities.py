@@ -26,6 +26,10 @@ def capped_stacks(effect, count):
 
 def unit_updates(kind, row, effects, *, building=False, defense=False):
     updates = {}
+    if building and defense and effects.get('defense_health_percent'):
+        updates['Strength'] = str(round(
+            float(row['Strength']) * (100 + effects['defense_health_percent']) / 100
+        ))
     health = effects.get('infrastructure_health_percent', 0)
     if building and health and infrastructure_building(kind, row, defense=defense):
         updates['Strength'] = str(round(float(row['Strength']) * (100 + health) / 100))

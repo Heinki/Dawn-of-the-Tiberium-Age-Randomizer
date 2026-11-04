@@ -254,7 +254,7 @@ class FinalFortressResultWatch:
                 self.started
                 and not self.result
                 and event
-                and event.startswith(('milestone:', 'camp:', 'camp_clear:', 'camp_pick:'))
+                and event.startswith(('milestone:', 'camp:', 'camp_clear:', 'camp_pick:', 'outpost_lost:'))
             ):
                 if event not in self.events:
                     self.events.append(event)
@@ -287,8 +287,18 @@ class FinalFortressResultWatch:
             return
         self.kill_counts = dict.fromkeys(FRIENDLY_ACTORS, 0)
         for actor in self.plan['coalition_scores']:
+            outpost_transfers = 0
+            if actor.get('camp_slot') is not None:
+                for camp in self.plan['map']['camps']:
+                    layout = camp.get('outpost', {})
+                    if (layout.get('compact') and not layout.get('after_recovery')
+                            and f'camp_pick:{actor["camp_slot"]}:{camp["id"]}' in self.events):
+                        outpost_transfers += sum(
+                            f'outpost_lost:{camp["id"]}:{i}' not in self.events
+                            for i in range(len(layout['structures']))
+                        )
             self.kill_counts[actor['actor']] = max(
-                0, self._coalition_records[actor['actor']] - actor['initial_transfers']
+                0, self._coalition_records[actor['actor']] - actor['initial_transfers'] - outpost_transfers
             )
         # Preserve the existing shared thresholds and cap. Keep each house's
         # combat count independently for reporting and co-op attribution.

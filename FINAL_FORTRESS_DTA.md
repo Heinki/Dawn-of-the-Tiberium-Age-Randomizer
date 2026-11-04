@@ -37,14 +37,14 @@ grant the Allied Radar Dome (`RADOME`). Preplaced refineries do not grant a
 duplicate collector. Their placement-only
 types are hidden from human and AI construction and satisfy the same technology
 prerequisites as ordinary friendly refineries. Newly built refineries still supply
-their native collector. Starting defenses
-add two emplacements of one new type per rank, with faction-specific limits:
+their native collector. Starting defenses form a perimeter around the friendly production core. Each rank
+unlocks another faction defense type, with these grants:
 
-- GDI: Guard Tower and Advanced Guard Tower; maximum rank 2, four emplacements.
-- Nod: Gun Turret, Obelisk and SAM Site; maximum rank 3, six emplacements.
-- Soviet: Flame Tower, Tesla Coil and SAM Site; maximum rank 3, six emplacements.
+- GDI: Guard Tower and Advanced Guard Tower; maximum rank 2, six of each type (12 total).
+- Nod: Gun Turret, Obelisk and SAM Site; maximum rank 3, four of each type (12 total).
+- Soviet: Flame Tower, Tesla Coil and SAM Site; maximum rank 3, four of each type (12 total).
 - Allies: Pill Box, Gun Turret, Camouflaged Pill Box and AA Gun; maximum rank 4,
-  eight emplacements.
+  three of each type (12 total).
 
 The UI shows the chosen faction's ranks and limit. Higher purchased ranks are
 retained when switching to a faction with fewer types; purchases beyond that
@@ -59,7 +59,7 @@ ownership, durability upgrades, reserve shield and defeat behavior.
 
 Six guarded crates exist at startup. First collection pays 10 Defensive Points
 to every human. Human collectors receive their own frozen cash or unit payload;
-enemy/helper collection routes the payload to the host. Guard deaths grant no
+allied helper collection routes the payload to the host. Enemy units do not recover camps. Guard deaths grant no
 points. Native visual crate cash is disabled to avoid duplicate payouts.
 
 Survival awards are 25 points at minute 25, 25 at minute 45 and 50 on victory.
@@ -146,7 +146,7 @@ escrow correction. Unfinished quits grant no kill bonus.
   effect helpers are cleared before preparation and after Fortress releases its
   runtime, using the same cleanup as other randomizer modes.
 
-The current catalogue exposes **31 perks and 27 Challenges**. Building-income
+The current catalogue exposes **38 perks and 27 Challenges**. Building-income
 upgrades, emergency objective repair and veteran defenses are intentionally
 excluded. DTA's available power catalogue replaces MO's support/superweapon rank
 lists; the two power unlock perks each have one rank. Aircraft handling and the
@@ -167,6 +167,69 @@ helper houses share their private production types; enemy copies retain native
 values. The Mobile Sensor Array retains its linked deployed sensor structure
 and can undeploy back into its private mobile type. Specialist access does not
 assign a hero limit to ordinarily unlimited support vehicles.
+
+Seven expedition and defense perks extend the same purchases and refunds:
+
+| Perk | Ranks and Defensive Points cost per rank | Effect |
+| --- | --- | --- |
+| Fortified Emplacements | 3: 120 / 260 / 480 | +15% / +30% / +45% health to friendly defensive buildings, including outpost defenses. |
+| Expedition Salvage | 3: 100 / 220 / 400 | Every collected camp pays an additional 1,000 / 2,000 / 3,000 credits alongside its normal reward. |
+| Priority Reinforcements | 3: 160 / 320 / 560 | First and subsequent periodic deliveries use 4:45 / 4:30 / 4:15 intervals. Requires Periodic reinforcements; capacity waits and the shared 150-unit living cap remain. |
+| Hazard Training | 1: 180 | All friendly infantry gain native Tiberium and Tiberium gas protection. Ordinary weapon damage remains. |
+| Advanced Spoils | 3: 150 / 300 / 550 | Replace Tier 1 and Tier 2 camp unit rolls with mixed faction squads of 5 / 6 / 8 units. Cash and special-unit rolls remain. |
+| Veteran Spoils | 2: 180 / 360 | All camp reward units arrive Veteran / Elite, including Advanced Spoils squads. |
+| Forward Outposts | 6: 200 / 350 / 550 / 800 / 1,150 / 1,600 | Each collected camp deploys a powered faction outpost, with cumulative grants described below. |
+
+Forward Outposts ranks grant faction-native buildings:
+
+1. Barracks, two basic defenses and enough advanced generators.
+2. Add refinery and one faction harvester when claimed.
+3. Add faction radar and air defense.
+4. Add vehicle production and the remaining faction defense types.
+5. Add helipad and repair depot.
+6. Add construction yard and a 12-emplacement perimeter, alternating every faction defense type.
+
+Friendly starting bases use compact production cores with 12 defenses at maximum
+Starting defenses rank. Production footprints stay inside the perimeter; initial
+MCV deployment, objective, arrivals and starting armies retain clear tiles.
+Cliffs and other impassable terrain shape the available perimeter sectors.
+
+Camp outpost buildings appear only after a human or allied helper recovers the
+crate position. They do not exist as passive or hidden structures before pickup.
+The collecting human owns the deployment; allied helper collections route to the
+host. Enemy units cannot trigger recovery. Buildings deploy at the same compact,
+faction-correct positions used by version 6, with no relocation of blocked plots.
+They cannot be sold, captured with engineers or undeployed. Destroyed grants do
+not rebuild. Ordinary native refinery construction supplies its matching collector.
+
+Generators deploy first. Each foundation uses non-forced native placement and
+retries once per simulation second until clear. Human and enemy units are never
+removed or crushed to force a building into its reserved position. A one-time
+completion flag prevents automatic replacement after destruction, and every
+attempt stops at the terminal run flag.
+
+Native creation actions and building-existence events are bound after final INI
+serialization. They use the reviewed runtime building heap prefix of 501 rather
+than the catalogue's 498 entries, then the actual emitted map type order. Runtime
+binary and registration fingerprints guard that reviewed mapping so unsupported
+installations cannot silently deliver foreign buildings.
+
+Production occupies the inner core, with defenses around it. Foundations use
+connected ground at one elevation, avoiding isolated cliff ledges. Buildings have
+clearance from other structures, scenery, existing units, arrival lanes and camp
+guards. Compact groups use a perimeter radius of at most 11 cells. If all granted
+production cannot fit inside a defended group, the planner removes late production
+additions first; it never scatters those buildings beyond protection. An entirely
+unusable site grants no outpost and displays that fact. Power covers the actual
+compound, including More power ranks. Buildings remain absent until collection, then wait for clear foundations.
+
+New deployments are created directly under the receiving house and do not
+contribute capture score. Version 6 receipts retain their original transfer
+correction and zero-point loss markers.
+
+Run plan version 7 freezes recovery-gated deployments. Versions 1–6 retain their
+original frozen layouts, delivery strategy and receipts. The installed-map review is
+recorded in [the outpost audit](FINAL_FORTRESS_OUTPOSTS_AUDIT.md).
 
 Possible replacements for the objective's visual are listed in
 [Neutral objective candidates](FINAL_FORTRESS_OBJECTIVES.md). The current building
@@ -199,14 +262,32 @@ Reconnect the whole lobby between games; there is no mid-game joining.
 ## Persistence and review status
 
 Ordinary progression uses `final_fortress_state.json` and its OS lock in DTA's
-APP_DIR. Saves use DTA-owned schema version 1; new plans use version 3, while
-version 1 and 2 receipts retain their frozen effects and starting economy. Other games' state is
+APP_DIR. Saves use DTA-owned schema version 1; new plans use version 7, while
+version 1–6 receipts retain their frozen effects and starting economy. Other games' state is
 rejected. Recovery scans DTA's rotating DEBUG logs, requires this run's START and
 terminal markers, backs up changed saves and credits only missing receipts.
 Generic Winner rows and elapsed launcher time never award completion.
 
-Final Fortress exposes only ordinary progression. The debug profile, profile
-selector and all-unlocks initializer have been removed.
+Source gameplay testing uses the developer flag `TESTING_PROFILE_ENABLED` in
+`randomizer/final_fortress/feature.py`. Set it to `True` and restart the source
+launcher: all configured perks are already purchased at maximum rank. Set it
+to `False` and restart to restore ordinary progression. There is no JSON,
+environment-variable or player-facing override.
+
+Compiled EXEs always disable the testing profile, even if the source flag was
+left enabled during packaging or a testing save is present. Both profile
+selection and the all-unlocks initializer enforce this source-only gate.
+The ordinary EXE build therefore cannot accidentally distribute the developer
+all-perks mode. Its installation report records the effective testing flag.
+
+Enabled source runs automatically use `final_fortress_testing_state.json` and
+its separate lock. The header and wallet show "Testing profile". Every configured
+perk is purchased at maximum rank; newly added perks are enabled automatically.
+The testing wallet starts with at least 1,000,000 Defensive Points. A fresh
+profile uses GDI, Normal difficulty, x1 waves and no Challenges. Existing disabled
+perk selections and preferences are preserved. Testing ranks refresh at startup,
+including newly added perks; an active run retains its frozen gameplay loadout.
+Ordinary saves and rewards remain isolated. Testing saves are not packaged.
 
 Final scores are read from Vinifera's native Winner/Loser records without
 requiring the older `Sending game results.` preamble. Human names and actual

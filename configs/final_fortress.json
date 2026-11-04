@@ -6965,23 +6965,32 @@
       {
         "id": "starting_defenses",
         "display_name": "Starting defenses",
-        "description": "Two emplacements per unlocked defense type. Faction limits: GDI 2 ranks, Nod and Soviet 3, Allies 4. Higher purchased ranks are retained for other factions. Only the additional power needed is supplied.",
+        "description": "Start with a faction defensive perimeter. Each rank unlocks another defense type: six per type for GDI, four for Nod/Soviet and three for Allies. Maximum ranks form a 12-emplacement perimeter around the production core. Enough power is supplied.",
         "gem_cost": 40,
         "effects": {
           "defenses_by_country": {
             "GDI": [
               "TWR",
+              "TWR",
+              "TWR",
+              "TWR",
+              "TWR",
               "TWR"
             ],
             "Nod": [
+              "GUN",
+              "GUN",
               "GUN",
               "GUN"
             ],
             "Allies": [
               "RAPBOX",
+              "RAPBOX",
               "RAPBOX"
             ],
             "Soviet": [
+              "RAFTUR",
+              "RAFTUR",
               "RAFTUR",
               "RAFTUR"
             ]
@@ -6994,17 +7003,26 @@
               "defenses_by_country": {
                 "GDI": [
                   "TWR",
+                  "TWR",
+                  "TWR",
+                  "TWR",
+                  "TWR",
                   "TWR"
                 ],
                 "Nod": [
+                  "GUN",
+                  "GUN",
                   "GUN",
                   "GUN"
                 ],
                 "Allies": [
                   "RAPBOX",
+                  "RAPBOX",
                   "RAPBOX"
                 ],
                 "Soviet": [
+                  "RAFTUR",
+                  "RAFTUR",
                   "RAFTUR",
                   "RAFTUR"
                 ]
@@ -7017,26 +7035,44 @@
               "defenses_by_country": {
                 "GDI": [
                   "TWR",
+                  "ATWR",
                   "TWR",
                   "ATWR",
+                  "TWR",
+                  "ATWR",
+                  "TWR",
+                  "ATWR",
+                  "TWR",
+                  "ATWR",
+                  "TWR",
                   "ATWR"
                 ],
                 "Nod": [
                   "GUN",
+                  "OBLI",
                   "GUN",
                   "OBLI",
+                  "GUN",
+                  "OBLI",
+                  "GUN",
                   "OBLI"
                 ],
                 "Allies": [
                   "RAPBOX",
+                  "RAGUN",
                   "RAPBOX",
                   "RAGUN",
+                  "RAPBOX",
                   "RAGUN"
                 ],
                 "Soviet": [
                   "RAFTUR",
+                  "RATSLA",
                   "RAFTUR",
                   "RATSLA",
+                  "RAFTUR",
+                  "RATSLA",
+                  "RAFTUR",
                   "RATSLA"
                 ]
               }
@@ -7048,32 +7084,55 @@
               "defenses_by_country": {
                 "GDI": [
                   "TWR",
+                  "ATWR",
                   "TWR",
                   "ATWR",
+                  "TWR",
+                  "ATWR",
+                  "TWR",
+                  "ATWR",
+                  "TWR",
+                  "ATWR",
+                  "TWR",
                   "ATWR"
                 ],
                 "Nod": [
                   "GUN",
-                  "GUN",
-                  "OBLI",
                   "OBLI",
                   "SAM",
+                  "GUN",
+                  "OBLI",
+                  "SAM",
+                  "GUN",
+                  "OBLI",
+                  "SAM",
+                  "GUN",
+                  "OBLI",
                   "SAM"
                 ],
                 "Allies": [
                   "RAPBOX",
-                  "RAPBOX",
-                  "RAGUN",
                   "RAGUN",
                   "RAHBOX",
+                  "RAPBOX",
+                  "RAGUN",
+                  "RAHBOX",
+                  "RAPBOX",
+                  "RAGUN",
                   "RAHBOX"
                 ],
                 "Soviet": [
                   "RAFTUR",
-                  "RAFTUR",
-                  "RATSLA",
                   "RATSLA",
                   "RASAM",
+                  "RAFTUR",
+                  "RATSLA",
+                  "RASAM",
+                  "RAFTUR",
+                  "RATSLA",
+                  "RASAM",
+                  "RAFTUR",
+                  "RATSLA",
                   "RASAM"
                 ]
               }
@@ -7085,34 +7144,58 @@
               "defenses_by_country": {
                 "GDI": [
                   "TWR",
+                  "ATWR",
                   "TWR",
                   "ATWR",
+                  "TWR",
+                  "ATWR",
+                  "TWR",
+                  "ATWR",
+                  "TWR",
+                  "ATWR",
+                  "TWR",
                   "ATWR"
                 ],
                 "Nod": [
                   "GUN",
-                  "GUN",
-                  "OBLI",
                   "OBLI",
                   "SAM",
+                  "GUN",
+                  "OBLI",
+                  "SAM",
+                  "GUN",
+                  "OBLI",
+                  "SAM",
+                  "GUN",
+                  "OBLI",
                   "SAM"
                 ],
                 "Allies": [
                   "RAPBOX",
-                  "RAPBOX",
                   "RAGUN",
-                  "RAGUN",
-                  "RAHBOX",
                   "RAHBOX",
                   "RAAGUN",
+                  "RAPBOX",
+                  "RAGUN",
+                  "RAHBOX",
+                  "RAAGUN",
+                  "RAPBOX",
+                  "RAGUN",
+                  "RAHBOX",
                   "RAAGUN"
                 ],
                 "Soviet": [
                   "RAFTUR",
-                  "RAFTUR",
-                  "RATSLA",
                   "RATSLA",
                   "RASAM",
+                  "RAFTUR",
+                  "RATSLA",
+                  "RASAM",
+                  "RAFTUR",
+                  "RATSLA",
+                  "RASAM",
+                  "RAFTUR",
+                  "RATSLA",
                   "RASAM"
                 ]
               }
@@ -9609,6 +9692,405 @@
             "gem_cost": 280,
             "effects": {
               "transport_capacity_stacks": 3
+            }
+          }
+        ]
+      },
+      {
+        "id": "fortified_emplacements",
+        "display_name": "Fortified Emplacements",
+        "description": "All friendly defensive buildings gain +15% / +30% / +45% health. Includes defenses granted by Forward Outposts; objective and infrastructure are separate.",
+        "gem_cost": 120,
+        "effects": {
+          "defense_health_percent": 15
+        },
+        "ranks": [
+          {
+            "gem_cost": 120,
+            "effects": {
+              "defense_health_percent": 15
+            }
+          },
+          {
+            "gem_cost": 260,
+            "effects": {
+              "defense_health_percent": 30
+            }
+          },
+          {
+            "gem_cost": 480,
+            "effects": {
+              "defense_health_percent": 45
+            }
+          }
+        ]
+      },
+      {
+        "id": "expedition_salvage",
+        "display_name": "Expedition Salvage",
+        "description": "Every collected camp grants an additional 1,000 / 2,000 / 3,000 credits alongside its normal reward. Paid to the collecting human; AI helper collections credit the host.",
+        "gem_cost": 100,
+        "effects": {
+          "camp_salvage_credits": 1000
+        },
+        "ranks": [
+          {
+            "gem_cost": 100,
+            "effects": {
+              "camp_salvage_credits": 1000
+            }
+          },
+          {
+            "gem_cost": 220,
+            "effects": {
+              "camp_salvage_credits": 2000
+            }
+          },
+          {
+            "gem_cost": 400,
+            "effects": {
+              "camp_salvage_credits": 3000
+            }
+          }
+        ]
+      },
+      {
+        "id": "priority_reinforcements",
+        "display_name": "Priority Reinforcements",
+        "description": "Periodic reinforcements arrive every 4:45 / 4:30 / 4:15 instead of five minutes, including the first delivery. Requires Periodic reinforcements; its shared living-unit cap remains.",
+        "gem_cost": 160,
+        "effects": {
+          "reinforcement_interval_reduction_seconds": 15
+        },
+        "ranks": [
+          {
+            "gem_cost": 160,
+            "effects": {
+              "reinforcement_interval_reduction_seconds": 15
+            }
+          },
+          {
+            "gem_cost": 320,
+            "effects": {
+              "reinforcement_interval_reduction_seconds": 30
+            }
+          },
+          {
+            "gem_cost": 560,
+            "effects": {
+              "reinforcement_interval_reduction_seconds": 45
+            }
+          }
+        ]
+      },
+      {
+        "id": "hazard_training",
+        "display_name": "Hazard Training",
+        "description": "Friendly infantry are immune to Tiberium and Tiberium gas damage. Applies to starting, produced and rewarded infantry; ordinary weapon damage remains.",
+        "gem_cost": 180,
+        "effects": {
+          "hazard_training": true
+        },
+        "ranks": [
+          {
+            "gem_cost": 180,
+            "effects": {
+              "hazard_training": true
+            }
+          }
+        ]
+      },
+      {
+        "id": "advanced_spoils",
+        "display_name": "Advanced Spoils",
+        "description": "Replace Tier 1 and Tier 2 camp unit rolls with progressively stronger mixed faction squads of 5 / 6 / 8 units. Credit and special-unit rolls remain unchanged. Combines with Expedition Salvage and Veteran Spoils.",
+        "gem_cost": 150,
+        "effects": {
+          "camp_reward_units_by_country": {
+            "GDI": [
+              {
+                "type": "MTNK",
+                "count": 3
+              },
+              {
+                "type": "MSAM",
+                "count": 2
+              }
+            ],
+            "Nod": [
+              {
+                "type": "LTNK",
+                "count": 3
+              },
+              {
+                "type": "FTNK",
+                "count": 2
+              }
+            ],
+            "Allies": [
+              {
+                "type": "2TNK",
+                "count": 3
+              },
+              {
+                "type": "RAARTY",
+                "count": 2
+              }
+            ],
+            "Soviet": [
+              {
+                "type": "3TNK",
+                "count": 3
+              },
+              {
+                "type": "V2RL",
+                "count": 2
+              }
+            ]
+          }
+        },
+        "ranks": [
+          {
+            "gem_cost": 150,
+            "effects": {
+              "camp_reward_units_by_country": {
+                "GDI": [
+                  {
+                    "type": "MTNK",
+                    "count": 3
+                  },
+                  {
+                    "type": "MSAM",
+                    "count": 2
+                  }
+                ],
+                "Nod": [
+                  {
+                    "type": "LTNK",
+                    "count": 3
+                  },
+                  {
+                    "type": "FTNK",
+                    "count": 2
+                  }
+                ],
+                "Allies": [
+                  {
+                    "type": "2TNK",
+                    "count": 3
+                  },
+                  {
+                    "type": "RAARTY",
+                    "count": 2
+                  }
+                ],
+                "Soviet": [
+                  {
+                    "type": "3TNK",
+                    "count": 3
+                  },
+                  {
+                    "type": "V2RL",
+                    "count": 2
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "gem_cost": 300,
+            "effects": {
+              "camp_reward_units_by_country": {
+                "GDI": [
+                  {
+                    "type": "HTNK",
+                    "count": 3
+                  },
+                  {
+                    "type": "MSAM",
+                    "count": 2
+                  },
+                  {
+                    "type": "DISCARTY",
+                    "count": 1
+                  }
+                ],
+                "Nod": [
+                  {
+                    "type": "FTNK",
+                    "count": 3
+                  },
+                  {
+                    "type": "LTNK",
+                    "count": 2
+                  },
+                  {
+                    "type": "STNK",
+                    "count": 1
+                  }
+                ],
+                "Allies": [
+                  {
+                    "type": "2TNK",
+                    "count": 3
+                  },
+                  {
+                    "type": "RAARTY",
+                    "count": 2
+                  },
+                  {
+                    "type": "CTNK",
+                    "count": 1
+                  }
+                ],
+                "Soviet": [
+                  {
+                    "type": "4TNK",
+                    "count": 3
+                  },
+                  {
+                    "type": "SHILKA",
+                    "count": 2
+                  },
+                  {
+                    "type": "TTNK",
+                    "count": 1
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "gem_cost": 550,
+            "effects": {
+              "camp_reward_units_by_country": {
+                "GDI": [
+                  {
+                    "type": "HTNK",
+                    "count": 4
+                  },
+                  {
+                    "type": "MSAM",
+                    "count": 2
+                  },
+                  {
+                    "type": "DISCARTY",
+                    "count": 2
+                  }
+                ],
+                "Nod": [
+                  {
+                    "type": "FTNK",
+                    "count": 4
+                  },
+                  {
+                    "type": "STNK",
+                    "count": 2
+                  },
+                  {
+                    "type": "ARTY",
+                    "count": 2
+                  }
+                ],
+                "Allies": [
+                  {
+                    "type": "2TNK",
+                    "count": 4
+                  },
+                  {
+                    "type": "RAARTY",
+                    "count": 2
+                  },
+                  {
+                    "type": "TNKD",
+                    "count": 2
+                  }
+                ],
+                "Soviet": [
+                  {
+                    "type": "4TNK",
+                    "count": 4
+                  },
+                  {
+                    "type": "SHILKA",
+                    "count": 2
+                  },
+                  {
+                    "type": "TTNK",
+                    "count": 2
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "veteran_spoils",
+        "display_name": "Veteran Spoils",
+        "description": "All mobile units awarded by camp crates arrive Veteran / Elite. Applies to normal and Advanced Spoils unit rewards; credit-only crates grant no units.",
+        "gem_cost": 180,
+        "effects": {
+          "camp_veterancy": 1
+        },
+        "ranks": [
+          {
+            "gem_cost": 180,
+            "effects": {
+              "camp_veterancy": 1
+            }
+          },
+          {
+            "gem_cost": 360,
+            "effects": {
+              "camp_veterancy": 2
+            }
+          }
+        ]
+      },
+      {
+        "id": "forward_outposts",
+        "display_name": "Forward Outposts",
+        "description": "Recover a guarded camp to deploy a compact, powered outpost of your own faction. Six ranks add production and defenses; rank 6 has a 12-emplacement perimeter. Buildings appear only after friendly recovery, waiting for occupied tiles to clear. Existing compact positions are retained; cramped sites reduce production.",
+        "gem_cost": 200,
+        "effects": {
+          "outpost_rank": 1
+        },
+        "ranks": [
+          {
+            "gem_cost": 200,
+            "effects": {
+              "outpost_rank": 1
+            }
+          },
+          {
+            "gem_cost": 350,
+            "effects": {
+              "outpost_rank": 2
+            }
+          },
+          {
+            "gem_cost": 550,
+            "effects": {
+              "outpost_rank": 3
+            }
+          },
+          {
+            "gem_cost": 800,
+            "effects": {
+              "outpost_rank": 4
+            }
+          },
+          {
+            "gem_cost": 1150,
+            "effects": {
+              "outpost_rank": 5
+            }
+          },
+          {
+            "gem_cost": 1600,
+            "effects": {
+              "outpost_rank": 6
             }
           }
         ]

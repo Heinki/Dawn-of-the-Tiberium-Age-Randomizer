@@ -53,7 +53,15 @@ class FinalFortressController(FortressCoopController):
         self.final_fortress_config = None
         self.final_fortress_state = None
         try:
-            self.final_fortress_config = load_config()
+            from randomizer.final_fortress.feature import testing_profile_enabled
+
+            config = load_config()
+            if testing_profile_enabled():
+                repository = FinalFortressRepository(testing=True)
+                repository.initialize_testing_profile(config)
+                self.final_fortress_repository = repository
+                self.final_fortress_header_var.set('Final Fortress · Testing profile · All perks unlocked')
+            self.final_fortress_config = config
             self.final_fortress_map_catalogue = self.final_fortress_config
             self.final_fortress_map_choices = tuple(
                 m['display_name'] for m in map_definitions(self.final_fortress_map_catalogue)
@@ -64,6 +72,7 @@ class FinalFortressController(FortressCoopController):
             if self.final_fortress_state['preferences']['workspace_selected']:
                 self.game_mode_var.set(DISPLAY_NAME)
         except (RuntimeError, ValueError, OSError) as exc:
+            self.final_fortress_config = None
             self.final_fortress_map_choices = ()
             self.final_fortress_status_var.set(str(exc))
         self.progression_mode_var.trace_add('write', self._sync_game_mode_choice)
@@ -236,7 +245,8 @@ class FinalFortressController(FortressCoopController):
         self.final_fortress_country_var.set(COUNTRY_LABELS.get(preferences['player_country'], ''))
         self.final_fortress_difficulty_var.set(preferences['difficulty'].title())
         self.final_fortress_wave_multiplier_var.set(f'x{preferences["wave_multiplier"]}')
-        self.final_fortress_gems_var.set(f'Defensive Points: {state["gems"]}')
+        profile = 'Testing profile · ' if self.final_fortress_repository.testing else ''
+        self.final_fortress_gems_var.set(f'{profile}Defensive Points: {state["gems"]}')
         if not hasattr(self, 'final_fortress_perks_tree'):
             return
         from randomizer.final_fortress.perks import ranks, owned_rank, next_price
@@ -261,8 +271,6 @@ class FinalFortressController(FortressCoopController):
                 if perk['id'] in state['selected_perks']
                 else 'Disabled' if rank else 'Not purchased'
             )
-            if purchased_rank > max_rank:
-                status += f' · {purchased_rank} owned'
             values = (
                 perk['display_name'],
                 '◀' if purchased_rank and not perks_locked else '',
@@ -334,9 +342,9 @@ class FinalFortressController(FortressCoopController):
 
     def fortress_help_text(self):
         return (
-            'Defend the Civilian Armory (ARMORY) headquarters beside your initial MCV for 60 simulation minutes. A starting refinery includes one faction harvester; runs without a starting refinery receive none. Starting defenses add two emplacements of each unlocked type: GDI has two types, Nod and Soviet three, Allies four. Higher purchased ranks remain available when switching factions. Extra generators cover only the actual starting demand. Objective destruction means defeat. Ordinary skirmish AI remains active. Enemy MCVs deploy into protected starting yards; fixed turrets are immune and expansions remain destructible.\n\n'
+            'Defend the Civilian Armory (ARMORY) headquarters beside your initial MCV for 60 simulation minutes. A starting refinery includes one faction harvester; runs without a starting refinery receive none. Starting defenses form a perimeter around starting production: GDI grants six emplacements per unlocked type, Nod and Soviet four, Allies three, up to twelve total. Higher purchased ranks remain available when switching factions. Extra generators cover only the actual starting demand. Objective destruction means defeat. Ordinary skirmish AI remains active. Enemy MCVs deploy into protected starting yards; fixed turrets are immune and expansions remain destructible.\n\n'
             'Waves begin at minute 5 on one front, minute 10 on two, minute 15 on three. Difficulty and x1–x10 scale scripted troops. Five minutes separate complete deliveries. Enemy reservations: 480 units in groups of 20; allied reinforcements: 150 in shared groups of 15. Living survivors retain their reservations. Helpers receive attack orders.\n\n'
-            'Six guarded crates exist from the start. First pickup grants 10 Defensive Points to every human. Human collectors receive their frozen payload; enemy/helper pickup sends it to the host. Contents: 40% 2,500 credits; 30% ten Tier 1 units; 20% five Tier 2 units; 10% one faction special. Guard deaths award nothing.\n\n'
+            'Six guarded crates exist from the start. First pickup grants 10 Defensive Points to every human. Human collectors receive their frozen payload; allied helper pickup sends it to the host. Enemy units do not recover camps. Contents: 40% 2,500 credits; 30% ten Tier 1 units; 20% five Tier 2 units; 10% one faction special. Guard deaths award nothing.\n\n'
             'Survival awards: 25 points at minute 25, 25 at minute 45, 50 on victory. Earned points survive defeat or quit. Verified victory/defeat also awards five points per 50 corrected friendly native kill-score points, capped at 500 at 5,000. Native scores may include captures. Unfinished quits have no kill bonus.\n\n'
             'Settings contains Final Fortress co-op for two or three humans. Host chooses shared settings/perks; Fundraising remains personal. Every peer verifies identical map bytes before launch. Each machine keeps its own wallet and purchases. Helpers fill only unused friendly seats. No mid-game joining or reconnect.\n\n'
             'Specialist support technology unlocks faction support units/buildings through the normal war factory or construction yard plus radar. Targeting and ammunition improves only eligible mobile types. Fortified infrastructure adds up to 45% health to production/economy buildings, separately from objective durability. Transport capacity adds up to three passenger slots without granting units or passengers. These perks share friendly private types with helpers and do not buff enemy copies.\n\n'
@@ -669,12 +677,7 @@ class FinalFortressController(FortressCoopController):
         details = rank_descriptions(perk, country, self.final_fortress_config)
         if 0 < rank <= len(ranks(perk)):
             refund = ranks(perk)[rank - 1]['gem_cost']
-            details = f'Refund purchased rank {rank}: {refund} Defensive Points.\n\n' + details
-        if rank > len(ranks(perk, country)):
-            details = (
-                f'{rank} ranks owned; this faction uses at most {len(ranks(perk, country))}. '
-                'Refunding removes the highest purchased rank first.\n\n' + details
-            )
+            details = f'Refund: {refund} Defensive Points.\n\n' + details
         show_perk_details(self, details)
         self.final_fortress_refund_perk_button.configure(
             state='normal' if rank and not busy else 'disabled',

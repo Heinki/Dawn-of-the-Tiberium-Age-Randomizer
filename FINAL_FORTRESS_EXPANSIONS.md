@@ -4,7 +4,8 @@ Reviewed the installed DTA, C&C Reloaded and Mental Omega launcher catalogues on
 28 October 2026. The original comparison below records the catalogue at review
 time. Specialist support technology, targeting and ammunition, fortified
 infrastructure and transport capacity were subsequently implemented in DTA,
-bringing its current catalogue to 31 perks. Their ranks, prices and runtime
+bringing that catalogue to 31 perks. Seven further expedition and defense perks
+now bring the current catalogue to 38 perks. Their ranks, prices and runtime
 behavior are documented in [Final Fortress in DTA](FINAL_FORTRESS_DTA.md).
 The remaining entries are proposals rather than enabled gameplay features.
 

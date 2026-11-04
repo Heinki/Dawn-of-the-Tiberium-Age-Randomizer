@@ -12,7 +12,7 @@ from .waves import build_wave_schedule
 from .wave_priority import apply_priorities
 from .pressure import size_composition
 
-PLAN_VERSION = 4
+PLAN_VERSION = 7
 
 
 def _starting_economy(effects, country, plan_version):
@@ -39,6 +39,8 @@ def _starting_economy(effects, country, plan_version):
     if missing > 0:
         # Friendly grant slots reserve the native small generator footprint.
         generator = 'NUKE' if country in ('GDI', 'Nod') else 'RAPOWR'
+        if plan_version >= 6:
+            generator = 'NUK2' if country in ('GDI', 'Nod') else 'RAAPWR'
         effects['starting_power_buildings'] = [generator] * ceil(
             missing / (float(rules[generator]['Power']) * multiplier)
         )
@@ -69,7 +71,7 @@ def build_run_plan(
     validate_config(config)
     validate_wave_multiplier(wave_multiplier)
     text(seed, 'Seed')
-    if type(plan_version) is not int or plan_version not in (1, 2, 3, PLAN_VERSION):
+    if type(plan_version) is not int or plan_version not in (1, 2, 3, 4, 5, 6, PLAN_VERSION):
         raise ValueError('Unsupported DTA Fortress plan version.')
     if difficulty not in DIFFICULTY_IDS or player_country not in SIDE_COUNTRIES:
         raise ValueError('Choose a DTA faction and difficulty.')
@@ -102,6 +104,7 @@ def build_run_plan(
         include_generator_power=True,
         share_starting_power=True,
         include_expansion=plan_version >= 3,
+        include_expeditions=plan_version >= 5,
     )
     _starting_economy(effects, player_country, plan_version)
     human_count = len(coop_players) or 1
@@ -238,18 +241,54 @@ def build_run_plan(
         )
         reward['units'] = reward.pop('units_by_country')[player_country]
         reward.pop('weight')
+        if plan_version >= 5:
+            if reward['id'] in ('tier_one', 'tier_two') and effects['camp_reward_units']:
+                reward['units'] = deepcopy(effects['camp_reward_units'])
+                reward['display_name'] = 'Advanced faction squad'
+            reward['credits'] += effects['camp_salvage_credits']
+            reward['veterancy'] = effects['camp_veterancy']
+            if effects['camp_salvage_credits']:
+                reward['display_name'] += f' + {effects["camp_salvage_credits"]:,} salvage credits'
+            if reward['units'] and reward['veterancy']:
+                reward['display_name'] += ' (Veteran)' if reward['veterancy'] == 1 else ' (Elite)'
         camp['crate_reward'] = reward
         rewards['camp:' + camp['id']] = camp['gems']
         for seat in range(human_count):
             rewards[f'camp_pick:{seat}:' + camp['id']] = 0
+    if plan_version >= 6:
+        from randomizer.core.paths import GAME_ROOT
+        from .formations import plan_bases
+        from .catalogue import installed_rules_registry
+
+        plan_bases(GAME_ROOT, plan['map'], effects, installed_rules_registry()[1])
+    if effects.get('outpost_rank'):
+        from randomizer.core.paths import GAME_ROOT
+        from .outposts import plan_outposts
+
+        layouts = plan_outposts(
+            GAME_ROOT, plan['map'], player_country, effects['outpost_rank'],
+            effects['generator_power_percent'],
+            version=plan_version,
+        )
+        for camp, layout in zip(plan['map']['camps'], layouts):
+            if plan_version >= 7:
+                layout['after_recovery'] = True
+            camp['outpost'] = layout
+            if layout.get('compact') and not layout.get('after_recovery'):
+                for index in range(len(layout['structures'])):
+                    rewards[f'outpost_lost:{camp["id"]}:{index}'] = 0
     performance = plan['performance']
     for i in range(1, performance['max_tiers'] + 1):
         rewards[f'kills:{i * performance["units_per_tier"]}'] = performance['gems_per_tier']
     plan['gem_rewards'] = rewards
+    interval = 300 - effects.get('reinforcement_interval_reduction_seconds', 0)
+    if effects['reinforcements'] and plan_version >= 5:
+        effects['reinforcements']['first_seconds'] = interval
+        effects['reinforcements']['interval_seconds'] = interval
     plan['reinforcement_schedule'] = (
         [
             {'seconds': n, 'units': deepcopy(effects['reinforcements']['units'])}
-            for n in range(300, 3600, 300)
+            for n in range(interval, 3600, interval)
         ]
         if effects['reinforcements']
         else []

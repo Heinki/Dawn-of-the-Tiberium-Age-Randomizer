@@ -36,10 +36,11 @@ def rank_descriptions(perk, country, config=None):
     if perk.get('rank_limits_by_country'):
         limits = perk['rank_limits_by_country']
         descriptions.append(
-            'Available defense types: GDI 2, Nod 3, Soviet 3, Allies 4. '
-            'Each rank adds two emplacements of one new type. '
-            + (f'{country} maximum: rank {limits[country]}. ' if country else '')
-            + 'Higher purchased ranks are retained for factions with more defense types.'
+            (f'{country}: {limits[country]} defense types. ' if country else
+             'Available defense types: GDI 2, Nod 3, Soviet 3, Allies 4. ')
+            + (f'Each rank adds {len(perk["effects"]["defenses_by_country"][country])} emplacements of a new type. '
+               if country else 'Each rank adds emplacements of a new defense type. ')
+            + 'Maximum rank forms a 12-emplacement perimeter around starting production.'
         )
     for index, rank in enumerate(ranks(perk, country), 1):
         effect = rank['effects']
@@ -216,6 +217,56 @@ def rank_descriptions(perk, country, config=None):
                 f'+{effect["infrastructure_health_percent"]}% health for friendly construction '
                 'yards, production buildings, refineries, generators and silos, including future '
                 'construction; objective, defenses and support structures are excluded'
+            )
+        if effect.get('defense_health_percent'):
+            parts.append(
+                f'+{effect["defense_health_percent"]}% maximum health for all friendly defensive '
+                'buildings, including starting, constructed and Forward Outpost defenses'
+            )
+        if effect.get('hazard_training'):
+            parts.append('All friendly infantry are immune to Tiberium and Tiberium gas damage; ordinary weapon damage remains')
+        if effect.get('camp_salvage_credits'):
+            parts.append(
+                f'+{effect["camp_salvage_credits"]:,} credits per collected camp, alongside its '
+                'normal reward. Collecting human receives payment; AI helpers credit the host'
+            )
+        if effect.get('reinforcement_interval_reduction_seconds'):
+            interval = 300 - effect['reinforcement_interval_reduction_seconds']
+            parts.append(
+                f'Periodic reinforcements first arrive after {interval // 60}:{interval % 60:02d}, '
+                'then repeat at that interval. Requires Periodic reinforcements; '
+                'the shared living-unit cap and capacity waits remain'
+            )
+        if effect.get('camp_reward_units_by_country'):
+            table = effect['camp_reward_units_by_country']
+            parts.append(
+                'Replace Tier 1 and Tier 2 camp unit rewards with '
+                + (units(table[country]) if country else f'{sum(u["count"] for u in next(iter(table.values())))} mixed faction units')
+                + '. Credit and special-unit rolls remain unchanged; combines with Veteran Spoils and Expedition Salvage'
+            )
+        if effect.get('camp_veterancy'):
+            parts.append(
+                'All camp reward units arrive '
+                + ('Veteran' if effect['camp_veterancy'] == 1 else 'Elite (highest veterancy)')
+                + '. Includes Advanced Spoils; credit-only rewards grant no units'
+            )
+        if effect.get('outpost_rank'):
+            from .outposts import outpost_buildings
+
+            if country:
+                _, production, defenses = outpost_buildings(country, effect['outpost_rank'], perimeter=True)
+                parts.append('Each collected camp grants ' + buildings([*production, *defenses]))
+            else:
+                parts.append('Each collected camp grants a cumulative rank ' + str(effect['outpost_rank']) + ' faction outpost')
+            parts.append(
+                'Includes enough advanced generators for its own demand, accounting for More power. '
+                'Refinery outposts include a faction collector. Owned by the collecting human '
+                '(AI helper collections credit the host). Existing friendly perks apply. '
+                'Buildings appear only after a human or allied helper recovers the camp. '
+                'Occupied foundations wait until clear; generators deploy first. '
+                'Production stays inside the defensive perimeter, on connected ground. '
+                'Grants are one-time and never rebuild destroyed structures. '
+                'Cramped terrain reduces production instead of spreading buildings outside protection'
             )
         if effect.get('transport_capacity_stacks'):
             from randomizer.config.tuning import REWARD_PLANNING

@@ -88,7 +88,8 @@ def _countdowns(writer, plan, finished):
     for name, initial in [
         ('victory', 3600),
         ('enemy', 300),
-        *[(actor, 300) for actor, _, _ in coalition(plan) if plan['effects']['reinforcements']],
+        *[(actor, plan['effects']['reinforcements']['first_seconds'])
+          for actor, _, _ in coalition(plan) if plan['effects']['reinforcements']],
     ]:
         index = writer.flag('DFF_' + name)
         clocks[name] = index
@@ -265,6 +266,9 @@ class MapWriter:
             self.lines,
             {key: values for key, values in self.sections.items() if key not in packed_sections},
         )
+        from .outposts import finalize_deferred_outposts
+
+        finalize_deferred_outposts(self)
         for section in ('OverlayPack', 'OverlayDataPack'):
             if len(unpack(section_value_map(self.lines, section))) != 512 * 512:
                 raise ValueError('Invalid generated DTA packed overlay: ' + section)
@@ -512,6 +516,8 @@ def _player_rules(writer, plan):
         if kind.startswith('AI') or row.get('Buildability', '').casefold() == 'aionly':
             continue
         stats = {}
+        if category == 'InfantryTypes' and effects.get('hazard_training'):
+            stats['TiberiumProof'] = 'yes'
         cost = float(row.get('Cost', '0'))
         discount = (
             effects['construction_discount_percent']
@@ -774,6 +780,7 @@ def _encode_lcw(data):
 def _camp_crates(writer, plan, markers, finished, player_aliases, enemy_aliases):
     """Native visual crates, one shared claim flag, collector-specific frozen payload."""
     from .terrain import unpack
+    from .outposts import prepare_outpost, route_outpost_factories
 
     overlay = bytearray(unpack(section_value_map(writer.lines, 'OverlayPack')))
     no_build_index = list(writer.rules['OverlayTypes'].values()).index('NOBUILD')
@@ -787,11 +794,24 @@ def _camp_crates(writer, plan, markers, finished, player_aliases, enemy_aliases)
     friends = coalition(plan)
     humans = len(plan.get('coop_players', [])) or 1
     collectors = [(wp, seat if seat < humans else 0) for seat, (_, _, wp) in enumerate(friends)]
-    collectors.extend((wp, 0) for wp in plan['map']['enemy_waypoints'])
+    if plan.get('plan_version', 1) < 7:
+        collectors.extend((wp, 0) for wp in plan['map']['enemy_waypoints'])
+    outpost_aliases = {}
+    if any(c.get('outpost', {}).get('compact') and not c['outpost'].get('after_recovery')
+           for c in plan['map']['camps']):
+        writer.trigger('Unclaimed outposts remain passive', [(13, 0, 0)],
+                       [_action(37, 50 + wp) for _, _, wp in coalition(plan)]
+                       + [_action(37, 50 + wp) for wp in plan['map']['enemy_waypoints']],
+                       owner='Special')
     for i, camp in enumerate(plan['map']['camps']):
         p = camp['position']
         overlay[p['y'] * 512 + p['x']] = crate_index
         claimed = writer.flag('Camp ' + camp['id'] + ' claimed')
+        outpost_pickups, extra_aliases = prepare_outpost(
+            writer, plan, camp, player_aliases, finished, markers,
+        )
+        for source, copies in extra_aliases.items():
+            outpost_aliases.setdefault(source, []).extend(copies)
         previous = '<none>'
         first_tag = None
         waypoint = 30 + i
@@ -818,9 +838,23 @@ def _camp_crates(writer, plan, markers, finished, player_aliases, enemy_aliases)
                     recipient,
                     waypoint,
                     attack=False,
+                    veterancy=reward.get('veterancy', 0),
                 )
                 actions.append(writer.reinforce(team))
             actions.append(writer.message('Camp collected: ' + reward['display_name']))
+            actions.extend(outpost_pickups.get(seat, []))
+            # Native trigger actions have a small per-trigger action budget.
+            # Relays retain the single camp claim while delivering rich rewards.
+            if len(actions) > 8:
+                reward_actions = actions[3:]
+                actions = actions[:3]
+                for offset in range(0, len(reward_actions), 8):
+                    relay, _ = writer.trigger(
+                        'Camp ' + camp['id'] + f' reward relay {wp}:{offset}',
+                        [(13, 0, 0), (37, 0, finished)],
+                        reward_actions[offset:offset + 8], disabled=True,
+                    )
+                    actions.append(_action(53, trigger=relay))
             trigger, tag = writer.trigger(
                 'Camp ' + camp['id'] + ' pickup',
                 [(1, 0, 50 + wp), (37, 0, claimed), (37, 0, finished)],
@@ -894,6 +928,7 @@ def _camp_crates(writer, plan, markers, finished, player_aliases, enemy_aliases)
             parts = writer.rules['Powerups'][key].split(',')
             parts[0] = '0'
             writer.put('Powerups', key, ','.join(parts))
+    route_outpost_factories(writer, outpost_aliases)
 
 
 def _delivery_chain(
@@ -908,6 +943,7 @@ def _delivery_chain(
     clock=None,
     upgrader=None,
     late_flag=None,
+    interval=300,
 ):
     """Native semipersistent all-member death tags release small living reservations.
 
@@ -916,7 +952,7 @@ def _delivery_chain(
     """
     timers = [
         writer.trigger(
-            name + f' interval {i}', [(13, 0, 300), (37, 0, finished)], [], disabled=i > 0
+            name + f' interval {i}', [(13, 0, interval), (37, 0, finished)], [], disabled=i > 0
         )[0]
         for i in range(len(deliveries))
     ]
@@ -983,7 +1019,7 @@ def _delivery_chain(
         if i + 1 < len(timers):
             actions.append(_action(53, trigger=timers[i + 1]))
         if clock is not None:
-            actions.append(_set_local(clock, 300 if i + 1 < len(timers) else -1))
+            actions.append(_set_local(clock, interval if i + 1 < len(timers) else -1))
         writer.actions(relays[-1], actions or [writer.message(name + ' deliveries complete')])
 
 
@@ -1142,8 +1178,11 @@ def build_map(game_root, run, rules=None, *, power_runtime=None):
         ]
         available = list(layout['slots'])
         production_count = len(effects['starting_buildings']) + len(effects['starting_power_buildings'])
-        grant_positions = [available.pop(0) for _ in range(production_count)]
-        grant_positions.extend(_defense_slots(available, start(wp), len(effects['defense_types'])))
+        if plan.get('plan_version', 1) >= 6:
+            grant_positions = available[:len(grants)]
+        else:
+            grant_positions = [available.pop(0) for _ in range(production_count)]
+            grant_positions.extend(_defense_slots(available, start(wp), len(effects['defense_types'])))
         used = []
         for kind, position in zip(grants, grant_positions):
             alias = player_aliases.get(kind, kind)
@@ -1479,7 +1518,7 @@ def build_map(game_root, run, rules=None, *, power_runtime=None):
                         effect.get('veterancy', 0),
                     )
                 ]
-                for _ in range(11)
+                for _ in plan['reinforcement_schedule']
             ]
             _delivery_chain(
                 writer,
@@ -1489,6 +1528,7 @@ def build_map(game_root, run, rules=None, *, power_runtime=None):
                 finished,
                 name='Allied reinforcements ' + str(seat),
                 clock=clocks[ACTORS[seat]],
+                interval=effect['interval_seconds'],
             )
     if plan['effects']['lab_reserve_units']:
         actions = []
