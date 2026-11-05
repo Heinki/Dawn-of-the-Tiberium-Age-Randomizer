@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from randomizer.progression.grid import required_goals
+from randomizer.progression.mission_access import configure_grid_access
+
 from collections import Counter
 from copy import deepcopy
 from hashlib import sha256
@@ -9,7 +12,7 @@ import json
 
 from Archipelago.catalogue_contract import runtime_catalogue_checksum
 from randomizer.core.version import APP_VERSION
-from randomizer.progression.grid import grid_opening_mission_codes
+from randomizer.progression.grid import grid_opening_mission_codes, neighbors as grid_neighbors, starting_nodes as grid_starting_nodes
 from randomizer.rewards.catalogue import REWARD_BY_NAME
 from randomizer.rewards.display import canonical_reward
 from randomizer.rewards.planning import is_max_rewards_achieved_reward
@@ -31,6 +34,9 @@ GAMEPLAY_CONFIG_KEYS = (
     "mission_goal",
     "progression_mode",
     "grid_two_start_positions",
+    "required_victory_missions",
+    "mission_unlock_mode",
+    "minimum_completed_missions_before_final_unlock",
     "unlock_all_rewards_after_final_grid_mission",
     "rewards_per_objective",
     "rewards_on_victory_only",
@@ -117,6 +123,7 @@ def _goal_for_state(state, mission_order):
         return {
             "type": "grid",
             "mission_code": grid.get("goal") or mission_order[-1],
+            **({"mission_codes": required_goals(grid)} if "required_goals" in grid else {}),
         }
     return {"type": "mission", "mission_code": mission_order[-1]}
 
@@ -141,7 +148,48 @@ def _stable_grid(value):
         "height": int(value.get("height", 0)),
         "two_start_positions": bool(value.get("two_start_positions", False)),
         "goal": value.get("goal"),
+        **({key: deepcopy(value[key]) for key in ("required_goals", "required_victory_missions") if key in value}),
         "nodes": stable_nodes,
+    }
+
+
+def _progression_logic_for_state(state, mission_order):
+    """Freeze launcher-owned local mission unlock rules for AP logic."""
+    mode = str(state.get("progression_mode") or "Classic")
+    if mode == "Shop Mode":
+        return {
+            "type": "shop_stages",
+            "starting_missions": list(mission_order),
+            "mission_requirements": {
+                code: [] for code in mission_order
+            },
+        }
+    if mode == "Grid Mode":
+        grid = state.get("grid") if isinstance(state.get("grid"), dict) else {}
+        starts = grid_starting_nodes(grid)
+        if not starts:
+            raise ValueError("Grid run has no starting mission.")
+        return {
+            "type": "grid_neighbors",
+            "starting_missions": starts,
+            "mission_requirements": {
+                code: grid_neighbors(grid, code)
+                for code in mission_order
+            },
+        }
+
+    try:
+        starting_count = int(state.get("starting_unlocked_missions", 1))
+    except (TypeError, ValueError):
+        starting_count = 1
+    starting_count = max(1, min(len(mission_order), starting_count))
+    return {
+        "type": "victory_count",
+        "starting_missions": mission_order[:starting_count],
+        "mission_requirements": {
+            code: max(0, index - starting_count + 1)
+            for index, code in enumerate(mission_order)
+        },
     }
 
 
@@ -385,6 +433,7 @@ def build_run_manifest(state, launcher_config=None, *, catalogue_checksum=None):
         ),
         "mission_order": mission_order,
         "grid": _stable_grid(state.get("grid")),
+        **({"progression": _progression_logic_for_state(state, mission_order)} if progression_mode == "Grid Mode" else {}),
         "goal": _goal_for_state(state, mission_order),
         "shop": shop,
         "locations": locations,
@@ -428,6 +477,7 @@ def build_run_manifest(state, launcher_config=None, *, catalogue_checksum=None):
         },
         "state_snapshot": _server_state_snapshot(state),
     }
+    configure_grid_access(manifest, launcher_config or {})
     unsigned = _canonical_json(manifest).encode("utf-8")
     manifest["manifest_checksum"] = sha256(unsigned).hexdigest()
     return manifest

@@ -276,3 +276,9 @@ an engine change. See [the issue investigation](Todo.md) for the outstanding
 engine work and focused live checks.
 
 Player configurations created before mobile-unit access was introduced are migrated once to enable access and buffs. Existing buff-only seeds are not rewritten because changing their assigned rewards would invalidate completed progression; the launcher asks the player to generate a new seed instead.
+
+## Grid victory objectives and AP mission keys
+
+See [Grid progression and mission access](GRID_PROGRESSION.md) for required victory missions,
+AP unlock modes, the frozen whole-board currency budget, persistence, protocol
+compatibility, and the manual gameplay checklist.

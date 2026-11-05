@@ -1,5 +1,7 @@
 """Launcher adapter for the isolated Archipelago session worker."""
 
+from randomizer.progression.grid import required_goals
+
 from copy import deepcopy
 from datetime import datetime
 from urllib.parse import urlsplit, urlunsplit
@@ -63,6 +65,7 @@ class ArchipelagoController(ArchipelagoYamlController):
             'slot_data_version', 'randomizer_version', 'randomizer_seed',
             'catalogue_checksum', 'manifest_checksum', 'campaign_filter',
             'progression_mode', 'mission_goal', 'mission_order', 'goal', 'shop',
+            'grid_contract', 'grid_access',
         )
         return {
             key: deepcopy(slot_data[key])
@@ -843,6 +846,11 @@ class ArchipelagoController(ArchipelagoYamlController):
         values = slot_data.get('items', {})
         if not isinstance(values, dict) or not values:
             raise ValueError('slot data has no item mapping')
+        local_victory_names = {
+            f'Dawn of the Tiberium Age Local Victory: {code}'
+            for code in (slot_data.get('local_victories') or {})
+        }
+        access_items = ((slot_data.get('run_manifest') or {}).get('grid_access') or {}).get('item_ids', {})
         item_names = {}
         try:
             for item_id, reward_name in values.items():
@@ -850,6 +858,12 @@ class ArchipelagoController(ArchipelagoYamlController):
                 reward_name = str(reward_name).strip()
                 if item_id <= 0 or not reward_name or item_id in item_names:
                     raise ValueError
+                if reward_name not in local_victory_names:
+                    canonical_name = str(canonical_reward({
+                        'name': reward_name,
+                    }).get('name') or '').strip()
+                    if canonical_name in REWARD_BY_NAME:
+                        reward_name = canonical_name
                 item_names[item_id] = reward_name
         except (TypeError, ValueError) as exc:
             raise ValueError('slot data item mapping is invalid') from exc
@@ -857,12 +871,16 @@ class ArchipelagoController(ArchipelagoYamlController):
             reward_name
             for reward_name in item_names.values()
             if reward_name not in REWARD_BY_NAME
+            and reward_name not in local_victory_names
+            and reward_name not in access_items
         })
         if unknown:
             preview = ', '.join(unknown[:3])
             if len(unknown) > 3:
                 preview += f', +{len(unknown) - 3} more'
             raise ValueError(f'unknown Randomizer reward(s): {preview}')
+        if any(item_names.get(item_id) != name for name, item_id in access_items.items()):
+            raise ValueError('Mission key item mapping differs from the signed manifest.')
         return item_names
 
     @staticmethod
@@ -908,7 +926,24 @@ class ArchipelagoController(ArchipelagoYamlController):
                 }))
                 groups[(str(code).upper(), str(check_id))] = locations
                 allowed.update(locations)
+        local_victories = {}
+        for code, entry in (slot_data.get('local_victories') or {}).items():
+            if not isinstance(entry, dict):
+                continue
+            try:
+                location = int(entry.get('location', 0))
+                item = int(entry.get('item', 0))
+            except (TypeError, ValueError):
+                continue
+            if location <= 0 or item <= 0:
+                continue
+            local_victories[str(code).upper()] = {
+                'item': item,
+                'location': location,
+            }
+            allowed.add(location)
         self._archipelago_location_groups = groups
+        self._archipelago_local_victories = local_victories
         self._archipelago_allowed_locations = frozenset(allowed)
 
     def _load_archipelago_server_state(
@@ -997,7 +1032,119 @@ class ArchipelagoController(ArchipelagoYamlController):
         self.state['earned_rewards'] = self.earned_rewards_from_checks()
         return previous_ap
 
+    def _apply_archipelago_grid_server_locations(self, location_ids, replace=False):
+        """Track sent rewards without treating server checks as gameplay wins."""
+        apply_started = time.perf_counter()
+        slot_data = getattr(self, '_archipelago_slot_data', {})
+        allowed = getattr(self, '_archipelago_allowed_locations', frozenset())
+        if not allowed:
+            self._cache_archipelago_location_mappings(slot_data)
+            allowed = self._archipelago_allowed_locations
+        incoming = {
+            int(value)
+            for value in (location_ids or ())
+            if int(value) in allowed
+        }
+        previous = set(getattr(
+            self, '_archipelago_server_checked_locations', set()
+        ))
+        checked = incoming if replace else previous | incoming
+        self._archipelago_server_checked_locations = checked
+        ap_state = self._active_archipelago_state() or {}
+        session = getattr(self, '_archipelago_session', None)
+        checkpoint = (
+            session.checkpoint()
+            if session is not None
+            and getattr(self, '_archipelago_session_validated', False)
+            else ap_state.get('checkpoint', {})
+        )
+        known = set(checked)
+        if isinstance(checkpoint, dict) and checkpoint.get('format', 1) >= 2:
+            for key in ('completed_locations', 'pending_locations'):
+                known.update(
+                    int(value) for value in checkpoint.get(key, ())
+                    if int(value) in allowed
+                )
+        mission_checks = self.state.get('mission_checks', {})
+        changed = checked != previous
+        completed = []
+        started = []
+        for code in self.state.get('mission_order', []):
+            checks = mission_checks.get(code, [])
+            mission_started = False
+            mission_complete = any(
+                isinstance(check, dict)
+                and check.get('id') == 'victory' and check.get('unlocked')
+                for check in checks
+            )
+            for check in checks:
+                if not isinstance(check, dict):
+                    continue
+                check_id = str(check.get('id', ''))
+                mapped = set(getattr(
+                    self, '_archipelago_location_groups', {}
+                ).get((str(code).upper(), check_id), ()))
+                before = bool(check.get('unlocked'))
+                before_released = bool(check.get('released'))
+                # Release and collect commands send ordinary checked_locations,
+                # including private victory markers on a full-world release.
+                # Only persisted local gameplay checks prove completion. Keep
+                # externally sent rewards separate so the mission stays
+                # playable and cannot report CLIENT_GOAL or release the grid.
+                unlocked = before or mission_complete
+                released = bool(
+                    not unlocked and mapped and mapped.issubset(known)
+                )
+                if released:
+                    check['released'] = True
+                else:
+                    check.pop('released', None)
+                if unlocked:
+                    check['unlocked'] = True
+                    mission_started = True
+                    if check_id == 'victory':
+                        mission_complete = True
+                else:
+                    check.pop('unlocked', None)
+                changed = (
+                    changed or before != unlocked
+                    or before_released != released
+                )
+            if mission_started and not mission_complete:
+                started.append(code)
+            if mission_complete:
+                completed.append(code)
+        if self.state.get('completed_missions') != completed:
+            self.state['completed_missions'] = completed
+            changed = True
+        if self.state.get('started_missions') != started:
+            self.state['started_missions'] = started
+            changed = True
+        # AP checks don't award local items. ReceivedItems exclusively updates
+        # earned rewards, so location projection need not recanonicalize the
+        # full inventory on every mission check.
+        if self.state.get('progression_mode') == 'Grid Mode':
+            self.sync_grid_progression()
+        log_event(
+            'archipelago_server_locations_applied',
+            replace=bool(replace),
+            incoming_count=len(incoming),
+            previous_count=len(previous),
+            active_count=len(checked),
+            changed=bool(changed),
+            completed_missions=len(completed),
+            started_missions=len(started),
+            elapsed_ms=round(
+                (time.perf_counter() - apply_started) * 1000, 1
+            ),
+            **self._archipelago_log_context(),
+        )
+        return changed
+
     def _apply_archipelago_server_locations(self, location_ids, replace=False):
+        if self.state.get('grid_access'):
+            return self._apply_archipelago_grid_server_locations(location_ids, replace)
+
         """Project server-checked locations into mission/Grid completion state."""
         apply_started = time.perf_counter()
         slot_data = getattr(self, '_archipelago_slot_data', {})
@@ -1090,14 +1237,7 @@ class ArchipelagoController(ArchipelagoYamlController):
         # earned rewards, so location projection need not recanonicalize the
         # full inventory on every mission check.
         if self.state.get('progression_mode') == 'Grid Mode':
-            from randomizer.progression.grid import refresh_states
-            refresh_states(
-                self.state.get('grid', {}),
-                completed,
-                unlock_all_after_goal=bool(self.state.get(
-                    'unlock_all_rewards_after_final_grid_mission', False
-                )),
-            )
+            self.sync_grid_progression()
         log_event(
             'archipelago_server_locations_applied',
             replace=bool(replace),
@@ -1439,6 +1579,7 @@ class ArchipelagoController(ArchipelagoYamlController):
         """Persist and acknowledge one network item batch with two saves."""
         started = time.perf_counter()
         receipts = tuple(receipts or ())
+        receipts = self.apply_grid_key_receipts(receipts)
         if not receipts:
             return ()
         ap_state = self._active_archipelago_state()
@@ -1710,6 +1851,16 @@ class ArchipelagoController(ArchipelagoYamlController):
             return ()
         return tuple(value for value in location_ids if value > 0)
 
+    def _archipelago_local_victory_location(self, code):
+        mapping = getattr(self, '_archipelago_local_victories', {})
+        if not mapping:
+            slot_data = getattr(self, '_archipelago_slot_data', {})
+            if slot_data:
+                self._cache_archipelago_location_mappings(slot_data)
+                mapping = self._archipelago_local_victories
+        entry = mapping.get(str(code).upper(), {})
+        return int(entry.get('location', 0)) if isinstance(entry, dict) else 0
+
     def archipelago_check_location_count(self, code, check_id):
         if self._active_archipelago_state() is None:
             return None
@@ -1921,7 +2072,7 @@ class ArchipelagoController(ArchipelagoYamlController):
             str(code).upper()
             for code in self.state.get('completed_missions', ())
         }
-        if not goal_code or goal_code not in completed:
+        if not goal_code or not set(required_goals(grid)).issubset(completed):
             return ()
         excluded = {
             (str(group_code).upper(), str(check_id))
@@ -2018,6 +2169,15 @@ class ArchipelagoController(ArchipelagoYamlController):
                 'event_stem': 'mission_completion',
                 'locations': victory_locations,
             })
+        logic_location = self._archipelago_local_victory_location(code)
+        if logic_location:
+            groups.append({
+                'code': str(code).upper(),
+                'check_id': 'local_victory',
+                'label': 'local victory logic',
+                'event_stem': 'local_victory',
+                'locations': (logic_location,),
+            })
         group_keys = {
             (group['code'], group['check_id']) for group in groups
         }
@@ -2044,23 +2204,34 @@ class ArchipelagoController(ArchipelagoYamlController):
                 if not check_id:
                     continue
                 locations = self._archipelago_location_ids(code, check_id)
-                if not locations:
-                    continue
-                groups.append({
-                    'code': str(code).upper(),
-                    'check_id': check_id,
-                    'label': (
-                        'mission completion'
-                        if check_id == 'victory'
-                        else 'objective check'
-                    ),
-                    'event_stem': (
-                        'mission_completion'
-                        if check_id == 'victory'
-                        else 'objective'
-                    ),
-                    'locations': locations,
-                })
+                if locations:
+                    groups.append({
+                        'code': str(code).upper(),
+                        'check_id': check_id,
+                        'label': (
+                            'mission completion'
+                            if check_id == 'victory'
+                            else 'objective check'
+                        ),
+                        'event_stem': (
+                            'mission_completion'
+                            if check_id == 'victory'
+                            else 'objective'
+                        ),
+                        'locations': locations,
+                    })
+                if check_id == 'victory':
+                    logic_location = self._archipelago_local_victory_location(
+                        code
+                    )
+                    if logic_location:
+                        groups.append({
+                            'code': str(code).upper(),
+                            'check_id': 'local_victory',
+                            'label': 'local victory logic',
+                            'event_stem': 'local_victory',
+                            'locations': (logic_location,),
+                        })
         group_keys = {
             (group['code'], group['check_id']) for group in groups
         }

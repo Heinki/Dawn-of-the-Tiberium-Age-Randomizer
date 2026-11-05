@@ -12,6 +12,8 @@ from .data import (
     ITEM_NAME_GROUPS,
     ITEM_TABLE,
     LOCATION_TABLE,
+    LOCAL_VICTORY_DATA,
+    LOCAL_VICTORY_ITEM_TABLE,
     MISSION_DATA,
     VICTORY_EVENT,
     SHOP_PURCHASE_LOCATION_TABLE,
@@ -21,7 +23,7 @@ from .data import (
     location_entries,
     shop_item_location_entries,
 )
-from .manifest import parse_manifest
+from .manifest import parse_manifest, progression_for_manifest
 from .options import DTAOptions, DTA_OPTION_GROUPS, launcher_settings_from_options
 
 
@@ -60,6 +62,7 @@ class DTAWorld(World):
         **{name: data["id"] for name, data in ITEM_DATA.items()},
         **SHOP_STAGE_LOGIC_ITEM_TABLE,
     }
+    item_name_to_id.update(LOCAL_VICTORY_ITEM_TABLE)
     location_name_to_id = dict(LOCATION_TABLE)
     item_name_groups = ITEM_NAME_GROUPS
     location_name_groups = {
@@ -89,6 +92,8 @@ class DTAWorld(World):
         )
 
     def create_item(self, name: str) -> DTAItem:
+        if name in LOCAL_VICTORY_ITEM_TABLE:
+            return DTAItem(name, ItemClassification.progression, LOCAL_VICTORY_ITEM_TABLE[name], self.player)
         if name in SHOP_STAGE_LOGIC_ITEM_TABLE:
             return DTAItem(name, ItemClassification.progression,
                            SHOP_STAGE_LOGIC_ITEM_TABLE[name], self.player)
@@ -101,6 +106,9 @@ class DTAWorld(World):
                 yield from location_entries(code, check_id, count)
 
     def create_regions(self) -> None:
+        if self.run_manifest.get('grid_contract'):
+            self.progression = progression_for_manifest(self.run_manifest)
+            return self._create_grid_regions()
         menu = Region("Menu", self.player, self.multiworld)
         victory = DTALocation(
             self.player,
@@ -134,6 +142,109 @@ class DTAWorld(World):
             by_location.update({location.name: location for location in region.locations})
             menu.connect(region)
             regions.append(region)
+
+        for placement in self.run_manifest.get("local_placements", []):
+            name, _location_id = location_entries(
+                placement["mission"],
+                placement["check"],
+                placement["slot"],
+            )[-1]
+            by_location[name].place_locked_item(
+                self.create_item(placement["item"])
+            )
+        self.multiworld.regions += regions
+
+    def _create_grid_regions(self) -> None:
+        menu = Region("Menu", self.player, self.multiworld)
+        victory = DTALocation(
+            self.player,
+            VICTORY_EVENT,
+            None,
+            menu,
+        )
+        regions = [menu]
+        if self.run_manifest["progression_mode"] == "Shop Mode":
+            self._create_shop_regions(menu, victory, regions)
+            self.multiworld.regions += regions
+            return
+        by_location = {}
+        by_code = {}
+        for code in self.run_manifest["mission_order"]:
+            mission = MISSION_DATA[code]
+            region = Region(mission["title"], self.player, self.multiworld)
+            active = {}
+            for check_id, count in self.run_manifest["locations"][code].items():
+                active.update(dict(location_entries(code, check_id, count)))
+            region.add_locations(active, DTALocation)
+            by_location.update({location.name: location for location in region.locations})
+            local_victory = DTALocation(
+                self.player,
+                LOCAL_VICTORY_DATA[code]["location_name"],
+                LOCAL_VICTORY_DATA[code]["location_id"],
+                region,
+            )
+            local_victory.place_locked_item(
+                self.create_item(LOCAL_VICTORY_DATA[code]["item_name"])
+            )
+            region.locations.append(local_victory)
+            by_code[code] = region
+            regions.append(region)
+
+        progression = self.progression
+        local_victory_names = {
+            code: LOCAL_VICTORY_DATA[code]["item_name"]
+            for code in self.run_manifest["mission_order"]
+        }
+        from .grid_rules import connect_key_regions
+        if connect_key_regions(self, menu, by_code, local_victory_names):
+            pass
+        elif progression["type"] == "victory_count":
+            all_victories = tuple(local_victory_names.values())
+            for code, region in by_code.items():
+                required = progression["mission_requirements"][code]
+                rule = None if required == 0 else (
+                    lambda state, needed=required, names=all_victories:
+                    sum(state.has(name, self.player) for name in names) >= needed
+                )
+                if rule is None:
+                    menu.connect(region)
+                else:
+                    menu.connect(region, rule=rule)
+        else:
+            starts = set(progression["starting_missions"])
+            for code, region in by_code.items():
+                required = tuple(
+                    local_victory_names[neighbor]
+                    for neighbor in progression["mission_requirements"][code]
+                )
+                rule = None if code in starts else (
+                    lambda state, names=required:
+                    any(state.has(name, self.player) for name in names)
+                )
+                if rule is None:
+                    menu.connect(region)
+                else:
+                    menu.connect(region, rule=rule)
+
+        goal = self.run_manifest["goal"]
+        goal_codes = (
+            self.run_manifest["mission_order"]
+            if goal["type"] == "all_missions"
+            else goal.get("mission_codes", [goal["mission_code"]])
+        )
+        goal_items = tuple(local_victory_names[code] for code in goal_codes)
+        victory.access_rule = lambda state, names=goal_items: all(
+            state.has(name, self.player) for name in names
+        )
+        victory.place_locked_item(
+            DTAItem(
+                VICTORY_EVENT,
+                ItemClassification.progression,
+                None,
+                self.player,
+            )
+        )
+        menu.locations.append(victory)
 
         for placement in self.run_manifest.get("local_placements", []):
             name, _location_id = location_entries(
@@ -268,7 +379,7 @@ class DTAWorld(World):
                 ],
             }
         return {
-            "slot_data_version": 7 if shop is not None else 4,
+            "slot_data_version": 8 if self.run_manifest.get("grid_contract") else 7 if shop is not None else 4,
             "randomizer_version": self.run_manifest["randomizer_version"],
             "randomizer_seed": self.run_manifest["randomizer_seed"],
             "catalogue_checksum": CATALOGUE_CHECKSUM,
@@ -281,8 +392,13 @@ class DTAWorld(World):
             "shop": shop_slot_data,
             "run_manifest": self.run_manifest,
             "items": {
-                str(ITEM_DATA[name]["id"]): name
-                for name in sorted(used_items)
+                **{str(ITEM_DATA[name]["id"]): name for name in sorted(used_items)},
+                **({str(LOCAL_VICTORY_DATA[code]["item_id"]): LOCAL_VICTORY_DATA[code]["item_name"]
+                    for code in self.run_manifest["mission_order"]} if self.run_manifest.get('grid_contract') else {}),
             },
+            "local_victories": ({code: {"item": LOCAL_VICTORY_DATA[code]["item_id"],
+                                        "location": LOCAL_VICTORY_DATA[code]["location_id"]}
+                                 for code in self.run_manifest["mission_order"]}
+                                if self.run_manifest.get('grid_contract') else {}),
             "locations": locations,
         }

@@ -7,7 +7,7 @@ YAML, connect to a room, and continue an existing multiworld game.
 
 - Dawn of the Tiberium Age 16.0.0 with Vinifera in a separate, unmodified game
   installation
-- DTA Randomizer Launcher 2.3
+- DTA Randomizer Launcher 2.6
 - The same `BattleE.ini`, `Tutorial.ini`, and fan mission maps as the APWorld catalogue when using fan missions. Put the INI files in DTA's `INI` folder and maps in their listed `Maps/Missions` or `Maps/Custom` locations.
 - Archipelago 0.6.8
 - `dta.apworld` from the same Randomizer release as the launcher
@@ -215,3 +215,9 @@ and generation snapshots. Building only needs checked-in files; DTA is required
 when regenerating snapshots.
 
 Review the generated YAML, packaged catalogue and live server handshake after rebuilding.
+
+## Grid victory objectives and AP mission keys
+
+See [Grid progression and mission access](../GRID_PROGRESSION.md) for required victory missions,
+AP unlock modes, the frozen whole-board currency budget, persistence, protocol
+compatibility, and the manual gameplay checklist.
