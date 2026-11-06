@@ -294,6 +294,8 @@ def apply_color_mode(self):
         card['details_canvas'].configure(background=background)
     for canvas in getattr(self, 'advanced_pool_canvases', {}).values():
         canvas.configure(background=palette['canvas'])
+    if hasattr(self, 'shop_roster_showcase'):
+        self.shop_roster_showcase.canvas.configure(background=palette['canvas'])
     for slider in getattr(self, 'reward_weight_slider_controls', ()):
         slider.refresh_theme(palette)
     for slider_name in ('unit_access_limit_slider', 'power_access_limit_slider'):
