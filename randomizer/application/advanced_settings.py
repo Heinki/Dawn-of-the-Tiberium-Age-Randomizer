@@ -703,7 +703,7 @@ class AdvancedSettingsController:
 
         campaign_missions = [
             mission for mission in self.missions
-            if mission_matches_campaign(mission, selected_campaign)
+            if self.shop_mode_selected() or mission_matches_campaign(mission, selected_campaign)
         ]
         visible_missions = filter_missions_by_build_settings(
             campaign_missions,
@@ -887,12 +887,12 @@ class AdvancedSettingsController:
         )
         self.advanced_pool_status_label.configure(
             text=(
-                f'{ARSENAL_MODE if arsenal_mode else selected_campaign}: '
+                f'{"Regular Shop: all campaigns" if self.shop_mode_selected() else ARSENAL_MODE if arsenal_mode else selected_campaign}: '
                 f'missions {included_missions}/{len(visible_missions)}, '
                 f'units {included_units}/{len(visible_unit_ids)}, '
                 f'powers {included_powers}/{len(visible_power_ids)} included'
                 + (
-                    ' | Warning: Shop Mode requires at least 10 missions.'
+                    ' | Shop Mode requires at least 10 missions (no maximum of 10).'
                     if self.shop_mode_selected() and included_missions < 10
                     else ' | Warning: exactly 10 missions selected; repeats possible.'
                     if self.shop_mode_selected() and included_missions == 10
@@ -1037,7 +1037,8 @@ class AdvancedSettingsController:
         selected_campaign = self.campaign_var.get()
         if pool_key == 'missions':
             return (
-                selected_campaign == CAMPAIGN_FILTERS[0]
+                self.shop_mode_selected()
+                or selected_campaign == CAMPAIGN_FILTERS[0]
                 or entry.get('campaign') == selected_campaign
             )
         if self.reward_mode_var.get() == ARSENAL_MODE:

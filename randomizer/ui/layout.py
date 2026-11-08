@@ -579,7 +579,7 @@ def _build_right_panel(self, main_frame):
 
     shop_run_options = (
         (
-            'Next run faction pool', 'shop_faction_pool_combo',
+            'Shop stock / loadout faction', 'shop_faction_pool_combo',
             self.shop_faction_pool_var, self.shop_faction_pool_options,
         ),
         (
@@ -823,6 +823,10 @@ def _build_info_tabs(self, info_tabs):
         font=('Segoe UI', 9),
     )
     self.rewards_text.grid(row=1, column=0, sticky='nsew')
+    from .skirmish import SkirmishFactionPicker
+    self.skirmish_faction_picker = SkirmishFactionPicker(progress_frame, self)
+    self.skirmish_faction_picker.grid(row=3, column=0, sticky='ew', pady=(6, 0))
+    self.skirmish_faction_picker.set_mission(self.selected_mission())
     self.precondition_picker = PreconditionPicker(progress_frame, self)
     self.precondition_picker.grid(row=2, column=0, sticky='ew', pady=(6, 0))
     self.precondition_picker.set_mission(self.selected_mission())
