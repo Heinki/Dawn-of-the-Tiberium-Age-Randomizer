@@ -361,6 +361,7 @@ class UnlockViewController:
             self.cameo_retry_count = 0
 
     def refresh_progress_view(self):
+        self.refresh_grid_access_controls()
         self.precondition_picker.set_mission(self.selected_mission())
         if not self.state:
             self.progress_label.config(text='No randomizer seed generated. Vanilla mission launching is still available.')
@@ -469,7 +470,7 @@ class UnlockViewController:
                 lines.append(self.grid_mission_requirements_text(code))
                 lines.append(self.grid_status_text())
                 if unlocks:
-                    if self.hide_locked_grid_missions_var.get():
+                    if self.grid_mission_names_hidden():
                         lines.append(
                             f'Completing this node reveals {len(unlocks)} neighboring mission(s).'
                         )

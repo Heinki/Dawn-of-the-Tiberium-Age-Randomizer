@@ -349,13 +349,13 @@ class CoopController:
             return
         return super().sync_state_mission_objectives()
 
-    def save_state(self):
+    def save_state(self, *, durable=False):
         if self.coop_guest_connected():
             return
         if not self.coop_enabled():
             if self.state.get('coop_mode'):
                 raise ValueError('Cannot save cooperative progress in Single Player mode.')
-            return super().save_state()
+            return super().save_state(durable=durable)
         if self.state and not self.state.get('coop_mode'):
             raise ValueError('Cannot save Single Player progress in co-op mode.')
         feature.require_enabled()
@@ -364,7 +364,7 @@ class CoopController:
         for key in ('_active_reward_settings_cache', '_canonical_earned_rewards_cache', '_unlock_dashboard_sources_cache', '_configured_reward_pool_cache'):
             self.__dict__.pop(key, None)
         self._enemy_buffs_view_dirty = True
-        atomic_write_json(coop_state_path(self.coop_count()), self.state, indent=None)
+        atomic_write_json(coop_state_path(self.coop_count()), self.state, indent=None, durable=durable)
         self.coop_publish_state()
 
     def load_missions(self):
