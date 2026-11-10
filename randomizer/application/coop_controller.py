@@ -190,14 +190,27 @@ class CoopController:
     def _refresh_coop_shop_modifiers(self):
         """Show host rules while retaining pre-run personal economy choices."""
         host = getattr(self, '_coop_host_shop_run', None) if self.coop_guest_connected() else None
+        lobby = getattr(self, '_coop_lobby', None)
+        choices = {}
+        if lobby and lobby.connected:
+            for slot, loadout in self._coop_loadouts.items():
+                if slot == lobby.slot or not 0 <= slot < len(lobby.players):
+                    continue
+                document = loadout.get('run')
+                modifiers = (document['modifiers'] if document and document['status'] == RunStatus.ACTIVE.value
+                             else loadout.get('shop_modifiers'))
+                choices[slot] = set(modifiers) if modifiers is not None else None
+        host_modifiers = (set(host.modifiers) if host and host.status is RunStatus.ACTIVE
+                          else choices.get(0))
         run = getattr(self, 'shop_run', None)
         active = bool(run and run.status is RunStatus.ACTIVE)
         for key, button in getattr(self, 'shop_modifier_button_by_id', {}).items():
             definition = self.shop_config.modifiers[key]
             reason = modifier_unavailable_reason(key)
-            shared = bool(host and key in SHARED_SHOP_MODIFIERS)
+            shared = bool(self.coop_guest_connected() and host_modifiers is not None
+                          and key in SHARED_SHOP_MODIFIERS)
             if shared:
-                self.shop_modifier_vars[key].set(key in host.modifiers)
+                self.shop_modifier_vars[key].set(key in host_modifiers)
             elif reason:
                 self.shop_modifier_vars[key].set(False)
             if shared:
@@ -212,17 +225,26 @@ class CoopController:
                 f'{definition.display_name} (host controlled)' if shared else
                 f'Enable {definition.display_name}'
             ))
+            partner_status = []
+            for slot, modifiers in sorted(choices.items()):
+                name = 'Host' if slot == 0 else lobby.players[slot]['name']
+                status = ('not shared yet' if modifiers is None else
+                          'selected' if key in modifiers else 'not selected')
+                partner_status.append(f'{name}: {status}')
+            selection_text = '\n' + ' | '.join(partner_status) if partner_status else ''
             self.shop_modifier_description_by_id[key].configure(
                 text=(reason + '\n' if reason else '')
-                     + f'Tradeoff: {definition.description}'
+                     + f'Tradeoff: {definition.description}' + selection_text
             )
             self.shop_modifier_tooltip_by_id[key].text = (
-                (reason + '\n' if reason else '') + definition.description
+                (reason + '\n' if reason else '') + definition.description + selection_text
             )
         if hasattr(self, 'shop_modifier_status_var'):
             if not host and not active:
                 self.shop_modifier_status_var.set(
                     'Co-op: choose supported modifiers before starting. '
+                    'Checkboxes are your choices; player labels show their selections. '
+                    'The host controls shared rules; other economy modifiers are personal. '
                     'Options marked unavailable cannot apply their full effects in multiplayer.'
                 )
         if host and hasattr(self, 'shop_modifier_status_var'):
@@ -231,6 +253,7 @@ class CoopController:
                             for key in sorted(SHARED_SHOP_MODIFIERS)]
             self.shop_modifier_status_var.set(
                 'Host modifiers: ' + (', '.join(names) or 'none') + '. '
+                + 'Checkboxes are your choices; player labels show their selections. '
                 + 'Host controls ' + ', '.join(shared_names) + '. '
                 + ('Your modifiers are locked for this run.' if active else
                    'Other economy modifiers are personal; choose them before joining.'))
@@ -450,7 +473,9 @@ class CoopController:
         selected = (run.selected_permanent_units if run and run.status is RunStatus.ACTIVE
                     else self._selected_loadout_reward_ids())
         selected = [item for item in selected if item in profile.permanent_unit_unlocks]
-        return contribution(profile, selected, run)
+        modifiers = [key for key, variable in self.shop_modifier_vars.items()
+                     if key in SAFE_SHOP_MODIFIERS and variable.get()]
+        return contribution(profile, selected, run, shop_modifiers=modifiers)
 
     def effective_shop_run(self, run):
         if not self.coop_enabled():
@@ -649,7 +674,11 @@ class CoopController:
             self.shop_modifier_vars[modifier_id].set(False)
             self._refresh_coop_shop_modifiers()
             return
-        return super()._shop_modifier_toggled(modifier_id)
+        result = super()._shop_modifier_toggled(modifier_id)
+        if self.coop_enabled():
+            self.coop_publish_state()
+            self._refresh_coop_shop_modifiers()
+        return result
 
     def launch_shop_mission(self, index):
         if self.coop_guest_connected():
@@ -1316,6 +1345,7 @@ class CoopController:
                     if hasattr(self, '_coop_status'):
                         self._coop_status.set(self._coop_safe_message(f'Connected as player {lobby.slot + 1}: ' + ', '.join(player['name'] for player in value)))
                     self.coop_publish_state()
+                    self.refresh_coop_controls()
                     self._refresh_coop_connection_fields()
                 elif event == 'error':
                     safe_value = self._coop_safe_message(value)

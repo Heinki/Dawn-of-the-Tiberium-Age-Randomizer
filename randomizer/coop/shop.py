@@ -64,8 +64,9 @@ def mission_view(local, host):
 
 
 def gameplay_document(loadout):
-    """Exclude mission-control acknowledgements when guarding prepared rewards."""
+    """Exclude display choices and mission controls when guarding prepared rewards."""
     document = dict(loadout)
+    document.pop('shop_modifiers', None)
     if document.get('run'):
         document['run'] = dict(document['run'])
         for key in CONTROL_FIELDS:

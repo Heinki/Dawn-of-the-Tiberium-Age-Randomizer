@@ -22,6 +22,9 @@ see the [Archipelago player guide](Archipelago/README.md).
 Experimental native co-op Grid/Shop supports 2–4 humans when its source-only
 feature flag is enabled. The host controls mission selection and team progress.
 Grid rewards are shared; Shop players retain personal loadouts and economies.
+Shop modifier cards show each connected partner's selected/unselected choices,
+updated before joining and throughout the run. Checkboxes remain your own
+choices; host-controlled shared modifiers follow the host.
 New co-op Shop runs support host-controlled Hardcore, shared challenge cards,
 enemy stat buffs, and eligible scripted reinforcement bonuses. Enemy effects
 target native enemy AI slots; personal purchases and currencies stay separate.

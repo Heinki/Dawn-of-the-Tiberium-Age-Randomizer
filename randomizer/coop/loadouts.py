@@ -6,11 +6,12 @@ from randomizer.rewards.catalogue import SHOP_ALWAYS_AVAILABLE_UNIT_GROUPS, unit
 from randomizer.shop.active import active_shop_role_tech_ids
 from randomizer.shop.catalogue import canonical_reward_for_id, canonical_reward_id, catalogue_entry, shop_role_entry_available
 from randomizer.shop.config import SHOP_CONFIG
-from randomizer.shop.model import BuffPurchase, ShopRewardType
+from randomizer.shop.model import BuffPurchase, RunStatus, ShopRewardType
 from randomizer.shop.modifiers import modifier_allows_loadout_entry
 from randomizer.shop.state import normalize_shop_profile, normalize_shop_run
 
 from .maps import supported_reward
+from .settings import SAFE_SHOP_MODIFIERS
 
 
 PERSONAL_UPGRADES = {
@@ -24,8 +25,8 @@ PERSONAL_UPGRADES = {
 }
 
 
-def contribution(profile, selected, run=None):
-    """Validate owned selections and share only permanent gameplay data."""
+def contribution(profile, selected, run=None, *, shop_modifiers=None):
+    """Validate personal gameplay data and optional display-only modifier choices."""
     if run is not None and run.ap_identity and not run.reward_settings.get('coop_mode'):
         raise ValueError('Archipelago Shop saves cannot contribute to native co-op loadouts.')
     selected = tuple(dict.fromkeys(canonical_reward_id(item) for item in selected))
@@ -41,7 +42,7 @@ def contribution(profile, selected, run=None):
         entry = catalogue_entry(reward)
         if entry is None or entry.reward_type is not ShopRewardType.UNIT_ACCESS or not supported_reward(reward):
             raise ValueError('Co-op loadout contains an unsupported permanent unit.')
-    return {
+    document = {
         'selected': list(selected),
         'run': run.to_dict() if run is not None else None,
         'profile': {
@@ -52,6 +53,15 @@ def contribution(profile, selected, run=None):
                                    for key in (*PERSONAL_UPGRADES, 'expanded_loadout')},
         },
     }
+    if shop_modifiers is not None:
+        if (not isinstance(shop_modifiers, (list, tuple))
+                or any(not isinstance(key, str) or key not in SAFE_SHOP_MODIFIERS
+                       for key in shop_modifiers)):
+            raise ValueError('Invalid co-op Shop modifier selections.')
+        # Draft choices are display-only; an active run is authoritative.
+        modifiers = run.modifiers if run and run.status is RunStatus.ACTIVE else shop_modifiers
+        document['shop_modifiers'] = sorted(set(modifiers))
+    return document
 
 
 def normalize_contribution(document):
@@ -60,7 +70,8 @@ def normalize_contribution(document):
     if 'run' not in document:
         raise ValueError('Update every launcher for personal co-op Shop purchases.')
     run = normalize_shop_run(document['run'])
-    return contribution(normalize_shop_profile(document['profile']), document['selected'], run)
+    return contribution(normalize_shop_profile(document['profile']), document['selected'], run,
+                        shop_modifiers=document.get('shop_modifiers'))
 
 
 def personal_upgrade_levels(loadout):
