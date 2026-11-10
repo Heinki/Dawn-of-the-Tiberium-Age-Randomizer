@@ -3,7 +3,10 @@
 Reviewed against the installed loose DTA maps, their house ownership, map-local
 rules, registered reinforcement teams, ownership-transfer scripts/triggers, and
 briefings. All 121 configured mission codes are covered below. This is a source
-review, not a claim that every mission has been played through.
+review, not a claim that every mission has been played through. Player-reviewed
+corrections supplied on 2026-11-10 take precedence over earlier source inferences;
+the relevant rows identify those corrections. Mayday was rechecked and remains
+`base_build` because its second phase supplies a deployable player MCV.
 
 - `base_build`: the player can obtain a functional construction yard or deployable
   MCV during normal mission progression, including later phases or required captures.
@@ -40,7 +43,7 @@ All map filenames below are relative to the game's `Maps/Missions` directory.
 | `M_SE5` | `base_build` | `se05.map` | Nod initially owns a functional NFACT and unit factories. |
 | `M_SE6` | `base_build` | `se06.map` | The objective builds NMCV from the captured Soviet factory. NMCV deploys into NFACT; the launcher also supplies this MCV as a runtime mission fix. |
 | `M_SE7` | `true_no_build` | `se07.map` | Interior infiltration with supplied units. |
-| `M_SE8` | `true_no_build` | `se08.map` | Infiltration and stolen naval units; no player production base. |
+| `M_SE8` | `no_build_production` | `se08.map` | Player-reviewed correction: production is available during the mission; classify as production without normal base construction. |
 | `M_SE9` | `base_build` | `se09.map` | Phase-two transport team 01000104 contains the player MCV. |
 | `M_SE10` | `base_build` | `se10.map` | Nod initially owns a functional NFACT. |
 | `M_SE11` | `base_build` | `se11.map` | The NodFortress base, including NFACT and NMCV, transfers to Nod. |
@@ -60,7 +63,7 @@ All map filenames below are relative to the game's `Maps/Missions` directory.
 | `M_CR4` | `no_build_production` | `cr04.map` | The Commando opening is followed by player Enforcer team 01000161. BFRT deploys into the infantry factory DBFRT; a later outpost transfer also gives AWEAP. No player construction yard or MCV. |
 | `M_CR5` | `base_build` | `cr05.map` | After retaking the bridgehead, team 01000056 delivers AMCV. |
 | `M_CR6` | `base_build` | `cr06.map` | Trigger 01000233 transfers the shore base, including AFACT, to Allies. |
-| `M_CR7` | `true_no_build` | `cr07.map` | Spy infiltration with supplied forces. |
+| `M_CR7` | `no_build_production` | `cr07.map` | Player-reviewed correction: the infiltration mission permits production; classify as production without normal base construction. |
 | `M_CR8` | `base_build` | `cr08.map` | The Enforcer phase is followed by player MCV team 01000050. |
 | `M_CRA9` | `true_no_build` | `cra09.map` | Sensor Array escort. The discovered service-depot outpost provides repair support, not production. |
 | `M_CRA10` | `base_build` | `cra10.map` | Player MCV landing team 01000008. |
@@ -105,17 +108,17 @@ All map filenames below are relative to the game's `Maps/Missions` directory.
 | `M_CD7` | `true_no_build` | `rsovm7.map` | Mobile HQ escape; no player factory or MCV. |
 | `M_CD8` | `base_build` | `rsovm8.map` | Soviet initially owns SMCV. |
 | `M_UNDER_SIEGE_2` | `base_build` | `unsiege2.map` | GDI initially owns GFACT. |
-| `M_MAYDAY` | `base_build` | `mayday.map` | Phase-two trigger 01000041 delivers GMCV team 01000088. |
+| `M_MAYDAY` | `base_build` | `mayday.map` | Verified: phase-two action 01000041 delivers GDI team 01000088 with TaskForce 01000087 (GMCV). Its arrival script only moves it; GMCV retains DeploysInto=GFACT. Tutorial text 13003 explicitly announces the authorized MCV. |
 | `M_BUNNY_HUNT` | `base_build` | `eastermission1.map` | Starting MCV team 01000029; objective 1 requires deploying it. |
 | `M_CURFEW_BREAKER` | `base_build` | `curfew_breaker.map` | GDI initially owns GMCV. |
-| `M_OP_GUIL` | `true_no_build` | `op_guil.map` | Beach assault with supplied forces. |
+| `M_OP_GUIL` | `base_build` | `op_guil.map` | Player-reviewed correction: normal base construction becomes available during the mission, beyond the supplied-force opening. |
 | `M_REUNIFICATION` | `true_no_build` | `reunific.map` | Naval/ground assault with scripted reinforcements. Nod1 retains its allied base; it never transfers to the player. |
-| `M_SHADOW_REPRISAL` | `no_build_production` | `shadow_reprisal.map` | Nod owns a refinery and unit factories, with no construction yard or MCV. |
+| `M_SHADOW_REPRISAL` | `base_build` | `shadow_reprisal.map` | Player-reviewed correction: the player captures a GDI MCV during normal mission progression. |
 | `M_STEALTHY_INHIBITION` | `true_no_build` | `si.map` | Convoy attack with supplied stealth forces. |
 | `M_SARIN1_RA_CS` | `base_build` | `sarin1_ra_cs.map` | Mission-start trigger 01000026 delivers Allied MCV team 01000028. |
 | `M_SARIN2_RA_CS` | `true_no_build` | `sarin2_ra_cs.map` | Infiltration with supplied/stolen forces; no player factory or MCV. |
 | `M_DESPERATE_GRIP` | `base_build` | `sandtrapsp.map` | Allies initially owns AFACT. |
-| `M_FROSTBITE` | `base_build` | `frstbite.map` | Allies initially owns AFACT. |
+| `M_FROSTBITE` | `no_build_production` | `frstbite.map` | Player-requested mission category: production without normal base construction. Initial AFACT ownership alone is not the intended player-facing classification. |
 | `M_RIVER_RAID` | `base_build` | `river_raid.map` | Reinforcement team 01000012 supplies AMCV after the opening objective. |
 | `M_THE_EAST_ASIAN_FRONT` | `base_build` | `asia01.map` | Player MCV team 01000009. |
 | `M_DAWN_OF_LIBERATION` | `base_build` | `dawn_of_liberation.map` | Starting AMCV team 01000007. |
@@ -127,7 +130,7 @@ All map filenames below are relative to the game's `Maps/Missions` directory.
 | `M_HUE` | `true_no_build` | `hardpoints_ugv_edition.map` | The player replaces the MCV with a Tactical UGV; enemy MCVs are not player assets. |
 | `M_FUE` | `true_no_build` | `frenzy_ugv_edition.map` | The player replaces the MCV with a Tactical UGV; enemy MCVs are not player assets. |
 | `M_CREXT2` | `base_build` | `crextnod.map` | Player MCV transport teams 01000005 and 01000016. |
-| `M_RAS01` | `no_build_production` | `ras1.map` | Soviet initially owns aircraft production, with no construction yard or MCV. |
+| `M_RAS01` | `true_no_build` | `ras1.map` | Player-requested mission category: supplied/scripted forces, without a normal production economy. The existing RAASTRP buildings also provide scripted DropPodSpecial support. |
 | `M_RAS02` | `base_build` | `ras2.map` | Soviet initially owns SFACT. |
 | `M_RAS03` | `true_no_build` | `ras3.map` | Dog/spy hunt; the map explicitly disables the barracks Factory. |
 | `M_RAS04` | `base_build` | `ras4.map` | Player MCV team 01000008. |

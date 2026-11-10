@@ -159,13 +159,19 @@ def _validate_required_sections(config_key, sections, path):
 
 def _validate_missions(sections, path):
     allowed = {'base_build', 'true_no_build', 'no_build_production'}
-    invalid = {
-        code: value
-        for code, value in sections['build_classifications'].items()
-        if value not in allowed
-    }
-    if invalid:
-        _invalid(f'Invalid mission build classifications: {invalid}', path)
+    for section in ('build_classifications', 'coop_build_classifications'):
+        classifications = sections.get(section, {})
+        if not isinstance(classifications, dict):
+            _invalid(f'{section} must be an object', path)
+        invalid = {
+            code: value for code, value in classifications.items()
+            if not isinstance(value, str) or value not in allowed
+            or (section == 'coop_build_classifications'
+                and (not code.startswith('COOP_') or code != code.upper()))
+            or (section == 'build_classifications' and code.upper().startswith('COOP_'))
+        }
+        if invalid:
+            _invalid(f'Invalid mission build classifications in {section}: {invalid}', path)
 
     validate_mission_reward_config(sections, path, _invalid)
 

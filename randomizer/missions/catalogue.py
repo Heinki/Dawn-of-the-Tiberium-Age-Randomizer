@@ -60,7 +60,8 @@ NO_BUILD_PRODUCTION = 'no_build_production'
 # player-facing seed data, not a title/stage-name guess.
 MISSION_BUILD_CLASSIFICATIONS = {
     str(code).upper(): classification
-    for code, classification in _MISSION_CONFIG['build_classifications'].items()
+    for section in ('build_classifications', 'coop_build_classifications')
+    for code, classification in _MISSION_CONFIG.get(section, {}).items()
 }
 
 TRUE_NO_BUILD_MISSION_CODES = frozenset(

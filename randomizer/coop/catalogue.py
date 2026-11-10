@@ -6,7 +6,10 @@ import re
 from pathlib import Path
 
 from randomizer.dta.rules import PLAYABLE_FACTIONS, ini_sections
-from randomizer.missions.catalogue import normalize_long_description
+from randomizer.missions.catalogue import (
+    BASE_BUILD, NO_BUILD_PRODUCTION, TRUE_NO_BUILD,
+    mission_build_classification, normalize_long_description,
+)
 from .compatibility import normalize_text, text_hash
 
 
@@ -260,12 +263,13 @@ def discover_coop_missions(root, *, include_excluded=False):
                                        dependencies=dependencies, legacy_dependencies=legacy_dependencies,
                                        cache=source_cache)
             faction = PLAYABLE_FACTIONS[side]
+            classification = mission_build_classification(mission)
             mission.update({
                 'index': len(missions) + 1, 'scenario': str(path.relative_to(root)),
                 'title': metadata.get('Description', metadata.get('Name', path.stem)),
                 'side': faction, 'campaign': faction,
                 'briefing': normalize_long_description(metadata.get('Briefing', '')),
-                'objectives': [], 'objective_count': 1, 'build_classification': 'base_build',
+                'objectives': [], 'objective_count': 1, 'build_classification': classification,
                 'reward_class': 'act_1', 'reward_multiplier': 1,
                 'required_addon': truth(settings.get('Firestorm', metadata.get('RequiredAddOn', '0'))),
                 'coop_player_count': maximum, 'coop_side': side,
@@ -273,8 +277,9 @@ def discover_coop_missions(root, *, include_excluded=False):
                 'coop_settings': settings, 'coop_dependencies': dependencies,
                 '_coop_legacy_dependencies': legacy_dependencies,
                 'coop_modes': [mode.strip() for mode in modes],
-                'coop_excluded_reason': '', 'no_build': False, 'true_no_build': False,
-                'no_build_production': False, 'operation': False,
+                'coop_excluded_reason': '', 'no_build': classification != BASE_BUILD,
+                'true_no_build': classification == TRUE_NO_BUILD,
+                'no_build_production': classification == NO_BUILD_PRODUCTION, 'operation': False,
             })
             if minimum != maximum:
                 mission.update({'coop_min_player_count': minimum, 'coop_max_player_count': maximum})
