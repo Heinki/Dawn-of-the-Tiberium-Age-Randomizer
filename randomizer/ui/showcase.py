@@ -221,6 +221,9 @@ class RosterShowcase(ttk.Frame):
                 continue
             included = item['included']
             status = 'Included' if included else 'Excluded'
+            unavailable = bool(item.get('locked', False))
+            if unavailable:
+                status = 'Unavailable'
             locked = active_run or item.get('locked', False)
             if locked:
                 status += ' · Locked'
@@ -232,7 +235,7 @@ class RosterShowcase(ttk.Frame):
                 photo = self._photos[photo_key]
             card = draw_showcase_card(
                 self.content, 0, 0, item, photo=photo,
-                excluded=not included,
+                excluded=not included and not unavailable, disabled=unavailable,
                 command=None if locked else (
                     lambda reward_id=item['id']: self.command(reward_id)
                 ),

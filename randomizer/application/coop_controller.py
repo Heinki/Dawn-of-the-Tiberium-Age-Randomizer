@@ -22,6 +22,9 @@ from randomizer.coop.privacy import redact_connection_details
 from randomizer.coop.lobby import Lobby, pack, unpack
 from randomizer.coop.loadouts import contribution, normalize_contribution, personal_shop_run, personal_upgrade_levels, PERSONAL_UPGRADES
 from randomizer.coop.maps import prepare_map, safe_settings, supported_reward, verify_dependencies
+from randomizer.coop.settings import (
+    POWER_UNAVAILABLE_REASON, modifier_unavailable_reason,
+)
 from randomizer.coop.persistence import COOP_STATE_PATH, COOP_GUEST_STATE_PATH, SharedShopRepository, coop_state_path
 from randomizer.coop.shop import gameplay_document, mission_view, sync_personal_run, SAFE_SHOP_MODIFIERS, SHARED_SHOP_MODIFIERS
 from randomizer.coop.spawn import spawn_data
@@ -190,12 +193,38 @@ class CoopController:
         run = getattr(self, 'shop_run', None)
         active = bool(run and run.status is RunStatus.ACTIVE)
         for key, button in getattr(self, 'shop_modifier_button_by_id', {}).items():
+            definition = self.shop_config.modifiers[key]
+            reason = modifier_unavailable_reason(key)
             shared = bool(host and key in SHARED_SHOP_MODIFIERS)
             if shared:
                 self.shop_modifier_vars[key].set(key in host.modifiers)
+            elif reason:
+                self.shop_modifier_vars[key].set(False)
+            if shared:
+                reason = 'Controlled by the host; follows the host when you join.'
+            elif active and not reason:
+                reason = 'Locked for the active run.'
             button.configure(state='disabled' if (
                 active or shared or key not in SAFE_SHOP_MODIFIERS
-            ) else 'normal')
+            ) else 'normal', text=(
+                f'{definition.display_name} (unavailable in Co-op)'
+                if key not in SAFE_SHOP_MODIFIERS else
+                f'{definition.display_name} (host controlled)' if shared else
+                f'Enable {definition.display_name}'
+            ))
+            self.shop_modifier_description_by_id[key].configure(
+                text=(reason + '\n' if reason else '')
+                     + f'Tradeoff: {definition.description}'
+            )
+            self.shop_modifier_tooltip_by_id[key].text = (
+                (reason + '\n' if reason else '') + definition.description
+            )
+        if hasattr(self, 'shop_modifier_status_var'):
+            if not host and not active:
+                self.shop_modifier_status_var.set(
+                    'Co-op: choose supported modifiers before starting. '
+                    'Options marked unavailable cannot apply their full effects in multiplayer.'
+                )
         if host and hasattr(self, 'shop_modifier_status_var'):
             names = [self.shop_config.modifiers[key].display_name for key in host.modifiers]
             shared_names = [self.shop_config.modifiers[key].display_name
@@ -205,6 +234,7 @@ class CoopController:
                 + 'Host controls ' + ', '.join(shared_names) + '. '
                 + ('Your modifiers are locked for this run.' if active else
                    'Other economy modifiers are personal; choose them before joining.'))
+        self._refresh_shop_modifier_difficulty()
 
     def on_coop_mode_changed(self, *_args):
         previous = self.coop_enabled()
@@ -475,6 +505,9 @@ class CoopController:
     def _refresh_shop_setup(self):
         result = super()._refresh_shop_setup()
         if self.coop_enabled():
+            self.shop_loadout_help_var.set(
+                self.shop_loadout_help_var.get() + ' ' + POWER_UNAVAILABLE_REASON
+            )
             self._refresh_coop_shop_modifiers()
         return result
 
@@ -578,6 +611,13 @@ class CoopController:
             return run
         return super()._repair_shop_mission_offers(run)
 
+    def _shop_power_unavailable_reason(self, entry):
+        if self.coop_enabled() and (entry is None or entry.reward_type in {
+            ShopRewardType.POWER_ACCESS, ShopRewardType.POWER_BUFF,
+        }):
+            return POWER_UNAVAILABLE_REASON
+        return super()._shop_power_unavailable_reason(entry)
+
     def _shop_entry_available(self, entry, run=None, *, stock=False):
         if self.coop_enabled() and entry.reward_type in {ShopRewardType.POWER_ACCESS, ShopRewardType.POWER_BUFF}:
             return False
@@ -589,7 +629,7 @@ class CoopController:
             return
         if self.coop_enabled() and modifier_id not in SAFE_SHOP_MODIFIERS:
             self.shop_modifier_vars[modifier_id].set(False)
-            messagebox.showwarning('Experimental co-op', 'This gameplay modifier has no audited co-op implementation.', parent=self)
+            self._refresh_coop_shop_modifiers()
             return
         return super()._shop_modifier_toggled(modifier_id)
 

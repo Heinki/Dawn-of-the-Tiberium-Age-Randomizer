@@ -274,6 +274,21 @@ def start_new_run(
         ).reward_type is ShopRewardType.POWER_ACCESS
     )
     reward_settings = dict(reward_settings or {})
+    if reward_settings.get('coop_mode'):
+        from randomizer.coop.settings import (
+            SAFE_SHOP_MODIFIERS, supported_reward,
+        )
+        unsupported_modifiers = set(modifier_ids) - SAFE_SHOP_MODIFIERS
+        if unsupported_modifiers:
+            raise ShopTransitionError(
+                'Shop modifiers unavailable in Co-op: '
+                + ', '.join(sorted(unsupported_modifiers))
+            )
+        if any(not supported_reward(canonical_reward_for_id(reward_id))
+               for reward_id in loadout.selected_reward_ids):
+            raise ShopTransitionError(
+                'Custom reward powers are unavailable in Co-op starting loadouts'
+            )
     faction_filter = str(
         reward_settings.get('shop_faction_filter') or campaign_filter
     )

@@ -3,6 +3,8 @@
 from dataclasses import replace
 from uuid import uuid4
 
+from randomizer.coop.settings import supported_reward
+
 from .active import (
     active_shop_power_ids,
     active_shop_reward_ids,
@@ -316,7 +318,8 @@ class ShopProgressionService:
         ):
             stock_faction = 'All Campaigns'
         shop_eligible = (
-            modifier_allows_shop_offer(
+            (not run.reward_settings.get('coop_mode') or supported_reward(reward))
+            and modifier_allows_shop_offer(
                 entry, reward, run.modifiers, automatic=random_training,
             )
             and shop_entry_available(
@@ -370,6 +373,10 @@ class ShopProgressionService:
             ShopRewardType.UNIT_ACCESS, ShopRewardType.POWER_ACCESS
         }:
             raise ShopTransitionError('Only access offers can be stock-locked')
+        if run.reward_settings.get('coop_mode') and not supported_reward(
+            canonical_reward_for_id(reward_id)
+        ):
+            raise ShopTransitionError('This reward is unavailable in Co-op')
         updated = replace(
             run,
             stock_lock_reward_id=entry.reward_id,

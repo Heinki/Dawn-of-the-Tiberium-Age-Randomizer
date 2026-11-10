@@ -967,6 +967,10 @@ class ShopController(ShopPolishController):
     def _shop_mission(self, code):
         return self._mission_by_code.get(str(code).upper(), {})
 
+    def _shop_power_unavailable_reason(self, entry):
+        """Explain mode restrictions; None requests the general power notice."""
+        return ''
+
     def _shop_entry_available(self, entry, run=None, *, stock=False):
         if run is None:
             reward_mode = SHOP_REWARD_MODE
@@ -2778,7 +2782,8 @@ class ShopController(ShopPolishController):
                     or entry.reward_type is ShopRewardType.UNIT_ACCESS
                     and entry.target_id in owned_unit_source_by_target
                 )
-                and self._shop_entry_available(entry)
+                and (self._shop_entry_available(entry)
+                     or self._shop_power_unavailable_reason(entry))
             ),
             key=lambda entry: entry.reward_id.casefold(),
         )
@@ -2843,7 +2848,10 @@ class ShopController(ShopPolishController):
                 'photo': cameo,
                 'included': source_reward_id in selected,
                 'locked': source_reward_id not in self._shop_setup_eligible_reward_ids,
-                'reason': 'Unavailable under the current roster restrictions.',
+                'reason': (
+                    self._shop_power_unavailable_reason(entry)
+                    or 'Unavailable under the current roster restrictions.'
+                ),
             })
         roster_items.sort(key=lambda item: (
             showcase_order.get(item['target_id'], len(showcase_order)), item['label'].casefold(),
@@ -2880,6 +2888,12 @@ class ShopController(ShopPolishController):
             )
         single_faction = self.shop_campaign_filter() != 'All Campaigns'
         for modifier_id, button in self.shop_modifier_button_by_id.items():
+            definition = self.shop_config.modifiers[modifier_id]
+            button.configure(text=f'Enable {definition.display_name}')
+            self.shop_modifier_description_by_id[modifier_id].configure(
+                text=f'Tradeoff: {definition.description}'
+            )
+            self.shop_modifier_tooltip_by_id[modifier_id].text = definition.description
             unavailable = (
                 modifier_id == 'faction_roulette' and single_faction
             )
@@ -3072,7 +3086,11 @@ class ShopController(ShopPolishController):
         for index, entry in enumerate(power_entries):
             iid = f'permanent-power-{index}'
             price = permanent_power_price(entry.target_id)
-            if entry.reward_id in owned_powers:
+            if self._shop_power_unavailable_reason(entry):
+                state = ('Owned; unavailable in Co-op' if entry.reward_id in owned_powers
+                         else 'Unavailable in Co-op')
+                row_tag, buyable = 'unavailable', False
+            elif entry.reward_id in owned_powers:
                 state, row_tag, buyable = 'Owned', 'owned', False
             elif active_run:
                 state, row_tag, buyable = (
@@ -3373,7 +3391,9 @@ class ShopController(ShopPolishController):
                 ),
             )
             effect_state = 'MAX' if maxed else f'Stacks {stacks} / {maximum}'
-            if maxed:
+            if self._shop_power_unavailable_reason(entry):
+                state, row_tag, buyable = 'Unavailable in Co-op', 'unavailable', False
+            elif maxed:
                 state, row_tag, buyable = 'Maximum stacks', 'maxed', False
             elif active_run:
                 state, row_tag, buyable = (
@@ -3468,14 +3488,16 @@ class ShopController(ShopPolishController):
         )
         if not selected:
             self.shop_permanent_power_info_var.set(
-                'Select a superweapon or support power.'
+                self._shop_power_unavailable_reason(None)
+                or 'Select a superweapon or support power.'
             )
             self.shop_permanent_power_button.configure(text='Select a Power')
             return
         values = self.shop_permanent_power_tree.item(selected[0], 'values')
         self.shop_permanent_power_info_var.set(
             f'{values[0]} • {values[1]} • {values[2]} • {values[3]}. '
-            'Permanent powers can be selected in future starting loadouts.'
+            + (self._shop_power_unavailable_reason(None)
+               or 'Permanent powers can be selected in future starting loadouts.')
         )
         self.shop_permanent_power_button.configure(
             text=f'Buy {values[0]} — {values[3]}' if allowed else values[2]
@@ -3494,7 +3516,8 @@ class ShopController(ShopPolishController):
         )
         if not selected:
             self.shop_permanent_power_buff_info_var.set(
-                'Select a permanently unlocked power, then choose a buff.'
+                self._shop_power_unavailable_reason(None)
+                or 'Select a permanently unlocked power, then choose a buff.'
             )
             self.shop_permanent_power_buff_button.configure(
                 text='Select a Permanent Power Buff'
@@ -3505,6 +3528,8 @@ class ShopController(ShopPolishController):
         )
         self.shop_permanent_power_buff_info_var.set(
             f'{values[0]} • {values[1]} • {values[2]} • Next: {values[3]}.'
+            + (' ' + self._shop_power_unavailable_reason(None)
+               if self._shop_power_unavailable_reason(None) else '')
         )
         self.shop_permanent_power_buff_button.configure(
             text=(
@@ -3544,6 +3569,9 @@ class ShopController(ShopPolishController):
         self.refresh_shop_mode()
 
     def buy_selected_permanent_power(self, _event=None):
+        if self._shop_power_unavailable_reason(None):
+            self._set_shop_message(self._shop_power_unavailable_reason(None), error=True)
+            return
         selected = self.shop_permanent_power_tree.selection()
         if not selected:
             return
@@ -3748,6 +3776,9 @@ class ShopController(ShopPolishController):
         self.refresh_shop_mode()
 
     def buy_selected_permanent_power_buff(self, _event=None):
+        if self._shop_power_unavailable_reason(None):
+            self._set_shop_message(self._shop_power_unavailable_reason(None), error=True)
+            return
         selected = self.shop_permanent_power_buff_tree.selection()
         if not selected:
             return

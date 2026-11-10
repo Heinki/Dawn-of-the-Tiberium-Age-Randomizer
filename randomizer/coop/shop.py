@@ -9,14 +9,7 @@ from randomizer.shop.state import normalize_shop_run
 from randomizer.shop.transitions import (
     abandon_run, apply_mission_failure, apply_mission_victory,
 )
-
-
-SAFE_SHOP_MODIFIERS = frozenset({
-    'greedy', 'veteran_economy', 'poor_logistics', 'generous_command',
-    'blind_choice', 'no_safety_net', 'war_economy', 'narrow_intelligence',
-    'liquid_assets', 'low_tech_war', 'blockbuster_special',
-})
-SHARED_SHOP_MODIFIERS = frozenset({'no_safety_net', 'narrow_intelligence'})
+from .settings import SAFE_SHOP_MODIFIERS, SHARED_SHOP_MODIFIERS
 
 
 CONTROL_FIELDS = (

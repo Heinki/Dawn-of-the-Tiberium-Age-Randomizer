@@ -738,6 +738,8 @@ def _build_right_panel(self, main_frame):
     ).grid(row=1, column=1, sticky='e', pady=(0, 6))
     self.shop_modifier_buttons = []
     self.shop_modifier_button_by_id = {}
+    self.shop_modifier_description_by_id = {}
+    self.shop_modifier_tooltip_by_id = {}
     for column in range(2):
         modifier_frame.columnconfigure(column, weight=1)
     for index, (modifier_id, variable) in enumerate(
@@ -760,13 +762,17 @@ def _build_right_panel(self, main_frame):
             ),
         )
         checkbutton.grid(row=0, column=0, sticky='w')
-        ttk.Label(
+        description = ttk.Label(
             modifier_card,
             text=f'Tradeoff: {definition.description}',
             style='Muted.TLabel',
             wraplength=330,
-        ).grid(row=1, column=0, sticky='w', padx=(24, 0))
-        WidgetTooltip(checkbutton, definition.description)
+        )
+        description.grid(row=1, column=0, sticky='w', padx=(24, 0))
+        self.shop_modifier_description_by_id[modifier_id] = description
+        self.shop_modifier_tooltip_by_id[modifier_id] = WidgetTooltip(
+            checkbutton, definition.description
+        )
         self.shop_modifier_buttons.append(checkbutton)
         self.shop_modifier_button_by_id[modifier_id] = checkbutton
 

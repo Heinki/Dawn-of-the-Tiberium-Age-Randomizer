@@ -1337,6 +1337,9 @@ class ShopPolishController(ShopArchipelagoController):
                 'Green rows can be bought now. Grey rows are unavailable; '
                 'blue rows are already active.'
             )
+        power_reason = self._shop_power_unavailable_reason(None)
+        if power_reason and category in {'Offers', 'Powers', 'Power Buffs'}:
+            help_var.set(help_var.get() + ' ' + power_reason)
         cameo_images = self._prepare_shop_unit_cameos(
             entry.reward_id for entry, _detail in visible
         )
@@ -1957,7 +1960,8 @@ class ShopPolishController(ShopArchipelagoController):
             return ''
         return (
             f'{reward_id}\nPermanent local power entitlement. '
-            'Automatically active in future Shop runs.'
+            + (self._shop_power_unavailable_reason(None)
+               or 'Selectable in future Shop run starting loadouts.')
         )
 
     def shop_upgrade_tooltip(self, row_id):
