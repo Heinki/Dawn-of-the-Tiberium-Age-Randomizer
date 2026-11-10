@@ -305,6 +305,39 @@ def normalize_shop_run(document, *, config=SHOP_CONFIG):
             raise ShopStateError(str(exc)) from exc
         if not isinstance(cooperative.get('coop_metadata'), dict):
             raise ShopStateError('Co-op Shop run lacks native mission metadata.')
+        version = cooperative.get('coop_challenges_version', 0)
+        if type(version) is not int or version not in (0, 1):
+            raise ShopStateError('Unsupported co-op challenge version; update every launcher.')
+        slots = cooperative.get('coop_challenge_slots', 0)
+        if type(slots) is not int or not 0 <= slots <= config.mission_offer_count:
+            raise ShopStateError('Invalid shared co-op challenge slots.')
+    receipts = _object(document.get('coop_challenge_receipts', {}), 'coop_challenge_receipts')
+    if receipts:
+        from randomizer.config.static import load_static_config
+        from .catalogue import canonical_reward_for_id
+        effect_ids = {'', *load_static_config('shop_mode.json')['mission_effects']}
+    for key, receipt in receipts.items():
+        parts = str(key).split(':', 2)
+        if (len(parts) != 3 or not parts[0].isdigit() or int(parts[0]) < 1
+                or not parts[1].isdigit() or not parts[2]
+                or not isinstance(receipt, dict)
+                or not isinstance(receipt.get('mission_modifier_id'), str)
+                or not isinstance(receipt.get('enemy_reward_ids'), list)
+                or len(receipt['enemy_reward_ids']) > 1000
+                or any(not isinstance(item, str) or not item for item in receipt['enemy_reward_ids'])):
+            raise ShopStateError('Invalid co-op challenge receipt.')
+        if receipt['mission_modifier_id'] not in effect_ids:
+            raise ShopStateError('Unknown co-op mission modifier in receipt.')
+        for reward_id in receipt['enemy_reward_ids']:
+            try:
+                reward = canonical_reward_for_id(reward_id)
+            except ValueError as exc:
+                raise ShopStateError('Unknown co-op enemy reward in receipt.') from exc
+            if not reward.get('enemy_reward') or reward.get('enemy_effect') not in {
+                'armor', 'production', 'firepower', 'reload', 'speed',
+                'reinforcement_size', 'powerhouse',
+            }:
+                raise ShopStateError('Unsupported co-op enemy reward in receipt.')
     try:
         status = RunStatus(document.get('status', RunStatus.ACTIVE.value))
     except ValueError as exc:
@@ -524,6 +557,7 @@ def normalize_shop_run(document, *, config=SHOP_CONFIG):
             document.get('enemy_reward_applications', {}),
             'enemy_reward_applications',
         )),
+        coop_challenge_receipts=deepcopy(receipts),
         modifiers=modifiers,
         coupon_used_stage=coupon_used_stage,
         stock_lock_reward_id=stock_lock_reward_id,

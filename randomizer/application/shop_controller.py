@@ -690,7 +690,7 @@ class ShopController(ShopPolishController):
                 if item.mission_code == run.selected_mission_code
             ), None)
             entries = self._shop_enemy_scaling_entries_for_offer(run, offer)
-            if self.archipelago_run_active():
+            if self.archipelago_run_active() and not run.reward_settings.get('coop_mode'):
                 entries.extend(super().active_enemy_scaling_entries())
             return entries
         return super().active_enemy_scaling_entries()

@@ -12,6 +12,7 @@ import subprocess
 import time
 import traceback
 import tkinter as tk
+from dataclasses import replace
 from tkinter import messagebox, ttk
 
 from randomizer.config.player import save_config
@@ -24,7 +25,9 @@ from randomizer.coop.loadouts import contribution, normalize_contribution, perso
 from randomizer.coop.maps import prepare_map, safe_settings, supported_reward, verify_dependencies
 from randomizer.coop.settings import (
     POWER_UNAVAILABLE_REASON, modifier_unavailable_reason,
+    COOP_CHALLENGES_VERSION, SHARED_CHALLENGE_SETTINGS,
 )
+from randomizer.coop.challenges import challenges_enabled, receipt_key
 from randomizer.coop.persistence import COOP_STATE_PATH, COOP_GUEST_STATE_PATH, SharedShopRepository, coop_state_path
 from randomizer.coop.shop import gameplay_document, mission_view, sync_personal_run, SAFE_SHOP_MODIFIERS, SHARED_SHOP_MODIFIERS
 from randomizer.coop.spawn import spawn_data
@@ -91,7 +94,7 @@ class CoopController:
         count.bind('<<ComboboxSelected>>', self.on_coop_mode_changed)
         connect = ttk.Button(frame, text='Co-op Connection…', command=self.open_coop_dialog)
         connect.grid(row=1, column=0, sticky='w', pady=(5, 0))
-        ttk.Label(frame, text='Grid rewards are shared. Shop players keep their own Ore, Gems, purchases and loadouts; host controls missions. Powers/enemy effects disabled.', wraplength=360, style='Muted.TLabel').grid(row=2, column=0, columnspan=3, sticky='w')
+        ttk.Label(frame, text='Grid rewards are shared. Shop players keep their own Ore, Gems, purchases and loadouts. Host controls missions and Hardcore; Shop challenges affect enemy AI slots only. Custom powers remain unavailable.', wraplength=360, style='Muted.TLabel').grid(row=2, column=0, columnspan=3, sticky='w')
         self._coop_controls.append((toggle, count, connect))
 
     def refresh_coop_controls(self):
@@ -591,6 +594,18 @@ class CoopController:
         if self.coop_enabled():
             settings = safe_settings(settings, self.coop_count())
             settings['coop_metadata'] = {mission['code']: mission['coop_metadata_hash'] for mission in self.missions}
+            host = getattr(self, '_coop_host_shop_run', None) if self.coop_guest_connected() else None
+            if host is not None:
+                for key in SHARED_CHALLENGE_SETTINGS:
+                    if key in host.reward_settings:
+                        settings[key] = copy.deepcopy(host.reward_settings[key])
+                    else:
+                        settings.pop(key, None)
+            else:
+                settings['coop_challenges_version'] = COOP_CHALLENGES_VERSION
+                settings['coop_challenge_slots'] = min(
+                    self.shop_config.mission_offer_count, self._shop_challenge_slots()
+                )
         return settings
 
     def _shop_run_mission_pool(self, run=None):
@@ -617,6 +632,12 @@ class CoopController:
         }):
             return POWER_UNAVAILABLE_REASON
         return super()._shop_power_unavailable_reason(entry)
+
+    def _shop_upgrade_effect_text(self, upgrade_id, definition):
+        text = super()._shop_upgrade_effect_text(upgrade_id, definition)
+        if self.coop_enabled() and upgrade_id == 'permanent_challenge_slots':
+            text += ' In co-op, the host\'s level controls shared mission choices for the whole run. Your level applies when you host.'
+        return text
 
     def _shop_entry_available(self, entry, run=None, *, stock=False):
         if self.coop_enabled() and entry.reward_type in {ShopRewardType.POWER_ACCESS, ShopRewardType.POWER_BUFF}:
@@ -866,7 +887,7 @@ class CoopController:
         if selected in self._mission_by_code:
             self._coop_player_selections[0] = selected
         self._coop_state_revision += 1
-        snapshot = {'state': shared_run_state(self.state, getattr(self, '_archipelago_slot_data', None)), 'loadout_protocol': 5, 'revision': self._coop_state_revision,
+        snapshot = {'state': shared_run_state(self.state, getattr(self, '_archipelago_slot_data', None)), 'loadout_protocol': 6, 'revision': self._coop_state_revision,
                     'loadouts': {str(slot): loadout for slot, loadout in self._coop_loadouts.items()},
                     'shop_run': run.to_dict() if run else None,
                     'mode': self.progression_mode_var.get(), 'count': self.coop_count(),
@@ -1462,8 +1483,8 @@ class CoopController:
         if self._coop_pending_launch:
             raise ValueError('Host changed run during co-op preparation.')
         snapshot = json.loads(unpack(message['snapshot']))
-        if snapshot.get('loadout_protocol') != 5:
-            raise ValueError('Host launcher must support personal Shop purchases and mission pings. Update every launcher.')
+        if snapshot.get('loadout_protocol') != 6:
+            raise ValueError('Host launcher must support shared Shop challenges. Update every launcher.')
         revision = snapshot.get('revision')
         if type(revision) is not int or revision <= self._coop_received_revision:
             raise ValueError('Stale cooperative state snapshot.')
@@ -1686,6 +1707,8 @@ class CoopController:
             finally:
                 self.__dict__.pop('_coop_launch_loadout_slot', None)
             self._coop_prepared_loadouts = copy.deepcopy(self._coop_loadouts)
+            enemy_rewards = ([entry['reward'] for entry in self.active_enemy_scaling_entries()]
+                             if challenges_enabled(run) else [])
             difficulty = self.resolve_selected_mission_difficulty(mission)
             speed = self.get_selected_game_speed_value()
             self._record_coop_log(f'Co-op preparing {mission["code"]}: {difficulty.label}.')
@@ -1696,7 +1719,8 @@ class CoopController:
             self._coop_building_map = True
             self.run_in_background(
                 'Preparing co-op mission…', 'Building the host team map and waiting for every player.',
-                lambda: prepare_map(GAME_ROOT, mission, (), difficulty, player_loadouts=player_loadouts),
+                lambda: prepare_map(GAME_ROOT, mission, (), difficulty, player_loadouts=player_loadouts,
+                                    enemy_rewards=enemy_rewards),
                 lambda result: self._share_coop_launch(mission, difficulty, speed, result, launch_note),
                 self.handle_mission_prepare_error,
             )
@@ -1733,6 +1757,26 @@ class CoopController:
                    'loadout_hashes': {str(slot): self._coop_loadout_hash(loadout)
                                       for slot, loadout in self._coop_prepared_loadouts.items()}}
         try:
+            if challenges_enabled(self._shop_launch_run):
+                run = self._shop_launch_run
+                modifier = self._active_shop_mission_modifier(run)
+                enemy = report.get('enemy', {})
+                receipt = {'mission_modifier_id': modifier.id if modifier else '',
+                           'enemy_reward_ids': list(enemy.get('reward_ids', ()))}
+                receipts = dict(run.coop_challenge_receipts)
+                key = receipt_key(run, mission['code'])
+                if key in receipts and receipts[key] != receipt:
+                    raise ValueError('Prepared co-op challenge changed after commitment.')
+                receipts[key] = receipt
+                self._shop_launch_run = replace(run, coop_challenge_receipts=receipts)
+                self.shop_repository.save_run(self._shop_launch_run)
+                self.shop_run = self._shop_launch_run
+                self.record_enemy_reward_applications(mission['code'], enemy.get('applications', []))
+                self._record_coop_log(
+                    f'Co-op enemy challenge: {len(receipt["enemy_reward_ids"])} applied buff stacks; '
+                    f'{len(enemy.get("applications", ()))} enemy targets; '
+                    f'{len(enemy.get("skipped", ()))} skipped effects.'
+                )
             self.coop_publish_state()
             self._write_coop_runtime(pending, data)
             self._coop_pending_launch = dict(pending, mission=mission, difficulty=difficulty,
@@ -1761,6 +1805,14 @@ class CoopController:
         # Resolve the native launch path before acknowledging preparation.
         # Missing Wine/SyringeEx must not release the other players' barrier.
         self.build_command()
+        try:
+            from randomizer.coop.diagnostics import save_preparation
+            diagnostic = LAUNCHER_LOG.parent.parent / 'diagnostics' / 'last-coop-preparation.zip'
+            save_preparation(diagnostic, mission, data, spawn)
+            log_event('coop_preparation_saved', mission=mission['code'],
+                      map_sha256=pending['sha256'], path=str(diagnostic))
+        except OSError as exc:
+            self._record_coop_log('Co-op diagnostic could not be saved: ' + self._coop_safe_message(exc), error=True)
 
     def _validate_coop_runtime(self, pending):
         if hashlib.sha256(SPAWN_MAP_INI.read_bytes()).hexdigest() != pending['sha256']:

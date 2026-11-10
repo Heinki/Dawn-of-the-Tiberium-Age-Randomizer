@@ -2790,7 +2790,9 @@ def unit_specific_buff_rules(
         if free_output and source_id != output_id:
             rules.setdefault(output_id, {})['FreeUnit'] = free_output
     from randomizer.dta.compatibility import docking_rules, building_event_rules
-    for section, values in docking_rules(combined, rules, report).items():
+    for section, values in docking_rules(
+        combined, rules, report, preserve_native_aircraft=human_only_production,
+    ).items():
         rules.setdefault(section, {}).update(values)
     event_source = _merged_sections(authored, rule_overlays or {})
     for section, values in building_event_rules(installed, event_source, rules, report).items():

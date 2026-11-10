@@ -239,6 +239,7 @@ def _team_taskforce_rules(
     regional_count,
     powerhouse_count,
     excluded_teams=(),
+    house_factions=None,
 ):
     if regional_count <= 0 and powerhouse_count <= 0:
         return {}, []
@@ -353,7 +354,9 @@ def _team_taskforce_rules(
                         clone_values[key] = ','.join(fields)
                         same_type_applied = True
         special_ids_added = []
-        faction = _house_acts_like(house, by_lower)
+        faction = (house_factions or {}).get(
+            house.casefold(), _house_acts_like(house, by_lower)
+        )
         special_pool = _SPECIAL_UNITS_BY_ACTS_LIKE.get(faction, ())
         if apply_powerhouse and land_team and any(
             safe or unit_id in special_pool
@@ -523,6 +526,9 @@ def enemy_script_buff_rules(
     rewards,
     installed_sections,
     reserved_rules=None,
+    *,
+    house_factions=None,
+    excluded_teams=(),
 ):
     """Apply reviewed AI script buffs without touching player-owned teams."""
     counts, definitions = _effect_counts(rewards)
@@ -571,9 +577,9 @@ def enemy_script_buff_rules(
     powerhouse = by_effect.get('powerhouse')
     # Cinematic and objective teams can depend on exact member counts and
     # durability. Keep them native in both growth and veterancy passes.
-    excluded_teams = MISSION_ENEMY_SCRIPT_EXCLUDED_TEAMS.get(
+    excluded_teams = set(excluded_teams) | set(MISSION_ENEMY_SCRIPT_EXCLUDED_TEAMS.get(
         str(mission.get('code') or '').upper(), ()
-    )
+    ))
     team_rules, team_results = _team_taskforce_rules(
         sections,
         installed_sections,
@@ -581,6 +587,7 @@ def enemy_script_buff_rules(
         regional[1] if regional else 0,
         powerhouse[1] if powerhouse else 0,
         excluded_teams=excluded_teams,
+        house_factions=house_factions,
     )
     merge(team_rules)
     for effect, house, target, applied_count, field in team_results:

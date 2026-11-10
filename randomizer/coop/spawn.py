@@ -35,6 +35,17 @@ def spawn_data(mission, players, local_slot, game_id, map_data, settings, game_s
     local = players[local_slot]
     section_settings = dict(settings)
     sides = section_settings.pop('_coop_player_sides', [mission['coop_side']] * count)
+    enemy_handicap = section_settings.pop('_coop_enemy_handicap', None)
+    enemy_positions = section_settings.pop('_coop_enemy_buff_positions', None)
+    if enemy_handicap is not None and (type(enemy_handicap) is not int or not 0 <= enemy_handicap <= 6):
+        raise ValueError('Invalid hostile cooperative AI handicap.')
+    authored_enemies = {position for _, _, position in mission['coop_enemies']}
+    if enemy_handicap is not None and (
+            not isinstance(enemy_positions, list) or not enemy_positions
+            or any(type(position) is not int or position not in authored_enemies for position in enemy_positions)
+            or len(set(enemy_positions)) != len(enemy_positions)
+            or set(enemy_positions).intersection(mission.get('_coop_protected_enemy_positions', ()))):
+        raise ValueError('Invalid cooperative enemy buff targets.')
     if (not isinstance(sides, list) or len(sides) != count
             or any(isinstance(side, bool) or not isinstance(side, int) or not 0 <= side < 31 for side in sides)):
         raise ValueError('Invalid personal cooperative production countries.')
@@ -63,7 +74,11 @@ def spawn_data(mission, players, local_slot, game_id, map_data, settings, game_s
         multi = f'Multi{slot + 1}'
         sections.setdefault('HouseCountries', {})[multi] = str(side)
         sections.setdefault('HouseColors', {})[multi] = str(color)
-        sections.setdefault('HouseHandicaps', {})[multi] = settings['AIDifficulty']
+        hostile = slot >= count + len(allies)
+        sections.setdefault('HouseHandicaps', {})[multi] = (
+            str(enemy_handicap) if hostile and enemy_handicap is not None
+            and position in enemy_positions else settings['AIDifficulty']
+        )
         sections['SpawnLocations'][multi] = str(position)
     groups = (range(count + len(allies)), range(count + len(allies), count + len(allies) + len(enemies)))
     for group in groups:

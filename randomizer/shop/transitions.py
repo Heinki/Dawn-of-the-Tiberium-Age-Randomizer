@@ -5,6 +5,7 @@ from collections import Counter
 from hashlib import sha256
 
 from randomizer.rewards.catalogue import unit_role_equivalents
+from randomizer.coop.challenges import challenges_enabled, challenge_receipt, applied_enemy_buff_count
 
 from .archipelago import ap_automatic_reward_ids
 from .config import SHOP_CONFIG
@@ -621,6 +622,10 @@ def apply_mission_victory(
     ):
         raise ShopTransitionError('Next Shop offer contains invalid mission data')
 
+    if challenges_enabled(run):
+        if challenge_receipt(run, mission_code) is None:
+            raise ShopTransitionError('Prepare the shared co-op mission before recording its victory')
+        enemy_buff_count = applied_enemy_buff_count(run, mission_code)
     reward = mission_reward(
         offer.economy_class,
         victory_coin_bonus_level=profile.upgrade_level(

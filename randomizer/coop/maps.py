@@ -1,4 +1,4 @@
-"""Native cooperative map preparation with personal, production-only rewards."""
+"""Native cooperative maps with personal production rewards and enemy challenges."""
 
 import hashlib
 
@@ -15,7 +15,7 @@ from .settings import safe_settings, supported_reward
 from .victory import adapt_team_outcomes
 
 
-def prepare_map(root, mission, rewards, difficulty, *, settings=None, credit_bonus=0, player_loadouts=None):
+def prepare_map(root, mission, rewards, difficulty, *, settings=None, credit_bonus=0, player_loadouts=None, enemy_rewards=()):
     require_enabled()
     if not matches_player_count(mission, mission['coop_player_count']):
         raise ValueError('Native co-op mission requires its authored player count; reduced-player preparation is disabled.')
@@ -34,6 +34,7 @@ def prepare_map(root, mission, rewards, difficulty, *, settings=None, credit_bon
     overlays.append(resolve_path(root, f'INI/Map Code/Difficulty {name}.ini'))
     for overlay in overlays:
         merge(sections, inherited_sections(root, overlay))
+    spawn_settings['AIDifficulty'] = str(handicap)
     if player_loadouts is not None:
         from .production import player_production_rules
         sides, report = player_production_rules(root, mission, sections, player_loadouts)
@@ -41,6 +42,9 @@ def prepare_map(root, mission, rewards, difficulty, *, settings=None, credit_bon
         adapt_team_outcomes(mission, sections)
     else:
         report = _shared_production_rules(mission, rewards, settings, sections)
+    if enemy_rewards:
+        from .enemies import apply_enemy_rewards
+        report['enemy'] = apply_enemy_rewards(root, mission, sections, spawn_settings, enemy_rewards)
     sections.setdefault('Basic', {}).update({'SkipScore': 'no', 'EndOfGame': 'no'})
     # Flatten inheritance: spawnmap.ini lives outside Maps/Co-Op and must
     # never resolve inherited map filenames relative to the game root.

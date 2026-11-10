@@ -866,6 +866,15 @@ class WindowController:
                 column=index % header_columns,
                 pady=(3 if compact and index >= header_columns else 0, 0),
             )
+        join_button = getattr(self, 'shop_coop_join_button', None)
+        if join_button is not None:
+            join_visible = bool(join_button.grid_info())
+            join_button.grid_configure(
+                row=(len(self.shop_header_labels) + header_columns - 1) // header_columns,
+                column=0, columnspan=header_columns,
+            )
+            if not join_visible:
+                join_button.grid_remove()
 
     def on_shop_mousewheel(self, event):
         if not all(hasattr(self, name) for name in (

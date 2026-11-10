@@ -172,6 +172,10 @@ def discover_coop_missions(root, *, include_excluded=False):
     game_options = ini_sections(root / 'Resources' / 'GameOptions.ini')
     colors = sorted(int(value.split(',')[-1]) for value in game_options.get('MPColors', {}).values())
     source_cache = {}
+    from .enemies import available_wave_effects, scripted_allied_enemy_positions
+    installed_rules = ini_sections(root / 'INI' / 'Rules.ini')
+    enhanced_rules = {name: dict(values) for name, values in installed_rules.items()}
+    merge(enhanced_rules, ini_sections(root / 'INI' / 'Enhance.ini'))
     missions = []
     registered = {name.replace('\\', '/').casefold()
                   for name in catalogue.get('MultiMaps', {}).values()}
@@ -274,6 +278,11 @@ def discover_coop_missions(root, *, include_excluded=False):
             })
             if minimum != maximum:
                 mission.update({'coop_min_player_count': minimum, 'coop_max_player_count': maximum})
+            # Derived capability data is not part of legacy metadata hashes.
+            mission['_coop_protected_enemy_positions'] = scripted_allied_enemy_positions(mission, sections)
+            mission['_coop_enemy_wave_effects'] = available_wave_effects(
+                mission, sections, enhanced_rules if mission['required_addon'] else installed_rules
+            )
             refresh_metadata_hashes(mission)
         except (OSError, ValueError, KeyError) as exc:
             mission['coop_excluded_reason'] = str(exc)

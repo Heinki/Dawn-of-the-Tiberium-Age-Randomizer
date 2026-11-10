@@ -7,6 +7,7 @@ from hashlib import sha256
 from randomizer.config.static import load_static_config
 from randomizer.config.tuning import stacking_stack_limit
 from randomizer.rewards.catalogue import REWARD_POOL
+from randomizer.coop.challenges import challenges_enabled, challenge_receipt
 
 from .active import active_shop_reward_ids
 from .catalogue import canonical_reward_for_id
@@ -164,8 +165,20 @@ def mission_modifier_for_run_offer(run, offer, *, challenge_slots=0):
     """Resolve stable offer modifiers without duplicate visible choices."""
     if run is None or offer is None:
         return None
-    if run.reward_settings.get('coop_mode'):
+    cooperative = bool(run.reward_settings.get('coop_mode'))
+    if cooperative and not challenges_enabled(run):
         return None
+    if cooperative:
+        receipt = challenge_receipt(run, offer.mission_code)
+        if receipt is not None:
+            modifier_id = receipt['mission_modifier_id']
+            if not modifier_id:
+                return None
+            modifier = next((item for item in MISSION_MODIFIERS if item.id == modifier_id), None)
+            if modifier is None:
+                raise ValueError('Unknown shared co-op mission modifier.')
+            return modifier
+        challenge_slots = int(run.reward_settings.get('coop_challenge_slots', 0))
     try:
         offer_index = run.mission_offers.index(offer)
     except ValueError:
@@ -173,9 +186,10 @@ def mission_modifier_for_run_offer(run, offer, *, challenge_slots=0):
             run.seed,
             run.stage,
             offer,
-            owned_reward_ids=active_shop_reward_ids(run),
+            owned_reward_ids=() if cooperative else active_shop_reward_ids(run),
         )
-    owned_reward_ids = active_shop_reward_ids(run)
+    # Every player sees identical choices despite different personal purchases.
+    owned_reward_ids = () if cooperative else active_shop_reward_ids(run)
     used_ids = set()
     resolved = None
     for index, current_offer in enumerate(
@@ -220,6 +234,9 @@ def mission_blocks_shop_enemy_buffs(mission):
 
 def _enemy_reward_allowed_for_mission(reward, mission):
     effect = str(reward.get('enemy_effect') or '')
+    if mission.get('coop_mode'):
+        from randomizer.coop.enemies import STAT_FIELDS
+        return effect in STAT_FIELDS or effect in mission.get('_coop_enemy_wave_effects', ())
     if effect == 'ion_cannon':
         return mission.get('build_classification') == 'base_build'
     if effect in {
@@ -252,6 +269,13 @@ def shop_enemy_scaling_entries(
     """Build capped, deterministic Shop enemy buffs for one mission offer."""
     if run is None or offer is None:
         return []
+    if run.reward_settings.get('coop_mode') and not challenges_enabled(run):
+        return []
+    receipt = challenge_receipt(run, offer.mission_code)
+    if receipt is not None:
+        return [{'reward': canonical_reward_for_id(reward_id),
+                 'source': 'Co-op applied challenge', 'earned_from': offer.mission_code}
+                for reward_id in receipt['enemy_reward_ids']]
 
     candidates = []
     effects = modifier_effects(run.modifiers)

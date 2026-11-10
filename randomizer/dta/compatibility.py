@@ -8,7 +8,7 @@ from randomizer.dta.rules import comma_items, effective_section
 _IMPLICIT_ENGINE_BUILDING_TYPES = 3
 
 
-def docking_rules(combined, generated, report):
+def docking_rules(combined, generated, report, *, preserve_native_aircraft=False):
     """Share docking types; the engine still enforces building ownership.
 
     This permits captured foreign/AI facilities, not hostile-owned docking.
@@ -48,8 +48,22 @@ def docking_rules(combined, generated, report):
                 dock in refineries for dock in native_docks
             ):
                 continue
+            unit_destinations = destinations
+            if preserve_native_aircraft and list_name == 'AircraftTypes' and source == unit:
+                # Co-op AI and authored starting aircraft retain their native
+                # airfield families. A fixed-wing plane must not gain unrelated
+                # helicopter pads merely because the player can buy aircraft.
+                # Equivalent player-owned pad clones remain valid destinations
+                # for captured aircraft; human production clones keep the full
+                # cross-faction routing above.
+                native_families = {dock.casefold() for dock in native_docks}
+                unit_destinations = [
+                    output for output, original in source_by_output.items()
+                    if output != original and output in pads
+                    and original.casefold() in native_families
+                ]
             rules[unit] = {'Dock': ','.join(dict.fromkeys([
-                *native_docks, *destinations,
+                *native_docks, *unit_destinations,
             ]))}
     return rules
 

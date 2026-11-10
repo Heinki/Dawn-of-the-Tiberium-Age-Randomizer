@@ -10,12 +10,15 @@ from randomizer.shop.transitions import (
     abandon_run, apply_mission_failure, apply_mission_victory,
 )
 from .settings import SAFE_SHOP_MODIFIERS, SHARED_SHOP_MODIFIERS
+from .settings import SHARED_CHALLENGE_SETTINGS
+from .challenges import applied_enemy_buff_count
 
 
 CONTROL_FIELDS = (
     'mission_offers', 'selected_mission_code', 'mission_committed',
     'rerolls_used', 'assisted_mission_code', 'difficulty_assists_used',
     'precondition_unlocks',
+    'coop_challenge_receipts', 'enemy_reward_applications',
 )
 
 
@@ -36,6 +39,14 @@ def validate_partner_run(local, host):
             or local.reward_settings.get('coop_mode') is not True
             or local.reward_settings.get('coop_player_count') != host.reward_settings.get('coop_player_count')):
         raise ValueError('Shop players need matching seed, mission pool, run length and mission-control modifiers.')
+    if (local.reward_settings.get('coop_challenges_version', 0)
+            or host.reward_settings.get('coop_challenges_version', 0)):
+        if any(local.reward_settings.get(key) != host.reward_settings.get(key)
+               for key in SHARED_CHALLENGE_SETTINGS):
+            raise ValueError('Shop players need the same host challenge rules. Join a new run with matching launchers.')
+    if any(host.coop_challenge_receipts.get(key) != value
+           for key, value in local.coop_challenge_receipts.items()):
+        raise ValueError('Host changed an already prepared co-op challenge receipt.')
 
 
 def mission_view(local, host):
@@ -77,6 +88,8 @@ def sync_personal_run(profile, local, host, missions):
     completed = len(local.completed_missions)
     if local.completed_missions != host.completed_missions[:completed]:
         raise ValueError('Shop completion histories differ.')
+    local = replace(local, coop_challenge_receipts=host.coop_challenge_receipts,
+                    enemy_reward_applications=host.enemy_reward_applications)
     def continue_endless(run):
         if run.status is RunStatus.COMPLETED and host.endless and not run.endless:
             return replace(run, status=RunStatus.ACTIVE, stage=run.stage + 1,
@@ -99,7 +112,8 @@ def sync_personal_run(profile, local, host, missions):
                 raise ValueError('Host Shop result lacks next-stage mission offers.')
             next_offers = (MissionOffer(next_code, classify_mission(missions[next_code])),)
         result = apply_mission_victory(profile, local, code,
-                                      next_offers=() if final else next_offers)
+                                      next_offers=() if final else next_offers,
+                                      enemy_buff_count=applied_enemy_buff_count(local, code))
         profile, local = result.profile, result.run
         local = continue_endless(local)
         if index + 1 < len(missing):

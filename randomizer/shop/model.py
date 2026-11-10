@@ -242,6 +242,7 @@ class ShopRun:
     completed_missions: tuple[str, ...] = ()
     rewarded_victories: tuple[str, ...] = ()
     enemy_reward_applications: Mapping[str, Any] = field(default_factory=dict)
+    coop_challenge_receipts: Mapping[str, Any] = field(default_factory=dict)
     modifiers: tuple[str, ...] = ()
     coupon_used_stage: int | None = None
     stock_lock_reward_id: str | None = None
@@ -298,6 +299,7 @@ class ShopRun:
             'enemy_reward_applications': deepcopy(
                 dict(self.enemy_reward_applications)
             ),
+            'coop_challenge_receipts': deepcopy(dict(self.coop_challenge_receipts)),
             'modifiers': list(self.modifiers),
             'coupon_used_stage': self.coupon_used_stage,
             'stock_lock_reward_id': self.stock_lock_reward_id,

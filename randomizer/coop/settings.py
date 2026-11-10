@@ -1,12 +1,18 @@
-"""Compatibility policy for the production-only native co-op adapter."""
+"""Compatibility policy for personal rewards and shared native co-op challenges."""
 
 
 SAFE_SHOP_MODIFIERS = frozenset({
     'greedy', 'veteran_economy', 'poor_logistics', 'generous_command',
     'blind_choice', 'no_safety_net', 'war_economy', 'narrow_intelligence',
     'liquid_assets', 'low_tech_war', 'blockbuster_special',
+    'hardcore', 'treasure_hunter',
 })
-SHARED_SHOP_MODIFIERS = frozenset({'no_safety_net', 'narrow_intelligence'})
+SHARED_SHOP_MODIFIERS = frozenset({'no_safety_net', 'narrow_intelligence', 'hardcore'})
+
+# Freeze these host-owned rules when joining; personal currencies and upgrades
+# remain local. Absence of a version retains legacy co-op run behavior.
+SHARED_CHALLENGE_SETTINGS = ('coop_challenges_version', 'coop_challenge_slots', 'enemy_scaling')
+COOP_CHALLENGES_VERSION = 1
 
 
 def modifier_unavailable_reason(modifier_id):
