@@ -30,6 +30,13 @@ Do not mix launcher/APWorld releases within an existing multiworld.
 
 ## Publishing manually
 
+The repository includes a committed `Archipelago/dta.apworld`. Changes to its
+bundled Python modules or static configuration require rebuilding that archive
+with `python Archipelago/build_apworld.py --output-directory Archipelago` and
+including it with the source changes. Run `check_release_files.ps1` before
+pushing. CI deliberately rejects stale archive contents before building the
+Windows release; building only the launcher EXE does not update the APWorld.
+
 1. Increment `APP_VERSION` in `randomizer/core/version.py`. Use a dotted numeric
    version and a matching GitHub tag, such as `v3.0` for `3.0`.
 2. Build with `build_archipelago_release.ps1`, or `build_all_linux.sh` when using

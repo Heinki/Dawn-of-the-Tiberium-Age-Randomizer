@@ -19,9 +19,11 @@ This project is the randomizer launcher for DTA 16.0.2 and Vinifera. It reuses t
 For APWorld installation, room generation, connection, and troubleshooting,
 see the [Archipelago player guide](Archipelago/README.md).
 
-Developer builds can enable [experimental native co-op Grid/Shop](COOP_PROTOTYPE.md)
-for 2–4 humans. Release builds keep its source-only feature flag off. The host
-owns a shared run and loadout; unsupported maps and effects are excluded.
+Experimental native co-op Grid/Shop supports 2–4 humans when its source-only
+feature flag is enabled. The host controls mission selection and team progress.
+Grid rewards are shared; Shop players retain personal loadouts and economies.
+See [the current Co-op implementation](COOP_IMPLEMENTATION.md) for the distinction
+between shared starters, selected permanent units, personal buffs, and profiles.
 Co-op player setup uses a private ZeroTier network. Follow the
 [co-op connection guide](COOP_CONNECTION_GUIDE.md) for setup, firewall
 troubleshooting and streaming privacy. The compact connection window hides

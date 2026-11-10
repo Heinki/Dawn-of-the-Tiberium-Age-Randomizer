@@ -90,7 +90,11 @@ print('Committed APWorld contents match the source build.')
 '@
     & python -c $compareArchives $apworldPath $generatedApworld
     if ($LASTEXITCODE -ne 0) {
-        throw "Committed APWorld does not match the source build."
+        throw (
+            "Committed APWorld does not match the source build. " +
+            "Run python Archipelago/build_apworld.py --output-directory Archipelago " +
+            "and include the regenerated Archipelago/dta.apworld with the source changes."
+        )
     }
 }
 finally {
