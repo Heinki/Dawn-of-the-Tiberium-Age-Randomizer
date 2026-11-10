@@ -254,6 +254,7 @@ def prepare_spawn_map(
     power_actions=(),
     power_house='',
     output_path=SPAWN_MAP_INI,
+    shop_mode=False,
 ):
     """Copy one loose DTA mission, consolidate difficulty, then add safe rules."""
     source = mission_source_path(mission.get('scenario'))
@@ -345,6 +346,10 @@ def prepare_spawn_map(
         },
     })
 
+    markers = {}
+    if shop_mode:
+        from randomizer.shop.attempts import inject_defeat_markers
+        markers = inject_defeat_markers(lines, mission.get('code', ''))
     output_path = Path(output_path)
     output_path.write_text(
         '\r\n'.join(lines) + '\r\n',
@@ -357,7 +362,7 @@ def prepare_spawn_map(
         'source_scenario': mission.get('scenario'),
         'generated_map': str(output_path),
         'root_map': str(output_path),
-        'markers': {},
+        'markers': markers,
         'seen': set(),
         'offset': 0,
         'dta': True,

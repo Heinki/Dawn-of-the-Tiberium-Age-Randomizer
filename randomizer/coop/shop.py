@@ -101,6 +101,9 @@ def sync_personal_run(profile, local, host, missions):
     local = continue_endless(local)
     missing = host.completed_missions[completed:]
     for index, code in enumerate(missing):
+        if (local.status is RunStatus.ACTIVE and not local.mission_committed
+                and code in {offer.mission_code for offer in local.mission_offers}):
+            local = replace(local, mission_committed=True, selected_mission_code=code)
         if (local.status is not RunStatus.ACTIVE or not local.mission_committed
                 or local.selected_mission_code != code):
             raise ValueError('Host Shop victory differs from the guest committed mission.')
@@ -122,6 +125,11 @@ def sync_personal_run(profile, local, host, missions):
             offer = MissionOffer(next_code, classify_mission(missions[next_code]))
             local = replace(local, mission_offers=(offer,),
                             selected_mission_code=next_code, mission_committed=True)
+    if (not local.mission_committed and local.status is RunStatus.ACTIVE
+            and local.selected_mission_code in {offer.mission_code for offer in local.mission_offers}
+            and (host.emergency_revivals_used != local.emergency_revivals_used
+                 or host.status is RunStatus.FAILED and host.failed_mission_code != 'GAVE_UP')):
+        local = replace(local, mission_committed=True)
     if host.emergency_revivals_used != local.emergency_revivals_used:
         if (host.emergency_revivals_used != local.emergency_revivals_used + 1
                 or not local.mission_committed or not host.mission_offers):

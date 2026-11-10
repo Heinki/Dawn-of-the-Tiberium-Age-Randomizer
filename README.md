@@ -84,10 +84,25 @@ Victories award temporary Ore and permanent Gems. Ore buys
 units, defenses, powers, and buffs for the current run; Gems buy permanent
 unit access, permanent buffs, and account upgrades. A detected defeat ends the
 run, while permanent progression survives restarts and failed runs.
-Each mission allows one attempt: saving, loading, restarting, or closing the
-game before victory fails the committed mission. The launcher shows this rule
-before creating every new Shop run. DTA mission-triggered autosaves are ignored;
-they cannot be used to continue a Shop run.
+Saving and loading remain forbidden in Shop missions. DTA mission-triggered
+autosaves are ignored; they cannot be used to continue a Shop run.
+
+Crashes, co-op desyncs, launch errors, and exits without a verified result
+preserve the active Shop stage, Ore, purchases, original mission offers, and
+Emergency Revivals. After the game closes, retry the same mission or select
+another original offer. Reopening the launcher also recovers an unresolved
+mission commitment automatically. Recovery awards no victory rewards. Verified
+defeats still follow the normal failure and Emergency Revival rules. Update
+both players' launchers before co-op play.
+
+Co-op Shop results now wait until every player's game has closed. A fresh engine
+SYNC/EXCEPT diagnostic, an explicit desync/reconnection error, a missing result,
+or conflicting peer results preserves the stage instead of ending the run or
+spending an Emergency Revival. Old diagnostic files are ignored. Close every
+player's game, then retry the same mission or choose another original offer.
+Every player must update: older lobby protocols are rejected because they cannot
+report interruptions safely. This protects progression; it does not claim to
+prevent every engine desync.
 
 An **Emergency Revival** keeps a Shop run alive after a failed mission. It
 repeats the same stage with new mission choices. Without an available Emergency

@@ -863,6 +863,18 @@ class CoopController:
             self.coop_publish_state()
         return result
 
+    def record_interrupted_mission_attempt(self, code, source):
+        if self.coop_guest_connected() or (self.coop_enabled() and self._coop_games_running):
+            return False
+        self._coop_recording_result = True
+        try:
+            changed = super().record_interrupted_mission_attempt(code, source)
+        finally:
+            self._coop_recording_result = False
+        if changed and self.coop_enabled():
+            self.coop_publish_state()
+        return changed
+
     def record_failed_mission_attempt(self, code, source):
         if self.coop_guest_connected() or (self.coop_enabled() and self._coop_games_running):
             return False
@@ -1236,6 +1248,11 @@ class CoopController:
         if not lobby:
             self._refresh_coop_connection_fields()
             return
+        result = self._coop_team_result
+        if result is not None and result.get('shop'):
+            result['interrupted'] = True
+            if result.get('watch') is not None:
+                result['watch'].reason = 'Co-op control connection lost; result unverified'
         status = ('Connection lost: ' if self._coop_was_connected else 'Connection failed: ') + reason
         lobby.close()
         self._cancel_coop_poll()
@@ -1304,6 +1321,7 @@ class CoopController:
         if hasattr(self, '_coop_status'):
             self._coop_status.set(status)
         self._coop_was_connected = False
+        self.recover_idle_shop_mission()
         self.refresh_coop_controls()
         self.refresh_grid_tiles()
         self._refresh_coop_connection_fields()
@@ -1858,7 +1876,9 @@ class CoopController:
         mission = pending['mission']
         if self.coop_guest_connected() and self.shop_mode_selected():
             self._shop_launch_run = self.shop_run
-        self._coop_team_result = {'code': mission['code'], 'won': False, 'started': False, 'any_started': False,
+        self._coop_team_result = {'code': mission['code'], 'won': False, 'defeated': False,
+                                  'interrupted': False, 'reports': {}, 'shop': self.shop_launch_active(),
+                                  'started': False, 'any_started': False,
                                   'run': self._shop_launch_run,
                                   'pool': self._shop_launch_mission_pool}
         hook = {'mission_code': mission['code'], 'scenario': 'spawnmap.ini', 'markers': {},
@@ -1866,6 +1886,7 @@ class CoopController:
                 'coop_score_log': ScoreLog(DEBUG_LOG),
                 'coop_human_names': [player['name'] for player in self._coop_lobby.players]}
         self.start_mission_process(mission, hook, self.resolve_selected_mission_difficulty(mission), pending['speed'], 'Experimental native co-op')
+        self._coop_team_result['watch'] = getattr(self, '_shop_interruption_watch', None)
         self._coop_team_result['started'] = self.active_game_process is not None
         if self.active_game_process is None:
             self._report_coop_finished()
@@ -1875,6 +1896,17 @@ class CoopController:
         hook = getattr(self, 'active_hook', None)
         if not hook or not hook.get('coop'):
             return super().process_hook_log_text(text)
+        result = self._coop_team_result
+        watch = result.get('watch') if result else None
+        reason = watch.observe_text(text) if watch is not None else ''
+        if reason:
+            result['interrupted'] = True
+            result['won'] = result['defeated'] = False
+            if not result.get('interruption_logged'):
+                result['interruption_logged'] = True
+                self._record_coop_log(reason + '. Shop stage will be preserved after every game closes.', error=True)
+        if result and result.get('interrupted'):
+            return
         if 'co-op victory' in hook['seen']:
             return
         # The host log contains all final player scores. A surviving human
@@ -1884,9 +1916,24 @@ class CoopController:
         text = hook.pop('coop_log_tail', '') + text
         parts = text.split('\n')
         hook['coop_log_tail'] = parts.pop()
+        scores = hook.setdefault('coop_scores', {})
+        pending = hook.get('coop_score_pending')
+        for line in parts:
+            match = re.fullmatch(r'(.+): (Winner|Loser)\s*', line.strip())
+            if match:
+                pending = match.groups()
+            elif pending and re.fullmatch(r'\s+Score\s*=\s*-?\d+\s*', line):
+                name, outcome = pending
+                scores[name] = outcome
+                pending = None
+        hook['coop_score_pending'] = pending
+        if (all(scores.get(name) == 'Loser' for name in hook['coop_human_names'])
+                and any(value == 'Winner' for name, value in scores.items()
+                        if name not in hook['coop_human_names'])):
+            self._coop_team_result['defeated'] = True
         if any(re.fullmatch('(?:' + names + r'): Winner\s*', line.strip()) for line in parts):
             self._coop_team_result['won'] = True
-            if not self.coop_guest_connected():
+            if not self.coop_guest_connected() and not result.get('shop'):
                 self.unlock_mission_check(hook['mission_code'], 'victory', 'DTA co-op team victory')
             hook['seen'].add('co-op victory')
 
@@ -1911,6 +1958,8 @@ class CoopController:
             text = hook['coop_score_log'].read_text(final=process is None or process.poll() is not None)
             self.process_hook_log_text(text)
         except OSError as exc:
+            if self._coop_team_result:
+                self._coop_team_result['interrupted'] = True
             self.append_log('Co-op score log read failed: ' + self._coop_safe_message(exc), error=True)
         # Reuse the existing process-exit/Shop failure lifecycle after reading
         # scores. The shared watcher skips its solo log discovery for co-op.
@@ -1925,8 +1974,14 @@ class CoopController:
         result = self._coop_team_result
         if not lobby or not result:
             return
+        watch = result.get('watch')
+        if watch is not None and watch.poll():
+            result['interrupted'] = True
+        interrupted = bool(result['interrupted'] or not result['started']
+                           or not (result['won'] or result['defeated']))
         message = {'type': 'finished', 'token': self._coop_game_token,
-                   'code': result['code'], 'won': result['won'], 'started': result['started']}
+                   'code': result['code'], 'won': result['won'], 'started': result['started'],
+                   'defeated': result['defeated'], 'interrupted': interrupted}
         if lobby.role == 'host':
             self._finish_coop_player(0, message)
         elif lobby.connected:
@@ -1941,23 +1996,51 @@ class CoopController:
         if (not result or message.get('token') != self._coop_game_token
                 or message.get('code') != result['code'] or type(message.get('won')) is not bool
                 or type(message.get('started')) is not bool
+                or type(message.get('defeated')) is not bool
+                or type(message.get('interrupted')) is not bool
                 or type(slot) is not int or slot not in range(self.coop_count())):
             raise ValueError('Stale or invalid cooperative mission result.')
         if slot not in self._coop_games_running:
             return
         self._coop_games_running.discard(slot)
         result['any_started'] = result['any_started'] or message['started']
+        result['reports'][slot] = dict(message)
+        result['interrupted'] = result['interrupted'] or message['interrupted']
+        watch = result.get('watch')
+        if watch is not None and watch.poll():
+            result['interrupted'] = True
+        if result['interrupted'] and watch is not None:
+            watch.reason = watch.reason or 'A co-op player reported an interrupted or unverified game'
         process = getattr(self, 'active_game_process', None)
         restore_context = not (process and process.poll() is None)
         if restore_context:
             self._shop_launch_run = result['run']
             self._shop_launch_mission_pool = result['pool']
         try:
-            if message['won']:
-                result['won'] = True
-                self.unlock_mission_check(result['code'], 'victory', 'DTA co-op team score')
-            if not self._coop_games_running and not result['won'] and result['any_started']:
-                self.record_failed_mission_attempt(result['code'], 'All co-op games closed without team victory')
+            if result['shop']:
+                # A single peer's native Loser rows cannot settle a Shop run.
+                # Wait for every process, including a peer that alone desynced.
+                if not self._coop_games_running:
+                    self._shop_launch_run = result['run']
+                    self._shop_launch_mission_pool = result['pool']
+                    self._shop_interruption_watch = watch
+                    reports = tuple(result['reports'].values())
+                    verified = (len(reports) == self.coop_count()
+                                and all(report['started'] for report in reports)
+                                and not result['interrupted'])
+                    if verified and all(report['won'] and not report['defeated'] for report in reports):
+                        self.unlock_mission_check(result['code'], 'victory', 'Verified co-op team result')
+                    elif verified and all(report['defeated'] and not report['won'] for report in reports):
+                        self.record_failed_mission_attempt(result['code'], 'Verified co-op team defeat from every player')
+                    else:
+                        self.record_interrupted_mission_attempt(result['code'],
+                            'A co-op player desynced, crashed, or ended without a verified result')
+            else:
+                if message['won']:
+                    result['won'] = True
+                    self.unlock_mission_check(result['code'], 'victory', 'DTA co-op team score')
+                if not self._coop_games_running and not result['won'] and result['any_started']:
+                    self.record_failed_mission_attempt(result['code'], 'All co-op games closed without team victory')
         finally:
             if restore_context:
                 self.finish_progression_launch_context()

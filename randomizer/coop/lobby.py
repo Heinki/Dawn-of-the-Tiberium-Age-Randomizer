@@ -21,7 +21,7 @@ from .interfaces import unicast_ipv4, zerotier_ipv4_addresses
 from .compatibility import FINGERPRINT_POLICY, normalize_text
 
 
-PROTOCOL = 6
+PROTOCOL = 7
 LOBBY_PORT = 19420
 MAX_WIRE = 16 * 1024 * 1024
 MAX_DATA = 32 * 1024 * 1024

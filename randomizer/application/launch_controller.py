@@ -76,7 +76,6 @@ from randomizer.dta.maps import (
     mission_runtime_fixes,
     mission_source_lines,
     mission_source_path,
-    newest_debug_log,
     player_starting_credit_rules,
     prepare_spawn_map,
     score_screen_loaded,
@@ -123,7 +122,7 @@ class LaunchController:
 
     @staticmethod
     def dta_shop_rule_violation(line, init_clear_count):
-        """Describe a forbidden Shop save/load/restart log event."""
+        """Describe explicit forbidden save/load events; teardown is not a restart."""
         normalized = str(line or '').upper()
         if 'LOADING GAME [' in normalized:
             return 'loading a saved game'
@@ -133,11 +132,6 @@ class LaunchController:
             and 'MISSION AUTO-SAVE' not in normalized
         ):
             return 'saving the mission'
-        if (
-            'MAPCLASS::INIT_CLEAR ENTRY' in normalized
-            and init_clear_count > 2
-        ):
-            return 'restarting the mission'
         return ''
 
     def unlocked_mission_codes(self):
@@ -842,9 +836,19 @@ throw "Map $name was not found in expandmo*.mix"
         if not self.active_hook or not text:
             return
 
+        watch = getattr(self, '_shop_interruption_watch', None)
+        if watch is not None:
+            watch.observe_text(text)
+        text = self.active_hook.pop('log_tail', '') + text
+        parts = text.split('\n')
+        self.active_hook['log_tail'] = parts.pop()
+        text = '\n'.join(parts)
         code = self.active_hook['mission_code']
         if self.active_hook.get('dta'):
             for line in text.splitlines():
+                for marker, result in self.active_hook.get('markers', {}).items():
+                    if f"Creating a new team named '{marker}'." in line:
+                        self.unlock_mission_check(code, result, 'Verified in-game defeat')
                 if score_screen_loaded(line):
                     # A randomizer replay of an already-completed mission still
                     # needs to stop at the score screen. Unlocking is idempotent,
@@ -928,7 +932,7 @@ throw "Map $name was not found in expandmo*.mix"
             if 'MapClass::Init_Clear entry' in line:
                 if self.active_hook.get('scenario_ready'):
                     self.active_hook['scenario_ready'] = False
-                    if not self.is_mission_complete(code):
+                    if not self.shop_launch_active() and not self.is_mission_complete(code):
                         self.record_failed_mission_attempt(code, 'In-game mission restart detected')
             elif 'Capture_Mouse()' in line:
                 self.active_hook['scenario_ready'] = True
@@ -1014,23 +1018,14 @@ throw "Map $name was not found in expandmo*.mix"
 
     def poll_hook_log(self):
         if self.active_hook and self.active_hook.get('dta') and not self.active_hook.get('coop'):
-            log_path = newest_debug_log(DEBUG_LOG)
-            if log_path is not None:
-                previous_path = self.active_hook.get('debug_path')
-                if previous_path != str(log_path):
-                    self.active_hook['debug_path'] = str(log_path)
-                    self.active_hook['offset'] = 0
-                    self.active_hook['dta_init_clear_count'] = 0
-                try:
-                    size = log_path.stat().st_size
-                    offset = min(size, self.active_hook.get('offset', 0))
-                    with log_path.open('r', encoding='utf-8', errors='ignore') as handle:
-                        handle.seek(offset)
-                        text = handle.read()
-                        self.active_hook['offset'] = handle.tell()
-                    self.process_hook_log_text(text)
-                except OSError as exc:
-                    self.append_log(f'DTA log read failed: {exc}', error=True)
+            process = self.active_game_process
+            try:
+                text = self.active_hook['score_log'].read_text(
+                    final=process is None or process.poll() is not None,
+                )
+                self.process_hook_log_text(text)
+            except OSError as exc:
+                self.append_log(f'DTA log read failed: {exc}', error=True)
         elif self.active_hook and not self.active_hook.get('coop') and DEBUG_LOG.exists():
             try:
                 size = DEBUG_LOG.stat().st_size
@@ -1042,6 +1037,7 @@ throw "Map $name was not found in expandmo*.mix"
                     # across that boundary or the first Init_Clear in the new
                     # file is misclassified as an in-game restart.
                     self.active_hook['scenario_ready'] = False
+                    self.active_hook.pop('log_tail', None)
                 with DEBUG_LOG.open('r', encoding='utf-8', errors='ignore') as handle:
                     handle.seek(offset)
                     text = handle.read()
@@ -1055,6 +1051,8 @@ throw "Map $name was not found in expandmo*.mix"
             self.after(HOOK_POLL_MS, self.poll_hook_log)
             return
 
+        if self.active_hook and self.active_hook.get('log_tail'):
+            self.process_hook_log_text('\n')
         if self.active_hook:
             scenario = self.active_hook.get('scenario', 'mission')
             seen_count = len(self.active_hook.get('seen', set()))
@@ -1072,7 +1070,9 @@ throw "Map $name was not found in expandmo*.mix"
         attempt = self.active_mission_attempt or {}
         attempt_code = attempt.get('mission_code')
         if attempt_code and not self.is_mission_complete(attempt_code):
-            self.record_failed_mission_attempt(attempt_code, 'Mission closed without victory')
+            if not self.shop_launch_active():
+                self.record_failed_mission_attempt(attempt_code, 'Mission closed without victory')
+            # Shop cleanup below releases an unresolved attempt without a loss.
         self.active_hook = None
         self.active_game_process = None
         self.active_mission_attempt = None
@@ -1598,6 +1598,7 @@ throw "Map $name was not found in expandmo*.mix"
                 extra_rules=dta_rules,
                 power_actions=power_actions,
                 power_house=power_report['player_house'],
+                shop_mode=self.shop_launch_active(),
             )
             self.record_enemy_reward_applications(
                 mission_code,
@@ -1742,10 +1743,8 @@ throw "Map $name was not found in expandmo*.mix"
             hook['mission_assistance_unit_ids'] = assistance_unit_ids
             hook['infantry_access_report'] = access_report
             hook['power_report'] = power_report
-            existing_log = newest_debug_log(DEBUG_LOG)
-            if existing_log is not None:
-                hook['debug_path'] = str(existing_log)
-                hook['offset'] = existing_log.stat().st_size
+            from randomizer.coop.victory import ScoreLog
+            hook['score_log'] = ScoreLog(DEBUG_LOG)
             self.write_spawn_ini(mission, difficulty, game_speed_value)
             self.write_launch_options(difficulty.engine_value, game_speed_value)
         except Exception:
@@ -1763,6 +1762,7 @@ throw "Map $name was not found in expandmo*.mix"
         game_speed_value,
         launch_note='',
     ):
+        self.begin_shop_mission_interruption_watch()
         scenario = mission['scenario']
         cmd = self.build_command()
         command_text = subprocess.list2cmdline(cmd)
