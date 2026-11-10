@@ -107,10 +107,7 @@ class CoopController:
         if self.campaign_var.get() not in campaigns:
             self.campaign_var.set(campaigns[0])
         modes = ('Grid Mode', 'Shop Mode') if cooperative else PROGRESSION_MODES
-        for name in ('progression_mode_combo', 'shop_progression_mode_combo'):
-            widget = getattr(self, name, None)
-            if widget:
-                widget.configure(values=modes)
+        self.refresh_game_mode_navigation()
         if cooperative and self.progression_mode_var.get() not in modes:
             self.progression_mode_var.set('Grid Mode')
         process = getattr(self, 'active_game_process', None)

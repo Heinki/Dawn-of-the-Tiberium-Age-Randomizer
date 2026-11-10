@@ -590,25 +590,6 @@ def _build_gameplay_settings(self, settings_frame):
     )
     self.settings_intro_label.grid(row=1, column=0, sticky='ew', pady=(8, 8))
 
-    fortress_mode_settings = ttk.LabelFrame(
-        settings_frame, text='Game Mode', padding=8
-    )
-    self.fortress_mode_settings_frame = fortress_mode_settings
-    fortress_mode_settings.columnconfigure(0, weight=1)
-    self.fortress_settings_mode_combo = ttk.Combobox(
-        fortress_mode_settings,
-        textvariable=self.game_mode_var,
-        values=self.game_mode_choices,
-        state='readonly',
-    )
-    self.fortress_settings_mode_combo.grid(row=0, column=0, sticky='ew')
-    self.fortress_settings_mode_combo.bind(
-        '<<ComboboxSelected>>', self.on_game_mode_changed
-    )
-    self.fortress_settings_mode_combo.bind(
-        '<MouseWheel>', self.on_settings_control_mousewheel, add='+'
-    )
-
     self.mission_appearance_column = ttk.Frame(settings_frame)
     self.mission_appearance_column.columnconfigure(0, weight=1)
     map_colors_frame = ttk.LabelFrame(

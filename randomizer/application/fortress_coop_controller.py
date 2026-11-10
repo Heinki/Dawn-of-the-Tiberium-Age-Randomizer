@@ -59,12 +59,7 @@ class FortressCoopController(FortressCoopLaunchController):
     def refresh_fortress_settings_controls(self):
         selected = self.final_fortress_mode_selected()
         locked = bool(self._fortress_lobby) or self.fortress_busy()
-        mode = getattr(self, 'fortress_settings_mode_combo', None)
-        if mode is not None:
-            mode.configure(
-                state='disabled' if locked or getattr(self, '_coop_lobby', None)
-                or self.busy_depth else 'readonly'
-            )
+        self.refresh_game_mode_navigation()
         for toggle, count, connect in getattr(self, '_coop_controls', []):
             toggle.master.grid_remove() if selected else toggle.master.grid()
         for frame, toggle, count, connect in getattr(self, '_fortress_control_frames', []):

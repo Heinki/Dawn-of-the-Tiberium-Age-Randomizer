@@ -100,10 +100,15 @@ class FinalFortressController(FortressCoopController):
             or bool(process and process.poll() is None)
         )
 
-    def on_game_mode_changed(self, event=None):
+    def available_game_modes(self):
+        return tuple(mode for mode in self.game_mode_choices
+                     if not self.coop_enabled()
+                     or mode in ('Grid Mode', 'Shop Mode', DISPLAY_NAME))
+
+    def apply_game_mode_selection(self):
         choice = self.game_mode_var.get()
         if choice not in self.game_mode_choices:
-            return
+            return False
         if (
             self.fortress_busy()
             or self._fortress_lobby
@@ -115,18 +120,19 @@ class FinalFortressController(FortressCoopController):
                 if self._final_fortress_saved_tabs is not None
                 else self.progression_mode_var.get()
             )
-            return
+            return False
         try:
             self.final_fortress_repository.set_workspace_selected(choice == DISPLAY_NAME)
         except FinalFortressPersistenceError as exc:
             messagebox.showerror(DISPLAY_NAME, str(exc), parent=self)
-            return
+            return False
         if choice != DISPLAY_NAME:
             self.progression_mode_var.set(choice)
-            self.on_progression_mode_changed(event)
+            self.on_progression_mode_changed()
         self.sync_shop_workspace()
         self.refresh_coop_controls()
         self.settings_canvas.yview_moveto(0)
+        return True
 
     def sync_shop_workspace(self):
         if not hasattr(self, 'final_fortress_tab'):
@@ -192,10 +198,7 @@ class FinalFortressController(FortressCoopController):
         result = super().refresh_coop_controls()
         if not hasattr(self, 'game_mode_var'):
             return result
-        for name in ('progression_mode_combo', 'shop_progression_mode_combo'):
-            widget = getattr(self, name, None)
-            if widget:
-                widget.configure(textvariable=self.game_mode_var, values=self.game_mode_choices)
+        self.refresh_game_mode_navigation()
         self.refresh_fortress_settings_controls()
         return result
 
