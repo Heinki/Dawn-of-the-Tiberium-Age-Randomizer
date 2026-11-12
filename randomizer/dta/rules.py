@@ -145,11 +145,14 @@ def decimal_value(values, key, default=0.0):
 
 def effective_section(sections, section_id, _seen=None):
     """Resolve DTA ``BaseSection`` or ``$Inherits`` INI inheritance."""
-    lookup = {str(name).casefold(): (name, values) for name, values in sections.items()}
-    item = lookup.get(str(section_id or '').casefold())
-    if item is None:
-        return {}
-    actual_name, values = item
+    actual_name = str(section_id or '')
+    values = sections.get(actual_name)
+    if values is None:
+        marker = actual_name.casefold()
+        actual_name = next((name for name in sections if name.casefold() == marker), '')
+        values = sections.get(actual_name)
+        if values is None:
+            return {}
     seen = set(_seen or ())
     marker = actual_name.casefold()
     if marker in seen:

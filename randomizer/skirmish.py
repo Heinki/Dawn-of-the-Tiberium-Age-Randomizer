@@ -10,7 +10,21 @@ from randomizer.maps.ini import IniLines, merge_ini_section_values, all_section_
 
 
 def all_section_value_maps_preserve(lines):
-    return {name: section_value_map_preserve(lines, name) for name in all_section_value_maps(lines)}
+    """Read keys once instead of rescanning the map for every section."""
+    sections = {}
+    current = None
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith('[') and stripped.endswith(']'):
+            # Match section_value_map_preserve's first-section semantics.
+            name = stripped[1:-1].strip()
+            current = {} if name.casefold() not in sections else None
+            if current is not None:
+                sections[name.casefold()] = (name, current)
+        elif current is not None and '=' in line:
+            key, value = line.split('=', 1)
+            current[key.strip()] = value.strip()
+    return {name: values for name, values in sections.values()}
 
 GAME = 'dta'
 
@@ -38,9 +52,10 @@ def playable_countries():
     return {label: country for country, label in COUNTRY_LABELS.items()}
 
 
-def discover_maps(root):
+def discover_maps(root, *, cache=None):
     """Offer installed multiplayer maps, preserving their authored map scripts."""
     root = Path(root)
+    cache = {} if cache is None else cache
     result = {}
     for directory in ('Maps', 'MapsMO'):
         folder = root / directory
@@ -63,7 +78,7 @@ def discover_maps(root):
             if len(starts) < 2 or 0 not in starts:
                 continue
             from randomizer.skirmish_factions import map_countries
-            countries = tuple(map_countries(root, {'path': str(source.resolve())}, rows=rows).values())
+            countries = tuple(map_countries(root, {'path': str(source.resolve())}, rows=rows, cache=cache).values())
             if not countries:
                 continue
             label = str(source.relative_to(root))

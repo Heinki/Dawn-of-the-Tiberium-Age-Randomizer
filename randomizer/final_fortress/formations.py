@@ -58,6 +58,26 @@ def compound(terrain, rules, art, production, defenses, center, occupied, *,
     anchors = [(cx + dx, cy + dy) for dx in range(-shifts, shifts + 1)
                for dy in range(-shifts, shifts + 1)]
     anchors.sort(key=lambda p: ((p[0] - cx) ** 2 + (p[1] - cy) ** 2, p))
+    ground = available & connected
+    candidates_by_anchor = {
+        (ax, ay): sorted(ground, key=lambda p: ((p[0] - ax) ** 2 + (p[1] - ay) ** 2, p))
+        for ax, ay in anchors if (ax, ay) in connected
+    }
+    order = sorted(range(len(production)), key=lambda i: (-len(offsets[production[i]]), i))
+    extents = {kind: (min(x for x, y in cells), max(x for x, y in cells),
+                      min(y for x, y in cells), max(y for x, y in cells))
+               for kind, cells in offsets.items()}
+    geometry = {}
+
+    def site(kind, x, y):
+        key = (kind, x, y)
+        if key not in geometry:
+            cells = {(x + dx, y + dy) for dx, dy in offsets[kind]}
+            apron = {(px + dx, py + dy) for px, py in cells
+                     for dx in (-1, 0, 1) for dy in (-1, 0, 1)}
+            geometry[key] = cells, apron, cells <= available
+        return geometry[key]
+
     # Try compact circles first, expanding the whole protected group together.
     for radius in range(6, maximum_radius + 1):
         for ax, ay in anchors:
@@ -65,18 +85,21 @@ def compound(terrain, rules, art, production, defenses, center, occupied, *,
                 continue
             if any(hypot(x - ax, y - ay) > radius - 1 for x, y in protected):
                 continue
-            candidates = sorted(available & connected, key=lambda p: ((p[0] - ax) ** 2 + (p[1] - ay) ** 2, p))
+            candidates = candidates_by_anchor[(ax, ay)]
             taken, placed = set(occupied), {}
-            order = sorted(range(len(production)), key=lambda i: (-len(offsets[production[i]]), i))
             for i in order:
                 kind = production[i]
+                left, right, top, bottom = extents[kind]
+                rectangular = len(offsets[kind]) == (right - left + 1) * (bottom - top + 1)
                 for x, y in candidates:
-                    cells = {(x + dx, y + dy) for dx, dy in offsets[kind]}
-                    if any(hypot(px - ax, py - ay) > radius - 2 for px, py in cells):
+                    dx = max(abs(x + left - ax), abs(x + right - ax))
+                    dy = max(abs(y + top - ay), abs(y + bottom - ay))
+                    outside = (dx * dx + dy * dy > (radius - 2) ** 2) if rectangular else any(
+                        hypot(x + px - ax, y + py - ay) > radius - 2 for px, py in offsets[kind])
+                    if outside:
                         continue
-                    apron = {(px + dx, py + dy) for px, py in cells
-                             for dx in (-1, 0, 1) for dy in (-1, 0, 1)}
-                    if cells <= available and not apron.intersection(taken):
+                    cells, apron, clear = site(kind, x, y)
+                    if clear and not apron.intersection(taken):
                         placed[i] = {'type': kind, 'position': {'x': x, 'y': y}}
                         taken.update(cells)
                         break
@@ -88,15 +111,13 @@ def compound(terrain, rules, art, production, defenses, center, occupied, *,
             for i, kind in enumerate(defenses):
                 angle = 2 * pi * i / len(defenses)
                 target = ax + radius * cos(angle), ay + radius * sin(angle)
-                choices = sorted(available & connected, key=lambda p: ((p[0] - target[0]) ** 2 + (p[1] - target[1]) ** 2, p))
+                choices = sorted(ground, key=lambda p: ((p[0] - target[0]) ** 2 + (p[1] - target[1]) ** 2, p))
                 for x, y in choices:
                     distance = hypot(x - ax, y - ay)
                     if not radius - .75 <= distance <= radius + 1.25:
                         continue
-                    cells = {(x + dx, y + dy) for dx, dy in offsets[kind]}
-                    apron = {(px + dx, py + dy) for px, py in cells
-                             for dx in (-1, 0, 1) for dy in (-1, 0, 1)}
-                    if cells <= available and not apron.intersection(taken):
+                    cells, apron, clear = site(kind, x, y)
+                    if clear and not apron.intersection(taken):
                         perimeter.append({'type': kind, 'position': {'x': x, 'y': y}})
                         taken.update(cells)
                         break

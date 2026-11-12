@@ -52,6 +52,10 @@ def configuration_digest(config):
     ).hexdigest()
 
 
+from randomizer.core.plan_cache import cached_plan
+
+
+@cached_plan
 def build_run_plan(
     config,
     *,

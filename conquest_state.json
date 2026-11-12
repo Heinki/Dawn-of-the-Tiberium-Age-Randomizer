@@ -3,633 +3,33 @@
   "rules_version": 1,
   "game": "dta",
   "revision": 6,
-  "id": "c954976a09ab481fabe50a0c1f2c23f9",
+  "id": "ea1517758fed4dd3aeb23294b54d144f",
   "settings": {
     "size": 100,
     "player_country": "Soviet",
-    "ai_country": "Allies",
-    "difficulty": "Impossible",
+    "ai_country": "Nod",
+    "difficulty": "Normal",
     "credits": 10000,
     "density": 2,
-    "seed": "asd",
+    "seed": "c05d791a73b429d8",
     "installation_hash": "cbb89135ef97f5e09c6a021baa24abb3ac87bb50d52af1cea35531b997a3bc4a"
   },
   "turn": 1,
-  "phase": "ai",
+  "phase": "player",
   "winner": null,
-  "random": 4114589782,
+  "random": 768772996,
   "nodes": [
     {
       "id": 0,
-      "x": -4.932679646863505,
-      "y": -19.08944227766264,
+      "x": 15.874268142859869,
+      "y": 28.182771100662613,
       "owner": "player",
-      "income": 70,
+      "income": 265,
       "buffs": {
-        "reload": 5,
-        "damage": 5,
-        "health": 5
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/hectic_oasis.map",
-        "name": "Hectic Oasis",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            113,
-            163
-          ],
-          "1": [
-            165,
-            121
-          ],
-          "2": [
-            90,
-            41
-          ],
-          "3": [
-            38,
-            58
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "0656bf51cf9e05b5a07ab2175ff9aedb66a6606f49d8ab376c381a58b7f95c9c"
-      }
-    },
-    {
-      "id": 1,
-      "x": 167.93589501319644,
-      "y": 7.948229931450314,
-      "owner": "neutral",
-      "income": 145,
-      "buffs": {
-        "health": 10,
-        "reload": 5,
-        "speed": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/subterranean_greenery.map",
-        "name": "[4] Subterranean Greenery",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            79,
-            78
-          ],
-          "1": [
-            79,
-            149
-          ],
-          "2": [
-            146,
-            148
-          ],
-          "3": [
-            146,
-            78
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "82b4df8da495fe130478d8eaa7c22cef6ff212bcc038e1c1b15bdda395bb2fae"
-      }
-    },
-    {
-      "id": 2,
-      "x": 278.41208267378596,
-      "y": 23.349330248941875,
-      "owner": "neutral",
-      "income": 70,
-      "buffs": {
-        "reload": 5,
-        "health": 5,
-        "armor": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/dry_heat.map",
-        "name": "Dry Heat",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            120,
-            76
-          ],
-          "1": [
-            39,
-            90
-          ],
-          "2": [
-            101,
-            123
-          ],
-          "3": [
-            59,
-            43
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "cd010872b70846b66a81ddec317a04d65af725e0b0cd743d755611761fc2d087"
-      }
-    },
-    {
-      "id": 3,
-      "x": 413.48555448954704,
-      "y": 2.199249859221169,
-      "owner": "neutral",
-      "income": 155,
-      "buffs": {
-        "speed": 10,
-        "damage": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/forgotten_forests.map",
-        "name": "Forgotten Forests",
-        "starts": [
-          0,
-          1
-        ],
-        "positions": {
-          "0": [
-            43,
-            99
-          ],
-          "1": [
-            140,
-            79
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "37daf1325a9a8525f0b99d5ea3c298e47878275d8e7745c7a074be1d65c08073"
-      }
-    },
-    {
-      "id": 4,
-      "x": 562.4903905762902,
-      "y": 27.437242644791397,
-      "owner": "neutral",
-      "income": 240,
-      "buffs": {
-        "speed": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/pitfall.map",
-        "name": "Pitfall",
-        "starts": [
-          0,
-          1
-        ],
-        "positions": {
-          "0": [
-            40,
-            26
-          ],
-          "1": [
-            71,
-            93
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "d8519bd90aa551002a7372b655c140678dc977900aeec5372188b94f61278107"
-      }
-    },
-    {
-      "id": 5,
-      "x": 717.7103146384685,
-      "y": -11.520971828704646,
-      "owner": "neutral",
-      "income": 215,
-      "buffs": {
-        "reload": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/idyllic_lake.map",
-        "name": "Idyllic Lake",
-        "starts": [
-          0,
-          1
-        ],
-        "positions": {
-          "0": [
-            115,
-            164
-          ],
-          "1": [
-            84,
-            30
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "fb6daa57e700337ab6a5b8ad5e2468e713e9c14639359499124b6d7c7a60cbff"
-      }
-    },
-    {
-      "id": 6,
-      "x": 811.763488494032,
-      "y": 20.396107767994955,
-      "owner": "neutral",
-      "income": 230,
-      "buffs": {
-        "reload": 5,
         "damage": 5
       },
       "perks": {},
       "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/rust_in_the_dust.map",
-        "name": "Rust in the dust",
-        "starts": [
-          0,
-          1,
-          2
-        ],
-        "positions": {
-          "0": [
-            39,
-            66
-          ],
-          "1": [
-            93,
-            119
-          ],
-          "2": [
-            104,
-            46
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "4cbb53633a27a9eee1195f18043c0a2112aad3ee343973eb310539db6d9b52be"
-      }
-    },
-    {
-      "id": 7,
-      "x": 973.1884477288793,
-      "y": -19.79584453349113,
-      "owner": "neutral",
-      "income": 240,
-      "buffs": {
-        "damage": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/triad_of_deception.map",
-        "name": "Triad of Deception",
-        "starts": [
-          0,
-          1,
-          2
-        ],
-        "positions": {
-          "0": [
-            42,
-            85
-          ],
-          "1": [
-            75,
-            34
-          ],
-          "2": [
-            104,
-            78
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "62f3de7baaa9e20d6fb26e430f5210da1921a1ebf58a469d5035658215e473be"
-      }
-    },
-    {
-      "id": 8,
-      "x": 1110.0531699183998,
-      "y": 0.5178927989062281,
-      "owner": "neutral",
-      "income": 230,
-      "buffs": {
-        "health": 10,
-        "armor": 5
-      },
-      "perks": {},
-      "reward": "production",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/marooned2.map",
-        "name": "Marooned II",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            139,
-            121
-          ],
-          "1": [
-            101,
-            63
-          ],
-          "2": [
-            51,
-            95
-          ],
-          "3": [
-            107,
-            149
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "f4f49339c2d81025d37ddd5309de580b986aa5c8075522bb8f26978765ab6c31"
-      }
-    },
-    {
-      "id": 9,
-      "x": 1266.5957310247318,
-      "y": 20.02701907647578,
-      "owner": "neutral",
-      "income": 265,
-      "buffs": {
-        "armor": 5
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/back_county.map",
-        "name": "Back County",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            41,
-            86
-          ],
-          "1": [
-            78,
-            123
-          ],
-          "2": [
-            85,
-            45
-          ],
-          "3": [
-            121,
-            79
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "fff1d30da78b0ee901b92160bcb96ad7916e2ce3faa67ddfcb66a2b2ea3f7429"
-      }
-    },
-    {
-      "id": 10,
-      "x": 20.413513763234917,
-      "y": 132.45902502100824,
-      "owner": "player",
-      "income": 95,
-      "buffs": {
-        "damage": 10,
-        "armor": 5,
-        "speed": 10
-      },
-      "perks": {},
-      "reward": "vehicles",
-      "claimed": [
-        "player"
-      ],
-      "map": {
-        "path": "Maps/Default/tower_of_power.map",
-        "name": "Tower of Power",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            68,
-            103
-          ],
-          "1": [
-            104,
-            70
-          ],
-          "2": [
-            67,
-            30
-          ],
-          "3": [
-            29,
-            67
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "f38c952e23472259c9b708543c67a84c0c0e0d7fde0c35c79e9bc01787e7d3c0"
-      }
-    },
-    {
-      "id": 11,
-      "x": 143.70918365609938,
-      "y": 116.02778463967839,
-      "owner": "neutral",
-      "income": 70,
-      "buffs": {
-        "damage": 10,
-        "health": 10,
-        "speed": 10
-      },
-      "perks": {},
-      "reward": "veterans",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/cliffs_of_insanity.map",
-        "name": "[6] Cliffs of Insanity",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5
-        ],
-        "positions": {
-          "0": [
-            61,
-            108
-          ],
-          "1": [
-            110,
-            182
-          ],
-          "2": [
-            162,
-            126
-          ],
-          "3": [
-            141,
-            57
-          ],
-          "4": [
-            78,
-            61
-          ],
-          "5": [
-            114,
-            105
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "2a4e065acefbf9302ba1ff72925ad592ed58317dd14a1986518d96ec2e48c6db"
-      }
-    },
-    {
-      "id": 12,
-      "x": 289.4254522058768,
-      "y": 154.934443821287,
-      "owner": "neutral",
-      "income": 180,
-      "buffs": {
-        "damage": 5,
-        "speed": 10
-      },
-      "perks": {},
-      "reward": "discount",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/gravity_valley.map",
-        "name": "Gravity Valley",
-        "starts": [
-          0,
-          1
-        ],
-        "positions": {
-          "0": [
-            19,
-            75
-          ],
-          "1": [
-            126,
-            71
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "aa54e314f90f77df742e6ffa0b81be9ab9aa0d689f1058835b9ae269af05e780"
-      }
-    },
-    {
-      "id": 13,
-      "x": 420.43434637500815,
-      "y": 153.33286467483725,
-      "owner": "neutral",
-      "income": 190,
-      "buffs": {
-        "reload": 5
-      },
-      "perks": {},
-      "reward": "power",
       "claimed": [],
       "map": {
         "path": "Maps/Default/icy_floes.map",
@@ -675,24 +75,250 @@
           "Soviet"
         ],
         "sha256": "283bd980ee21530b075c67f127f00420f43ae3928d138a6d1fd67c7c06ed4eaa"
-      }
+      },
+      "hq": "player"
     },
     {
-      "id": 14,
-      "x": 553.886332371722,
-      "y": 149.17340396454063,
-      "owner": "neutral",
-      "income": 130,
+      "id": 1,
+      "x": 136.27561334277112,
+      "y": -17.699198735065153,
+      "owner": "player",
+      "income": 145,
       "buffs": {
-        "speed": 10,
-        "reload": 5
+        "health": 5,
+        "reload": 10,
+        "damage": 10
       },
       "perks": {},
       "reward": null,
       "claimed": [],
       "map": {
-        "path": "Maps/Default/social_divide.map",
-        "name": "Social Divide (2-4)",
+        "path": "Maps/Default/frozen_advance.map",
+        "name": "Frozen Advance",
+        "starts": [
+          0,
+          1
+        ],
+        "positions": {
+          "0": [
+            101,
+            60
+          ],
+          "1": [
+            50,
+            58
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "9e3d39ece86e9900790efac9000c6414782d9fdfed2fbe7f04edcea25f37f3c0"
+      }
+    },
+    {
+      "id": 2,
+      "x": 250.4963475926805,
+      "y": -28.158086015218817,
+      "owner": "neutral",
+      "income": 205,
+      "buffs": {
+        "damage": 5,
+        "armor": 5
+      },
+      "perks": {},
+      "reward": "hazard_training",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/dark_prospects.map",
+        "name": "Dark Prospects",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            99,
+            181
+          ],
+          "1": [
+            17,
+            101
+          ],
+          "2": [
+            101,
+            18
+          ],
+          "3": [
+            182,
+            98
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "e8f30e940fcf2dd036bdfa6b0510b98c12db8c3143f2abc3dbc9b6025558d2aa"
+      }
+    },
+    {
+      "id": 3,
+      "x": 406.4338659912862,
+      "y": 9.558640565834672,
+      "owner": "neutral",
+      "income": 190,
+      "buffs": {
+        "health": 10
+      },
+      "perks": {},
+      "reward": "production",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/marooned2.map",
+        "name": "Marooned II",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            139,
+            121
+          ],
+          "1": [
+            101,
+            63
+          ],
+          "2": [
+            51,
+            95
+          ],
+          "3": [
+            107,
+            149
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "f4f49339c2d81025d37ddd5309de580b986aa5c8075522bb8f26978765ab6c31"
+      }
+    },
+    {
+      "id": 4,
+      "x": 533.5485445080473,
+      "y": -17.090865258124268,
+      "owner": "neutral",
+      "income": 290,
+      "buffs": {
+        "armor": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/idyllic_lake.map",
+        "name": "Idyllic Lake",
+        "starts": [
+          0,
+          1
+        ],
+        "positions": {
+          "0": [
+            115,
+            164
+          ],
+          "1": [
+            84,
+            30
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "fb6daa57e700337ab6a5b8ad5e2468e713e9c14639359499124b6d7c7a60cbff"
+      }
+    },
+    {
+      "id": 5,
+      "x": 698.5607187998402,
+      "y": -29.360623450522546,
+      "owner": "neutral",
+      "income": 215,
+      "buffs": {
+        "speed": 5
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/drifted_river.map",
+        "name": "Drifted River",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            55,
+            159
+          ],
+          "1": [
+            68,
+            98
+          ],
+          "2": [
+            198,
+            99
+          ],
+          "3": [
+            202,
+            168
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "bfd0cb04a6b90770a6f9e25a056ef1a57bad4a2e8ca4d3dde95ca2bd76f48169"
+      }
+    },
+    {
+      "id": 6,
+      "x": 822.1606761023035,
+      "y": 4.448422968873082,
+      "owner": "neutral",
+      "income": 130,
+      "buffs": {
+        "armor": 10,
+        "speed": 10
+      },
+      "perks": {
+        "garrison": 1
+      },
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/dusk.map",
+        "name": "Dusk",
         "starts": [
           0,
           1,
@@ -702,19 +328,19 @@
         "positions": {
           "0": [
             22,
-            48
+            91
           ],
           "1": [
-            57,
-            88
+            93,
+            29
           ],
           "2": [
-            51,
-            21
+            141,
+            81
           ],
           "3": [
-            85,
-            62
+            75,
+            143
           ]
         },
         "countries": [
@@ -723,17 +349,416 @@
           "Allies",
           "Soviet"
         ],
-        "sha256": "326b0c8b0d608773c2c0ac74feddfe85210b6a02c3dc5ed87e804afa059d47f8"
+        "sha256": "690db6702b5708c6464a73b05d684d9aff401334ed6d30042f69e9d89a60324d"
+      }
+    },
+    {
+      "id": 7,
+      "x": 986.33722775036,
+      "y": 4.703938301874018,
+      "owner": "neutral",
+      "income": 190,
+      "buffs": {
+        "speed": 10
+      },
+      "perks": {
+        "garrison": 1
+      },
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/arctic_disaster.map",
+        "name": "Arctic Disaster",
+        "starts": [
+          0,
+          1
+        ],
+        "positions": {
+          "0": [
+            93,
+            144
+          ],
+          "1": [
+            104,
+            56
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "3de11ef6953b367c559d6131988a85a24b54cee0f36bfc6626a4b6f157b915e8"
+      }
+    },
+    {
+      "id": 8,
+      "x": 1115.0183292527786,
+      "y": 6.818019805724795,
+      "owner": "neutral",
+      "income": 265,
+      "buffs": {
+        "damage": 10
+      },
+      "perks": {},
+      "reward": "infantry",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/subterranean_jewelry.map",
+        "name": "[6] Subterranean Jewellery",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "positions": {
+          "0": [
+            150,
+            81
+          ],
+          "1": [
+            105,
+            81
+          ],
+          "2": [
+            59,
+            128
+          ],
+          "3": [
+            105,
+            173
+          ],
+          "4": [
+            150,
+            173
+          ],
+          "5": [
+            196,
+            128
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "e33c27dd215c7695d9392b674bb6c7b1b81f2f4ecc3af0988c4fa67436156709"
+      }
+    },
+    {
+      "id": 9,
+      "x": 1272.0855004794369,
+      "y": -10.281231716611085,
+      "owner": "neutral",
+      "income": 70,
+      "buffs": {
+        "reload": 5,
+        "armor": 10,
+        "damage": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/grid_gardens.map",
+        "name": "[8] Grid Gardens",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "positions": {
+          "0": [
+            112,
+            165
+          ],
+          "1": [
+            142,
+            138
+          ],
+          "2": [
+            169,
+            108
+          ],
+          "3": [
+            197,
+            138
+          ],
+          "4": [
+            227,
+            165
+          ],
+          "5": [
+            197,
+            193
+          ],
+          "6": [
+            169,
+            223
+          ],
+          "7": [
+            142,
+            193
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "9406cb33c660e087cbf9d823758531327bf3d8f7f2d0ed782018921943f4573b"
+      }
+    },
+    {
+      "id": 10,
+      "x": 27.389363225837393,
+      "y": 166.7974684377334,
+      "owner": "neutral",
+      "income": 95,
+      "buffs": {
+        "speed": 10,
+        "armor": 5,
+        "damage": 5
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/triad_of_deception.map",
+        "name": "Triad of Deception",
+        "starts": [
+          0,
+          1,
+          2
+        ],
+        "positions": {
+          "0": [
+            42,
+            85
+          ],
+          "1": [
+            75,
+            34
+          ],
+          "2": [
+            104,
+            78
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "62f3de7baaa9e20d6fb26e430f5210da1921a1ebf58a469d5035658215e473be"
+      }
+    },
+    {
+      "id": 11,
+      "x": 139.03824056371528,
+      "y": 139.82752759069052,
+      "owner": "neutral",
+      "income": 95,
+      "buffs": {
+        "health": 5,
+        "reload": 10,
+        "speed": 5
+      },
+      "perks": {},
+      "reward": "production",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/springnight.map",
+        "name": "[6] Springnight",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "positions": {
+          "0": [
+            23,
+            62
+          ],
+          "1": [
+            45,
+            38
+          ],
+          "2": [
+            79,
+            38
+          ],
+          "3": [
+            105,
+            65
+          ],
+          "4": [
+            104,
+            101
+          ],
+          "5": [
+            83,
+            122
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "cfe47322eece5440e74847df89be2da0706ea570a8b8095a202a72cb832b4da8"
+      }
+    },
+    {
+      "id": 12,
+      "x": 284.67159273099855,
+      "y": 133.01266996436306,
+      "owner": "neutral",
+      "income": 265,
+      "buffs": {
+        "health": 5
+      },
+      "perks": {
+        "garrison": 1
+      },
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/yaseca_island.map",
+        "name": "Yaseca Island [2-3]",
+        "starts": [
+          0,
+          1,
+          2
+        ],
+        "positions": {
+          "0": [
+            50,
+            90
+          ],
+          "1": [
+            99,
+            73
+          ],
+          "2": [
+            59,
+            49
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "384cafe828a82efc644e880eb4e4a18253397e0b3f8bb5032220e749d8cccf41"
+      }
+    },
+    {
+      "id": 13,
+      "x": 399.72632198255513,
+      "y": 169.19248801214837,
+      "owner": "neutral",
+      "income": 145,
+      "buffs": {
+        "damage": 10,
+        "reload": 5,
+        "speed": 10
+      },
+      "perks": {},
+      "reward": "veterans",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/chrono_station.map",
+        "name": "Chrono Station",
+        "starts": [
+          0,
+          1
+        ],
+        "positions": {
+          "0": [
+            123,
+            38
+          ],
+          "1": [
+            35,
+            123
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "db1ab03424492f562bb1a8c29aee819668c08e3f64053914bf93d703c70e0eb4"
+      }
+    },
+    {
+      "id": 14,
+      "x": 535.1450878985439,
+      "y": 127.47831939444112,
+      "owner": "neutral",
+      "income": 180,
+      "buffs": {
+        "damage": 10,
+        "health": 5
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/creepy_obstruction.map",
+        "name": "Creepy Obstruction",
+        "starts": [
+          0,
+          1
+        ],
+        "positions": {
+          "0": [
+            68,
+            116
+          ],
+          "1": [
+            76,
+            26
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "06ee705e08e66f7c24b4d141648db247569ba0e9feebe4190e603477f2002a19"
       }
     },
     {
       "id": 15,
-      "x": 690.402366663448,
-      "y": 146.01026513126462,
+      "x": 690.7219680161252,
+      "y": 133.7166538370221,
       "owner": "neutral",
-      "income": 215,
+      "income": 170,
       "buffs": {
-        "damage": 5
+        "reload": 5,
+        "armor": 10,
+        "health": 10
       },
       "perks": {},
       "reward": null,
@@ -776,37 +801,32 @@
     },
     {
       "id": 16,
-      "x": 836.0745135297984,
-      "y": 125.15790627457511,
+      "x": 810.8493628559951,
+      "y": 129.2362347719637,
       "owner": "neutral",
-      "income": 230,
+      "income": 130,
       "buffs": {
-        "speed": 5,
+        "damage": 10,
         "reload": 5
       },
       "perks": {},
-      "reward": "production",
+      "reward": null,
       "claimed": [],
       "map": {
-        "path": "Maps/Default/top_o_the_hill.map",
-        "name": "[3] Top o' the Hill",
+        "path": "Maps/Default/forest_of_fear.map",
+        "name": "Forest of Fear",
         "starts": [
           0,
-          1,
-          2
+          1
         ],
         "positions": {
           "0": [
-            39,
-            38
+            34,
+            67
           ],
           "1": [
             104,
-            121
-          ],
-          "2": [
-            121,
-            104
+            74
           ]
         },
         "countries": [
@@ -815,616 +835,24 @@
           "Allies",
           "Soviet"
         ],
-        "sha256": "f86a6630911a10a03f1e7df592fb9c3bf2ef8f0b4492162bdce44fa9d5a0f52b"
+        "sha256": "1f9f9be9f6c35a1fb09f6de16c44708d8bad6f020600f9cd47f316301579e1db"
       }
     },
     {
       "id": 17,
-      "x": 952.941546465237,
-      "y": 145.26166832201716,
-      "owner": "neutral",
-      "income": 170,
-      "buffs": {
-        "armor": 10,
-        "damage": 5,
-        "speed": 5
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/creepy_obstruction.map",
-        "name": "Creepy Obstruction",
-        "starts": [
-          0,
-          1
-        ],
-        "positions": {
-          "0": [
-            68,
-            116
-          ],
-          "1": [
-            76,
-            26
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "06ee705e08e66f7c24b4d141648db247569ba0e9feebe4190e603477f2002a19"
-      }
-    },
-    {
-      "id": 18,
-      "x": 1096.5693997056528,
-      "y": 168.4312611098665,
+      "x": 987.1113130969272,
+      "y": 149.3978626340776,
       "owner": "neutral",
       "income": 190,
       "buffs": {
-        "health": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/arctic_circle.map",
-        "name": "[8] Arctic Circle",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7
-        ],
-        "positions": {
-          "0": [
-            99,
-            193
-          ],
-          "1": [
-            70,
-            210
-          ],
-          "2": [
-            28,
-            165
-          ],
-          "3": [
-            48,
-            129
-          ],
-          "4": [
-            129,
-            50
-          ],
-          "5": [
-            164,
-            29
-          ],
-          "6": [
-            211,
-            73
-          ],
-          "7": [
-            196,
-            105
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "80ae5d842318db9e273f86cdf8ada6af779c2f67fbe0f8e0c74f31288c7d3da4"
-      }
-    },
-    {
-      "id": 19,
-      "x": 1258.8498842617214,
-      "y": 148.33931252235848,
-      "owner": "neutral",
-      "income": 180,
-      "buffs": {
-        "speed": 5,
-        "armor": 5
-      },
-      "perks": {},
-      "reward": "discount",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/keep_off_the_grass.map",
-        "name": "[2] Keep off the Grass",
-        "starts": [
-          0,
-          1
-        ],
-        "positions": {
-          "0": [
-            30,
-            62
-          ],
-          "1": [
-            113,
-            89
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "0e4a858b4e623c50e62bb1b5a9d3786f9da90ae64bdac87565ab17d711bb2512"
-      }
-    },
-    {
-      "id": 20,
-      "x": 11.958045029873375,
-      "y": 254.0010822162336,
-      "owner": "neutral",
-      "income": 290,
-      "buffs": {
-        "speed": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/white_acres.map",
-        "name": "[8] White Acres",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7
-        ],
-        "positions": {
-          "0": [
-            153,
-            96
-          ],
-          "1": [
-            132,
-            128
-          ],
-          "2": [
-            98,
-            152
-          ],
-          "3": [
-            63,
-            131
-          ],
-          "4": [
-            21,
-            85
-          ],
-          "5": [
-            48,
-            55
-          ],
-          "6": [
-            82,
-            20
-          ],
-          "7": [
-            110,
-            51
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "77cb176b1a3bc07372fd440308c1e6d4f478b6f0065f5667375ccbac02fca096"
-      }
-    },
-    {
-      "id": 21,
-      "x": 162.20743198528487,
-      "y": 284.177812774906,
-      "owner": "neutral",
-      "income": 230,
-      "buffs": {
-        "armor": 5,
-        "speed": 10
-      },
-      "perks": {
-        "garrison": 1
-      },
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/isle_of_oades.map",
-        "name": "[4] Isle of Oades",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            69,
-            124
-          ],
-          "1": [
-            117,
-            72
-          ],
-          "2": [
-            108,
-            166
-          ],
-          "3": [
-            160,
-            115
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "c2c9506280bafed5603abdc1ee1bbf9df68b715119bdeffa319ce49c25a8385b"
-      }
-    },
-    {
-      "id": 22,
-      "x": 257.87113151087607,
-      "y": 261.8225778239844,
-      "owner": "neutral",
-      "income": 230,
-      "buffs": {
-        "health": 10,
-        "armor": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/castle_rock.map",
-        "name": "Castle Rock",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            148,
-            186
-          ],
-          "1": [
-            182,
-            149
-          ],
-          "2": [
-            76,
-            112
-          ],
-          "3": [
-            111,
-            79
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "948b15845404ff70aaeaedd10c4657136a528ba367da89fa7db315f7980485ff"
-      }
-    },
-    {
-      "id": 23,
-      "x": 422.6627263622928,
-      "y": 285.57027239470034,
-      "owner": "neutral",
-      "income": 70,
-      "buffs": {
-        "armor": 10,
-        "damage": 5,
-        "reload": 5
+        "speed": 5
       },
       "perks": {},
       "reward": "barracks",
       "claimed": [],
       "map": {
-        "path": "Maps/Default/crossroads.map",
-        "name": "Road to Middle",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            50,
-            79
-          ],
-          "1": [
-            27,
-            53
-          ],
-          "2": [
-            52,
-            27
-          ],
-          "3": [
-            81,
-            54
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "2f5c51166a300453a0357b298c5530d7012d22994a31911475156b7a3ba319d6"
-      }
-    },
-    {
-      "id": 24,
-      "x": 573.5261827559675,
-      "y": 262.60069107945964,
-      "owner": "neutral",
-      "income": 95,
-      "buffs": {
-        "damage": 5,
-        "speed": 10,
-        "armor": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/middle_of_nowhere.map",
-        "name": "[8] Middle of Nowhere",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7
-        ],
-        "positions": {
-          "0": [
-            70,
-            162
-          ],
-          "1": [
-            111,
-            162
-          ],
-          "2": [
-            147,
-            196
-          ],
-          "3": [
-            171,
-            158
-          ],
-          "4": [
-            144,
-            108
-          ],
-          "5": [
-            148,
-            67
-          ],
-          "6": [
-            97,
-            80
-          ],
-          "7": [
-            102,
-            115
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "450a4eca4e6a6aa06a3d47545137c7756fc4d88bbc6c14bfcd174d1430babdb6"
-      }
-    },
-    {
-      "id": 25,
-      "x": 674.3841030439156,
-      "y": 276.2581082306333,
-      "owner": "neutral",
-      "income": 180,
-      "buffs": {
-        "damage": 5,
-        "speed": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/dust_bowl.map",
-        "name": "Dustbowl",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            41,
-            66
-          ],
-          "1": [
-            66,
-            42
-          ],
-          "2": [
-            74,
-            97
-          ],
-          "3": [
-            99,
-            77
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "fe7e90d96f05772fff0a6662a3edf09fccefece716336a28d1fc6cf139ba61d5"
-      }
-    },
-    {
-      "id": 26,
-      "x": 867.0490996019245,
-      "y": 302.5140722838138,
-      "owner": "neutral",
-      "income": 215,
-      "buffs": {
-        "armor": 10
-      },
-      "perks": {},
-      "reward": "income",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/parted_paradise.map",
-        "name": "Parted Paradise",
-        "starts": [
-          0,
-          1
-        ],
-        "positions": {
-          "0": [
-            141,
-            95
-          ],
-          "1": [
-            95,
-            139
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "3d99ed0652e33843681eb82ff8e24d293dafce5032ae0f52b4aa65c5d39d514c"
-      }
-    },
-    {
-      "id": 27,
-      "x": 993.4600957818783,
-      "y": 281.12555267692517,
-      "owner": "neutral",
-      "income": 70,
-      "buffs": {
-        "reload": 5,
-        "damage": 10,
-        "speed": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/radial_range.map",
-        "name": "Radial Range (2-8)",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7
-        ],
-        "positions": {
-          "0": [
-            37,
-            149
-          ],
-          "1": [
-            113,
-            227
-          ],
-          "2": [
-            225,
-            111
-          ],
-          "3": [
-            148,
-            33
-          ],
-          "4": [
-            94,
-            95
-          ],
-          "5": [
-            162,
-            166
-          ],
-          "6": [
-            99,
-            160
-          ],
-          "7": [
-            157,
-            99
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "af6c0b474acbbf075d9d3d777410a987edfe1e61eefb45b52c2d463ecd33bb7e"
-      }
-    },
-    {
-      "id": 28,
-      "x": 1123.985958803924,
-      "y": 263.13977696821735,
-      "owner": "neutral",
-      "income": 190,
-      "buffs": {
-        "health": 10
-      },
-      "perks": {},
-      "reward": "power",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/narrow_river.map",
-        "name": "[6] Narrow River",
+        "path": "Maps/Default/turfed_islands.map",
+        "name": "Turfing islands",
         "starts": [
           0,
           1,
@@ -1435,27 +863,455 @@
         ],
         "positions": {
           "0": [
-            32,
-            63
+            95,
+            149
           ],
           "1": [
+            143,
+            143
+          ],
+          "2": [
+            149,
+            96
+          ],
+          "3": [
+            115,
+            64
+          ],
+          "4": [
             69,
-            99
+            73
+          ],
+          "5": [
+            59,
+            116
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "9b187197f2fe2b08a781b19e8334236761b799b5562e4df2eeb021b88febcf3d"
+      }
+    },
+    {
+      "id": 18,
+      "x": 1118.8097098422934,
+      "y": 123.82005709484419,
+      "owner": "neutral",
+      "income": 290,
+      "buffs": {
+        "damage": 5
+      },
+      "perks": {},
+      "reward": "factory",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/pitfall.map",
+        "name": "Pitfall",
+        "starts": [
+          0,
+          1
+        ],
+        "positions": {
+          "0": [
+            40,
+            26
+          ],
+          "1": [
+            71,
+            93
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "d8519bd90aa551002a7372b655c140678dc977900aeec5372188b94f61278107"
+      }
+    },
+    {
+      "id": 19,
+      "x": 1271.0891775756204,
+      "y": 136.22319868834757,
+      "owner": "neutral",
+      "income": 155,
+      "buffs": {
+        "damage": 5,
+        "armor": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/hectic_oasis.map",
+        "name": "Hectic Oasis",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            113,
+            163
+          ],
+          "1": [
+            165,
+            121
+          ],
+          "2": [
+            90,
+            41
+          ],
+          "3": [
+            38,
+            58
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "0656bf51cf9e05b5a07ab2175ff9aedb66a6606f49d8ab376c381a58b7f95c9c"
+      }
+    },
+    {
+      "id": 20,
+      "x": -0.5401973448208715,
+      "y": 251.0653090593299,
+      "owner": "neutral",
+      "income": 290,
+      "buffs": {
+        "speed": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/gold_rush.map",
+        "name": "Tournament Gold Rush",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            38,
+            98
+          ],
+          "1": [
+            81,
+            139
+          ],
+          "2": [
+            94,
+            33
+          ],
+          "3": [
+            138,
+            79
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "9a33261bf5153935622644c62278ce07ed4ebbe4cf2a38d08b741f1ef902814b"
+      }
+    },
+    {
+      "id": 21,
+      "x": 148.23332082702888,
+      "y": 265.7541419622467,
+      "owner": "neutral",
+      "income": 190,
+      "buffs": {
+        "health": 5
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/glimmering_bluffs.map",
+        "name": "Glimmering Bluffs",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "positions": {
+          "0": [
+            77,
+            175
+          ],
+          "1": [
+            129,
+            224
+          ],
+          "2": [
+            19,
+            132
+          ],
+          "3": [
+            146,
+            50
+          ],
+          "4": [
+            192,
+            94
+          ],
+          "5": [
+            260,
+            146
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "e2bc17e1ae6a60988dcbcd9606252df4fdc8f4ae3bf8e4bb2237c7c9dff0ef59"
+      }
+    },
+    {
+      "id": 22,
+      "x": 297.0421588846704,
+      "y": 287.38974433748905,
+      "owner": "neutral",
+      "income": 265,
+      "buffs": {
+        "reload": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/desert_lakes.map",
+        "name": "[6] Desert Lakes",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "positions": {
+          "0": [
+            25,
+            130
+          ],
+          "1": [
+            86,
+            86
+          ],
+          "2": [
+            112,
+            35
+          ],
+          "3": [
+            103,
+            163
+          ],
+          "4": [
+            121,
+            116
+          ],
+          "5": [
+            180,
+            75
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "9d5d14e8044ce46ee44ce227b6825f8cfb8dc1f3a7d4131fb5b8a1cf6fcc5edf"
+      }
+    },
+    {
+      "id": 23,
+      "x": 424.08315440595686,
+      "y": 282.4616613610062,
+      "owner": "neutral",
+      "income": 230,
+      "buffs": {
+        "damage": 5,
+        "speed": 5
+      },
+      "perks": {},
+      "reward": "production",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/tiberian_twilight.map",
+        "name": "Tiberian Twilight",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "positions": {
+          "0": [
+            28,
+            109
+          ],
+          "1": [
+            74,
+            145
           ],
           "2": [
             116,
-            138
+            168
           ],
           "3": [
-            167,
-            139
+            115,
+            112
           ],
           "4": [
-            122,
-            93
+            89,
+            65
           ],
           "5": [
-            77,
+            102,
+            31
+          ],
+          "6": [
+            151,
+            67
+          ],
+          "7": [
+            179,
+            120
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "27fd0ac9cd38cd90e0d8d5cd7b857b25e1cc2ffcaed61004fa3b43292f8fba96"
+      }
+    },
+    {
+      "id": 24,
+      "x": 582.4010588301693,
+      "y": 272.5913465063324,
+      "owner": "neutral",
+      "income": 290,
+      "buffs": {
+        "reload": 5
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/epicenter.map",
+        "name": "Epicenter",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "positions": {
+          "0": [
+            62,
+            60
+          ],
+          "1": [
+            82,
+            59
+          ],
+          "2": [
+            99,
+            77
+          ],
+          "3": [
+            99,
+            95
+          ],
+          "4": [
+            80,
+            98
+          ],
+          "5": [
+            59,
+            81
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "8c8f9ed8a82b575d00c522565432e1b2af32056627237306e153a34119c06f5b"
+      }
+    },
+    {
+      "id": 25,
+      "x": 676.8137099527725,
+      "y": 308.04004675672167,
+      "owner": "neutral",
+      "income": 95,
+      "buffs": {
+        "damage": 10,
+        "health": 5,
+        "speed": 5
+      },
+      "perks": {},
+      "reward": "elite_deployment",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/naval_rampage.map",
+        "name": "Naval Rampage",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            54,
+            152
+          ],
+          "1": [
+            141,
+            245
+          ],
+          "2": [
+            249,
+            144
+          ],
+          "3": [
+            160,
             51
           ]
         },
@@ -1465,18 +1321,254 @@
           "Allies",
           "Soviet"
         ],
-        "sha256": "798c6b663a6c0f41c109be572a6b4d8d3b7494ddc8ffd5433e650138a4314999"
+        "sha256": "00fe7955c3ae67a2a3147ee439831939750bae587f5f14b5e8334e268a899524"
+      }
+    },
+    {
+      "id": 26,
+      "x": 839.6295761423356,
+      "y": 276.44353964130147,
+      "owner": "neutral",
+      "income": 155,
+      "buffs": {
+        "health": 5,
+        "armor": 10
+      },
+      "perks": {},
+      "reward": "factory",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/tiberium_rig.map",
+        "name": "Super Tiberium Platform",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "positions": {
+          "0": [
+            106,
+            181
+          ],
+          "1": [
+            80,
+            155
+          ],
+          "2": [
+            80,
+            107
+          ],
+          "3": [
+            106,
+            81
+          ],
+          "4": [
+            154,
+            81
+          ],
+          "5": [
+            180,
+            107
+          ],
+          "6": [
+            180,
+            155
+          ],
+          "7": [
+            154,
+            181
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "ffa3801e6e9dd79394693bf5c680ebb286a18ba6173e8aa8e2caceb2bd85f1b1"
+      }
+    },
+    {
+      "id": 27,
+      "x": 983.1961732032117,
+      "y": 281.9265159304033,
+      "owner": "neutral",
+      "income": 170,
+      "buffs": {
+        "reload": 5,
+        "speed": 10,
+        "damage": 10
+      },
+      "perks": {},
+      "reward": "veterans",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/alpine_assault.map",
+        "name": "Alpine Assault",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "positions": {
+          "0": [
+            232,
+            71
+          ],
+          "1": [
+            187,
+            69
+          ],
+          "2": [
+            74,
+            184
+          ],
+          "3": [
+            77,
+            232
+          ],
+          "4": [
+            172,
+            320
+          ],
+          "5": [
+            213,
+            321
+          ],
+          "6": [
+            329,
+            213
+          ],
+          "7": [
+            323,
+            164
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "ef5b82db320cdb97e5a2b3f48589d7e906d90c00734a674d2b0fb15513b35a89"
+      }
+    },
+    {
+      "id": 28,
+      "x": 1118.0978856147483,
+      "y": 292.31495337542117,
+      "owner": "neutral",
+      "income": 215,
+      "buffs": {
+        "reload": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/hollow_grave.map",
+        "name": "Hollow Grave (2-4)",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            91,
+            40
+          ],
+          "1": [
+            45,
+            96
+          ],
+          "2": [
+            123,
+            98
+          ],
+          "3": [
+            70,
+            150
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "d31e0276633a2f703c76e3d8f600f8d963f2e159003f85a065e3fe7e9c2f236c"
       }
     },
     {
       "id": 29,
-      "x": 1233.8820551592323,
-      "y": 285.4672068268034,
+      "x": 1234.9732004995883,
+      "y": 293.60142953182077,
       "owner": "neutral",
-      "income": 180,
+      "income": 120,
       "buffs": {
-        "damage": 5,
-        "speed": 5
+        "armor": 10,
+        "speed": 5,
+        "damage": 5
+      },
+      "perks": {},
+      "reward": "vehicles",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/social_divide.map",
+        "name": "Social Divide (2-4)",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            22,
+            48
+          ],
+          "1": [
+            57,
+            88
+          ],
+          "2": [
+            51,
+            21
+          ],
+          "3": [
+            85,
+            62
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "326b0c8b0d608773c2c0ac74feddfe85210b6a02c3dc5ed87e804afa059d47f8"
+      }
+    },
+    {
+      "id": 30,
+      "x": 4.741641312280876,
+      "y": 418.8757783694078,
+      "owner": "neutral",
+      "income": 290,
+      "buffs": {
+        "damage": 10
       },
       "perks": {},
       "reward": null,
@@ -1528,238 +1620,32 @@
       }
     },
     {
-      "id": 30,
-      "x": 14.967391034704853,
-      "y": 429.9159267062966,
-      "owner": "neutral",
-      "income": 70,
-      "buffs": {
-        "reload": 5,
-        "health": 10,
-        "speed": 10
-      },
-      "perks": {},
-      "reward": "production",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/king_of_the_hills_extreme.map",
-        "name": "[8] King of the Hills Extreme",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7
-        ],
-        "positions": {
-          "0": [
-            77,
-            107
-          ],
-          "1": [
-            117,
-            73
-          ],
-          "2": [
-            91,
-            167
-          ],
-          "3": [
-            132,
-            137
-          ],
-          "4": [
-            165,
-            101
-          ],
-          "5": [
-            120,
-            214
-          ],
-          "6": [
-            174,
-            175
-          ],
-          "7": [
-            215,
-            127
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "ecad8434ef32ba4c1b052e3b93890e1d081306d4c2159f1794b8452ebce4c39c"
-      }
-    },
-    {
       "id": 31,
-      "x": 113.61892480136393,
-      "y": 405.69168467484224,
-      "owner": "neutral",
-      "income": 290,
-      "buffs": {
-        "health": 5
-      },
-      "perks": {},
-      "reward": "refinery",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/pit_frozen_over.map",
-        "name": "[8] Pit Frozen Over",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7
-        ],
-        "positions": {
-          "0": [
-            42,
-            82
-          ],
-          "1": [
-            88,
-            37
-          ],
-          "2": [
-            140,
-            75
-          ],
-          "3": [
-            142,
-            114
-          ],
-          "4": [
-            112,
-            145
-          ],
-          "5": [
-            85,
-            148
-          ],
-          "6": [
-            52,
-            115
-          ],
-          "7": [
-            116,
-            82
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "0982a453b4088a31f74eef572a67bd10244f2f526ba9c8abfa14c7fc4a5c7dab"
-      }
-    },
-    {
-      "id": 32,
-      "x": 257.3893686078987,
-      "y": 420.7238447557291,
-      "owner": "neutral",
-      "income": 265,
-      "buffs": {
-        "speed": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/naval_diplomacy.map",
-        "name": "[8] Naval Diplomacy",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7
-        ],
-        "positions": {
-          "0": [
-            175,
-            179
-          ],
-          "1": [
-            198,
-            159
-          ],
-          "2": [
-            198,
-            137
-          ],
-          "3": [
-            180,
-            121
-          ],
-          "4": [
-            125,
-            119
-          ],
-          "5": [
-            102,
-            139
-          ],
-          "6": [
-            102,
-            161
-          ],
-          "7": [
-            120,
-            177
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "42678ca13db09f7b754cd70a1902d2ae60f2bdba14b0d65915570b7e9e7dd843"
-      }
-    },
-    {
-      "id": 33,
-      "x": 393.9856988751263,
-      "y": 408.8473676433816,
+      "x": 136.4032075115661,
+      "y": 440.71922466360286,
       "owner": "neutral",
       "income": 240,
       "buffs": {
-        "armor": 10
+        "speed": 10
       },
       "perks": {},
-      "reward": null,
+      "reward": "power",
       "claimed": [],
       "map": {
-        "path": "Maps/Default/beach_landing.map",
-        "name": "Beach Landing (2)",
+        "path": "Maps/Default/unforgiving_islands.map",
+        "name": "Unforgiving Islands",
         "starts": [
           0,
           1
         ],
         "positions": {
           "0": [
-            72,
-            76
+            111,
+            43
           ],
           "1": [
-            37,
-            42
+            35,
+            103
           ]
         },
         "countries": [
@@ -1768,58 +1654,37 @@
           "Allies",
           "Soviet"
         ],
-        "sha256": "3c2a133145d8dda040144357b8091cc50516110a93ffaf558810881707503780"
+        "sha256": "bdc811b881f95a7b77d0ff8f60be3f9ea0ccfc1f77bc0da1c0e58c82464a66c7"
       }
     },
     {
-      "id": 34,
-      "x": 542.7420080625069,
-      "y": 425.7807518573791,
+      "id": 32,
+      "x": 279.06513132101344,
+      "y": 425.5662579012963,
       "owner": "neutral",
-      "income": 170,
+      "income": 130,
       "buffs": {
-        "health": 10,
-        "damage": 5,
+        "speed": 10,
         "reload": 5
       },
       "perks": {},
       "reward": null,
       "claimed": [],
       "map": {
-        "path": "Maps/Default/subterranean_jewelry.map",
-        "name": "[6] Subterranean Jewellery",
+        "path": "Maps/Default/coastal_battle.map",
+        "name": "Coastal Battle [2]",
         "starts": [
           0,
-          1,
-          2,
-          3,
-          4,
-          5
+          1
         ],
         "positions": {
           "0": [
-            150,
-            81
+            51,
+            129
           ],
           "1": [
-            105,
-            81
-          ],
-          "2": [
-            59,
-            128
-          ],
-          "3": [
-            105,
-            173
-          ],
-          "4": [
-            150,
-            173
-          ],
-          "5": [
-            196,
-            128
+            136,
+            48
           ]
         },
         "countries": [
@@ -1828,21 +1693,22 @@
           "Allies",
           "Soviet"
         ],
-        "sha256": "e33c27dd215c7695d9392b674bb6c7b1b81f2f4ecc3af0988c4fa67436156709"
+        "sha256": "00aee064d882d751fe807dec737032457fbabe0ad968f182c57c474ef5da588c"
       }
     },
     {
-      "id": 35,
-      "x": 683.7417196260192,
-      "y": 426.5117378212368,
+      "id": 33,
+      "x": 431.4355683486623,
+      "y": 394.22487058418926,
       "owner": "neutral",
-      "income": 180,
+      "income": 120,
       "buffs": {
-        "reload": 10,
-        "damage": 5
+        "speed": 10,
+        "health": 5,
+        "armor": 5
       },
       "perks": {},
-      "reward": "vehicles",
+      "reward": null,
       "claimed": [],
       "map": {
         "path": "Maps/Default/small_town_usa.map",
@@ -1871,13 +1737,113 @@
       }
     },
     {
-      "id": 36,
-      "x": 849.707620167207,
-      "y": 446.76395579733713,
+      "id": 34,
+      "x": 544.8658728556137,
+      "y": 437.43417815617113,
       "owner": "neutral",
-      "income": 265,
+      "income": 215,
       "buffs": {
         "health": 5
+      },
+      "perks": {},
+      "reward": "production",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/tower_of_power.map",
+        "name": "Tower of Power",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            68,
+            103
+          ],
+          "1": [
+            104,
+            70
+          ],
+          "2": [
+            67,
+            30
+          ],
+          "3": [
+            29,
+            67
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "f38c952e23472259c9b708543c67a84c0c0e0d7fde0c35c79e9bc01787e7d3c0"
+      }
+    },
+    {
+      "id": 35,
+      "x": 673.3001273242128,
+      "y": 395.08461837881094,
+      "owner": "neutral",
+      "income": 95,
+      "buffs": {
+        "damage": 5,
+        "health": 10,
+        "reload": 5
+      },
+      "perks": {},
+      "reward": "vehicles",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/back_county.map",
+        "name": "Back County",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            41,
+            86
+          ],
+          "1": [
+            78,
+            123
+          ],
+          "2": [
+            85,
+            45
+          ],
+          "3": [
+            121,
+            79
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "fff1d30da78b0ee901b92160bcb96ad7916e2ce3faa67ddfcb66a2b2ea3f7429"
+      }
+    },
+    {
+      "id": 36,
+      "x": 851.2730869421973,
+      "y": 403.8965855312107,
+      "owner": "neutral",
+      "income": 170,
+      "buffs": {
+        "damage": 5,
+        "reload": 5,
+        "armor": 10
       },
       "perks": {},
       "reward": null,
@@ -1940,33 +1906,61 @@
     },
     {
       "id": 37,
-      "x": 964.1320669120554,
-      "y": 407.7495934671352,
+      "x": 976.6678804441258,
+      "y": 418.87780966268616,
       "owner": "neutral",
-      "income": 240,
+      "income": 215,
       "buffs": {
-        "health": 5
+        "damage": 10
       },
-      "perks": {
-        "garrison": 1
-      },
-      "reward": null,
+      "perks": {},
+      "reward": "rapid_rearm",
       "claimed": [],
       "map": {
-        "path": "Maps/Default/forest_of_fear.map",
-        "name": "Forest of Fear",
+        "path": "Maps/Default/subterranean_bluewery.map",
+        "name": "[8] Subterranean Bluewery",
         "starts": [
           0,
-          1
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
         ],
         "positions": {
           "0": [
-            34,
-            67
+            174,
+            82
           ],
           "1": [
-            104,
-            74
+            129,
+            82
+          ],
+          "2": [
+            83,
+            129
+          ],
+          "3": [
+            83,
+            174
+          ],
+          "4": [
+            129,
+            221
+          ],
+          "5": [
+            174,
+            221
+          ],
+          "6": [
+            220,
+            174
+          ],
+          "7": [
+            220,
+            129
           ]
         },
         "countries": [
@@ -1975,120 +1969,22 @@
           "Allies",
           "Soviet"
         ],
-        "sha256": "1f9f9be9f6c35a1fb09f6de16c44708d8bad6f020600f9cd47f316301579e1db"
+        "sha256": "f93b8aa9de941e24f4a30076cf630f0599a31503465c61025f64248c4df1f388"
       }
     },
     {
       "id": 38,
-      "x": 1129.822252336059,
-      "y": 421.36615326120807,
-      "owner": "neutral",
-      "income": 155,
-      "buffs": {
-        "damage": 10,
-        "health": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/razor_blade.map",
-        "name": "Razor Blade (Naval)",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            60,
-            124
-          ],
-          "1": [
-            187,
-            119
-          ],
-          "2": [
-            122,
-            186
-          ],
-          "3": [
-            122,
-            61
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "fcdc69f04a1c7d48ac6e97bd01c4a6280b1e6a77f500485a867a17af308ff8ba"
-      }
-    },
-    {
-      "id": 39,
-      "x": 1248.5700031329636,
-      "y": 414.55615355044023,
-      "owner": "neutral",
-      "income": 180,
-      "buffs": {
-        "health": 5,
-        "reload": 10
-      },
-      "perks": {},
-      "reward": "production",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/duel_at_dawn.map",
-        "name": "Duel At Dawn",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            121,
-            70
-          ],
-          "1": [
-            42,
-            95
-          ],
-          "2": [
-            74,
-            37
-          ],
-          "3": [
-            82,
-            133
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "8a0ad4ef5e2641220d601ffcb9350004f8841680076cc044ec7f9369d1480702"
-      }
-    },
-    {
-      "id": 40,
-      "x": 27.202993800618877,
-      "y": 588.5914608653408,
+      "x": 1147.3923444064123,
+      "y": 405.34419633207506,
       "owner": "neutral",
       "income": 120,
       "buffs": {
-        "armor": 5,
-        "speed": 10,
-        "reload": 5
+        "damage": 10,
+        "reload": 10,
+        "speed": 5
       },
       "perks": {},
-      "reward": null,
+      "reward": "discount",
       "claimed": [],
       "map": {
         "path": "Maps/Default/sand_serpent.map",
@@ -2117,20 +2013,69 @@
       }
     },
     {
-      "id": 41,
-      "x": 158.36047227013904,
-      "y": 583.9826965663596,
+      "id": 39,
+      "x": 1239.782567095194,
+      "y": 437.61119592883773,
       "owner": "neutral",
-      "income": 190,
+      "income": 240,
       "buffs": {
+        "damage": 5
+      },
+      "perks": {},
+      "reward": "recruitment",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/desert_storm.map",
+        "name": "Desert Storm",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            61,
+            97
+          ],
+          "1": [
+            31,
+            62
+          ],
+          "2": [
+            64,
+            30
+          ],
+          "3": [
+            93,
+            65
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "f6b9cdacf1d7f6e53ba2657a247e34b79fcc3e55e9741f7feb972d6e178a4aad"
+      }
+    },
+    {
+      "id": 40,
+      "x": 25.03207725245816,
+      "y": 586.8090587503846,
+      "owner": "neutral",
+      "income": 155,
+      "buffs": {
+        "health": 10,
         "speed": 10
       },
       "perks": {},
-      "reward": "refinery",
+      "reward": null,
       "claimed": [],
       "map": {
-        "path": "Maps/Default/dark_prospects.map",
-        "name": "Dark Prospects",
+        "path": "Maps/Default/toxic_passage.map",
+        "name": "Toxic Passage",
         "starts": [
           0,
           1,
@@ -2139,177 +2084,20 @@
         ],
         "positions": {
           "0": [
-            99,
-            181
+            36,
+            106
           ],
           "1": [
-            17,
-            101
+            100,
+            42
           ],
           "2": [
-            101,
-            18
-          ],
-          "3": [
-            182,
-            98
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "e8f30e940fcf2dd036bdfa6b0510b98c12db8c3143f2abc3dbc9b6025558d2aa"
-      }
-    },
-    {
-      "id": 42,
-      "x": 252.19064185504544,
-      "y": 582.6574134600825,
-      "owner": "neutral",
-      "income": 215,
-      "buffs": {
-        "armor": 5
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/naval_rampage.map",
-        "name": "Naval Rampage",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            54,
-            152
-          ],
-          "1": [
-            141,
-            245
-          ],
-          "2": [
-            249,
-            144
-          ],
-          "3": [
-            160,
-            51
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "00fe7955c3ae67a2a3147ee439831939750bae587f5f14b5e8334e268a899524"
-      }
-    },
-    {
-      "id": 43,
-      "x": 394.16884673042523,
-      "y": 578.7644784850792,
-      "owner": "neutral",
-      "income": 180,
-      "buffs": {
-        "speed": 10,
-        "damage": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/rocky_ridge.map",
-        "name": "Rocky Ridge",
-        "starts": [
-          0,
-          1
-        ],
-        "positions": {
-          "0": [
-            119,
-            64
-          ],
-          "1": [
-            30,
-            75
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "d673800fe55f690f5d447d95784c002f573b26af441c7bb14514d05142a1703d"
-      }
-    },
-    {
-      "id": 44,
-      "x": 576.5204247648605,
-      "y": 556.3201743819963,
-      "owner": "neutral",
-      "income": 145,
-      "buffs": {
-        "damage": 10,
-        "health": 10,
-        "armor": 10
-      },
-      "perks": {},
-      "reward": "discount",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/grid_gardens.map",
-        "name": "[8] Grid Gardens",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7
-        ],
-        "positions": {
-          "0": [
-            112,
+            96,
             165
           ],
-          "1": [
-            142,
-            138
-          ],
-          "2": [
-            169,
+          "3": [
+            157,
             108
-          ],
-          "3": [
-            197,
-            138
-          ],
-          "4": [
-            227,
-            165
-          ],
-          "5": [
-            197,
-            193
-          ],
-          "6": [
-            169,
-            223
-          ],
-          "7": [
-            142,
-            193
           ]
         },
         "countries": [
@@ -2318,146 +2106,18 @@
           "Allies",
           "Soviet"
         ],
-        "sha256": "9406cb33c660e087cbf9d823758531327bf3d8f7f2d0ed782018921943f4573b"
+        "sha256": "78192788c2c9cd37b0f336a3c5fd55f6ca82fea3b964dd2833889dfde4c47275"
       }
     },
     {
-      "id": 45,
-      "x": 684.7360827144419,
-      "y": 558.472877949004,
+      "id": 41,
+      "x": 113.26142581388889,
+      "y": 565.2375894764608,
       "owner": "neutral",
-      "income": 170,
+      "income": 205,
       "buffs": {
-        "damage": 10,
-        "armor": 5,
-        "reload": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/alpine_assault.map",
-        "name": "Alpine Assault",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7
-        ],
-        "positions": {
-          "0": [
-            232,
-            71
-          ],
-          "1": [
-            187,
-            69
-          ],
-          "2": [
-            74,
-            184
-          ],
-          "3": [
-            77,
-            232
-          ],
-          "4": [
-            172,
-            320
-          ],
-          "5": [
-            213,
-            321
-          ],
-          "6": [
-            329,
-            213
-          ],
-          "7": [
-            323,
-            164
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "ef5b82db320cdb97e5a2b3f48589d7e906d90c00734a674d2b0fb15513b35a89"
-      }
-    },
-    {
-      "id": 46,
-      "x": 864.9831045230478,
-      "y": 574.5220455017915,
-      "owner": "neutral",
-      "income": 130,
-      "buffs": {
-        "health": 10,
-        "reload": 5
-      },
-      "perks": {},
-      "reward": "allies",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/diamond_valley.map",
-        "name": "[6] Diamond Valley",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5
-        ],
-        "positions": {
-          "0": [
-            92,
-            100
-          ],
-          "1": [
-            94,
-            160
-          ],
-          "2": [
-            106,
-            217
-          ],
-          "3": [
-            154,
-            190
-          ],
-          "4": [
-            150,
-            130
-          ],
-          "5": [
-            147,
-            75
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "d6278435fb2dce8435873af7ce1c54aaae1b69a3c5fa694f9f3a568e26078704"
-      }
-    },
-    {
-      "id": 47,
-      "x": 1005.1212116521252,
-      "y": 585.3788808319573,
-      "owner": "neutral",
-      "income": 265,
-      "buffs": {
-        "speed": 5
+        "health": 5,
+        "damage": 5
       },
       "perks": {},
       "reward": null,
@@ -2519,20 +2179,70 @@
       }
     },
     {
-      "id": 48,
-      "x": 1103.0168667405005,
-      "y": 588.245104979711,
+      "id": 42,
+      "x": 277.2800152224342,
+      "y": 588.6246254036957,
+      "owner": "neutral",
+      "income": 170,
+      "buffs": {
+        "health": 5,
+        "reload": 10,
+        "damage": 5
+      },
+      "perks": {},
+      "reward": "discount",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/river_front.map",
+        "name": "River front",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            70,
+            120
+          ],
+          "1": [
+            22,
+            73
+          ],
+          "2": [
+            72,
+            24
+          ],
+          "3": [
+            121,
+            73
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "c85c2899b50f716645b501c312ebb28de0a8a32158bf434bea73fb7ed0235d66"
+      }
+    },
+    {
+      "id": 43,
+      "x": 432.2403483658291,
+      "y": 561.9221354282756,
       "owner": "neutral",
       "income": 190,
       "buffs": {
-        "damage": 5
+        "speed": 5
       },
       "perks": {},
       "reward": null,
       "claimed": [],
       "map": {
-        "path": "Maps/Default/over_and_under.map",
-        "name": "[6] Over and Under",
+        "path": "Maps/Default/tideland.map",
+        "name": "[2-6] Tideland (Naval)",
         "starts": [
           0,
           1,
@@ -2543,28 +2253,28 @@
         ],
         "positions": {
           "0": [
-            195,
-            91
+            110,
+            65
           ],
           "1": [
-            248,
-            169
+            160,
+            102
           ],
           "2": [
-            186,
-            169
+            181,
+            144
           ],
           "3": [
-            162,
-            195
+            123,
+            174
           ],
           "4": [
-            100,
-            194
+            47,
+            133
           ],
           "5": [
-            162,
-            264
+            84,
+            103
           ]
         },
         "countries": [
@@ -2573,24 +2283,26 @@
           "Allies",
           "Soviet"
         ],
-        "sha256": "141496d38da993837ccaf279f6337b7be70d9ef76a10da789dc7c6f7dadfd49f"
+        "sha256": "d6b6dbd4b46e7fc77bc6fd5c16b253352f5a2f57bf2fffbabdc31420f3aa5234"
       }
     },
     {
-      "id": 49,
-      "x": 1246.2963714619864,
-      "y": 548.4804902753042,
+      "id": 44,
+      "x": 563.4350099630739,
+      "y": 549.6126237308542,
       "owner": "neutral",
-      "income": 215,
+      "income": 170,
       "buffs": {
-        "damage": 5
+        "damage": 10,
+        "speed": 10,
+        "health": 10
       },
       "perks": {},
-      "reward": "barracks",
+      "reward": "extended_arsenal",
       "claimed": [],
       "map": {
-        "path": "Maps/Default/unrepentant.map",
-        "name": "[6] Unrepentant",
+        "path": "Maps/Default/underwater_passage.map",
+        "name": "Underwater Passage",
         "starts": [
           0,
           1,
@@ -2601,28 +2313,78 @@
         ],
         "positions": {
           "0": [
-            31,
-            104
+            160,
+            83
           ],
           "1": [
-            76,
+            147,
+            99
+          ],
+          "2": [
+            94,
+            161
+          ],
+          "3": [
+            49,
+            135
+          ],
+          "4": [
+            38,
+            102
+          ],
+          "5": [
+            104,
+            44
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "a073084a9dd3f98f184d541cb0f9b674eeea53c9fdd31e7e5b853294397e080b"
+      }
+    },
+    {
+      "id": 45,
+      "x": 715.7423511602325,
+      "y": 551.5862158294694,
+      "owner": "neutral",
+      "income": 170,
+      "buffs": {
+        "health": 5,
+        "speed": 10,
+        "damage": 5
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/subterranean_greenery.map",
+        "name": "[4] Subterranean Greenery",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            79,
+            78
+          ],
+          "1": [
+            79,
+            149
+          ],
+          "2": [
+            146,
             148
           ],
-          "2": [
-            50,
-            78
-          ],
           "3": [
-            151,
+            146,
             78
-          ],
-          "4": [
-            98,
-            34
-          ],
-          "5": [
-            125,
-            109
           ]
         },
         "countries": [
@@ -2631,114 +2393,20 @@
           "Allies",
           "Soviet"
         ],
-        "sha256": "442e47454987d43503ec2517349f4ac7f7f8e022947738bd69fcd7abade9d9d6"
+        "sha256": "82b4df8da495fe130478d8eaa7c22cef6ff212bcc038e1c1b15bdda395bb2fae"
       }
     },
     {
-      "id": 50,
-      "x": 25.98723356326707,
-      "y": 723.5568396135906,
+      "id": 46,
+      "x": 812.7949437166109,
+      "y": 564.7851015110591,
       "owner": "neutral",
-      "income": 70,
+      "income": 290,
       "buffs": {
-        "health": 10,
-        "damage": 5,
-        "speed": 5
+        "damage": 10
       },
       "perks": {},
       "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/mining_isthmus.map",
-        "name": "[2] Mining Isthmus",
-        "starts": [
-          0,
-          1
-        ],
-        "positions": {
-          "0": [
-            66,
-            110
-          ],
-          "1": [
-            132,
-            90
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "cc64b388165c12c2fba22cbc4f5d0ee4cb7ce656876840c747466e2d28af871a"
-      }
-    },
-    {
-      "id": 51,
-      "x": 124.5539858812373,
-      "y": 681.8828843642605,
-      "owner": "neutral",
-      "income": 215,
-      "buffs": {
-        "speed": 5
-      },
-      "perks": {},
-      "reward": "income",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/icy_ridge.map",
-        "name": "[5] Icy Ridge",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ],
-        "positions": {
-          "0": [
-            120,
-            115
-          ],
-          "1": [
-            98,
-            66
-          ],
-          "2": [
-            177,
-            127
-          ],
-          "3": [
-            101,
-            173
-          ],
-          "4": [
-            76,
-            91
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "e128598a1ec7c4ae0200e5e94e57689cfd987f9643b5d966beafa62e62ce170b"
-      }
-    },
-    {
-      "id": 52,
-      "x": 250.3664456786993,
-      "y": 726.7220074750443,
-      "owner": "neutral",
-      "income": 130,
-      "buffs": {
-        "health": 10,
-        "speed": 10
-      },
-      "perks": {},
-      "reward": "power",
       "claimed": [],
       "map": {
         "path": "Maps/Default/cliffs_of_lunacy.map",
@@ -2792,53 +2460,43 @@
       }
     },
     {
-      "id": 53,
-      "x": 402.7857455436125,
-      "y": 711.919030843858,
+      "id": 47,
+      "x": 977.5085871058818,
+      "y": 533.5284447805849,
       "owner": "neutral",
       "income": 230,
       "buffs": {
         "health": 5,
-        "reload": 5
+        "armor": 10
       },
       "perks": {},
-      "reward": null,
+      "reward": "veterans",
       "claimed": [],
       "map": {
-        "path": "Maps/Default/canyon_chase_2.map",
-        "name": "Canyon Chase 2 (2-6)",
+        "path": "Maps/Default/dust_devils.map",
+        "name": "Dust Devils",
         "starts": [
           0,
           1,
           2,
-          3,
-          4,
-          5
+          3
         ],
         "positions": {
           "0": [
-            30,
-            91
+            25,
+            90
           ],
           "1": [
-            46,
-            55
+            75,
+            82
           ],
           "2": [
-            78,
-            23
+            103,
+            40
           ],
           "3": [
-            85,
-            118
-          ],
-          "4": [
-            84,
-            89
-          ],
-          "5": [
-            116,
-            69
+            46,
+            48
           ]
         },
         "countries": [
@@ -2847,26 +2505,216 @@
           "Allies",
           "Soviet"
         ],
-        "sha256": "8a71ee88a69b9ffb9f4fc9afc67fe789d37e7b8c09ed77e1c4da6baac193e929"
+        "sha256": "5a0faa8a09c8397ab3ea20c6b33c248baf8179d388f94b371fef278d3b2aa9e1"
       }
     },
     {
-      "id": 54,
-      "x": 547.6934359304215,
-      "y": 695.4108842738843,
+      "id": 48,
+      "x": 1143.371520354523,
+      "y": 532.9426298208857,
       "owner": "neutral",
-      "income": 120,
+      "income": 145,
       "buffs": {
-        "speed": 5,
         "damage": 5,
-        "health": 5
+        "speed": 5,
+        "reload": 10
       },
       "perks": {},
       "reward": null,
       "claimed": [],
       "map": {
-        "path": "Maps/Default/all_that_glitters.map",
-        "name": "All That Glitters",
+        "path": "Maps/Default/desert_city.map",
+        "name": "Desert City [2]",
+        "starts": [
+          0,
+          1
+        ],
+        "positions": {
+          "0": [
+            124,
+            37
+          ],
+          "1": [
+            42,
+            128
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "40c8ac61fa0c4a399d2c2913e7d41dc48cf94b0011e008cacc967fe9e5c67c73"
+      }
+    },
+    {
+      "id": 49,
+      "x": 1258.7954758060039,
+      "y": 557.9324164947699,
+      "owner": "neutral",
+      "income": 215,
+      "buffs": {
+        "health": 10
+      },
+      "perks": {},
+      "reward": "battle_treasury",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/rust_in_the_dust.map",
+        "name": "Rust in the dust",
+        "starts": [
+          0,
+          1,
+          2
+        ],
+        "positions": {
+          "0": [
+            39,
+            66
+          ],
+          "1": [
+            93,
+            119
+          ],
+          "2": [
+            104,
+            46
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "4cbb53633a27a9eee1195f18043c0a2112aad3ee343973eb310539db6d9b52be"
+      }
+    },
+    {
+      "id": 50,
+      "x": 0.14119532820429725,
+      "y": 685.321183643104,
+      "owner": "neutral",
+      "income": 95,
+      "buffs": {
+        "armor": 5,
+        "health": 5,
+        "speed": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/lakefront_clash.map",
+        "name": "Lakefront Clash",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "positions": {
+          "0": [
+            52,
+            86
+          ],
+          "1": [
+            74,
+            104
+          ],
+          "2": [
+            104,
+            75
+          ],
+          "3": [
+            83,
+            50
+          ],
+          "4": [
+            46,
+            19
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "661a6dbf6cfe495f416b10c4b3d362c2727e2ae3256be712268177db495a1690"
+      }
+    },
+    {
+      "id": 51,
+      "x": 155.32143307176008,
+      "y": 692.2098315616893,
+      "owner": "neutral",
+      "income": 120,
+      "buffs": {
+        "armor": 5,
+        "reload": 10,
+        "health": 5
+      },
+      "perks": {
+        "garrison": 1
+      },
+      "reward": "power",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/razor_blade.map",
+        "name": "Razor Blade (Naval)",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            60,
+            124
+          ],
+          "1": [
+            187,
+            119
+          ],
+          "2": [
+            122,
+            186
+          ],
+          "3": [
+            122,
+            61
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "fcdc69f04a1c7d48ac6e97bd01c4a6280b1e6a77f500485a867a17af308ff8ba"
+      }
+    },
+    {
+      "id": 52,
+      "x": 309.231246536773,
+      "y": 676.0881136196891,
+      "owner": "neutral",
+      "income": 95,
+      "buffs": {
+        "armor": 5,
+        "reload": 5,
+        "damage": 5
+      },
+      "perks": {},
+      "reward": "rapid_rearm",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/spring_path.map",
+        "name": "[8] Spring Path",
         "starts": [
           0,
           1,
@@ -2879,36 +2727,36 @@
         ],
         "positions": {
           "0": [
-            174,
-            107
+            181,
+            160
           ],
           "1": [
-            186,
-            187
+            221,
+            134
           ],
           "2": [
-            161,
-            256
+            197,
+            95
           ],
           "3": [
-            255,
-            167
+            146,
+            74
           ],
           "4": [
-            97,
-            96
+            108,
+            90
           ],
           "5": [
-            112,
-            175
+            56,
+            109
           ],
           "6": [
-            30,
-            123
+            60,
+            151
           ],
           "7": [
-            123,
-            30
+            99,
+            149
           ]
         },
         "countries": [
@@ -2917,46 +2765,36 @@
           "Allies",
           "Soviet"
         ],
-        "sha256": "9ca76238079d706e0390ef4e2db980f83a3d30369cbc055e7e5be016da4e139b"
+        "sha256": "2dcb0cc5f7d5be0a115642e1f1c799483f276e07affc9e50cb9bf9204f97f81f"
       }
     },
     {
-      "id": 55,
-      "x": 715.9954244068163,
-      "y": 718.983804701156,
+      "id": 53,
+      "x": 433.6181456370489,
+      "y": 727.4806809958698,
       "owner": "neutral",
-      "income": 190,
+      "income": 240,
       "buffs": {
-        "speed": 10
+        "armor": 10
       },
       "perks": {},
       "reward": null,
       "claimed": [],
       "map": {
-        "path": "Maps/Default/gold_rush.map",
-        "name": "Tournament Gold Rush",
+        "path": "Maps/Default/red_valley.map",
+        "name": "Red Valley (2)",
         "starts": [
           0,
-          1,
-          2,
-          3
+          1
         ],
         "positions": {
           "0": [
-            38,
-            98
+            91,
+            29
           ],
           "1": [
-            81,
-            139
-          ],
-          "2": [
-            94,
-            33
-          ],
-          "3": [
-            138,
-            79
+            107,
+            178
           ]
         },
         "countries": [
@@ -2965,24 +2803,25 @@
           "Allies",
           "Soviet"
         ],
-        "sha256": "9a33261bf5153935622644c62278ce07ed4ebbe4cf2a38d08b741f1ef902814b"
+        "sha256": "809d0a012482615a3d7d43b53e62b4fa6a3663cdcd8f01e565e04abcb0ee657d"
       }
     },
     {
-      "id": 56,
-      "x": 837.4446229623649,
-      "y": 673.5611100065242,
+      "id": 54,
+      "x": 560.4180084646887,
+      "y": 718.5260820650583,
       "owner": "neutral",
-      "income": 265,
+      "income": 155,
       "buffs": {
-        "health": 10
+        "health": 10,
+        "speed": 5
       },
       "perks": {},
-      "reward": "recruitment",
+      "reward": "production",
       "claimed": [],
       "map": {
-        "path": "Maps/Default/underwater_passage.map",
-        "name": "Underwater Passage",
+        "path": "Maps/Default/counterpoise.map",
+        "name": "[6] Counterpoise",
         "starts": [
           0,
           1,
@@ -2993,28 +2832,28 @@
         ],
         "positions": {
           "0": [
-            160,
-            83
+            37,
+            95
           ],
           "1": [
-            147,
-            99
+            102,
+            120
           ],
           "2": [
-            94,
-            161
+            111,
+            77
           ],
           "3": [
-            49,
-            135
+            95,
+            41
           ],
           "4": [
-            38,
-            102
+            87,
+            166
           ],
           "5": [
-            104,
-            44
+            158,
+            97
           ]
         },
         "countries": [
@@ -3023,17 +2862,1994 @@
           "Allies",
           "Soviet"
         ],
-        "sha256": "a073084a9dd3f98f184d541cb0f9b674eeea53c9fdd31e7e5b853294397e080b"
+        "sha256": "a39eb12cce80495f8f8c6fe9a1ac24bb6685bddd29f799ab2f7c45be340c8c44"
+      }
+    },
+    {
+      "id": 55,
+      "x": 717.8550950232856,
+      "y": 722.7381306439105,
+      "owner": "neutral",
+      "income": 145,
+      "buffs": {
+        "damage": 10,
+        "speed": 10,
+        "reload": 10
+      },
+      "perks": {},
+      "reward": "power",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/badlands.map",
+        "name": "Badlands",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            138,
+            84
+          ],
+          "1": [
+            28,
+            85
+          ],
+          "2": [
+            76,
+            22
+          ],
+          "3": [
+            78,
+            134
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "59931cf112ffc3e1e5101839015434ad750a3bf79f7485026a356c9c7d071c4f"
+      }
+    },
+    {
+      "id": 56,
+      "x": 858.2945137805045,
+      "y": 698.1352428248084,
+      "owner": "neutral",
+      "income": 70,
+      "buffs": {
+        "reload": 5,
+        "health": 5,
+        "damage": 10
+      },
+      "perks": {},
+      "reward": "hazard_training",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/radial_range.map",
+        "name": "Radial Range (2-8)",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "positions": {
+          "0": [
+            37,
+            149
+          ],
+          "1": [
+            113,
+            227
+          ],
+          "2": [
+            225,
+            111
+          ],
+          "3": [
+            148,
+            33
+          ],
+          "4": [
+            94,
+            95
+          ],
+          "5": [
+            162,
+            166
+          ],
+          "6": [
+            99,
+            160
+          ],
+          "7": [
+            157,
+            99
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "af6c0b474acbbf075d9d3d777410a987edfe1e61eefb45b52c2d463ecd33bb7e"
       }
     },
     {
       "id": 57,
-      "x": 1008.3044297230239,
-      "y": 674.4353658501753,
+      "x": 1005.5929271053524,
+      "y": 706.0776670794817,
+      "owner": "neutral",
+      "income": 155,
+      "buffs": {
+        "health": 10,
+        "speed": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/diamond_valley.map",
+        "name": "[6] Diamond Valley",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "positions": {
+          "0": [
+            92,
+            100
+          ],
+          "1": [
+            94,
+            160
+          ],
+          "2": [
+            106,
+            217
+          ],
+          "3": [
+            154,
+            190
+          ],
+          "4": [
+            150,
+            130
+          ],
+          "5": [
+            147,
+            75
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "d6278435fb2dce8435873af7ce1c54aaae1b69a3c5fa694f9f3a568e26078704"
+      }
+    },
+    {
+      "id": 58,
+      "x": 1090.2752220587392,
+      "y": 689.0199801115184,
+      "owner": "neutral",
+      "income": 70,
+      "buffs": {
+        "damage": 5,
+        "armor": 5,
+        "reload": 5
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/beach_landing.map",
+        "name": "Beach Landing (2)",
+        "starts": [
+          0,
+          1
+        ],
+        "positions": {
+          "0": [
+            72,
+            76
+          ],
+          "1": [
+            37,
+            42
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "3c2a133145d8dda040144357b8091cc50516110a93ffaf558810881707503780"
+      }
+    },
+    {
+      "id": 59,
+      "x": 1230.3112217211412,
+      "y": 680.1857146767528,
+      "owner": "neutral",
+      "income": 240,
+      "buffs": {
+        "speed": 10
+      },
+      "perks": {},
+      "reward": "allies",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/savanna_ridge.map",
+        "name": "Savanna Ridge (2)",
+        "starts": [
+          0,
+          1
+        ],
+        "positions": {
+          "0": [
+            120,
+            134
+          ],
+          "1": [
+            51,
+            40
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "cbef8714f324d976e3e79b6e0941b12773140352da102a4363fc28a0192cf3d2"
+      }
+    },
+    {
+      "id": 60,
+      "x": 17.242966739652132,
+      "y": 832.6242823801647,
+      "owner": "neutral",
+      "income": 265,
+      "buffs": {
+        "damage": 10
+      },
+      "perks": {},
+      "reward": "extended_arsenal",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/tiberian_blitz.map",
+        "name": "Tiberian Blitz",
+        "starts": [
+          0,
+          1
+        ],
+        "positions": {
+          "0": [
+            26,
+            56
+          ],
+          "1": [
+            78,
+            56
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "f31cfc190519a9b5aaf3622e61c4aecc611f2ddb25455e59b6ad74bd40843a49"
+      }
+    },
+    {
+      "id": 61,
+      "x": 149.65266533107086,
+      "y": 821.7526867740281,
+      "owner": "neutral",
+      "income": 230,
+      "buffs": {
+        "armor": 5,
+        "reload": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/parted_paradise.map",
+        "name": "Parted Paradise",
+        "starts": [
+          0,
+          1
+        ],
+        "positions": {
+          "0": [
+            141,
+            95
+          ],
+          "1": [
+            95,
+            139
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "3d99ed0652e33843681eb82ff8e24d293dafce5032ae0f52b4aa65c5d39d514c"
+      }
+    },
+    {
+      "id": 62,
+      "x": 298.14612600077976,
+      "y": 837.6705693748208,
+      "owner": "neutral",
+      "income": 155,
+      "buffs": {
+        "health": 5,
+        "speed": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/delirious_island.map",
+        "name": "Delirious Island",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "positions": {
+          "0": [
+            125,
+            60
+          ],
+          "1": [
+            174,
+            100
+          ],
+          "2": [
+            213,
+            156
+          ],
+          "3": [
+            185,
+            186
+          ],
+          "4": [
+            154,
+            218
+          ],
+          "5": [
+            114,
+            168
+          ],
+          "6": [
+            70,
+            137
+          ],
+          "7": [
+            106,
+            105
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "fb4d697173a84aa00869ddbce8a0a8a77eb162637657b8e3d4080b66fc9e68b4"
+      }
+    },
+    {
+      "id": 63,
+      "x": 414.6914562071819,
+      "y": 829.5596980371865,
+      "owner": "neutral",
+      "income": 240,
+      "buffs": {
+        "damage": 5
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/ore_rig.map",
+        "name": "[8] Ore Rig",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "positions": {
+          "0": [
+            81,
+            81
+          ],
+          "1": [
+            155,
+            81
+          ],
+          "2": [
+            155,
+            155
+          ],
+          "3": [
+            81,
+            155
+          ],
+          "4": [
+            118,
+            89
+          ],
+          "5": [
+            147,
+            118
+          ],
+          "6": [
+            118,
+            147
+          ],
+          "7": [
+            90,
+            118
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "3725a068d347704904423535b0983e72256f577caff95df056594638dfa9889a"
+      }
+    },
+    {
+      "id": 64,
+      "x": 570.9232672294568,
+      "y": 861.3118430544052,
+      "owner": "neutral",
+      "income": 190,
+      "buffs": {
+        "damage": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/summer_skirmish.map",
+        "name": "S-River",
+        "starts": [
+          0,
+          1
+        ],
+        "positions": {
+          "0": [
+            118,
+            71
+          ],
+          "1": [
+            21,
+            67
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "a87740b7daf30fe528d16c1f9671df621dddeb411239def29f061e089b886e5a"
+      }
+    },
+    {
+      "id": 65,
+      "x": 728.176782579109,
+      "y": 866.3899915153521,
+      "owner": "neutral",
+      "income": 215,
+      "buffs": {
+        "reload": 5
+      },
+      "perks": {},
+      "reward": "production",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/split_peninsula.map",
+        "name": "[4] Split Peninsula",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            102,
+            40
+          ],
+          "1": [
+            128,
+            81
+          ],
+          "2": [
+            87,
+            124
+          ],
+          "3": [
+            56,
+            91
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "74f7733349200594c737c2ee629dcfe9d45d46fd5f950829f11d63b3fee46108"
+      }
+    },
+    {
+      "id": 66,
+      "x": 851.016061459602,
+      "y": 851.7080656095035,
+      "owner": "neutral",
+      "income": 190,
+      "buffs": {
+        "speed": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/black_forest.map",
+        "name": "Black Forest [2-4]",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            38,
+            111
+          ],
+          "1": [
+            175,
+            98
+          ],
+          "2": [
+            100,
+            174
+          ],
+          "3": [
+            106,
+            25
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "dc70673d6f3e0c09d8100303c74236e625b4c06dc9e7b95e374e5b967e0c8b58"
+      }
+    },
+    {
+      "id": 67,
+      "x": 966.5330026254339,
+      "y": 862.1950356440364,
+      "owner": "neutral",
+      "income": 240,
+      "buffs": {
+        "damage": 10
+      },
+      "perks": {
+        "garrison": 1
+      },
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/renegade_war.map",
+        "name": "Renegade War [2-6]",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "positions": {
+          "0": [
+            101,
+            28
+          ],
+          "1": [
+            134,
+            57
+          ],
+          "2": [
+            155,
+            99
+          ],
+          "3": [
+            107,
+            166
+          ],
+          "4": [
+            58,
+            142
+          ],
+          "5": [
+            37,
+            113
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "8da9dd0a47d0cefd8d6cef4d5a5b033b2d1da3f3a3fa628d4be864da3733848e"
+      }
+    },
+    {
+      "id": 68,
+      "x": 1107.3647762239862,
+      "y": 867.6571221977204,
+      "owner": "neutral",
+      "income": 240,
+      "buffs": {
+        "health": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/duel_at_dawn.map",
+        "name": "Duel At Dawn",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            121,
+            70
+          ],
+          "1": [
+            42,
+            95
+          ],
+          "2": [
+            74,
+            37
+          ],
+          "3": [
+            82,
+            133
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "8a0ad4ef5e2641220d601ffcb9350004f8841680076cc044ec7f9369d1480702"
+      }
+    },
+    {
+      "id": 69,
+      "x": 1240.0251260065445,
+      "y": 857.1281187276359,
+      "owner": "neutral",
+      "income": 240,
+      "buffs": {
+        "reload": 5
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/chaos_rivers.map",
+        "name": "Chaos Rivers (2-4)",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            25,
+            67
+          ],
+          "1": [
+            44,
+            37
+          ],
+          "2": [
+            70,
+            81
+          ],
+          "3": [
+            88,
+            52
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "4f4b0a7521b498088e877ef6fa46ad6cc8dc056955020acfd9a8a9bfe62b378d"
+      }
+    },
+    {
+      "id": 70,
+      "x": 6.424660041329645,
+      "y": 980.2306042232622,
+      "owner": "neutral",
+      "income": 190,
+      "buffs": {
+        "reload": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/rural_idyll.map",
+        "name": "[6] Rural Idyll",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "positions": {
+          "0": [
+            75,
+            153
+          ],
+          "1": [
+            38,
+            108
+          ],
+          "2": [
+            67,
+            73
+          ],
+          "3": [
+            107,
+            41
+          ],
+          "4": [
+            144,
+            74
+          ],
+          "5": [
+            144,
+            125
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "77ab918c3b9fd93f9f2b9f49ef83dc5c4fc61ad27a4d8e965fea5b035accf863"
+      }
+    },
+    {
+      "id": 71,
+      "x": 139.76374180441593,
+      "y": 986.4289604642365,
+      "owner": "neutral",
+      "income": 215,
+      "buffs": {
+        "damage": 10
+      },
+      "perks": {},
+      "reward": "battle_treasury",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/mountain_walk.map",
+        "name": "Mountain Walk",
+        "starts": [
+          0,
+          1
+        ],
+        "positions": {
+          "0": [
+            113,
+            61
+          ],
+          "1": [
+            35,
+            83
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "7c68543dd28eebc354fbcc7cedc74b79c373b6180fbcc3e836e0efdfc7c4464d"
+      }
+    },
+    {
+      "id": 72,
+      "x": 300.19856878069373,
+      "y": 997.9472991704506,
+      "owner": "neutral",
+      "income": 290,
+      "buffs": {
+        "damage": 10
+      },
+      "perks": {},
+      "reward": "battle_treasury",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/oil_war.map",
+        "name": "[6] Oil War",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "positions": {
+          "0": [
+            62,
+            141
+          ],
+          "1": [
+            124,
+            181
+          ],
+          "2": [
+            188,
+            173
+          ],
+          "3": [
+            198,
+            115
+          ],
+          "4": [
+            138,
+            82
+          ],
+          "5": [
+            76,
+            85
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "2cda91af5c6128963b5ba1fe44c4d5f0c9f36291f76ccbe56db4c72b66799a30"
+      }
+    },
+    {
+      "id": 73,
+      "x": 427.68934212895573,
+      "y": 955.4084641533192,
       "owner": "neutral",
       "income": 180,
       "buffs": {
+        "armor": 10,
+        "speed": 5
+      },
+      "perks": {},
+      "reward": "infantry",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/downtown_warfare.map",
+        "name": "Down town warfare",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            189,
+            120
+          ],
+          "1": [
+            189,
+            129
+          ],
+          "2": [
+            57,
+            117
+          ],
+          "3": [
+            57,
+            129
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "6e34f45369cc13f9374c6465e816f28c7f29a79a9b04d0177b5144e748cf4510"
+      }
+    },
+    {
+      "id": 74,
+      "x": 581.8986499636482,
+      "y": 1007.7861053043997,
+      "owner": "neutral",
+      "income": 190,
+      "buffs": {
+        "armor": 5
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/white_acres.map",
+        "name": "[8] White Acres",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "positions": {
+          "0": [
+            153,
+            96
+          ],
+          "1": [
+            132,
+            128
+          ],
+          "2": [
+            98,
+            152
+          ],
+          "3": [
+            63,
+            131
+          ],
+          "4": [
+            21,
+            85
+          ],
+          "5": [
+            48,
+            55
+          ],
+          "6": [
+            82,
+            20
+          ],
+          "7": [
+            110,
+            51
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "77cb176b1a3bc07372fd440308c1e6d4f478b6f0065f5667375ccbac02fca096"
+      }
+    },
+    {
+      "id": 75,
+      "x": 670.5867844260763,
+      "y": 968.173160030006,
+      "owner": "neutral",
+      "income": 170,
+      "buffs": {
+        "health": 10,
+        "reload": 10,
+        "speed": 5
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/forgotten_forests.map",
+        "name": "Forgotten Forests",
+        "starts": [
+          0,
+          1
+        ],
+        "positions": {
+          "0": [
+            43,
+            99
+          ],
+          "1": [
+            140,
+            79
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "37daf1325a9a8525f0b99d5ea3c298e47878275d8e7745c7a074be1d65c08073"
+      }
+    },
+    {
+      "id": 76,
+      "x": 820.195870368269,
+      "y": 965.5269199685788,
+      "owner": "neutral",
+      "income": 95,
+      "buffs": {
         "speed": 5,
+        "armor": 10,
+        "reload": 5
+      },
+      "perks": {},
+      "reward": "battle_treasury",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/castle_rock.map",
+        "name": "Castle Rock",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            148,
+            186
+          ],
+          "1": [
+            182,
+            149
+          ],
+          "2": [
+            76,
+            112
+          ],
+          "3": [
+            111,
+            79
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "948b15845404ff70aaeaedd10c4657136a528ba367da89fa7db315f7980485ff"
+      }
+    },
+    {
+      "id": 77,
+      "x": 958.7301377679404,
+      "y": 998.9982810005226,
+      "owner": "neutral",
+      "income": 215,
+      "buffs": {
+        "reload": 5
+      },
+      "perks": {
+        "garrison": 1
+      },
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/the_sandbar.map",
+        "name": "The Sandbar (2-4)",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            167,
+            69
+          ],
+          "1": [
+            101,
+            189
+          ],
+          "2": [
+            199,
+            100
+          ],
+          "3": [
+            73,
+            161
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "6b132d5e92fa219ab1a702c64607990fc4ba077ee90326afed039e1f51a494c0"
+      }
+    },
+    {
+      "id": 78,
+      "x": 1120.4576798383125,
+      "y": 981.0867097341259,
+      "owner": "neutral",
+      "income": 145,
+      "buffs": {
+        "damage": 10,
+        "health": 5,
+        "armor": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/dust_bowl.map",
+        "name": "Dustbowl",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            41,
+            66
+          ],
+          "1": [
+            66,
+            42
+          ],
+          "2": [
+            74,
+            97
+          ],
+          "3": [
+            99,
+            77
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "fe7e90d96f05772fff0a6662a3edf09fccefece716336a28d1fc6cf139ba61d5"
+      }
+    },
+    {
+      "id": 79,
+      "x": 1260.2609138072178,
+      "y": 1005.2365547052124,
+      "owner": "neutral",
+      "income": 130,
+      "buffs": {
+        "speed": 5,
+        "armor": 5
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/rocky_ridge.map",
+        "name": "Rocky Ridge",
+        "starts": [
+          0,
+          1
+        ],
+        "positions": {
+          "0": [
+            119,
+            64
+          ],
+          "1": [
+            30,
+            75
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "d673800fe55f690f5d447d95784c002f573b26af441c7bb14514d05142a1703d"
+      }
+    },
+    {
+      "id": 80,
+      "x": -29.599860779217416,
+      "y": 1137.3651416179514,
+      "owner": "neutral",
+      "income": 70,
+      "buffs": {
+        "armor": 5,
+        "health": 10,
+        "reload": 5
+      },
+      "perks": {},
+      "reward": "hardened_infrastructure",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/tour_of_egypt.map",
+        "name": "Tour of Egypt",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "positions": {
+          "0": [
+            22,
+            72
+          ],
+          "1": [
+            41,
+            91
+          ],
+          "2": [
+            61,
+            111
+          ],
+          "3": [
+            72,
+            22
+          ],
+          "4": [
+            91,
+            41
+          ],
+          "5": [
+            111,
+            61
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "dad8943d9928797d527c0fa42d10ad469dbefe4061ce929d30bba1eb7e0f0333"
+      }
+    },
+    {
+      "id": 81,
+      "x": 162.32546657291243,
+      "y": 1144.2488030658687,
+      "owner": "neutral",
+      "income": 190,
+      "buffs": {
+        "health": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/island_tactics.map",
+        "name": "Island Tactics",
+        "starts": [
+          0,
+          1
+        ],
+        "positions": {
+          "0": [
+            107,
+            185
+          ],
+          "1": [
+            63,
+            124
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "220a74b6563a4a15810650e663708f64b15612ca97c0edd46a7f894eb4435f7f"
+      }
+    },
+    {
+      "id": 82,
+      "x": 277.2473593534016,
+      "y": 1140.7396821463003,
+      "owner": "neutral",
+      "income": 170,
+      "buffs": {
+        "armor": 5,
+        "speed": 5,
+        "health": 5
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/ore_conflict.map",
+        "name": "Ore Conflict",
+        "starts": [
+          0,
+          1
+        ],
+        "positions": {
+          "0": [
+            25,
+            84
+          ],
+          "1": [
+            135,
+            76
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "f6b8e49cad32eaab07aaece83e419caeb627b988d9118cb317c612886c0edf23"
+      }
+    },
+    {
+      "id": 83,
+      "x": 395.4864590262462,
+      "y": 1096.1113553479688,
+      "owner": "neutral",
+      "income": 70,
+      "buffs": {
+        "armor": 10,
+        "speed": 5,
+        "health": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/crossroads.map",
+        "name": "Road to Middle",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            50,
+            79
+          ],
+          "1": [
+            27,
+            53
+          ],
+          "2": [
+            52,
+            27
+          ],
+          "3": [
+            81,
+            54
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "2f5c51166a300453a0357b298c5530d7012d22994a31911475156b7a3ba319d6"
+      }
+    },
+    {
+      "id": 84,
+      "x": 557.5875548434467,
+      "y": 1094.3560242890574,
+      "owner": "neutral",
+      "income": 95,
+      "buffs": {
+        "damage": 10,
+        "armor": 5,
+        "health": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/mining_town.map",
+        "name": "Mining Town",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "positions": {
+          "0": [
+            93,
+            210
+          ],
+          "1": [
+            48,
+            165
+          ],
+          "2": [
+            172,
+            57
+          ],
+          "3": [
+            210,
+            95
+          ],
+          "4": [
+            170,
+            211
+          ],
+          "5": [
+            213,
+            169
+          ],
+          "6": [
+            56,
+            89
+          ],
+          "7": [
+            97,
+            49
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "6c87af6652cd68719326e6d6336c49fadbf94ac0a5299be955ae940e188684d2"
+      }
+    },
+    {
+      "id": 85,
+      "x": 721.289243763692,
+      "y": 1127.221724571548,
+      "owner": "neutral",
+      "income": 70,
+      "buffs": {
+        "damage": 5,
+        "armor": 5,
+        "reload": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/sand_trap.map",
+        "name": "Sand Trap",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "positions": {
+          "0": [
+            49,
+            87
+          ],
+          "1": [
+            44,
+            57
+          ],
+          "2": [
+            70,
+            60
+          ],
+          "3": [
+            71,
+            35
+          ],
+          "4": [
+            108,
+            59
+          ],
+          "5": [
+            122,
+            91
+          ],
+          "6": [
+            98,
+            105
+          ],
+          "7": [
+            79,
+            123
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "535b8dce0f76212fea0d9cc808973fc23d33b322040efd11b1b286cfcbd57690"
+      }
+    },
+    {
+      "id": 86,
+      "x": 819.2711472075196,
+      "y": 1097.9430819448141,
+      "owner": "neutral",
+      "income": 155,
+      "buffs": {
+        "speed": 10,
+        "reload": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/tiberium_garden_redux.map",
+        "name": "Tiberium Garden Redux",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "positions": {
+          "0": [
+            37,
+            48
+          ],
+          "1": [
+            83,
+            35
+          ],
+          "2": [
+            113,
+            84
+          ],
+          "3": [
+            93,
+            111
+          ],
+          "4": [
+            48,
+            96
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "fe03e49022a55a266e91ac443ee66f1589bc49108804ef148bd01f553dec31c7"
+      }
+    },
+    {
+      "id": 87,
+      "x": 1000.4981751999394,
+      "y": 1131.6608766158838,
+      "owner": "neutral",
+      "income": 230,
+      "buffs": {
+        "speed": 5,
+        "reload": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/gravity_valley.map",
+        "name": "Gravity Valley",
+        "starts": [
+          0,
+          1
+        ],
+        "positions": {
+          "0": [
+            19,
+            75
+          ],
+          "1": [
+            126,
+            71
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "aa54e314f90f77df742e6ffa0b81be9ab9aa0d689f1058835b9ae269af05e780"
+      }
+    },
+    {
+      "id": 88,
+      "x": 1108.1822982478932,
+      "y": 1122.2174630497937,
+      "owner": "neutral",
+      "income": 95,
+      "buffs": {
+        "speed": 5,
+        "reload": 10,
+        "health": 5
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/stranded.map",
+        "name": "[2-4] Stranded (Naval)",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            112,
+            154
+          ],
+          "1": [
+            148,
+            102
+          ],
+          "2": [
+            100,
+            49
+          ],
+          "3": [
+            59,
+            102
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "54896f1577bc1346ba112b1223894eb3caac8e3bc5239b5919c0cac50dbd2c8c"
+      }
+    },
+    {
+      "id": 89,
+      "x": 1287.2452463317056,
+      "y": 1138.6286015591027,
+      "owner": "neutral",
+      "income": 215,
+      "buffs": {
+        "damage": 5
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/deceiving_adjacency.map",
+        "name": "Deceiving Adjacency",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            66,
+            35
+          ],
+          "1": [
+            30,
+            75
+          ],
+          "2": [
+            61,
+            100
+          ],
+          "3": [
+            95,
+            59
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "404ad5a716428a98ed18f4371e889f0bb4d5d9e6267cda103a2ef5a23b89d394"
+      }
+    },
+    {
+      "id": 90,
+      "x": 10.105446772690676,
+      "y": 1282.9702423379588,
+      "owner": "neutral",
+      "income": 215,
+      "buffs": {
+        "speed": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/subterranean_greenery_extended.map",
+        "name": "[8] Subterranean Greenery Extended",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "positions": {
+          "0": [
+            121,
+            76
+          ],
+          "1": [
+            121,
+            123
+          ],
+          "2": [
+            121,
+            168
+          ],
+          "3": [
+            121,
+            214
+          ],
+          "4": [
+            169,
+            214
+          ],
+          "5": [
+            169,
+            168
+          ],
+          "6": [
+            169,
+            123
+          ],
+          "7": [
+            169,
+            77
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "4a150ea37087e3c0e8d0fd6574ab8ebf5275a17ea603155ec3be05a29382e8a8"
+      }
+    },
+    {
+      "id": 91,
+      "x": 121.5054566229815,
+      "y": 1240.5890191228114,
+      "owner": "neutral",
+      "income": 240,
+      "buffs": {
+        "health": 10
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/aurora_clash.map",
+        "name": "[8] Aurora Clash",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "positions": {
+          "0": [
+            158,
+            159
+          ],
+          "1": [
+            190,
+            159
+          ],
+          "2": [
+            190,
+            191
+          ],
+          "3": [
+            158,
+            191
+          ],
+          "4": [
+            121,
+            122
+          ],
+          "5": [
+            228,
+            122
+          ],
+          "6": [
+            228,
+            229
+          ],
+          "7": [
+            121,
+            229
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "cad4a40f6a26e2b13d1a411adbfd53425a32ca0b277465ca8eb6f8ce717da0ac"
+      }
+    },
+    {
+      "id": 92,
+      "x": 291.581864327842,
+      "y": 1264.597294208142,
+      "owner": "neutral",
+      "income": 120,
+      "buffs": {
+        "health": 10,
+        "damage": 5,
+        "armor": 10
+      },
+      "perks": {},
+      "reward": "recruitment",
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/lost_arena.map",
+        "name": "Lost Arena",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "positions": {
+          "0": [
+            54,
+            31
+          ],
+          "1": [
+            86,
+            50
+          ],
+          "2": [
+            109,
+            79
+          ],
+          "3": [
+            79,
+            110
+          ],
+          "4": [
+            51,
+            84
+          ],
+          "5": [
+            27,
+            52
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "f9d5bb968b97ed43945dc6664ef60b582c8276eccba224eb351e59fb8c24cd52"
+      }
+    },
+    {
+      "id": 93,
+      "x": 447.1048037497344,
+      "y": 1240.0352627541124,
+      "owner": "neutral",
+      "income": 95,
+      "buffs": {
+        "health": 10,
+        "speed": 10,
         "damage": 5
       },
       "perks": {},
@@ -3096,807 +4912,18 @@
       }
     },
     {
-      "id": 58,
-      "x": 1134.2616286819452,
-      "y": 678.8390321087629,
-      "owner": "neutral",
-      "income": 265,
-      "buffs": {
-        "damage": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/dust_devils.map",
-        "name": "Dust Devils",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            25,
-            90
-          ],
-          "1": [
-            75,
-            82
-          ],
-          "2": [
-            103,
-            40
-          ],
-          "3": [
-            46,
-            48
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "5a0faa8a09c8397ab3ea20c6b33c248baf8179d388f94b371fef278d3b2aa9e1"
-      }
-    },
-    {
-      "id": 59,
-      "x": 1235.4568235904565,
-      "y": 686.1114245002332,
-      "owner": "neutral",
-      "income": 95,
-      "buffs": {
-        "armor": 5,
-        "damage": 10,
-        "health": 5
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/savanna_ridge.map",
-        "name": "Savanna Ridge (2)",
-        "starts": [
-          0,
-          1
-        ],
-        "positions": {
-          "0": [
-            120,
-            134
-          ],
-          "1": [
-            51,
-            40
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "cbef8714f324d976e3e79b6e0941b12773140352da102a4363fc28a0192cf3d2"
-      }
-    },
-    {
-      "id": 60,
-      "x": 17.339438154783714,
-      "y": 812.1695046588886,
+      "id": 94,
+      "x": 567.4562916628448,
+      "y": 1283.8621712850356,
       "owner": "neutral",
       "income": 70,
       "buffs": {
-        "health": 10,
-        "damage": 10,
-        "speed": 5
-      },
-      "perks": {},
-      "reward": "vehicles",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/rural_detour.map",
-        "name": "[4] Rural Detour",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            80,
-            184
-          ],
-          "1": [
-            84,
-            105
-          ],
-          "2": [
-            197,
-            81
-          ],
-          "3": [
-            236,
-            174
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "2cb4465c1c8729a4457833bf8377bf8a6ce015fd411b2b1eaca7c33dfc8dc441"
-      }
-    },
-    {
-      "id": 61,
-      "x": 166.43203540557076,
-      "y": 837.2110387343578,
-      "owner": "neutral",
-      "income": 215,
-      "buffs": {
-        "armor": 5
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/drifted_river.map",
-        "name": "Drifted River",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            55,
-            159
-          ],
-          "1": [
-            68,
-            98
-          ],
-          "2": [
-            198,
-            99
-          ],
-          "3": [
-            202,
-            168
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "bfd0cb04a6b90770a6f9e25a056ef1a57bad4a2e8ca4d3dde95ca2bd76f48169"
-      }
-    },
-    {
-      "id": 62,
-      "x": 266.73931749442227,
-      "y": 861.9942139561321,
-      "owner": "neutral",
-      "income": 180,
-      "buffs": {
-        "reload": 10,
-        "armor": 5
-      },
-      "perks": {},
-      "reward": "power",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/river_front.map",
-        "name": "River front",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            70,
-            120
-          ],
-          "1": [
-            22,
-            73
-          ],
-          "2": [
-            72,
-            24
-          ],
-          "3": [
-            121,
-            73
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "c85c2899b50f716645b501c312ebb28de0a8a32158bf434bea73fb7ed0235d66"
-      }
-    },
-    {
-      "id": 63,
-      "x": 428.6703158365426,
-      "y": 843.7363863863558,
-      "owner": "neutral",
-      "income": 265,
-      "buffs": {
-        "reload": 5
-      },
-      "perks": {},
-      "reward": "discount",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/desert_storm.map",
-        "name": "Desert Storm",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            61,
-            97
-          ],
-          "1": [
-            31,
-            62
-          ],
-          "2": [
-            64,
-            30
-          ],
-          "3": [
-            93,
-            65
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "f6b9cdacf1d7f6e53ba2657a247e34b79fcc3e55e9741f7feb972d6e178a4aad"
-      }
-    },
-    {
-      "id": 64,
-      "x": 539.983532626404,
-      "y": 813.5482785161593,
-      "owner": "neutral",
-      "income": 155,
-      "buffs": {
         "damage": 5,
-        "armor": 10
-      },
-      "perks": {},
-      "reward": "recruitment",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/tiberium_garden_redux.map",
-        "name": "Tiberium Garden Redux",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ],
-        "positions": {
-          "0": [
-            37,
-            48
-          ],
-          "1": [
-            83,
-            35
-          ],
-          "2": [
-            113,
-            84
-          ],
-          "3": [
-            93,
-            111
-          ],
-          "4": [
-            48,
-            96
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "fe03e49022a55a266e91ac443ee66f1589bc49108804ef148bd01f553dec31c7"
-      }
-    },
-    {
-      "id": 65,
-      "x": 686.7378680526513,
-      "y": 842.8627935446813,
-      "owner": "neutral",
-      "income": 95,
-      "buffs": {
-        "health": 10,
-        "reload": 10,
-        "damage": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/desert_city.map",
-        "name": "Desert City [2]",
-        "starts": [
-          0,
-          1
-        ],
-        "positions": {
-          "0": [
-            124,
-            37
-          ],
-          "1": [
-            42,
-            128
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "40c8ac61fa0c4a399d2c2913e7d41dc48cf94b0011e008cacc967fe9e5c67c73"
-      }
-    },
-    {
-      "id": 66,
-      "x": 860.5735208192671,
-      "y": 857.7450993938913,
-      "owner": "neutral",
-      "income": 205,
-      "buffs": {
-        "damage": 5,
-        "health": 10
-      },
-      "perks": {},
-      "reward": "allies",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/tour_of_egypt.map",
-        "name": "Tour of Egypt",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5
-        ],
-        "positions": {
-          "0": [
-            22,
-            72
-          ],
-          "1": [
-            41,
-            91
-          ],
-          "2": [
-            61,
-            111
-          ],
-          "3": [
-            72,
-            22
-          ],
-          "4": [
-            91,
-            41
-          ],
-          "5": [
-            111,
-            61
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "dad8943d9928797d527c0fa42d10ad469dbefe4061ce929d30bba1eb7e0f0333"
-      }
-    },
-    {
-      "id": 67,
-      "x": 970.4543844265752,
-      "y": 821.6335820633718,
-      "owner": "neutral",
-      "income": 240,
-      "buffs": {
-        "health": 5
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/split_peninsula.map",
-        "name": "[4] Split Peninsula",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            102,
-            40
-          ],
-          "1": [
-            128,
-            81
-          ],
-          "2": [
-            87,
-            124
-          ],
-          "3": [
-            56,
-            91
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "74f7733349200594c737c2ee629dcfe9d45d46fd5f950829f11d63b3fee46108"
-      }
-    },
-    {
-      "id": 68,
-      "x": 1106.1734695368202,
-      "y": 863.7163281230005,
-      "owner": "neutral",
-      "income": 155,
-      "buffs": {
-        "health": 5,
-        "damage": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/glimmering_bluffs.map",
-        "name": "Glimmering Bluffs",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5
-        ],
-        "positions": {
-          "0": [
-            77,
-            175
-          ],
-          "1": [
-            129,
-            224
-          ],
-          "2": [
-            19,
-            132
-          ],
-          "3": [
-            146,
-            50
-          ],
-          "4": [
-            192,
-            94
-          ],
-          "5": [
-            260,
-            146
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "e2bc17e1ae6a60988dcbcd9606252df4fdc8f4ae3bf8e4bb2237c7c9dff0ef59"
-      }
-    },
-    {
-      "id": 69,
-      "x": 1259.1260204864066,
-      "y": 823.9639661198385,
-      "owner": "neutral",
-      "income": 190,
-      "buffs": {
-        "armor": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/red_mountain.map",
-        "name": "[8] Red Mountain",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7
-        ],
-        "positions": {
-          "0": [
-            71,
-            151
-          ],
-          "1": [
-            108,
-            193
-          ],
-          "2": [
-            175,
-            205
-          ],
-          "3": [
-            195,
-            133
-          ],
-          "4": [
-            238,
-            159
-          ],
-          "5": [
-            170,
-            106
-          ],
-          "6": [
-            101,
-            104
-          ],
-          "7": [
-            164,
-            70
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "d0c07a68d03942aeede442b629a6809b592296379d2f21c4a030953fc25461df"
-      }
-    },
-    {
-      "id": 70,
-      "x": 7.733137088116223,
-      "y": 954.027472246026,
-      "owner": "neutral",
-      "income": 130,
-      "buffs": {
-        "speed": 5,
-        "armor": 10
-      },
-      "perks": {},
-      "reward": "discount",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/tiberium_rig.map",
-        "name": "Super Tiberium Platform",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7
-        ],
-        "positions": {
-          "0": [
-            106,
-            181
-          ],
-          "1": [
-            80,
-            155
-          ],
-          "2": [
-            80,
-            107
-          ],
-          "3": [
-            106,
-            81
-          ],
-          "4": [
-            154,
-            81
-          ],
-          "5": [
-            180,
-            107
-          ],
-          "6": [
-            180,
-            155
-          ],
-          "7": [
-            154,
-            181
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "ffa3801e6e9dd79394693bf5c680ebb286a18ba6173e8aa8e2caceb2bd85f1b1"
-      }
-    },
-    {
-      "id": 71,
-      "x": 169.59072985554886,
-      "y": 972.7504812842163,
-      "owner": "neutral",
-      "income": 190,
-      "buffs": {
-        "reload": 5
-      },
-      "perks": {},
-      "reward": "veterans",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/springnight.map",
-        "name": "[6] Springnight",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5
-        ],
-        "positions": {
-          "0": [
-            23,
-            62
-          ],
-          "1": [
-            45,
-            38
-          ],
-          "2": [
-            79,
-            38
-          ],
-          "3": [
-            105,
-            65
-          ],
-          "4": [
-            104,
-            101
-          ],
-          "5": [
-            83,
-            122
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "cfe47322eece5440e74847df89be2da0706ea570a8b8095a202a72cb832b4da8"
-      }
-    },
-    {
-      "id": 72,
-      "x": 270.99782540977725,
-      "y": 980.1869697459687,
-      "owner": "neutral",
-      "income": 230,
-      "buffs": {
-        "damage": 10,
-        "health": 10
-      },
-      "perks": {
-        "garrison": 1
-      },
-      "reward": "vehicles",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/lakesides.map",
-        "name": "[4] Lakesides",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            155,
-            157
-          ],
-          "1": [
-            82,
-            147
-          ],
-          "2": [
-            86,
-            84
-          ],
-          "3": [
-            168,
-            88
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "834011466b4708b7a6a461ea116df1ae3309618b167d5918abdd2d0b18d547a9"
-      }
-    },
-    {
-      "id": 73,
-      "x": 420.96124507175756,
-      "y": 993.98274478802,
-      "owner": "neutral",
-      "income": 70,
-      "buffs": {
-        "reload": 5,
         "speed": 10,
-        "damage": 5
+        "armor": 10
       },
       "perks": {},
-      "reward": "power",
+      "reward": "hardened_infrastructure",
       "claimed": [],
       "map": {
         "path": "Maps/Default/godly_juke.map",
@@ -3945,826 +4972,13 @@
       }
     },
     {
-      "id": 74,
-      "x": 569.9052507141926,
-      "y": 961.3808035110724,
-      "owner": "neutral",
-      "income": 180,
-      "buffs": {
-        "armor": 10,
-        "reload": 5
-      },
-      "perks": {},
-      "reward": "veterans",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/black_forest.map",
-        "name": "Black Forest [2-4]",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            38,
-            111
-          ],
-          "1": [
-            175,
-            98
-          ],
-          "2": [
-            100,
-            174
-          ],
-          "3": [
-            106,
-            25
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "dc70673d6f3e0c09d8100303c74236e625b4c06dc9e7b95e374e5b967e0c8b58"
-      }
-    },
-    {
-      "id": 75,
-      "x": 685.1254976802505,
-      "y": 987.787324409549,
-      "owner": "neutral",
-      "income": 190,
-      "buffs": {
-        "reload": 5
-      },
-      "perks": {
-        "garrison": 1
-      },
-      "reward": "barracks",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/tideland.map",
-        "name": "[2-6] Tideland (Naval)",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5
-        ],
-        "positions": {
-          "0": [
-            110,
-            65
-          ],
-          "1": [
-            160,
-            102
-          ],
-          "2": [
-            181,
-            144
-          ],
-          "3": [
-            123,
-            174
-          ],
-          "4": [
-            47,
-            133
-          ],
-          "5": [
-            84,
-            103
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "d6b6dbd4b46e7fc77bc6fd5c16b253352f5a2f57bf2fffbabdc31420f3aa5234"
-      }
-    },
-    {
-      "id": 76,
-      "x": 811.4380047003025,
-      "y": 992.9397982829092,
-      "owner": "neutral",
-      "income": 120,
-      "buffs": {
-        "reload": 5,
-        "armor": 5,
-        "speed": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/deceiving_adjacency.map",
-        "name": "Deceiving Adjacency",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            66,
-            35
-          ],
-          "1": [
-            30,
-            75
-          ],
-          "2": [
-            61,
-            100
-          ],
-          "3": [
-            95,
-            59
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "404ad5a716428a98ed18f4371e889f0bb4d5d9e6267cda103a2ef5a23b89d394"
-      }
-    },
-    {
-      "id": 77,
-      "x": 962.4242723559546,
-      "y": 982.1406275070686,
-      "owner": "neutral",
-      "income": 120,
-      "buffs": {
-        "damage": 10,
-        "armor": 10,
-        "speed": 5
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/marshlands.map",
-        "name": "[6] Marshlands",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5
-        ],
-        "positions": {
-          "0": [
-            89,
-            89
-          ],
-          "1": [
-            140,
-            102
-          ],
-          "2": [
-            197,
-            92
-          ],
-          "3": [
-            192,
-            188
-          ],
-          "4": [
-            140,
-            180
-          ],
-          "5": [
-            93,
-            188
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "07c703b65825027c8b74087b57f7d23a7388a1e07dc4545390ef7db3414ef43b"
-      }
-    },
-    {
-      "id": 78,
-      "x": 1110.231784306286,
-      "y": 995.5562493579976,
-      "owner": "neutral",
-      "income": 155,
-      "buffs": {
-        "reload": 10,
-        "damage": 5
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/dusk.map",
-        "name": "Dusk",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            22,
-            91
-          ],
-          "1": [
-            93,
-            29
-          ],
-          "2": [
-            141,
-            81
-          ],
-          "3": [
-            75,
-            143
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "690db6702b5708c6464a73b05d684d9aff401334ed6d30042f69e9d89a60324d"
-      }
-    },
-    {
-      "id": 79,
-      "x": 1243.548037598814,
-      "y": 981.3858829575455,
-      "owner": "neutral",
-      "income": 190,
-      "buffs": {
-        "reload": 5
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/tiberium_chasm.map",
-        "name": "[2] Tiberium Chasm",
-        "starts": [
-          0,
-          1
-        ],
-        "positions": {
-          "0": [
-            103,
-            146
-          ],
-          "1": [
-            96,
-            53
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "b626f66107c0c3c81e78b62e1c2c2bac8063750609bfc95ba4a29eb03855b3e4"
-      }
-    },
-    {
-      "id": 80,
-      "x": 14.896886709354163,
-      "y": 1097.3309579091535,
-      "owner": "neutral",
-      "income": 145,
-      "buffs": {
-        "speed": 10,
-        "reload": 5,
-        "damage": 5
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/lakefront_clash.map",
-        "name": "Lakefront Clash",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ],
-        "positions": {
-          "0": [
-            52,
-            86
-          ],
-          "1": [
-            74,
-            104
-          ],
-          "2": [
-            104,
-            75
-          ],
-          "3": [
-            83,
-            50
-          ],
-          "4": [
-            46,
-            19
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "661a6dbf6cfe495f416b10c4b3d362c2727e2ae3256be712268177db495a1690"
-      }
-    },
-    {
-      "id": 81,
-      "x": 141.15527939807396,
-      "y": 1104.8496733297663,
-      "owner": "neutral",
-      "income": 155,
-      "buffs": {
-        "reload": 10,
-        "speed": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/combat_zones.map",
-        "name": "[8] Combat Zones",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7
-        ],
-        "positions": {
-          "0": [
-            43,
-            180
-          ],
-          "1": [
-            79,
-            111
-          ],
-          "2": [
-            142,
-            36
-          ],
-          "3": [
-            192,
-            134
-          ],
-          "4": [
-            281,
-            142
-          ],
-          "5": [
-            249,
-            210
-          ],
-          "6": [
-            148,
-            285
-          ],
-          "7": [
-            151,
-            195
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "f566cf853e63cbceabd8bb64e9a3eb26f701e5836761629a12d18b97c981aff0"
-      }
-    },
-    {
-      "id": 82,
-      "x": 276.73622459133713,
-      "y": 1106.438087203045,
-      "owner": "neutral",
-      "income": 290,
-      "buffs": {
-        "reload": 5
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/field.map",
-        "name": "[2] Field",
-        "starts": [
-          0,
-          1
-        ],
-        "positions": {
-          "0": [
-            54,
-            89
-          ],
-          "1": [
-            85,
-            56
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "86a208949853a695210fbc2052b4f2739cb0ce314b74e78e764692982b4f5fed"
-      }
-    },
-    {
-      "id": 83,
-      "x": 444.3407812300647,
-      "y": 1115.5993731829715,
-      "owner": "neutral",
-      "income": 190,
-      "buffs": {
-        "reload": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/ore_rig.map",
-        "name": "[8] Ore Rig",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7
-        ],
-        "positions": {
-          "0": [
-            81,
-            81
-          ],
-          "1": [
-            155,
-            81
-          ],
-          "2": [
-            155,
-            155
-          ],
-          "3": [
-            81,
-            155
-          ],
-          "4": [
-            118,
-            89
-          ],
-          "5": [
-            147,
-            118
-          ],
-          "6": [
-            118,
-            147
-          ],
-          "7": [
-            90,
-            118
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "3725a068d347704904423535b0983e72256f577caff95df056594638dfa9889a"
-      }
-    },
-    {
-      "id": 84,
-      "x": 563.5282541270125,
-      "y": 1144.3179448945207,
+      "id": 95,
+      "x": 709.182475698948,
+      "y": 1276.5041068767991,
       "owner": "neutral",
       "income": 170,
       "buffs": {
-        "health": 5,
-        "reload": 10,
-        "speed": 5
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/pie_chart_redux.map",
-        "name": "[6] Pie Chart Redux",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5
-        ],
-        "positions": {
-          "0": [
-            79,
-            151
-          ],
-          "1": [
-            94,
-            106
-          ],
-          "2": [
-            149,
-            78
-          ],
-          "3": [
-            132,
-            201
-          ],
-          "4": [
-            183,
-            159
-          ],
-          "5": [
-            200,
-            116
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "b165bc557b432a472c4ce3347f37bc40e13663a2cf93ebebdd33fec44d0d46c0"
-      }
-    },
-    {
-      "id": 85,
-      "x": 683.4433593280917,
-      "y": 1094.6814273193575,
-      "owner": "neutral",
-      "income": 130,
-      "buffs": {
         "health": 10,
-        "reload": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/subterranean_bluewery.map",
-        "name": "[8] Subterranean Bluewery",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7
-        ],
-        "positions": {
-          "0": [
-            174,
-            82
-          ],
-          "1": [
-            129,
-            82
-          ],
-          "2": [
-            83,
-            129
-          ],
-          "3": [
-            83,
-            174
-          ],
-          "4": [
-            129,
-            221
-          ],
-          "5": [
-            174,
-            221
-          ],
-          "6": [
-            220,
-            174
-          ],
-          "7": [
-            220,
-            129
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "f93b8aa9de941e24f4a30076cf630f0599a31503465c61025f64248c4df1f388"
-      }
-    },
-    {
-      "id": 86,
-      "x": 842.8240840697744,
-      "y": 1113.1738481299108,
-      "owner": "neutral",
-      "income": 120,
-      "buffs": {
-        "damage": 10,
-        "health": 10,
-        "reload": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/rural_idyll.map",
-        "name": "[6] Rural Idyll",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5
-        ],
-        "positions": {
-          "0": [
-            75,
-            153
-          ],
-          "1": [
-            38,
-            108
-          ],
-          "2": [
-            67,
-            73
-          ],
-          "3": [
-            107,
-            41
-          ],
-          "4": [
-            144,
-            74
-          ],
-          "5": [
-            144,
-            125
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "77ab918c3b9fd93f9f2b9f49ef83dc5c4fc61ad27a4d8e965fea5b035accf863"
-      }
-    },
-    {
-      "id": 87,
-      "x": 951.5649563661739,
-      "y": 1127.3881005187093,
-      "owner": "neutral",
-      "income": 180,
-      "buffs": {
-        "health": 5,
-        "damage": 5
-      },
-      "perks": {},
-      "reward": "discount",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/arctic_disaster.map",
-        "name": "Arctic Disaster",
-        "starts": [
-          0,
-          1
-        ],
-        "positions": {
-          "0": [
-            93,
-            144
-          ],
-          "1": [
-            104,
-            56
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "3de11ef6953b367c559d6131988a85a24b54cee0f36bfc6626a4b6f157b915e8"
-      }
-    },
-    {
-      "id": 88,
-      "x": 1137.0614078537935,
-      "y": 1103.0259894708427,
-      "owner": "neutral",
-      "income": 70,
-      "buffs": {
-        "health": 10,
-        "armor": 5,
-        "speed": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/stranded.map",
-        "name": "[2-4] Stranded (Naval)",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            112,
-            154
-          ],
-          "1": [
-            148,
-            102
-          ],
-          "2": [
-            100,
-            49
-          ],
-          "3": [
-            59,
-            102
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "54896f1577bc1346ba112b1223894eb3caac8e3bc5239b5919c0cac50dbd2c8c"
-      }
-    },
-    {
-      "id": 89,
-      "x": 1245.085719021015,
-      "y": 1129.8853353355664,
-      "owner": "neutral",
-      "income": 230,
-      "buffs": {
         "armor": 5,
         "speed": 5
       },
@@ -4772,8 +4986,8 @@
       "reward": null,
       "claimed": [],
       "map": {
-        "path": "Maps/Default/mining_town.map",
-        "name": "Mining Town",
+        "path": "Maps/Default/defunct_combat_platform.map",
+        "name": "[7] Defunct Combat Platform",
         "starts": [
           0,
           1,
@@ -4781,277 +4995,36 @@
           3,
           4,
           5,
-          6,
-          7
+          6
         ],
         "positions": {
           "0": [
-            93,
-            210
-          ],
-          "1": [
-            48,
-            165
-          ],
-          "2": [
-            172,
-            57
-          ],
-          "3": [
-            210,
-            95
-          ],
-          "4": [
-            170,
-            211
-          ],
-          "5": [
-            213,
-            169
-          ],
-          "6": [
-            56,
-            89
-          ],
-          "7": [
-            97,
-            49
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "6c87af6652cd68719326e6d6336c49fadbf94ac0a5299be955ae940e188684d2"
-      }
-    },
-    {
-      "id": 90,
-      "x": 25.034894563898952,
-      "y": 1249.106755529258,
-      "owner": "neutral",
-      "income": 230,
-      "buffs": {
-        "reload": 10,
-        "damage": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/nowhere_to_run.map",
-        "name": "[6] Nowhere to Run",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5
-        ],
-        "positions": {
-          "0": [
-            48,
-            76
-          ],
-          "1": [
-            46,
-            121
-          ],
-          "2": [
-            96,
-            149
-          ],
-          "3": [
-            134,
-            118
-          ],
-          "4": [
-            141,
-            66
-          ],
-          "5": [
-            87,
-            28
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "3722857b8ba2ca8cf3dabf7c81a92c1a022c009a7d55e11b71cf08eac555b6e3"
-      }
-    },
-    {
-      "id": 91,
-      "x": 125.77646454992997,
-      "y": 1279.881267115254,
-      "owner": "neutral",
-      "income": 230,
-      "buffs": {
-        "speed": 5,
-        "health": 5
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/renegade_war.map",
-        "name": "Renegade War [2-6]",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5
-        ],
-        "positions": {
-          "0": [
-            101,
-            28
-          ],
-          "1": [
-            134,
-            57
-          ],
-          "2": [
-            155,
-            99
-          ],
-          "3": [
-            107,
-            166
-          ],
-          "4": [
-            58,
-            142
-          ],
-          "5": [
-            37,
-            113
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "8da9dd0a47d0cefd8d6cef4d5a5b033b2d1da3f3a3fa628d4be864da3733848e"
-      }
-    },
-    {
-      "id": 92,
-      "x": 280.8477583739633,
-      "y": 1230.2753566011168,
-      "owner": "neutral",
-      "income": 130,
-      "buffs": {
-        "armor": 10,
-        "damage": 5
-      },
-      "perks": {},
-      "reward": "refinery",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/the_sandbar.map",
-        "name": "The Sandbar (2-4)",
-        "starts": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "positions": {
-          "0": [
-            167,
-            69
-          ],
-          "1": [
-            101,
-            189
-          ],
-          "2": [
-            199,
-            100
-          ],
-          "3": [
-            73,
-            161
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "6b132d5e92fa219ab1a702c64607990fc4ba077ee90326afed039e1f51a494c0"
-      }
-    },
-    {
-      "id": 93,
-      "x": 439.6822007950309,
-      "y": 1266.8429986888398,
-      "owner": "neutral",
-      "income": 155,
-      "buffs": {
-        "damage": 5,
-        "reload": 10
-      },
-      "perks": {},
-      "reward": "power",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/delirious_island.map",
-        "name": "Delirious Island",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7
-        ],
-        "positions": {
-          "0": [
-            125,
+            120,
             60
           ],
           "1": [
-            174,
-            100
+            83,
+            70
           ],
           "2": [
-            213,
-            156
+            166,
+            89
           ],
           "3": [
-            185,
-            186
+            123,
+            134
           ],
           "4": [
-            154,
-            218
+            66,
+            153
           ],
           "5": [
-            114,
-            168
+            37,
+            118
           ],
           "6": [
-            70,
-            137
-          ],
-          "7": [
-            106,
-            105
+            102,
+            100
           ]
         },
         "countries": [
@@ -5060,163 +5033,17 @@
           "Allies",
           "Soviet"
         ],
-        "sha256": "fb4d697173a84aa00869ddbce8a0a8a77eb162637657b8e3d4080b66fc9e68b4"
-      }
-    },
-    {
-      "id": 94,
-      "x": 574.3921836965795,
-      "y": 1268.2224215132908,
-      "owner": "neutral",
-      "income": 190,
-      "buffs": {
-        "reload": 10
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/red_valley.map",
-        "name": "Red Valley (2)",
-        "starts": [
-          0,
-          1
-        ],
-        "positions": {
-          "0": [
-            91,
-            29
-          ],
-          "1": [
-            107,
-            178
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "809d0a012482615a3d7d43b53e62b4fa6a3663cdcd8f01e565e04abcb0ee657d"
-      }
-    },
-    {
-      "id": 95,
-      "x": 699.3822422564864,
-      "y": 1268.9394591901605,
-      "owner": "neutral",
-      "income": 70,
-      "buffs": {
-        "reload": 5,
-        "speed": 5,
-        "armor": 10
-      },
-      "perks": {},
-      "reward": "income",
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/summer_skirmish.map",
-        "name": "S-River",
-        "starts": [
-          0,
-          1
-        ],
-        "positions": {
-          "0": [
-            118,
-            71
-          ],
-          "1": [
-            21,
-            67
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "a87740b7daf30fe528d16c1f9671df621dddeb411239def29f061e089b886e5a"
+        "sha256": "226321a1c8131fd68a77bbc3658d972ade7611bdbd146324f7de714ef3520082"
       }
     },
     {
       "id": 96,
-      "x": 836.3826484672277,
-      "y": 1247.8393822016287,
+      "x": 812.2731180765435,
+      "y": 1277.896473931274,
       "owner": "neutral",
-      "income": 205,
+      "income": 170,
       "buffs": {
-        "reload": 10,
-        "damage": 5
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/spring_path.map",
-        "name": "[8] Spring Path",
-        "starts": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7
-        ],
-        "positions": {
-          "0": [
-            181,
-            160
-          ],
-          "1": [
-            221,
-            134
-          ],
-          "2": [
-            197,
-            95
-          ],
-          "3": [
-            146,
-            74
-          ],
-          "4": [
-            108,
-            90
-          ],
-          "5": [
-            56,
-            109
-          ],
-          "6": [
-            60,
-            151
-          ],
-          "7": [
-            99,
-            149
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "2dcb0cc5f7d5be0a115642e1f1c799483f276e07affc9e50cb9bf9204f97f81f"
-      }
-    },
-    {
-      "id": 97,
-      "x": 991.7562362652069,
-      "y": 1273.023832652327,
-      "owner": "neutral",
-      "income": 180,
-      "buffs": {
+        "health": 10,
         "speed": 10,
         "armor": 5
       },
@@ -5224,48 +5051,8 @@
       "reward": null,
       "claimed": [],
       "map": {
-        "path": "Maps/Default/ore_conflict.map",
-        "name": "Ore Conflict",
-        "starts": [
-          0,
-          1
-        ],
-        "positions": {
-          "0": [
-            25,
-            84
-          ],
-          "1": [
-            135,
-            76
-          ]
-        },
-        "countries": [
-          "GDI",
-          "Nod",
-          "Allies",
-          "Soviet"
-        ],
-        "sha256": "f6b8e49cad32eaab07aaece83e419caeb627b988d9118cb317c612886c0edf23"
-      }
-    },
-    {
-      "id": 98,
-      "x": 1149.7676827081327,
-      "y": 1236.6567598114411,
-      "owner": "neutral",
-      "income": 170,
-      "buffs": {
-        "health": 5,
-        "reload": 5,
-        "speed": 5
-      },
-      "perks": {},
-      "reward": null,
-      "claimed": [],
-      "map": {
-        "path": "Maps/Default/epicenter.map",
-        "name": "Epicenter",
+        "path": "Maps/Default/canyon_chase_2.map",
+        "name": "Canyon Chase 2 (2-6)",
         "starts": [
           0,
           1,
@@ -5276,28 +5063,28 @@
         ],
         "positions": {
           "0": [
-            62,
-            60
+            30,
+            91
           ],
           "1": [
-            82,
-            59
+            46,
+            55
           ],
           "2": [
-            99,
-            77
+            78,
+            23
           ],
           "3": [
-            99,
-            95
+            85,
+            118
           ],
           "4": [
-            80,
-            98
+            84,
+            89
           ],
           "5": [
-            59,
-            81
+            116,
+            69
           ]
         },
         "countries": [
@@ -5306,38 +5093,96 @@
           "Allies",
           "Soviet"
         ],
-        "sha256": "8c8f9ed8a82b575d00c522565432e1b2af32056627237306e153a34119c06f5b"
+        "sha256": "8a71ee88a69b9ffb9f4fc9afc67fe789d37e7b8c09ed77e1c4da6baac193e929"
       }
     },
     {
-      "id": 99,
-      "x": 1232.6194458721236,
-      "y": 1247.1050542253658,
-      "owner": "ai",
-      "income": 95,
+      "id": 97,
+      "x": 979.5786022555425,
+      "y": 1235.6214502324697,
+      "owner": "neutral",
+      "income": 265,
       "buffs": {
-        "health": 5,
-        "armor": 10,
-        "reload": 10
+        "damage": 5
       },
       "perks": {},
       "reward": null,
       "claimed": [],
       "map": {
-        "path": "Maps/Default/island_tactics.map",
-        "name": "Island Tactics",
+        "path": "Maps/Default/icy_floes.map",
+        "name": "Icy Floes",
+        "starts": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "positions": {
+          "0": [
+            74,
+            68
+          ],
+          "1": [
+            111,
+            60
+          ],
+          "2": [
+            173,
+            110
+          ],
+          "3": [
+            150,
+            144
+          ],
+          "4": [
+            94,
+            152
+          ],
+          "5": [
+            44,
+            99
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "283bd980ee21530b075c67f127f00420f43ae3928d138a6d1fd67c7c06ed4eaa"
+      }
+    },
+    {
+      "id": 98,
+      "x": 1103.1965432175598,
+      "y": 1235.0280855697179,
+      "owner": "neutral",
+      "income": 120,
+      "buffs": {
+        "armor": 5,
+        "health": 10,
+        "reload": 5
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/frozen_advance.map",
+        "name": "Frozen Advance",
         "starts": [
           0,
           1
         ],
         "positions": {
           "0": [
-            107,
-            185
+            101,
+            60
           ],
           "1": [
-            63,
-            124
+            50,
+            58
           ]
         },
         "countries": [
@@ -5346,11 +5191,70 @@
           "Allies",
           "Soviet"
         ],
-        "sha256": "220a74b6563a4a15810650e663708f64b15612ca97c0edd46a7f894eb4435f7f"
+        "sha256": "9e3d39ece86e9900790efac9000c6414782d9fdfed2fbe7f04edcea25f37f3c0"
       }
+    },
+    {
+      "id": 99,
+      "x": 1283.3446856685462,
+      "y": 1268.8011500733833,
+      "owner": "ai",
+      "income": 120,
+      "buffs": {
+        "armor": 10,
+        "damage": 10,
+        "speed": 5
+      },
+      "perks": {},
+      "reward": null,
+      "claimed": [],
+      "map": {
+        "path": "Maps/Default/dark_prospects.map",
+        "name": "Dark Prospects",
+        "starts": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "positions": {
+          "0": [
+            99,
+            181
+          ],
+          "1": [
+            17,
+            101
+          ],
+          "2": [
+            101,
+            18
+          ],
+          "3": [
+            182,
+            98
+          ]
+        },
+        "countries": [
+          "GDI",
+          "Nod",
+          "Allies",
+          "Soviet"
+        ],
+        "sha256": "e8f30e940fcf2dd036bdfa6b0510b98c12db8c3143f2abc3dbc9b6025558d2aa"
+      },
+      "hq": "ai"
     }
   ],
   "edges": [
+    [
+      0,
+      1
+    ],
+    [
+      1,
+      2
+    ],
     [
       0,
       10
@@ -5364,32 +5268,12 @@
       11
     ],
     [
-      1,
-      11
+      11,
+      21
     ],
     [
-      1,
-      2
-    ],
-    [
-      2,
+      11,
       12
-    ],
-    [
-      12,
-      22
-    ],
-    [
-      21,
-      22
-    ],
-    [
-      21,
-      31
-    ],
-    [
-      30,
-      31
     ],
     [
       12,
@@ -5404,32 +5288,336 @@
       33
     ],
     [
-      13,
-      14
+      33,
+      34
     ],
     [
-      14,
-      24
+      34,
+      44
+    ],
+    [
+      22,
+      23
+    ],
+    [
+      43,
+      44
+    ],
+    [
+      34,
+      35
+    ],
+    [
+      25,
+      35
     ],
     [
       24,
       25
     ],
     [
+      22,
+      32
+    ],
+    [
+      13,
+      14
+    ],
+    [
+      31,
+      32
+    ],
+    [
+      31,
+      41
+    ],
+    [
+      40,
+      41
+    ],
+    [
+      40,
+      50
+    ],
+    [
+      30,
+      31
+    ],
+    [
+      41,
+      51
+    ],
+    [
+      51,
+      61
+    ],
+    [
+      60,
+      61
+    ],
+    [
       4,
       14
     ],
     [
-      15,
-      25
+      3,
+      4
     ],
     [
-      2,
-      3
+      60,
+      70
     ],
     [
-      32,
-      33
+      70,
+      71
+    ],
+    [
+      61,
+      62
+    ],
+    [
+      62,
+      63
+    ],
+    [
+      53,
+      63
+    ],
+    [
+      63,
+      73
+    ],
+    [
+      53,
+      54
+    ],
+    [
+      72,
+      73
+    ],
+    [
+      52,
+      53
+    ],
+    [
+      42,
+      52
+    ],
+    [
+      72,
+      83
+    ],
+    [
+      82,
+      83
+    ],
+    [
+      81,
+      82
+    ],
+    [
+      81,
+      91
+    ],
+    [
+      90,
+      91
+    ],
+    [
+      82,
+      92
+    ],
+    [
+      54,
+      64
+    ],
+    [
+      64,
+      75
+    ],
+    [
+      74,
+      75
+    ],
+    [
+      74,
+      84
+    ],
+    [
+      65,
+      75
+    ],
+    [
+      65,
+      66
+    ],
+    [
+      66,
+      67
+    ],
+    [
+      66,
+      76
+    ],
+    [
+      76,
+      86
+    ],
+    [
+      85,
+      86
+    ],
+    [
+      67,
+      77
+    ],
+    [
+      77,
+      87
+    ],
+    [
+      87,
+      97
+    ],
+    [
+      87,
+      88
+    ],
+    [
+      88,
+      98
+    ],
+    [
+      67,
+      68
+    ],
+    [
+      68,
+      78
+    ],
+    [
+      68,
+      69
+    ],
+    [
+      78,
+      79
+    ],
+    [
+      79,
+      89
+    ],
+    [
+      89,
+      99
+    ],
+    [
+      55,
+      65
+    ],
+    [
+      55,
+      56
+    ],
+    [
+      46,
+      56
+    ],
+    [
+      45,
+      46
+    ],
+    [
+      56,
+      57
+    ],
+    [
+      57,
+      58
+    ],
+    [
+      58,
+      59
+    ],
+    [
+      49,
+      59
+    ],
+    [
+      48,
+      49
+    ],
+    [
+      39,
+      49
+    ],
+    [
+      38,
+      39
+    ],
+    [
+      28,
+      38
+    ],
+    [
+      28,
+      29
+    ],
+    [
+      27,
+      28
+    ],
+    [
+      17,
+      27
+    ],
+    [
+      17,
+      18
+    ],
+    [
+      8,
+      18
+    ],
+    [
+      7,
+      8
+    ],
+    [
+      27,
+      37
+    ],
+    [
+      37,
+      47
+    ],
+    [
+      36,
+      37
+    ],
+    [
+      26,
+      36
+    ],
+    [
+      85,
+      95
+    ],
+    [
+      95,
+      96
+    ],
+    [
+      94,
+      95
+    ],
+    [
+      93,
+      94
+    ],
+    [
+      16,
+      26
     ],
     [
       15,
@@ -5444,324 +5632,68 @@
       6
     ],
     [
-      16,
-      17
-    ],
-    [
-      17,
-      27
-    ],
-    [
-      26,
-      27
-    ],
-    [
-      27,
-      37
-    ],
-    [
-      36,
-      37
-    ],
-    [
-      36,
-      46
-    ],
-    [
-      46,
-      56
-    ],
-    [
-      55,
-      56
-    ],
-    [
-      55,
-      65
-    ],
-    [
-      27,
-      28
+      80,
+      90
     ],
     [
       18,
-      28
-    ],
-    [
-      28,
-      29
-    ],
-    [
-      29,
-      39
-    ],
-    [
-      38,
-      39
-    ],
-    [
-      39,
-      49
-    ],
-    [
-      49,
-      59
-    ],
-    [
-      58,
-      59
-    ],
-    [
-      48,
-      58
-    ],
-    [
-      47,
-      48
-    ],
-    [
-      47,
-      57
-    ],
-    [
-      19,
-      29
+      19
     ],
     [
       9,
       19
     ],
     [
-      59,
-      69
+      3,
+      13
     ],
     [
-      65,
-      75
+      2,
+      3
     ],
     [
-      75,
-      85
+      5,
+      15
     ],
     [
-      74,
-      75
-    ],
-    [
-      75,
-      76
-    ],
-    [
-      76,
-      86
-    ],
-    [
-      86,
-      87
-    ],
-    [
-      84,
-      85
-    ],
-    [
-      83,
-      84
-    ],
-    [
-      73,
-      83
-    ],
-    [
-      84,
-      94
-    ],
-    [
-      94,
-      95
-    ],
-    [
-      93,
-      94
-    ],
-    [
-      86,
-      96
-    ],
-    [
-      66,
-      76
-    ],
-    [
-      66,
-      67
-    ],
-    [
-      67,
-      68
-    ],
-    [
-      68,
-      78
-    ],
-    [
-      78,
-      88
-    ],
-    [
-      88,
-      89
-    ],
-    [
-      89,
-      99
-    ],
-    [
-      98,
-      99
-    ],
-    [
-      78,
-      79
-    ],
-    [
-      77,
-      87
-    ],
-    [
-      64,
-      65
-    ],
-    [
-      63,
-      64
-    ],
-    [
-      54,
-      64
-    ],
-    [
-      53,
-      63
-    ],
-    [
-      43,
-      53
-    ],
-    [
-      42,
-      43
-    ],
-    [
-      41,
-      42
-    ],
-    [
-      41,
-      51
-    ],
-    [
-      50,
-      51
-    ],
-    [
-      50,
-      60
-    ],
-    [
-      40,
-      41
-    ],
-    [
-      51,
-      52
-    ],
-    [
-      52,
-      62
-    ],
-    [
-      61,
-      62
-    ],
-    [
-      62,
-      72
-    ],
-    [
-      71,
-      72
-    ],
-    [
-      72,
-      82
-    ],
-    [
-      82,
-      92
-    ],
-    [
-      71,
-      81
-    ],
-    [
-      80,
-      81
-    ],
-    [
-      44,
-      54
-    ],
-    [
-      44,
-      45
-    ],
-    [
-      35,
-      45
-    ],
-    [
-      34,
-      44
-    ],
-    [
-      60,
-      70
-    ],
-    [
-      87,
-      97
-    ],
-    [
-      80,
-      90
-    ],
-    [
-      90,
-      91
+      7,
+      17
     ],
     [
       8,
       9
     ],
     [
-      7,
-      8
-    ],
-    [
-      17,
-      18
-    ],
-    [
-      23,
+      14,
       24
     ],
     [
-      26,
-      37
+      14,
+      15
     ],
     [
-      28,
-      38
+      20,
+      21
+    ],
+    [
+      21,
+      22
+    ],
+    [
+      25,
+      26
+    ],
+    [
+      29,
+      39
+    ],
+    [
+      30,
+      40
+    ],
+    [
+      32,
+      33
     ],
     [
       40,
@@ -5769,63 +5701,95 @@
     ],
     [
       42,
+      51
+    ],
+    [
+      42,
+      43
+    ],
+    [
+      44,
+      45
+    ],
+    [
+      36,
+      46
+    ],
+    [
+      50,
+      60
+    ],
+    [
+      51,
       52
-    ],
-    [
-      45,
-      55
-    ],
-    [
-      66,
-      77
-    ],
-    [
-      57,
-      67
-    ],
-    [
-      68,
-      69
-    ],
-    [
-      69,
-      79
-    ],
-    [
-      70,
-      80
-    ],
-    [
-      61,
-      71
     ],
     [
       64,
       74
     ],
     [
+      69,
+      79
+    ],
+    [
+      71,
+      81
+    ],
+    [
+      71,
+      72
+    ],
+    [
       73,
-      74
+      83
+    ],
+    [
+      65,
+      76
+    ],
+    [
+      70,
+      80
+    ],
+    [
+      84,
+      85
+    ],
+    [
+      75,
+      85
+    ],
+    [
+      88,
+      89
+    ],
+    [
+      81,
+      90
+    ],
+    [
+      91,
+      92
     ],
     [
       92,
       93
     ],
     [
-      85,
-      95
-    ],
-    [
       96,
       97
     ],
     [
-      97,
+      88,
+      97
+    ],
+    [
+      87,
       98
     ],
     [
-      89,
-      98
+      98,
+      99
     ],
     [
       88,
@@ -5836,7 +5800,7 @@
     {
       "id": 1,
       "faction": "player",
-      "node": 10,
+      "node": 1,
       "strength": 7,
       "acted": true
     },
@@ -5846,10 +5810,17 @@
       "node": 99,
       "strength": 8,
       "acted": false
+    },
+    {
+      "id": 3,
+      "faction": "player",
+      "node": 0,
+      "strength": 5,
+      "acted": true
     }
   ],
-  "next_army": 3,
-  "next_event": 12,
+  "next_army": 4,
+  "next_event": 10,
   "history": [
     {
       "id": 1,
@@ -5876,71 +5847,57 @@
       "id": 4,
       "turn": 1,
       "faction": "player",
-      "node": 10,
-      "text": "Attack committed: 8.607 attack / 2 defense; 2 combatants."
+      "node": 1,
+      "text": "Attack committed: 8.198 attack / 2 defense; 2 combatants."
     },
     {
       "id": 5,
       "turn": 1,
       "faction": "player",
-      "node": 10,
+      "node": 1,
       "text": "Real battle launched. Committed supplies and perks are frozen."
     },
     {
       "id": 6,
       "turn": 1,
       "faction": "player",
-      "node": 10,
+      "node": 1,
       "text": "No verified result. Battle remains pending; retry or autobattle with the same committed bonuses."
     },
     {
       "id": 7,
       "turn": 1,
       "faction": "player",
-      "node": 10,
+      "node": 1,
       "text": "Autobattle: Commander won the battle."
     },
     {
       "id": 8,
       "turn": 1,
       "faction": "player",
-      "node": 10,
+      "node": 1,
       "text": "Territory captured. Surviving strategic strength: 7."
     },
     {
       "id": 9,
       "turn": 1,
       "faction": "player",
-      "node": 10,
-      "text": "Permanent capture reward: Armored escort, rank 1."
-    },
-    {
-      "id": 10,
-      "turn": 1,
-      "faction": "player",
-      "node": null,
-      "text": "Commander ended their turn."
-    },
-    {
-      "id": 11,
-      "turn": 1,
-      "faction": "ai",
-      "node": null,
-      "text": "Turn started: +118 campaign credits."
+      "node": 0,
+      "text": "Recruited +5 strength for 100 credits. Army action spent."
     }
   ],
   "pending": null,
   "attempts": [
     {
-      "id": "94f9159a5a234bdcb5a9d91ad787cea2",
-      "battle": "bb529aaec68947fea1d3a13f01e4918e",
+      "id": "f3ad9652fcdd43b7a8cc1f9cccb1570b",
+      "battle": "a073a6567f064dd39d117a07b0c22ade",
       "result": "unresolved"
     }
   ],
   "ai_purchase": false,
   "ai_recruits": 0,
   "player": {
-    "credits": 10000,
+    "credits": 9900,
     "research": {
       "health": 0,
       "armor": 0,
@@ -5948,13 +5905,11 @@
       "reload": 0,
       "damage": 0
     },
-    "perks": {
-      "vehicles": 1
-    },
+    "perks": {},
     "supplies": 0
   },
   "ai": {
-    "credits": 10118,
+    "credits": 10000,
     "research": {
       "health": 0,
       "armor": 0,

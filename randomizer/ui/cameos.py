@@ -439,3 +439,11 @@ def ensure_superweapon_cameos(superweapon_ids, sidebar_overrides=None):
     """Resolve the installed sidebar icon for each requested superweapon."""
     from randomizer.dta.cameos import ensure_superweapon_cameos as ensure_dta_cameos
     return ensure_dta_cameos(superweapon_ids, sidebar_overrides)
+
+
+# Tk requests are batched on the existing worker; workers retain direct access.
+from .asset_loader import deferred_cameos
+
+ensure_unit_cameos, ensure_superweapon_cameos, bind_cameo_loader = deferred_cameos(
+    ensure_unit_cameos, ensure_superweapon_cameos,
+)

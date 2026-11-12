@@ -1,5 +1,6 @@
 """DTA Art.ini, TS MIX, and SHP cameo adapter."""
 
+import hashlib
 import struct
 import zlib
 from functools import lru_cache
@@ -43,38 +44,50 @@ def mix_crc(filename):
     return zlib.crc32(name) & 0xFFFFFFFF
 
 
-def _read_mix_entry(mix_path, filename):
-    wanted = mix_crc(filename)
+@lru_cache(maxsize=64)
+def _mix_index(mix_path, size, modified):
+    """Read each archive directory once, without caching open handles."""
     with Path(mix_path).open('rb') as stream:
         marker = stream.read(4)
         if len(marker) != 4:
-            return None
+            return 0, {}
         first_word, flags = struct.unpack('<HH', marker)
         if first_word == 0:
             if flags & 0x0002:
-                return None
+                return 0, {}
             header_start = 4
         else:
             header_start = 0
             stream.seek(0)
         header = stream.read(6)
         if len(header) != 6:
-            return None
+            return 0, {}
         count, _data_size = struct.unpack('<HI', header)
         index = stream.read(count * 12)
         if len(index) != count * 12:
-            return None
+            return 0, {}
         data_start = header_start + 6 + count * 12
-        for offset in range(0, len(index), 12):
-            file_id, relative, size = struct.unpack_from('<III', index, offset)
-            if file_id != wanted:
-                continue
-            stream.seek(data_start + relative)
-            payload = stream.read(size)
-            return payload if len(payload) == size else None
-    return None
+        return data_start, {
+            file_id: (relative, length)
+            for file_id, relative, length in struct.iter_unpack('<III', index)
+            if data_start + relative + length <= size
+        }
 
 
+def _read_mix_entry(mix_path, filename):
+    stat = mix_path.stat()
+    data_start, entries = _mix_index(mix_path, stat.st_size, stat.st_mtime_ns)
+    entry = entries.get(mix_crc(filename))
+    if entry is None:
+        return None
+    relative, length = entry
+    with mix_path.open('rb') as stream:
+        stream.seek(data_start + relative)
+        payload = stream.read(length)
+    return payload if len(payload) == length else None
+
+
+@lru_cache(maxsize=1)
 def _mix_search_order():
     mix_dir = GAME_ROOT / 'MIX'
     return [
@@ -86,6 +99,17 @@ def _mix_search_order():
         *sorted(mix_dir.glob('Expand*.mix'), reverse=True),
         mix_dir / 'Local.mix',
     ]
+
+
+@lru_cache(maxsize=1)
+def _asset_cache_signature():
+    """Reuse decoded artwork across runs until installed sources change."""
+    digest = hashlib.sha256(b'dta-cameos-v3')
+    for path in [GAME_ROOT / 'INI' / name for name in ('Rules.ini', 'Art.ini', 'Enhance.ini')] + _mix_search_order():
+        if path.is_file():
+            stat = path.stat()
+            digest.update(f'{path.name}:{stat.st_size}:{stat.st_mtime_ns}\n'.encode())
+    return digest.hexdigest()[:16]
 
 
 @lru_cache(maxsize=512)
@@ -244,11 +268,13 @@ def _cameo_sources():
 @lru_cache(maxsize=512)
 def _unit_cameo_path(unit_id):
     """Decode once per identity, including identities without native artwork."""
-    output = CAMEO_CACHE_DIR / f'{unit_id.lower()}-dta.png'
+    output = CAMEO_CACHE_DIR / f'{unit_id.lower()}-dta-{_asset_cache_signature()}.png'
     if unit_id in TEXT_ONLY_CAMEO_IDS:
         # Older builds may have cached the incorrect inherited cameo.
         output.unlink(missing_ok=True)
         return None
+    if output.is_file() and output.stat().st_size:
+        return output
     rules, art, palette = _cameo_sources()
     if palette is None:
         return None
@@ -260,8 +286,6 @@ def _unit_cameo_path(unit_id):
     shp = mix_asset(filename)
     if shp is None:
         return None
-    # Refresh older on-disk artwork once at startup, then reuse the decoded
-    # image. This keeps fixes to inherited artwork effective across upgrades.
     shp_to_png(shp, palette, output)
     return output
 
@@ -300,6 +324,10 @@ def ensure_superweapon_cameos(superweapon_ids, sidebar_overrides=None):
 
 @lru_cache(maxsize=128)
 def _power_cameo_path(power_id, sidebar_override):
+    variant = f'-{mix_crc(sidebar_override):08x}' if sidebar_override else ''
+    output = CAMEO_CACHE_DIR / f'sw-{power_id.lower()}{variant}-dta-{_asset_cache_signature()}.png'
+    if output.is_file() and output.stat().st_size:
+        return output
     rules, art, palette = _cameo_sources()
     if palette is None:
         return None
@@ -330,7 +358,5 @@ def _power_cameo_path(power_id, sidebar_override):
     shp = mix_asset(filename)
     if shp is None:
         return None
-    variant = f'-{mix_crc(sidebar_override):08x}' if sidebar_override else ''
-    output = CAMEO_CACHE_DIR / f'sw-{power_id.lower()}{variant}-dta.png'
     shp_to_png(shp, palette, output)
     return output

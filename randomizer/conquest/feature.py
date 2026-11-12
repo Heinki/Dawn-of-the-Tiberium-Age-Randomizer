@@ -1,6 +1,6 @@
 """Build-time switch for the unreleased Conquest mode."""
 
-CONQUEST_FEATURE_ENABLED = False
+CONQUEST_FEATURE_ENABLED = True
 
 
 def enabled():

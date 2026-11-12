@@ -306,9 +306,12 @@ class ConquestController(ConquestCoopController):
     def _tick_conquest(self):
         if not conquest_enabled():
             return
+        visible = False
         try:
             view = self.conquest_view
             visible = self.conquest_selected() and view.winfo_ismapped()
+            if not visible:
+                return
             busy = self.conquest_busy() or bool(self.busy_depth) or bool(self._conquest_error) or self.conquest_orders_locked()
             if visible and view.busy != busy:
                 self.refresh_conquest()
@@ -337,7 +340,7 @@ class ConquestController(ConquestCoopController):
             self.refresh_conquest()
             self.append_log(traceback.format_exc(), error=True)
         finally:
-            self.after(50, self._tick_conquest)
+            self.after(50 if visible else 500, self._tick_conquest)
 
     def launch_conquest(self):
         if not conquest_enabled():

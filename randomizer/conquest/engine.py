@@ -56,11 +56,12 @@ def catalogue(root):
     """Offer installed 2–8-start skirmishes with supported native terrain."""
     root = Path(root).resolve()
     result = []
-    for relative, definition in discover_maps(root).items():
+    cache = {}
+    for relative, definition in discover_maps(root, cache=cache).items():
         if not 2 <= len(definition['starts']) <= 8:
             continue
         path = Path(definition['path']).resolve()
-        rows = inherited_sections(root, path)
+        rows = inherited_sections(root, path, cache=cache)
         if (any(rows.get(s) for s in ('Triggers', 'TeamTypes', 'AITriggerTypes', 'Houses')) or
             rows.get('Basic', {}).get('IgnoreGlobalAITriggers', 'no').casefold() in ('yes', 'true', '1') or
             rows.get('Map', {}).get('Theater', '').casefold() not in ('temperate', 'desert')):
@@ -86,6 +87,24 @@ class ConquestWriter(MapWriter):
     def key(self):
         self.counter += 1
         return f'DCQ{self.counter:05X}'
+
+
+def _clear_house_rosters(writer):
+    """Remove the native identities of seats that Conquest reassigns.
+
+    ActsLike changes AI and sidebar identity, but does not revoke Owner or
+    RequiredHouses entries. A Soviet using GDI1 must not inherit GDI1's GDI
+    refinery or Nod1's infantry when those seats are reassigned.
+    """
+    aliases = set(HOUSE_ALIASES)
+    for kind, native in writer.rules.items():
+        for field in ('Owner', 'RequiredHouses', 'ForbiddenHouses'):
+            values = comma_items(native.get(field))
+            if aliases.intersection(values):
+                remaining = [value for value in values if value not in aliases]
+                if field == 'RequiredHouses' and not remaining:
+                    remaining = ['Neutral']
+                writer.put(kind, field, ','.join(remaining))
 
 
 def _apply_house(writer, loadout, alias, index, *, impossible=False):
@@ -304,6 +323,7 @@ def render(root, state, attempt_id, *, game_speed=2, coop_slot=0, endpoints=None
         type(coop_slot) is not int or not 0 <= coop_slot < len(humans) or
         len(humans) > 1 and endpoints is None):
         raise ValueError('Invalid Conquest human seats or local player slot.')
+    _clear_house_rosters(writer)
     for member in members:
         slot = member['slot']
         _apply_house(writer, member['loadout'], HOUSE_ALIASES[slot], 6 + slot,

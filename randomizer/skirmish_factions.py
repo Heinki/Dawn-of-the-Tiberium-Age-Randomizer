@@ -19,7 +19,7 @@ def _map_catalogue(path):
     }
 
 
-def map_countries(root, definition, *, rows=None):
+def map_countries(root, definition, *, rows=None, cache=None):
     """Respect native map side exclusions and disabled country overrides."""
     from randomizer.skirmish import GAME, all_section_value_maps_preserve, playable_countries
     root = Path(root).resolve()
@@ -30,7 +30,7 @@ def map_countries(root, definition, *, rows=None):
         rows = all_section_value_maps_preserve(source.read_text(encoding='latin-1').splitlines())
     if GAME == 'dta':
         from randomizer.coop.catalogue import inherited_sections
-        rows = inherited_sections(root, source)
+        rows = inherited_sections(root, source, cache=cache)
     filename = 'MentalOmegaMaps.ini' if GAME == 'mo' else 'MPMaps.ini'
     catalogue = _map_catalogue(root / 'INI' / filename)
     key = source.relative_to(root).with_suffix('').as_posix().casefold()
