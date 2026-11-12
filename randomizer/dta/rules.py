@@ -5,6 +5,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from randomizer.core.paths import GAME_ROOT
+from randomizer.dta.aircraft import docked_reload_time
 
 
 PLAYABLE_FACTIONS = ('GDI', 'Nod', 'Allies', 'Soviet')
@@ -329,6 +330,7 @@ def techno_catalogue():
                 'armor': values.get('Armor', ''),
                 'sight': numeric_value(values, 'Sight'),
                 'ammo': numeric_value(values, 'Ammo'),
+                'rearm_rate': docked_reload_time(sections, category, values),
                 'is_dropship': values.get('IsDropship', '').casefold() in {
                     'yes', 'true', '1',
                 },

@@ -685,6 +685,18 @@ def _validate_tuning(sections, path):
         ):
             _invalid(f'Invalid stack limit for buff effect {effect!r}', path)
 
+    rearm = effects.get('rapid_rearm')
+    if (not isinstance(rearm, dict) or
+        not isinstance(rearm.get('reduction_per_stack'), (int, float)) or
+        isinstance(rearm.get('reduction_per_stack'), bool) or
+        not 0 < rearm['reduction_per_stack'] < 1 or
+        not isinstance(rearm.get('minimum_multiplier'), (int, float)) or
+        isinstance(rearm.get('minimum_multiplier'), bool) or
+        not 0 < rearm['minimum_multiplier'] < 1 or
+        not isinstance(rearm.get('stack_limit'), int) or
+        isinstance(rearm.get('stack_limit'), bool) or rearm['stack_limit'] < 1):
+        _invalid('Invalid Rapid Rearm buff tuning', path)
+
     self_heal_cap = effects.get('self_heal_cap')
     if (
         not isinstance(self_heal_cap, dict)

@@ -6,6 +6,7 @@ from .starting_unlocks import build_starting_unlocks_tab
 from .general_settings import build_general_settings
 from .enemy_scaling import build_enemy_scaling_settings
 from .negative_buffs import build_negative_buffs_tab
+from randomizer.config.tuning import stacked_aircraft_reload_rate
 
 from ._builder_dependencies import (
     ARSENAL_FACTIONS,
@@ -56,6 +57,9 @@ def _weight_slider(self, parent, label, variable, row, tooltip):
 
 def buff_setting_amount_text(buff_type):
     buff_id = buff_type['id']
+    if buff_id == 'rapid_rearm':
+        reduction = round((1 - stacked_aircraft_reload_rate(1, 1)) * 100)
+        return f'Rapid Rearm (−{reduction}% time)'
     if buff_id in {'production', 'cost'}:
         amount = round((1.0 - stacking_multiplier(buff_id, 1)) * 100)
         name = 'Production' if buff_id == 'production' else 'Cost'

@@ -11,6 +11,7 @@ MODE_DESCRIPTIONS = {
     'Grid Mode': 'Explore a randomized mission board through neighboring victories.',
     'Shop Mode': 'Configure a roguelike run with a shop, purchases, and loadouts.',
     'Final Fortress': 'Set up survival defense with waves, challenges, and permanent perks.',
+    'Conquest': 'Conquer territories solo or with up to four players over ZeroTier. Build personal armies, research upgrades, and fight skirmishes or autobattles.',
 }
 
 

@@ -60,6 +60,7 @@ UNIT_BUFF_WEIGHT_TYPES = (
     ('amphibious', 'Amphibious movement'),
     ('sight', 'Vision'),
     ('ammo', 'Ammo'),
+    ('rapid_rearm', 'Rapid Rearm'),
     ('passenger_capacity', 'Passenger capacity'),
     ('open_topped', 'Passenger firing'),
     ('cloak', 'Cloaking'),

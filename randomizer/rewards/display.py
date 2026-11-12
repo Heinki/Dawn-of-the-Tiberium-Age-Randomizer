@@ -27,6 +27,7 @@ from randomizer.config.tuning import (
     REWARD_PLANNING,
     stacked_cost,
     stacked_self_heal_rate,
+    stacked_aircraft_reload_rate,
     stacked_weapon_damage,
     stacked_weapon_rof,
     stacking_amount,
@@ -209,7 +210,7 @@ WEAPON_STAT_BUFF_TYPES = {'damage', 'range', 'reload', 'area'}
 UNIT_STAT_BUFF_TYPES = {
     'health', 'sight', 'ammo', 'passenger_capacity', 'open_topped',
     'self_healing', 'self_healing_cap', 'self_healing_rate', 'cloak',
-    'sensors', 'amphibious',
+    'sensors', 'amphibious', 'rapid_rearm',
 }
 MAP_GUARDED_BUFF_TYPES = WEAPON_STAT_BUFF_TYPES | UNIT_STAT_BUFF_TYPES
 CLONE_REQUIRED_BUFF_TYPES = (
@@ -332,7 +333,7 @@ def _uncached_buff_stack_limit(reward):
         return power_buff_stack_limit(reward)
     buff_type = reward.get('buff_type')
     if buff_type in {
-        'production', 'armor', 'health', 'range', 'area', 'ammo',
+        'production', 'armor', 'health', 'range', 'area', 'ammo', 'rapid_rearm',
     }:
         return stacking_stack_limit(buff_type)
     if buff_type == 'sight':
@@ -702,6 +703,11 @@ def buff_effect_lines(
             reward.get('unit'), 'Ammo'
         )
         return value_text(ammo_label, total_ammo, base_ammo)
+    if buff_type == 'rapid_rearm':
+        base_rate = float(target.get('rearm_rate', 0))
+        rate = stacked_aircraft_reload_rate(base_rate, count)
+        reduction = round((1 - rate / base_rate) * 100) if base_rate > 0 else 0
+        return [stacked(f'{prefix}Docked aircraft rearm time −{reduction}%')]
     if buff_type == 'passenger_capacity':
         base_passengers = int(target.get('passengers', 0))
         base_text = f' [{base_passengers}]' if show_base_values else ''

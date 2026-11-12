@@ -95,6 +95,12 @@ BUFF_TYPES = [
         'description': '{plural} carry more ammunition.',
     },
     {
+        'id': 'rapid_rearm',
+        'name': 'Rapid Rearm',
+        'setting_label': 'Rapid Rearm',
+        'description': '{plural} replenish ammunition faster while docked at a compatible helipad or airfield.',
+    },
+    {
         'id': 'passenger_capacity',
         'name': 'Expanded Transport',
         'setting_label': 'Passenger capacity',
@@ -318,6 +324,8 @@ def _allowed_buff_types(record):
     # never produce another shot, so do not expose a dead reward in any mode.
     if record['id'] != 'DTRK' and record.get('ammo', 0) > 0:
         allowed.append('ammo')
+    if record.get('category') == 'aircraft' and record.get('rearm_rate', 0) > 0:
+        allowed.append('rapid_rearm')
     if record.get('passengers', 0) > 0:
         allowed.append('passenger_capacity')
     if record.get('build_limit', 0) > 0:
@@ -362,6 +370,7 @@ for _record in _MOBILE_RECORDS:
         'strength': _record['strength'],
         'sight': _record['sight'],
         'ammo': _record['ammo'],
+        'rearm_rate': _record.get('rearm_rate', 0),
         'is_dropship': _record['is_dropship'],
         'primary_weapon': _record['primary_weapon'],
         'passengers': _record['passengers'],
@@ -782,7 +791,7 @@ CLONE_REQUIRED_BUFF_TYPES = frozenset(
         'production', 'cost', 'speed', 'armor', 'health', 'damage', 'reload',
         'range', 'sight', 'ammo', 'passenger_capacity', 'cloak', 'sensors',
         'self_healing', 'self_healing_cap', 'self_healing_rate', 'area',
-        'amphibious',
+        'amphibious', 'rapid_rearm',
         'build_limit',
     }
 )

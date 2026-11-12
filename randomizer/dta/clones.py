@@ -8,6 +8,7 @@ from randomizer.config.tuning import (
     BUFF_EFFECTS,
     capped_movement_speed,
     capped_sight_range,
+    stacked_aircraft_reload_rate,
     mission_assistance_stack_count,
     movement_speed_ceiling,
     stacked_cost,
@@ -18,6 +19,7 @@ from randomizer.config.tuning import (
     stacking_multiplier,
 )
 from randomizer.core.paths import GAME_ROOT
+from randomizer.dta.aircraft import docked_reload_time
 from randomizer.dta.demolition import (
     PLAYER_BLAST_ANIMATION,
     player_demolition_blast_art,
@@ -1047,6 +1049,10 @@ def mission_assistance_rewards(
 
 def _unit_overrides(values, counts, target):
     overrides = {}
+    if counts['rapid_rearm'] and target.get('category') == 'aircraft' and target.get('rearm_rate', 0) > 0:
+        rate = float(values.get('ReloadRate', target['rearm_rate']))
+        if rate > 0 and float(values.get('Ammo', target.get('ammo', 0))) > 0:
+            overrides['ReloadRate'] = _number(stacked_aircraft_reload_rate(rate, counts['rapid_rearm']))
     if counts['build_limit']:
         try:
             base_limit = int(float(values.get('BuildLimit', 0)))
@@ -1178,9 +1184,11 @@ def _unit_overrides(values, counts, target):
     return overrides
 
 
-def _target_with_effective_rules(target, values):
+def _target_with_effective_rules(target, values, *, source_sections=None):
     """Overlay clone-relevant catalogue metadata with active runtime rules."""
     effective = dict(target or {})
+    if source_sections is not None:
+        effective['rearm_rate'] = docked_reload_time(source_sections, effective.get('category'), values)
     for output_key, rule_key in (
         ('speed', 'Speed'),
         ('strength', 'Strength'),
@@ -1751,6 +1759,7 @@ def unit_specific_buff_rules(
                 'reload', 'range', 'sight', 'ammo', 'passenger_capacity',
                 'build_limit', 'cloak', 'sensors', 'self_healing',
                 'self_healing_cap', 'self_healing_rate', 'area', 'amphibious',
+                'rapid_rearm',
             }
         ):
             continue
@@ -1889,7 +1898,7 @@ def unit_specific_buff_rules(
         if not values:
             report['skipped'].append({'unit': unit_id, 'reason': 'missing_rules'})
             continue
-        target = _target_with_effective_rules(target, values)
+        target = _target_with_effective_rules(target, values, source_sections=source_sections)
 
         # SE5 disarms native Flame Towers used as props. Restore weapons only
         # for earned production, leaving the mission's placed props untouched.
@@ -2418,7 +2427,7 @@ def unit_specific_buff_rules(
                 if not linked_values or not linked_target:
                     continue
                 linked_target = _target_with_effective_rules(
-                    linked_target, linked_values
+                    linked_target, linked_values, source_sections=source_sections
                 )
                 linked_output = _clone_id(linked_source, 'PLAYER', occupied)
                 linked_rules = dict(linked_values)

@@ -34,6 +34,7 @@ from .base import (
 from randomizer.config.tuning import (
     stacked_cost,
     stacked_self_heal_rate,
+    stacked_aircraft_reload_rate,
     stacked_weapon_damage,
     stacked_weapon_rof,
 )
@@ -172,7 +173,12 @@ def veteran_armor_safety_rules(lines, installed_sections):
     }
 
 def apply_unit_buff_value(values, target, buff_type, count):
-    if buff_type == 'health':
+    if buff_type == 'rapid_rearm':
+        if target.get('category') != 'aircraft' or target.get('rearm_rate', 0) <= 0:
+            return False
+        rate = parse_float(values.get('ReloadRate'), target['rearm_rate'])
+        values['ReloadRate'] = f'{stacked_aircraft_reload_rate(rate, count):.8g}'
+    elif buff_type == 'health':
         multiplier = stacking_multiplier('health', count)
         base_strength = resolved_safe_strength(target)
         set_safe_strength(values, int(round(base_strength * multiplier)))

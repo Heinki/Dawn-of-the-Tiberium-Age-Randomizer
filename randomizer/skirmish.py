@@ -39,7 +39,7 @@ def playable_countries():
 
 
 def discover_maps(root):
-    """Offer unscripted maps only; authored campaigns keep their own adapters."""
+    """Offer installed multiplayer maps, preserving their authored map scripts."""
     root = Path(root)
     result = {}
     for directory in ('Maps', 'MapsMO'):
@@ -49,13 +49,18 @@ def discover_maps(root):
         for source in sorted(folder.rglob('*')):
             if source.suffix.lower() not in ('.map', '.mpr', '.yrm'):
                 continue
-            if any(part.casefold() in ('co-op', 'cooperative', 'coop', 'challenge', 'campaign') for part in source.relative_to(folder).parts[:-1]):
+            if any(part.casefold() in ('co-op', 'cooperative', 'coop', 'challenge', 'challenges', 'campaign', 'campaigns') for part in source.relative_to(folder).parts[:-1]):
                 continue
             rows = all_section_value_maps_preserve(source.read_bytes().decode('latin-1').splitlines())
-            if any(rows.get(name) for name in ('Triggers', 'TeamTypes', 'AITriggerTypes', 'Houses')):
+            if rows.get('Basic', {}).get('MultiplayerOnly', 'yes').casefold() in ('no', 'false', '0'):
                 continue
-            starts = [i for i in range(8) if str(i) in rows.get('Waypoints', {})]
-            if len(starts) < 2 or starts != list(range(len(starts))):
+            # Later low-numbered waypoints can be script destinations, not
+            # player seats. Prefer the authored multiplayer start count.
+            count = rows.get('Header', {}).get(
+                'NumberStartingPoints', rows.get('Basic', {}).get('MaxPlayer', '8'))
+            limit = int(count) if count.isdigit() and 2 <= int(count) <= 8 else 8
+            starts = [i for i in range(limit) if str(i) in rows.get('Waypoints', {})]
+            if len(starts) < 2 or 0 not in starts:
                 continue
             from randomizer.skirmish_factions import map_countries
             countries = tuple(map_countries(root, {'path': str(source.resolve())}, rows=rows).values())
@@ -116,8 +121,15 @@ def prepare_game(root, definition, rewards, settings, *, country, color, opponen
     if len(definition['starts']) < 2:
         raise ValueError('Skirmish map requires two start positions.')
     rows = all_section_value_maps_preserve(source.read_bytes().decode('latin-1').splitlines())
-    if any(rows.get(name) for name in ('Triggers', 'TeamTypes', 'AITriggerTypes', 'Houses')):
-        raise ValueError('Progression Skirmish requires an unscripted multiplayer map.')
+    if rows.get('Basic', {}).get('MultiplayerOnly', 'yes').casefold() in ('no', 'false', '0'):
+        raise ValueError('Progression Skirmish requires a multiplayer map.')
+    waypoints = rows.get('Waypoints', {})
+    starts = {index: divmod(int(waypoints[str(index)]), 1000)
+              for index in definition['starts']}
+    enemy_start = max((index for index in starts if index != 0), key=lambda index: (
+        sum((value - origin) ** 2 for value, origin in zip(starts[index], starts[0])),
+        -index,
+    ))
     if GAME == 'dta':
         from randomizer.coop.catalogue import inherited_sections
         rows = inherited_sections(root, source)
@@ -159,7 +171,7 @@ def prepare_game(root, definition, rewards, settings, *, country, color, opponen
     for index in range(opponents):
         house = f'Multi{index + 2}'
         enemy = rng.choice(available)
-        spawn['SpawnLocations'][house] = str(index + 1)
+        spawn['SpawnLocations'][house] = str(enemy_start)
         spawn['HouseCountries'][house] = str(native_countries.index(enemy))
         spawn['HouseColors'][house] = str(palette[index])
         spawn['HouseHandicaps'][house] = str(4 if difficulty == 'Brutal' else 2 - rank)

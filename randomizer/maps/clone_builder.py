@@ -1066,6 +1066,7 @@ def build_player_clone_sections(
             'open_topped', 'self_healing', 'self_healing_cap',
             'self_healing_rate', 'cloak', 'sensors', 'production', 'cost',
             'speed', 'amphibious',
+            'rapid_rearm',
         ):
             if buff_type in direct_types and apply_unit_buff_value(
                 clone_values, effective_target, buff_type, counts[buff_type]

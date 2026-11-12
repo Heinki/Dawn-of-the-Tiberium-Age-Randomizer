@@ -109,6 +109,15 @@ def stacked_weapon_rof(base_rof, count):
     return previous
 
 
+def stacked_aircraft_reload_rate(base_rate, count):
+    """Reduce an aircraft's native docked reload interval within its stack cap."""
+    values = BUFF_EFFECTS['rapid_rearm']
+    count = max(0, min(int(values['stack_limit']), int(count)))
+    multiplier = max(float(values['minimum_multiplier']),
+                     1 - float(values['reduction_per_stack']) * count)
+    return max(0, float(base_rate)) * multiplier
+
+
 def stacked_self_heal_rate(count, base_rate=None):
     """Return Vinifera minutes between ticks after rate-upgrade stacks."""
     values = BUFF_EFFECTS['self_heal_rate']

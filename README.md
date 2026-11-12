@@ -19,6 +19,12 @@ This project is the randomizer launcher for DTA 16.0.2 and Vinifera. It reuses t
 For APWorld installation, room generation, connection, and troubleshooting,
 see the [Archipelago player guide](Archipelago/README.md).
 
+Conquest is disabled in this release. Its build-time switch is
+`CONQUEST_FEATURE_ENABLED` in [randomizer/conquest/feature.py](randomizer/conquest/feature.py).
+Set it to `True` before launching from source or rebuilding to enable the mode.
+When disabled, its menu, campaign loading, AI timer, and co-op entry points are
+inactive. Existing Conquest saves are preserved; regular unit buffs remain available.
+
 Experimental native co-op Grid/Shop supports 2–4 humans when its source-only
 feature flag is enabled. The host controls mission selection and team progress.
 Grid rewards are shared; Shop players retain personal loadouts and economies.
@@ -55,6 +61,7 @@ IP and pairing code by default and uses the standard lobby/game ports automatica
 - Routes free aircraft and harvesters from player-production building clones to their buffed unit clones. Original enemy buildings retain their native free units.
 - Routes earned aircraft through the current mission faction's air production buildings in every mode: a Soviet player can build an unlocked Orca at a runway, and a GDI player can build an unlocked Yak at a helipad. The required faction factory becomes buildable without technology prerequisites, including replacements for starting factories. Native aircraft and their clones share compatible docking types; both resource harvesters accept native and cloned refineries across factions.
 - Adds unit-specific production-clone buffs where the installed DTA rules support them: production, cost, speed, armor, health, damage, reload, range, blast area, sight, ammo, passenger capacity, cloaking, sensors, staged regeneration, and amphibious movement for dry-land vehicles. Regeneration access first adds `SELF_HEAL` at Veteran rank, then enables self-healing from Rookie rank. Separate upgrades raise the healing cap from 50% to 100% or shorten the interval between healing ticks; neither changes `SelfHealingStep`. Natural self-healers receive only the cap and rate upgrades.
+- Includes **Rapid Rearm** in Unit Buffs with its own toggle, weight and three-stack cap. Orca, Apache, A-10, Yak, MiG, Longbow and Hind replenish ammunition at compatible helipads/airfields with 15% / 30% / 45% shorter reload intervals. This is separate from weapon Fire Rate and Ammo capacity. Player aircraft copies retain their own native or mission-specific baseline; enemy aircraft are unaffected.
 - Restricts Commando, Tanya, and Volkov player-production clones to one live unit. Their Command Capacity rewards increase that simultaneous limit by one per stack, matching other capped hero and prototype units.
 - Exposes 123 canonical mobile types: 24 infantry, 91 vehicles/naval units, and 8 aircraft. The 111 non-essential types can become access rewards. Engineer, both resource harvesters, Chinook, all four MCVs, and all four faction hovercraft transports remain permanently available. Engineers use a prerequisite-free player clone that accepts native, captured, and cloned infantry factories, including foreign barracks, with or without buffs. Each MCV requires its matching War Factory/Airstrip, so capturing an enemy factory also grants access to that faction's MCV.
 - Uses DTA's authored enhanced Heavy APC rules for the separate Soviet reward in every mission: six passengers, 5,000 strength, the `APC2ICON` cameo, no Rookie/Veteran weapon, and `M60mg` at Elite rank. Its catalogue stats, prices, and buffs use the same definition as its player clone.
