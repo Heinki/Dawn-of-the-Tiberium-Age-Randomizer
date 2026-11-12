@@ -12,7 +12,7 @@ from .waves import build_wave_schedule
 from .wave_priority import apply_priorities
 from .pressure import size_composition
 
-PLAN_VERSION = 7
+PLAN_VERSION = 8
 
 
 def _starting_economy(effects, country, plan_version):
@@ -75,7 +75,7 @@ def build_run_plan(
     validate_config(config)
     validate_wave_multiplier(wave_multiplier)
     text(seed, 'Seed')
-    if type(plan_version) is not int or plan_version not in (1, 2, 3, 4, 5, 6, PLAN_VERSION):
+    if type(plan_version) is not int or plan_version not in (1, 2, 3, 4, 5, 6, 7, PLAN_VERSION):
         raise ValueError('Unsupported DTA Fortress plan version.')
     if difficulty not in DIFFICULTY_IDS or player_country not in SIDE_COUNTRIES:
         raise ValueError('Choose a DTA faction and difficulty.')

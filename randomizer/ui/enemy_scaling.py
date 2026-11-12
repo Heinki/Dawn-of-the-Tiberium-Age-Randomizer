@@ -9,14 +9,16 @@ from ._builder_dependencies import (
 
 
 def build_enemy_scaling_settings(self, reward_frame):
+    # Append after the complete Starting Rewards block, including its options.
+    start_row = reward_frame.grid_size()[1]
     ttk.Separator(reward_frame, orient='horizontal').grid(
-        row=15, column=0, sticky='ew', pady=(8, 6)
+        row=start_row, column=0, sticky='ew', pady=(8, 6)
     )
     ttk.Label(
         reward_frame,
         text='AI Enemy Rewards',
         style='Muted.TLabel',
-    ).grid(row=16, column=0, sticky='w', pady=(0, 3))
+    ).grid(row=start_row + 1, column=0, sticky='w', pady=(0, 3))
 
     self.enemy_reward_pool_check = ttk.Checkbutton(
         reward_frame,
@@ -24,7 +26,7 @@ def build_enemy_scaling_settings(self, reward_frame):
         variable=self.enemy_reward_pool_var,
         command=self.refresh_setting_states,
     )
-    self.enemy_reward_pool_check.grid(row=17, column=0, sticky='w')
+    self.enemy_reward_pool_check.grid(row=start_row + 2, column=0, sticky='w')
     WidgetTooltip(
         self.enemy_reward_pool_check,
         'AI rewards occupy normal reward slots and apply only to verified '
@@ -34,7 +36,7 @@ def build_enemy_scaling_settings(self, reward_frame):
     )
 
     rates = ttk.Frame(reward_frame)
-    rates.grid(row=18, column=0, sticky='ew', pady=(4, 0))
+    rates.grid(row=start_row + 3, column=0, sticky='ew', pady=(4, 0))
     rates.columnconfigure(1, weight=1)
     ttk.Label(rates, text='AI bonus stacks per completed mission').grid(
         row=0, column=0, sticky='w', padx=(0, 8)
@@ -73,16 +75,16 @@ def build_enemy_scaling_settings(self, reward_frame):
         wraplength=590,
     )
     self.enemy_reward_capacity_label.grid(
-        row=19, column=0, sticky='w', pady=(3, 5)
+        row=start_row + 4, column=0, sticky='w', pady=(3, 5)
     )
 
     ttk.Label(
         reward_frame,
         text='Allowed AI rewards',
         style='Muted.TLabel',
-    ).grid(row=20, column=0, sticky='w', pady=(0, 2))
+    ).grid(row=start_row + 5, column=0, sticky='w', pady=(0, 2))
     groups_frame = ttk.Frame(reward_frame)
-    groups_frame.grid(row=21, column=0, sticky='ew')
+    groups_frame.grid(row=start_row + 6, column=0, sticky='ew')
     groups_frame.columnconfigure(0, weight=1)
     groups_frame.columnconfigure(1, weight=1)
     self.enemy_buff_group_controls = []

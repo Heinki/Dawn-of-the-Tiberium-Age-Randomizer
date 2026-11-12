@@ -1,5 +1,9 @@
 """Shared eligibility for aircraft that replenish ammunition at a dock."""
 
+AIRCRAFT_BUILDINGS = {'GDI': 'GHPAD', 'Nod': 'NHPAD', 'Allies': 'AHPAD', 'Soviet': 'RAASTRP'}
+AIRCRAFT_BUILDING_LABELS = {'GDI': 'GDI Helipad', 'Nod': 'Nod Helipad',
+                            'Allies': 'Allied Helipad', 'Soviet': 'Soviet Runway'}
+
 
 def docked_reload_time(rules, category, values):
     if category not in ('AircraftTypes', 'aircraft'):

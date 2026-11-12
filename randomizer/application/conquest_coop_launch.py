@@ -11,7 +11,7 @@ import uuid
 
 from randomizer.core.paths import GAME_ROOT, DEBUG_LOG
 from randomizer.core.storage import atomic_write_json, read_json_object
-from randomizer.coop.lobby import pack, unpack
+from randomizer.coop.lobby import pack, unpack, installation_details
 from randomizer.conquest.engine import render, install, verify_prepared
 from randomizer.conquest.persistence import validate, commit_attempt, mark_launched, finish_attempt
 from randomizer.conquest.players import roster
@@ -40,6 +40,7 @@ class ConquestCoopLaunchController:
         self.cleanup_generated_root_maps()
         self.clear_power_runtime_types()
         prepared = render(GAME_ROOT, state, token, game_speed=speed, coop_slot=slot, endpoints=endpoints)
+        prepared['runtime_hash'] = installation_details(GAME_ROOT)[0]
         return prepared, command, dict(map_hash=hashlib.sha256(prepared['map']).hexdigest(),
                                       spawn_hash=hashlib.sha256(prepared['spawn']).hexdigest())
 
@@ -65,16 +66,17 @@ class ConquestCoopLaunchController:
             committed, _ = self.conquest_repository.update(state['id'], state['revision'],
                 lambda s: commit_attempt(s, state['pending']['id'], token, **hashes))
             install(GAME_ROOT, prepared)
-            return committed, command, hashes
+            return committed, command, hashes, prepared['runtime_hash']
 
         def done(result):
             pending['worker'] = False
-            self.conquest_state, pending['command'], pending['hashes'] = result
+            self.conquest_state, pending['command'], pending['hashes'], pending['runtime_hash'] = result
             if pending['cancelled'] or self._cq_lobby is not lobby or not lobby.connected:
                 return self._cq_finish_cancelled()
             self.publish_conquest()
             lobby.send(dict(type='cq_prepare', token=token, payload=pack(json.dumps(dict(
                 state=self.conquest_state, endpoints=endpoints, speed=speed,
+                runtime_hash=pending['runtime_hash'],
                 map_hash=pending['hashes']['map_hash'])).encode())))
             self._cq_status.set('Waiting for every player to verify the identical battle map…')
             self.refresh_conquest()
@@ -104,6 +106,8 @@ class ConquestCoopLaunchController:
 
         def work():
             prepared, command, hashes = self._cq_prepare_files(state, token, payload['speed'], payload['endpoints'], slot)
+            if prepared['runtime_hash'] != payload.get('runtime_hash'):
+                raise ValueError('DTA game files differ between players. Update every installation to the same version, then retry.')
             if hashes['map_hash'] != payload['map_hash']:
                 raise ValueError('Conquest battle map differs between players.')
             install(GAME_ROOT, prepared)

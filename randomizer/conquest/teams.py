@@ -9,7 +9,7 @@ from copy import deepcopy
 
 from .catalogue import LOCAL_PERKS, combat_power, starting_force
 
-TEAM_VERSION = 2
+TEAM_VERSION = 4
 ALLY_STRENGTH = 8
 HOUSE_ALIASES = ('GDI1', 'Nod1', 'GDI2', 'Nod2', 'Allies1', 'Allies2', 'Soviet1', 'Soviet2')
 COLOR_SCHEMES = (3, 21, 47, 73, 27, 55, 39, 33)
@@ -26,9 +26,13 @@ def _member(battle, team, role, waypoint, slot):
             loadout['perks'].pop(key, None)
         loadout['perks'].pop('allies', None)
         loadout.pop('headquarters', None)
-        loadout['force'] = starting_force(loadout['country'], ALLY_STRENGTH, loadout['perks'])
+        sizing = dict(balance_version=battle.get('team_version', 1))
+        if battle.get('team_version', 1) >= 4:
+            loadout.update(army_count=1, defense_multiplier=1)
+        loadout['force'] = starting_force(loadout['country'], ALLY_STRENGTH, loadout['perks'],
+                                         legacy_aircraft=battle.get('team_version', 1) < 3, **sizing)
         loadout['power'] = combat_power(ALLY_STRENGTH, loadout['stats'], loadout['perks'],
-                                       field_repairs=loadout.get('field_repairs', False))
+                                       field_repairs=loadout.get('field_repairs', False), **sizing)
     return dict(id=f'{team}:{slot}', team=team, role=role,
         controller='human' if role == 'commander' and loadout['faction'] == 'player' else 'ai',
         slot=slot, waypoint=waypoint, color=slot, scheme=COLOR_SCHEMES[slot], loadout=loadout)
@@ -86,8 +90,8 @@ def validate_teams(battle):
         if 'team_version' in battle or any(battle[t]['perks'].get('allies') for t in ('attack', 'defense')):
             raise ValueError('Missing committed Conquest participants.')
         return
-    if (battle.get('team_version') not in (1, TEAM_VERSION) or
-        'human_loadouts' in battle and battle['team_version'] != TEAM_VERSION or
+    if (battle.get('team_version') not in (1, 2, 3, TEAM_VERSION) or
+        'human_loadouts' in battle and battle['team_version'] not in (2, 3, TEAM_VERSION) or
         battle['participants'] != plan_participants(battle)):
         raise ValueError('Invalid committed Conquest teams or starting positions.')
 

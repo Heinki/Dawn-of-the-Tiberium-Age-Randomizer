@@ -2,6 +2,7 @@
 
 from collections import Counter, deque
 from copy import deepcopy
+from functools import lru_cache
 import hashlib
 import math
 import os
@@ -9,26 +10,30 @@ from pathlib import Path
 import re
 import tempfile
 
-from randomizer.coop.catalogue import inherited_sections
-from randomizer.dta.rules import ini_sections, effective_section, installed_effective_sections, comma_items
+from randomizer.coop.catalogue import inherited_sections, merge
+from randomizer.dta.rules import ini_sections, effective_section, comma_items
 from randomizer.maps.ini import IniLines
 from randomizer.maps.hooks import append_hook_team
 from randomizer.skirmish import discover_maps, _dta_naval_options, _serialize
 from randomizer.final_fortress.engine import MapWriter, _action
 from randomizer.final_fortress.terrain import Terrain, BUILDABLE_TILES
 from randomizer.final_fortress.placement import foundation
-from .catalogue import FACTIONS, DIFFICULTIES, RULES_VERSION, BATTLE_CREDITS_PER_RANK, HELIPADS
+from .catalogue import FACTIONS, DIFFICULTIES, RULES_VERSION, BATTLE_CREDITS_PER_RANK, AIRCRAFT_BUILDINGS
 from .teams import HOUSE_ALIASES, participants
 from .players import human
 
 
-# Flat roads from the installed DTA theater registries. Fortress's deliberately
-# narrow placement palette omits roads used by ordinary skirmish spawn points,
-# including Alpine Assault's snow roads. Ramps, cliffs and bridges stay excluded.
+# Flat roads, floors and platform LAT from the installed DTA theater registries.
+# Fortress's deliberately narrow placement palette omits ordinary skirmish
+# surfaces. Impassable floors, equipment, platform edges, ramps and water stay
+# excluded; foundations and same-height access remain checked separately.
 CONQUEST_GROUND = {
     'temperate': BUILDABLE_TILES['temperate'] | frozenset({
         *range(196, 231), *range(1082, 1183), *range(1972, 2339),
         *range(3164, 3461), *range(4382, 4481), *range(9133, 9430),
+        *range(789, 806),       # Platform LAT and platform/dirt transitions.
+        *range(6865, 6885),     # Tiled and brick floors (not impassable floors).
+        *range(6955, 7054),     # Tiled/brick floor transitions.
     }),
     'desert': BUILDABLE_TILES['desert'] | frozenset({
         *range(1383, 1581), *range(3595, 3793),
@@ -44,6 +49,47 @@ def installation_fingerprint(root):
         digest.update(relative.encode())
         digest.update(path.read_bytes() if path.is_file() else b'<absent>')
     return digest.hexdigest()
+
+
+@lru_cache(maxsize=2)
+def _current_rules(root, signature):
+    """Refresh flattened rules when the client regenerates its installed INIs."""
+    rows = ini_sections(root / 'INI/Rules.ini')
+    merge(rows, ini_sections(root / 'INI/Enhance.ini'))
+    return {key: effective_section(rows, key) for key in rows}
+
+
+def _validate_runtime(root, battle):
+    """Check the committed army against today's installation, not its age.
+
+    Client updates and regenerated art files must not invalidate an entire solo
+    campaign. Frozen maps, force definitions, house seats and installed types
+    still have to match the native adapter before anything is committed.
+    """
+    for relative in ('game.exe', 'Vinifera.dll', 'LaunchVinifera.dat',
+                     'INI/Rules.ini', 'INI/Enhance.ini', 'INI/Art.ini', 'INI/AI.ini',
+                     'INI/MPMaps.ini', 'Resources/SkirmishLobby.ini'):
+        path = root / relative
+        if not path.is_file() or not path.stat().st_size:
+            raise ValueError(f'DTA installation is incomplete: {relative}. Repair the game, then retry this battle.')
+    signature = tuple((path.stat().st_mtime_ns, path.stat().st_size)
+                      for path in (root / 'INI/Rules.ini', root / 'INI/Enhance.ini'))
+    rules = _current_rules(root, signature)
+    buildings = set(rules.get('BuildingTypes', {}).values())
+    mobiles = set(rules.get('VehicleTypes', {}).values()) | set(rules.get('InfantryTypes', {}).values())
+    for member in participants(battle):
+        loadout, slot = member['loadout'], member['slot']
+        country, force = loadout['country'], loadout['force']
+        if (rules.get('Houses', {}).get(str(FACTIONS.index(country))) != country or
+            rules.get('Houses', {}).get(str(6 + slot)) != HOUSE_ALIASES[slot] or
+            rules.get(country, {}).get('Side') not in rules.get('Sides', {})):
+            raise ValueError('The installed DTA faction registry is incompatible with this battle. Repair the game, then retry.')
+        required = [(kind, mobiles) for kind in (*force['units'], force['collector'])]
+        required += [(kind, buildings) for kind in (*force['structures'], force['power_type'])]
+        for kind, registry in required:
+            if kind not in registry or not rules.get(kind):
+                raise ValueError(f'DTA no longer provides the required starting type {kind}. Repair the game, then retry this battle.')
+    return deepcopy(rules)
 
 
 def map_fingerprint(root, source):
@@ -190,7 +236,9 @@ def _placements(writer, source, sides, *, private_types=None):
             row = value.split(',')
             occupied.add((int(row[3]), int(row[4])))
     centers = {}
-    for index in range(8):
+    # Only occupied seats spawn an MCV. Reserving unused neighboring starts
+    # can consume the entire building area on tightly paired city maps.
+    for index in sorted({waypoint for _, waypoint in sides}):
         cell = source.get('Waypoints', {}).get(str(index))
         if cell is None:
             continue
@@ -247,7 +295,7 @@ def _placements(writer, source, sides, *, private_types=None):
                     occupied.update(apron)
                     output = (_starting_structure_type(writer, kind, refinery_cache, template=private.get(kind))
                               if kind in ('TDPROC', 'RAPROC') else private.get(kind, kind))
-                    if kind in HELIPADS.values():
+                    if kind in {*AIRCRAFT_BUILDINGS.values(), 'SHPAD'}:
                         pad = {**rules[kind], **writer.sections.get(output, {})}
                         if pad.get('FreeUnit', 'none').casefold() not in ('none', '<none>', ''):
                             output = _starting_structure_type(writer, kind, refinery_cache, template=private.get(kind), refinery=False)
@@ -289,14 +337,9 @@ def render(root, state, attempt_id, *, game_speed=2, coop_slot=0, endpoints=None
     if map_fingerprint(root, source) != battle['map']['sha256']:
         raise ValueError('The assigned battle map changed. Autobattle remains available.')
     if state.get('coop'):
-        from randomizer.coop.lobby import installation_details
         from .network import validate_endpoints
         validate_endpoints(state, endpoints)
-        compatible = state['settings'].get('coop_runtime_hash') == installation_details(root)[0]
-    else:
-        compatible = state['settings'].get('installation_hash') == installation_fingerprint(root)
-    if not compatible:
-        raise ValueError('DTA rules changed since campaign creation. Start a new campaign or use autobattle.')
+    rules = _validate_runtime(root, battle)
     if type(game_speed) is not int or not 0 <= game_speed <= 6:
         raise ValueError('Invalid game speed.')
     rows = inherited_sections(root, source)
@@ -308,7 +351,6 @@ def render(root, state, attempt_id, *, game_speed=2, coop_slot=0, endpoints=None
     overlay = 'Medium' if difficulty == 'Normal' else difficulty if difficulty in ('Easy', 'Hard') else 'Brutal'
     for section, values in inherited_sections(root, root / 'INI/Map Code' / f'Difficulty {overlay}.ini').items():
         rows.setdefault(section, {}).update(values)
-    rules = deepcopy(installed_effective_sections(enhanced=True))
     for section, values in rows.items():
         rules.setdefault(section, {}).update(values)
     rows.setdefault('Basic', {}).update(Name='Conquest: ' + battle['map']['name'], MultiplayerOnly='yes', IgnoreGlobalAITriggers='no')
@@ -340,7 +382,7 @@ def render(root, state, attempt_id, *, game_speed=2, coop_slot=0, endpoints=None
                 values.append(alias)
         writer.put('Sides', name, ','.join(values))
     from .native_effects import apply_effects
-    private = apply_effects(writer, members)
+    private = apply_effects(writer, members, balance_version=battle.get('team_version', 1))
     grants = _placements(writer, rows, [(m['loadout'], m['waypoint']) for m in members],
                          private_types={m['waypoint']: private[m['slot']] for m in members})
     team, force, script = writer.key(), writer.key(), writer.key()

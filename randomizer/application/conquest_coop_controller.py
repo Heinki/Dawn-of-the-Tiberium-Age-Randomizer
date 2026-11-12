@@ -241,12 +241,15 @@ class ConquestCoopController(ConquestCoopLaunchController):
         if not self.conquest_coop_ready():
             raise ValueError('Wait for every commander to reconnect.')
         actor = self._cq_actor(slot)
+        message = None
         if action == 'launch':
             authorize_action(self.conquest_state, actor, action, values)
             self.begin_conquest_coop_battle()
         else:
-            self._conquest_change(lambda state: authorize_action(state, actor, action, values))
-        self.refresh_conquest()
+            result = self._conquest_change(lambda state: authorize_action(state, actor, action, values))
+            message = result if isinstance(result, str) else None
+        self.refresh_conquest(message)
+        return message
 
     def _poll_conquest_lobby(self, lobby):
         if self._cq_lobby is not lobby:
@@ -316,15 +319,15 @@ class ConquestCoopController(ConquestCoopLaunchController):
                 if (not self.conquest_state or message.get('campaign') != self.conquest_state['id'] or
                     type(message.get('revision')) is not int or message['revision'] != self.conquest_state['revision']):
                     raise ValueError('Campaign changed. Review the synchronized map and try again.')
-                self._cq_execute(slot, message.get('action'), message.get('values'))
-                lobby.send(dict(type='cq_ack', token=token), slot)
+                result = self._cq_execute(slot, message.get('action'), message.get('values'))
+                lobby.send(dict(type='cq_ack', token=token, message=result), slot)
             except (ValueError, RuntimeError, OSError) as exc:
                 self.publish_conquest()
                 lobby.send(dict(type='cq_ack', token=token, error=str(exc)), slot)
         elif kind == 'cq_ack' and lobby.role == 'guest':
             if self._cq_request and message.get('token') == self._cq_request['token']:
                 self._cq_request = None
-                self.refresh_conquest(message.get('error') or 'Order saved by host.')
+                self.refresh_conquest(message.get('error') or message.get('message') or 'Order saved by host.')
         elif kind == 'cq_prepare' and lobby.role == 'guest':
             self.prepare_conquest_coop_guest(lobby, message)
         elif kind == 'cq_ready' and lobby.role == 'host':

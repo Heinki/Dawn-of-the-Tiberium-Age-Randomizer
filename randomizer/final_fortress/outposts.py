@@ -9,6 +9,7 @@ from math import ceil
 from pathlib import Path
 
 from randomizer.dta.rules import effective_section, ini_sections, comma_items
+from randomizer.dta.aircraft import AIRCRAFT_BUILDINGS
 from .maps import map_sections
 from .placement import foundation
 from .terrain import Terrain
@@ -18,7 +19,7 @@ FACTION_BUILDINGS = {
     'GDI': ('NUK2', 'PYLE', 'TDPROC', 'HQ', 'WEAP', 'GHPAD', 'FIX', 'GFACT'),
     'Nod': ('NUK2', 'HAND', 'TDPROC', 'HQ', 'AFLD', 'NHPAD', 'FIX', 'NFACT'),
     'Allies': ('RAAPWR', 'RATENT', 'RAPROC', 'RADOME', 'AWEAP', 'AHPAD', 'RAFIX', 'AFACT'),
-    'Soviet': ('RAAPWR', 'RABARR', 'RAPROC', 'SDOME', 'SWEAP', 'SHPAD', 'RAFIX', 'SFACT'),
+    'Soviet': ('RAAPWR', 'RABARR', 'RAPROC', 'SDOME', 'SWEAP', AIRCRAFT_BUILDINGS['Soviet'], 'RAFIX', 'SFACT'),
 }
 FACTION_DEFENSES = {
     'GDI': ('TWR', 'ATWR'),
@@ -28,9 +29,11 @@ FACTION_DEFENSES = {
 }
 
 
-def outpost_buildings(country, rank, *, perimeter=False):
+def outpost_buildings(country, rank, *, perimeter=False, native_aircraft=True):
     """Cumulative grants; rank six retains two of every native defense type."""
     generator, barracks, refinery, radar, factory, helipad, repair, yard = FACTION_BUILDINGS[country]
+    if not native_aircraft and country == 'Soviet':
+        helipad = 'SHPAD'
     defenses = FACTION_DEFENSES[country]
     buildings = [barracks]
     if rank >= 2:
@@ -60,19 +63,20 @@ def plan_outposts(root, definition, country, rank, power_percent, *, version=5):
     planner = _plan_compact_outposts if version >= 6 else _plan_outposts
     return deepcopy(planner(
         str(Path(root).resolve()), json.dumps(definition, sort_keys=True),
-        country, rank, power_percent,
+        country, rank, power_percent, native_aircraft=version >= 8,
     ))
 
 
 @lru_cache(maxsize=96)
-def _plan_compact_outposts(root, definition_json, country, rank, power_percent):
+def _plan_compact_outposts(root, definition_json, country, rank, power_percent, *, native_aircraft=False):
     from .catalogue import installed_rules_registry
     from .formations import context, compound, footprint
 
     definition = json.loads(definition_json)
     _, rules = installed_rules_registry()
     terrain, art, occupied, _ = context(root, definition, rules)
-    generator, requested_production, defenses = outpost_buildings(country, rank, perimeter=True)
+    generator, requested_production, defenses = outpost_buildings(
+        country, rank, perimeter=True, native_aircraft=native_aircraft)
     layouts = []
     for camp in definition['camps']:
         # Reserve the crate approaches, without cutting the entire compound
@@ -115,7 +119,7 @@ def _plan_compact_outposts(root, definition_json, country, rank, power_percent):
 
 
 @lru_cache(maxsize=96)
-def _plan_outposts(root, definition_json, country, rank, power_percent):
+def _plan_outposts(root, definition_json, country, rank, power_percent, *, native_aircraft=False):
     from .catalogue import installed_rules_registry
 
     definition = json.loads(definition_json)
@@ -164,7 +168,7 @@ def _plan_outposts(root, definition_json, country, rank, power_percent):
         occupied.update((x + dx, y + dy) for dx in range(-radius, radius + 1)
                         for dy in range(-radius, radius + 1))
 
-    generator, production, defenses = outpost_buildings(country, rank)
+    generator, production, defenses = outpost_buildings(country, rank, native_aircraft=native_aircraft)
     demand = sum(max(0, -int(rules[k].get('Power', '0'))) for k in production + defenses)
     output = round(int(rules[generator]['Power']) * (100 + power_percent) / 100)
     generators = max(1, ceil(demand / output))

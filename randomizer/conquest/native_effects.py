@@ -22,7 +22,7 @@ def _combat_weapon(rules, name):
         return False
 
 
-def apply_effects(writer, members):
+def apply_effects(writer, members, *, balance_version=4):
     """Preserve separate upgrades even when both opponents use one faction."""
     rules = writer.rules
     aliases = {}
@@ -34,6 +34,8 @@ def apply_effects(writer, members):
         rearm = loadout['perks'].get('rapid_rearm', 0)
         hardening = loadout['perks'].get('hardened_infrastructure', 0)
         hazard = loadout['perks'].get('hazard_training', 0)
+        health_percent = min(50, hardening * 10) if balance_version >= 4 else hardening * 15
+        rearm_percent = min(50, rearm * 10) if balance_version >= 4 else rearm * 15
         cache = aliases[member['slot']] = {}
         if not any((rank, repairs, rearm, hardening, hazard)):
             continue
@@ -60,11 +62,11 @@ def apply_effects(writer, members):
                 row['TiberiumProof'] = 'yes'
             if hardening and categories[kind] == 'BuildingTypes':
                 row.update(unit_updates(kind, original,
-                    {'infrastructure_health_percent': 15 * hardening}, building=True,
+                    {'infrastructure_health_percent': health_percent}, building=True,
                     defense=any(_combat_weapon(rules, original.get(field)) for field in WEAPONS)))
             reload_time = _reload_time(rules, categories[kind], original)
             if rearm and reload_time:
-                row['ReloadRate'] = f'{reload_time * (100 - 15 * rearm) / 100:.8g}'
+                row['ReloadRate'] = f'{reload_time * (100 - rearm_percent) / 100:.8g}'
             if repairs and categories[kind] != 'BuildingTypes' and any(
                     _combat_weapon(rules, original.get(field)) for field in WEAPONS):
                 row['SelfHealing'] = 'yes'

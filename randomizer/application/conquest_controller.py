@@ -153,13 +153,13 @@ class ConquestController(ConquestCoopController):
         def deliver(result=None, error=None, detail=None):
             self._conquest_saving = False
             if error is None:
-                self.conquest_state, _ = result
+                self.conquest_state, operation_message = result
                 try:
                     self.publish_conquest()
                 except (ValueError, RuntimeError, OSError) as exc:
                     error, detail = exc, traceback.format_exc()
             if error is None:
-                self.refresh_conquest(message)
+                self.refresh_conquest(operation_message if isinstance(operation_message, str) else message)
             else:
                 if pause_on_error or not isinstance(error, ValueError):
                     self._conquest_error = str(error)
@@ -189,8 +189,8 @@ class ConquestController(ConquestCoopController):
         if self.conquest_busy() or self.busy_depth or self._conquest_error:
             return
         handlers = {
-            'recruit': lambda s: campaign.recruit(s, values['node']),
-            'move': lambda s: campaign.move(s, values['source'], values['target']),
+            'recruit': lambda s: campaign.recruit(s, **values),
+            'move': lambda s: campaign.move(s, **values),
             'purchase': lambda s: campaign.purchase(s, **values),
             'use_item': lambda s: campaign.use_item(s, **values),
             'end': campaign.end_turn,

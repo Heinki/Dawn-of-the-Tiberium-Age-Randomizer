@@ -7,7 +7,7 @@ from . import campaign
 
 
 class ConquestLobby(Lobby):
-    mode = 'conquest-1'
+    mode = 'conquest-3'
 
 
 def validate_endpoints(state, endpoints):
@@ -33,7 +33,7 @@ def decision_actor(state):
 
 def authorize_action(state, actor, action, values):
     """Never accept a client-supplied faction, wallet, outcome or snapshot."""
-    keys = {'recruit': {'node'}, 'move': {'source', 'target'},
+    keys = {'recruit': {'node', 'army_id', 'new_army'}, 'move': {'source', 'target', 'army_id'},
             'purchase': {'kind', 'key', 'node'}, 'end': set(), 'auto': set(),
             'launch': set(), 'gift': {'node', 'recipient'}, 'use_item': {'key'}}
     if actor not in human_ids(state) or decision_actor(state) != actor:
@@ -47,8 +47,9 @@ def authorize_action(state, actor, action, values):
     if action == 'launch':
         return
     operations = {
-        'recruit': lambda: campaign.recruit(state, values['node'], actor),
-        'move': lambda: campaign.move(state, values['source'], values['target'], actor),
+        'recruit': lambda: campaign.recruit(state, values['node'], actor,
+            army_id=values.get('army_id'), new_army=values.get('new_army', False)),
+        'move': lambda: campaign.move(state, values['source'], values['target'], actor, army_id=values.get('army_id')),
         'purchase': lambda: campaign.purchase(state, values['kind'], values.get('key', ''), values.get('node'), actor),
         'use_item': lambda: campaign.use_item(state, values['key'], actor),
         'end': lambda: campaign.end_turn(state, actor),

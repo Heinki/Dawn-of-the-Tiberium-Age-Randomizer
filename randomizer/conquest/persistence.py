@@ -1,6 +1,7 @@
 """Locked, durable campaign transactions with frozen battle attempts."""
 
 from contextlib import contextmanager
+from collections import Counter
 from copy import deepcopy
 from pathlib import Path
 import os
@@ -9,8 +10,9 @@ import re
 from randomizer.core.paths import APP_DIR
 from randomizer.core.storage import atomic_write_json, read_json_object
 from .catalogue import (FACTIONS, DIFFICULTIES, STATS, PERKS, RULES_VERSION,
-                        MAX_STRENGTH, MAX_REPAIR_KITS, combat_power, starting_force)
-from .campaign import record, resolve
+                        MAX_STRENGTH, MAX_REPAIR_KITS, combat_power, starting_force,
+                        MAX_ARMIES_PER_NODE, MAX_RESEARCH_RANK)
+from .campaign import record, resolve, allied, armies_at
 from .teams import validate_teams
 from .players import human_ids, human, country, roster, validate_roster
 
@@ -48,18 +50,25 @@ def _map(value):
 
 
 def _validate_loadout(state, loadout, actor):
+    version = state['pending'].get('team_version', 1)
+    count = loadout.get('army_count', 1) if version >= 4 else 1
+    multiplier = loadout.get('defense_multiplier', 1) if version >= 4 else 1
+    if not _integer(count, 1, MAX_ARMIES_PER_NODE) or not _integer(multiplier, 1, MAX_ARMIES_PER_NODE):
+        raise ValueError('Invalid defending army stack.')
+    sizing = dict(balance_version=version, army_count=count, defense_multiplier=multiplier)
     if (loadout['faction'] != actor or loadout['country'] != country(state, actor) or
-        not _integer(loadout['strength'], 1, MAX_STRENGTH) or
+        not _integer(loadout['strength'], 1, MAX_STRENGTH * count) or
         set(loadout['stats']) != set(STATS) or
         any(not _integer(v, 0, 120 if k == 'damage' else 100) for k, v in loadout['stats'].items()) or
         any(k not in PERKS or not _integer(v, 1, PERKS[k]['maximum']) for k, v in loadout['perks'].items()) or
         type(loadout.get('headquarters', False)) is not bool or
         type(loadout.get('field_repairs', False)) is not bool or
         loadout['force'] != starting_force(loadout['country'], loadout['strength'], loadout['perks'],
-                                          headquarters=loadout.get('headquarters', False)) or
+                                          headquarters=loadout.get('headquarters', False),
+                                          legacy_aircraft=version < 3, **sizing) or
         loadout['power'] != combat_power(loadout['strength'], loadout['stats'], loadout['perks'],
                                         headquarters=loadout.get('headquarters', False),
-                                        field_repairs=loadout.get('field_repairs', False))):
+                                        field_repairs=loadout.get('field_repairs', False), **sizing)):
         raise ValueError('Invalid frozen Conquest loadout.')
 
 
@@ -124,11 +133,12 @@ def validate(state):
             raise ValueError('Conquest routes are disconnected.')
         if not _integer(state['next_army'], 3, 2**63 - 1):
             raise ValueError('Invalid Conquest army counter.')
-        if (len({a['id'] for a in armies}) != len(armies) or len({a['node'] for a in armies}) != len(armies) or
+        if (len({a['id'] for a in armies}) != len(armies) or
+            any(count > MAX_ARMIES_PER_NODE for count in Counter(a['node'] for a in armies).values()) or
             any(not _integer(a['id'], 1, state['next_army'] - 1) or
                 not _integer(a['node'], 0, count - 1) or not _integer(a['strength'], 1, MAX_STRENGTH) or
                 type(a['acted']) is not bool or a['faction'] not in actors or
-                nodes[a['node']]['owner'] != a['faction'] for a in armies)):
+                not allied(state, nodes[a['node']]['owner'], a['faction']) for a in armies)):
             raise ValueError('Invalid Conquest armies.')
         for side in actors:
             wallet = state[side]
@@ -137,7 +147,8 @@ def validate(state):
                 type(wallet.get('repairs_armed', False)) is not bool or
                 wallet.get('repairs_armed', False) and not wallet.get('repair_kits', 0) or
                 set(wallet['research']) != set(STATS) or
-                not all(_integer(v, 0, 3) for v in wallet['research'].values()) or
+                not all(_integer(v, 0, MAX_RESEARCH_RANK) for v in wallet['research'].values()) or
+                not _integer(wallet.get('upgrades_bought', 0), 0, 1000000) or
                 not _inventory(wallet['perks'], local=False)):
                 raise ValueError('Invalid Conquest economy.')
         if type(state['ai_purchase']) is not bool or not _integer(state['ai_recruits'], 0, 3):
@@ -166,12 +177,23 @@ def validate(state):
                 army['node'] != battle['source'] or army['faction'] != battle['attacker'] or
                 not _integer(battle['target'], 0, count - 1) or
                 sorted((battle['source'], battle['target'])) not in edges or
-                nodes[battle['target']]['owner'] == battle['attacker'] or
+                allied(state, nodes[battle['target']]['owner'], battle['attacker']) or
                 not _map(battle['map']) or battle['map'] != nodes[battle['target']]['map'] or
                 len(battle['starts']) != 2 or battle['starts'][0] == battle['starts'][1] or
                 any(s not in battle['map']['starts'] for s in battle['starts']) or
                 not _integer(battle['seed'], 1, 2**31 - 1) or battle['difficulty'] not in DIFFICULTIES):
                 raise ValueError('Invalid committed Conquest battle.')
+            if battle.get('team_version', 1) >= 4:
+                defenders = armies_at(state, battle['target'])
+                own = [a for a in defenders if a['faction'] == nodes[battle['target']]['owner']]
+                defense, attack = battle['defense'], battle['attack']
+                if (battle.get('defending_armies') != [a['id'] for a in defenders] or
+                    defense.get('army_count') != max(1, len(own)) or
+                    defense.get('defense_multiplier') != max(1, len(defenders)) or
+                    defense['strength'] != (sum(a['strength'] for a in own) or 2) or
+                    attack.get('army_count') != 1 or attack.get('defense_multiplier') != 1 or
+                    attack['strength'] != army['strength']):
+                    raise ValueError('Frozen battle differs from its stationed armies.')
             for key in ('attack', 'defense'):
                 expected = battle['attacker'] if key == 'attack' else nodes[battle['target']]['owner']
                 _validate_loadout(state, battle[key], expected)
@@ -191,6 +213,13 @@ def validate(state):
                         raise ValueError('HQ guards belong only to the defending commander.')
                     if actor == battle[team]['faction'] and entry['loadout'] != battle[team]:
                         raise ValueError('Commander loadout differs from the committed battle.')
+                    if battle.get('team_version', 1) >= 4 and actor != battle[team]['faction']:
+                        stationed = [a for a in armies_at(state, battle['target']) if a['faction'] == actor] if team == 'defense' else []
+                        strength = sum(a['strength'] for a in stationed) if stationed else max(
+                            (a['strength'] for a in armies if a['faction'] == actor), default=2)
+                        if (entry['loadout'].get('army_count') != max(1, len(stationed)) or
+                            entry['loadout'].get('defense_multiplier') != 1 or entry['loadout']['strength'] != strength):
+                            raise ValueError('Teammate loadout differs from its stationed armies.')
             elif 'human_loadouts' in battle or 'human_team' in battle:
                 raise ValueError('Unexpected cooperative battle roster.')
             validate_teams(battle)

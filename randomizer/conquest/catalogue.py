@@ -1,6 +1,7 @@
 """Versioned Conquest economy and faction-native battle grants."""
 
 from collections import Counter
+from randomizer.dta.aircraft import AIRCRAFT_BUILDINGS, AIRCRAFT_BUILDING_LABELS
 
 FACTIONS = ('GDI', 'Nod', 'Allies', 'Soviet')
 DIFFICULTIES = {'Easy': 2, 'Normal': 1, 'Hard': 0, 'Brutal': 4,
@@ -10,10 +11,14 @@ SIZES = {'Short — 9 territories': 9, 'Standard — 25 territories': 25,
 STATS = {'health': 'Health', 'armor': 'Armor', 'speed': 'Movement speed',
          'reload': 'Attack speed', 'damage': 'Damage'}
 MAX_STRENGTH = 40
-RECRUIT_COST = 100
-RESEARCH_COST = 400
-SUPPLY_COST = 150
-REPAIR_KIT_COST = 350
+MAX_ARMIES_PER_NODE = 4
+MAX_RESEARCH_RANK = 5
+BALANCE_VERSION = 4
+RECRUIT_COST = 1000
+RESEARCH_COST = 1000
+SUPPLY_COST = 500
+REPAIR_KIT_COST = 750
+INCOME_PER_RANK = 100
 MAX_REPAIR_KITS = 3
 BATTLE_CREDITS_PER_RANK = 2500
 RULES_VERSION = 1
@@ -28,7 +33,6 @@ ROSTERS = {
     'Soviet': ('E1S', 'SHILKA', '3TNK', 'RAPOWR', 'RABARR', 'RAPROC', 'RAHARV', 'RAFTUR'),
 }
 FACTORIES = {'GDI': 'WEAP', 'Nod': 'AFLD', 'Allies': 'AWEAP', 'Soviet': 'SWEAP'}
-HELIPADS = {'GDI': 'GHPAD', 'Nod': 'NHPAD', 'Allies': 'AHPAD', 'Soviet': 'SHPAD'}
 
 
 def _perk(name, cost, maximum, power, description, *, local=False):
@@ -37,96 +41,123 @@ def _perk(name, cost, maximum, power, description, *, local=False):
 
 
 PERKS = {
-    'allies': _perk('Coalition allies', 1500, 3, 0,
-        'Add 1 AI teammate per rank, up to 3. Each deployed ally has its own base, 10,000 battle credits and strength 8, sharing your faction upgrades and starting perks. Spare map starts limit deployment; unused allies stay in reserve and add no autobattle power. Available to both campaign factions.'),
-    'infantry': _perk('Infantry escort', 500, 3, 3,
-        'Start every battle with 3 extra faction rifle infantry per rank. +3 army power per rank.'),
-    'vehicles': _perk('Armored escort', 750, 3, 5,
-        'Start every battle with 1 extra faction tank per rank. +5 army power per rank.'),
-    'veterans': _perk('Veteran starting army', 700, 1, 0,
-        'Your starting combat troops and purchased escorts begin at Veteran rank. +15% mobile army power.'),
-    'power': _perk('Field power plant', 500, 1, 1,
-        'Start every battle with a faction power plant. +1 army power.'),
-    'barracks': _perk('Forward Barracks', 500, 1, 2,
-        'Start every battle with a faction barracks. Required power is included. +2 army power.'),
-    'refinery': _perk('Field refinery', 800, 1, 4,
-        'Start every battle with a faction refinery and exactly one harvester. Required power is included. +4 army power.'),
-    'garrison': _perk('Territory garrison', 450, 3, 4,
-        'Place 1 faction defense per rank when this territory is attacked. Power is included. Local; passes to its captor. +4 defense power per rank.', local=True),
-    'node_power': _perk('Node power plant', 300, 2, 1,
-        'Add 1 faction power plant per rank beyond the power required for other starting buildings when defending this node. Local; stays after capture. +1 defense power per rank.', local=True),
-    'node_barracks': _perk('Node barracks', 500, 1, 2,
-        'Start defenses of this node with a faction barracks and required power. Stacks with Forward Barracks. Local; stays after capture. +2 defense power.', local=True),
-    'node_refinery': _perk('Node refinery', 800, 1, 4,
-        'Start defenses of this node with a faction refinery, one harvester and required power. Stacks with field refineries. Local; stays after capture. +4 defense power.', local=True),
-    'node_factory': _perk('Node vehicle factory', 1000, 1, 5,
-        'Start defenses of this node with a faction vehicle factory and required power. Local; stays after capture. +5 defense power.', local=True),
-    'production': _perk('Production logistics', 600, 3, 2,
-        'Reduce unit and building production time by 10% per rank, up to 30%. +2 army power per rank.'),
-    'discount': _perk('Efficient procurement', 600, 3, 2,
-        'Reduce unit and building costs by 10% per rank, up to 30%. +2 army power per rank.'),
-    'recruitment': _perk('Recruitment training', 500, 3, 0,
-        'Add 1 extra strength per recruitment per rank. Recruitment still consumes the army action.'),
-    'income': _perk('War treasury', 500, 3, 0,
-        'Earn 25 extra campaign credits each turn per rank. Campaign credits are separate from battle credits.'),
-    'battle_treasury': _perk('Battle Treasury', 750, 3, 3,
-        'Start each battle with 2,500 extra battle credits per rank, up to 7,500. Personal armies and sponsored AI allies receive the bonus. +3 army power per rank.'),
-    'extended_arsenal': _perk('Extended Arsenal', 900, 2, 3,
-        'Add 1 cell of range per rank to eligible combat weapons, up to 2 cells. Applies to starting and produced combat units and defenses. Utility and suicide weapons are excluded. +3 army power per rank.'),
-    'civil_engineers': _perk('Civil Engineers', 600, 3, 0,
-        'Reduce all local node-upgrade prices by 10% per rank, up to 30%. Discounts apply to future purchases on your owned nodes.'),
-    'rapid_rearm': _perk('Rapid Rearm', 600, 3, 2,
-        'Reduce docked aircraft ammunition reload time by 15% per rank, up to 45%. Applies to eligible starting and produced aircraft. Does not change weapon fire rate or ground-unit ammunition. +2 army power per rank.'),
-    'hardened_infrastructure': _perk('Hardened Infrastructure', 700, 3, 2,
-        'Add 15% maximum health per rank, up to 45%, to construction yards, production buildings, refineries, power plants and silos. Includes starting buildings and future construction. Uses the same eligibility as Fortress Fortified Infrastructure. +2 army power per rank.'),
-    'hazard_training': _perk('Hazard Training', 400, 1, 0,
-        'Your starting and produced infantry gain native Tiberium protection. Ordinary combat damage remains unchanged. Sponsored AI allies share this training.'),
-    'elite_deployment': _perk('Elite Deployment', 1600, 1, 0,
-        'Starting combat troops and escorts arrive at Elite rank. Harvesters remain unpromoted. Replaces the Veteran starting-rank bonus with +30% mobile army power; the two rank bonuses do not stack.'),
-    'factory': _perk('Forward Factory', 1000, 1, 5,
-        'Start every battle with a faction vehicle factory and required power. Stacks with a local node factory when defending. +5 army power.'),
-    'helipad': _perk('Forward Helipad', 800, 1, 3,
-        'Start every battle with a faction helipad and required power. Aircraft can dock and rearm there according to their native docking rules. +3 army power.'),
+    'allies': _perk('Coalition allies', 2500, 3, 0, 'Add one AI ally per rank when the map has room.'),
+    'infantry': _perk('Infantry escort', 1000, 6, 3, 'Bring more and stronger infantry as you upgrade.'),
+    'vehicles': _perk('Armored escort', 1500, 6, 5, 'Bring more and stronger vehicles as you upgrade.'),
+    'veterans': _perk('Starting army training', 700, 2, 0, 'Rank 1: troops start Veteran. Rank 2: troops start Elite.'),
+    'power': _perk('Field power plant', 800, 1, 1, 'Start with a power plant.'),
+    'barracks': _perk('Forward Barracks', 1000, 1, 2, 'Start with a barracks. With Node barracks, you get two when defending.'),
+    'refinery': _perk('Field refinery', 1600, 1, 4, 'Start with a refinery and one harvester.'),
+    'garrison': _perk('Territory garrison', 750, 3, 4, 'Add one defense per rank to this territory.', local=True),
+    'node_power': _perk('Node power plant', 500, 2, 1, 'Add one extra power plant per rank when defending here.', local=True),
+    'node_barracks': _perk('Node barracks', 1000, 1, 2, 'Add a barracks when defending here. Stacks with Forward Barracks.', local=True),
+    'node_refinery': _perk('Node refinery', 1600, 1, 4, 'Add a refinery and harvester when defending here.', local=True),
+    'node_factory': _perk('Node vehicle factory', 2000, 1, 5, 'Add a vehicle factory when defending here.', local=True),
+    'production': _perk('Production logistics', 1000, 5, 2, 'Build 10% faster per rank, up to 50%.'),
+    'discount': _perk('Efficient procurement', 1000, 5, 2, 'Units and buildings cost 10% less per rank, up to 50%.'),
+    'recruitment': _perk('Improved recruitment', 1000, 3, 0, 'Recruit one extra strength per rank.'),
+    'income': _perk('War treasury', 800, 5, 0, 'Earn 100 more campaign credits per turn per rank.'),
+    'battle_treasury': _perk('Battle Treasury', 1500, 3, 3, 'Start battles with 2,500 more credits per rank.'),
+    'extended_arsenal': _perk('Extended Arsenal', 1800, 2, 3, 'Combat weapons gain one cell of range per rank.'),
+    'civil_engineers': _perk('Civil Engineers', 1000, 5, 0, 'Node upgrades cost 10% less per rank, up to 50%.'),
+    'rapid_rearm': _perk('Rapid Rearm', 1000, 5, 2, 'Aircraft reload ammunition 10% faster per rank, up to 50%.'),
+    'hardened_infrastructure': _perk('Hardened Infrastructure', 1200, 5, 2, 'Production and economy buildings gain 10% health per rank, up to 50%.'),
+    'hazard_training': _perk('Hazard Training', 1000, 1, 0, 'Your infantry take no Tiberium damage.'),
+    'elite_deployment': _perk('Elite Deployment', 1600, 1, 0, 'Troops start Elite.'),
+    'factory': _perk('Forward Factory', 2000, 1, 5, 'Start with a vehicle factory. With Node vehicle factory, you get two when defending.'),
+    'helipad': _perk('Forward aircraft production', 1600, 1, 3, 'Start with your faction aircraft building.'),
 }
+
+# Each rank is a complete cumulative escort, following the faction progression
+# used by Fortress. The last slot is the faction's hero or special vehicle.
+ESCORT_ROSTERS = {
+    'GDI': {'infantry': ('E1', 'GRENL', 'E3', 'RMBO'),
+            'vehicles': ('MTNK', 'MSAM', 'HTNK', 'HVCSAM')},
+    'Nod': {'infantry': ('E1N', 'CYBORG', 'E5', 'CYP'),
+            'vehicles': ('LTNK', 'FTNK', 'STNK', 'ILHEMOTH')},
+    'Allies': {'infantry': ('E1A', 'MGI', 'MECH', 'TANYA'),
+               'vehicles': ('2TNK', 'RAARTY', 'CTNK', 'PTNK')},
+    'Soviet': {'infantry': ('E1S', 'E2S', 'SHOK', 'VOLKOV'),
+               'vehicles': ('3TNK', 'V2RL', '4TNK', 'BEHEPLSM')},
+}
+ESCORT_COUNTS = {
+    'infantry': ((3, 0, 0, 0), (6, 0, 0, 0), (6, 2, 0, 0),
+                 (6, 3, 2, 0), (8, 4, 3, 0), (8, 4, 3, 1)),
+    'vehicles': ((1, 0, 0, 0), (2, 0, 0, 0), (2, 1, 0, 0),
+                 (2, 2, 1, 0), (3, 3, 2, 0), (3, 3, 2, 1)),
+}
+ESCORT_WEIGHTS = {'infantry': (1, 3, 4, 12), 'vehicles': (5, 8, 12, 25)}
+
+
+def escort_units(country, key, rank):
+    if not rank:
+        return {}
+    return {kind: count for kind, count in zip(ESCORT_ROSTERS[country][key], ESCORT_COUNTS[key][rank - 1]) if count}
+
+
+def escort_power(key, rank):
+    return sum(count * weight for count, weight in zip(ESCORT_COUNTS[key][rank - 1], ESCORT_WEIGHTS[key])) if rank else 0
+
+
+# Retain this identity for existing purchases, capture rewards and frozen battles.
+# New purchases expose Veteran and Elite as two ranks of one perk.
+PERKS['elite_deployment']['legacy'] = True
 LOCAL_PERKS = tuple(key for key, perk in PERKS.items() if perk['local'])
 
 
-def starting_force(country, strength, perks, *, headquarters=False):
-    """The same frozen strength/perks feed battle grants and combat ratings."""
+def starting_force(country, strength, perks, *, headquarters=False, legacy_aircraft=False,
+                   balance_version=BALANCE_VERSION, army_count=1, defense_multiplier=1):
+    """Freeze the units and buildings used by native and strategic battles."""
     infantry, scout, tank, power, barracks, refinery, collector, defense = ROSTERS[country]
     scouts = strength // 5
     units = Counter({infantry: strength - scouts * 3, scout: scouts})
-    units[infantry] += 3 * perks.get('infantry', 0)
-    units[tank] += perks.get('vehicles', 0)
+    modern = balance_version >= BALANCE_VERSION
+    if modern:
+        for key in ('infantry', 'vehicles'):
+            units.update({kind: count * army_count for kind, count in escort_units(country, key, perks.get(key, 0)).items()})
+    else:
+        units[infantry] += 3 * perks.get('infantry', 0)
+        units[tank] += perks.get('vehicles', 0)
+    local = defense_multiplier if modern else 1
+    # Armies share the commander's production base. Only military defenses
+    # multiply with the stack; refinery grants still supply one collector each.
     refineries = perks.get('refinery', 0) + perks.get('node_refinery', 0)
     structures = Counter({power: perks.get('power', 0) + perks.get('node_power', 0),
                           barracks: perks.get('barracks', 0) + perks.get('node_barracks', 0),
-                          refinery: refineries, defense: perks.get('garrison', 0),
+                          refinery: refineries, defense: perks.get('garrison', 0) * local,
                           FACTORIES[country]: perks.get('factory', 0) + perks.get('node_factory', 0),
-                          HELIPADS[country]: perks.get('helipad', 0)})
+                          ('SHPAD' if legacy_aircraft and country == 'Soviet' else AIRCRAFT_BUILDINGS[country]): perks.get('helipad', 0)})
     if headquarters:
         units[infantry] += HQ_INFANTRY
-        structures[defense] += HQ_DEFENSES
+        structures[defense] += HQ_DEFENSES * local
     if refineries:
         units[collector] += refineries
     return {'units': dict(+units), 'structures': dict(+structures),
-            'veterancy': deployment_rank(perks), 'collector': collector,
-            'power_type': power}
+            'veterancy': deployment_rank(perks), 'collector': collector, 'power_type': power}
 
 
 def deployment_rank(perks):
     return 2 if perks.get('elite_deployment') else perks.get('veterans', 0)
 
 
-def combat_power(strength, stats, perks, *, headquarters=False, field_repairs=False):
-    mobile = strength + 3 * perks.get('infantry', 0) + 5 * perks.get('vehicles', 0)
+def perk_rank(perks, key):
+    return deployment_rank(perks) if key == 'veterans' else perks.get(key, 0)
+
+
+def combat_power(strength, stats, perks, *, headquarters=False, field_repairs=False,
+                 balance_version=BALANCE_VERSION, army_count=1, defense_multiplier=1):
+    modern = balance_version >= BALANCE_VERSION
+    personal = army_count if modern else 1
+    local = defense_multiplier if modern else 1
+    mobile = strength + (sum(escort_power(key, perks.get(key, 0)) for key in ('infantry', 'vehicles')) * personal
+                         if modern else 3 * perks.get('infantry', 0) + 5 * perks.get('vehicles', 0))
     if headquarters:
         mobile += HQ_INFANTRY
     value = mobile * (1 + .15 * deployment_rank(perks))
-    value += sum(p['power'] * perks.get(key, 0) for key, p in PERKS.items()
-                 if key not in ('infantry', 'vehicles'))
+    value += sum(p['power'] * perks.get(key, 0) * (local if key == 'garrison' else 1)
+                 for key, p in PERKS.items() if key not in ('infantry', 'vehicles'))
     if headquarters:
-        value += HQ_DEFENSES * PERKS['garrison']['power']
+        value += HQ_DEFENSES * PERKS['garrison']['power'] * local
     for stat in STATS:
         value *= (1 + stats.get(stat, 0) / 100) ** (.25 if stat == 'speed' else .5)
     if field_repairs:

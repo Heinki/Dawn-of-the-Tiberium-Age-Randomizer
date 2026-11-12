@@ -6,13 +6,17 @@ import tkinter as tk
 from tkinter import ttk
 
 from randomizer.ui.viewport import ScrollableViewport
+from randomizer.ui.tooltips import WidgetTooltip
+from randomizer.ui.conquest_widgets import PurchaseCard, EscortRoster, configure_purchase_style
 from . import campaign
 from .teams import participants, team_power, deployment
 from .players import roster, human_ids, human, label as actor_label, country, bonus_owners
 from .network import decision_actor
 from .catalogue import (FACTIONS, DIFFICULTIES, SIZES, STATS, PERKS, MAX_STRENGTH,
                         RECRUIT_COST, RESEARCH_COST, SUPPLY_COST, LOCAL_PERKS,
-                        REPAIR_KIT_COST, MAX_REPAIR_KITS, BATTLE_CREDITS_PER_RANK)
+                        REPAIR_KIT_COST, MAX_REPAIR_KITS, BATTLE_CREDITS_PER_RANK,
+                        AIRCRAFT_BUILDING_LABELS, deployment_rank, perk_rank,
+                        MAX_ARMIES_PER_NODE, MAX_RESEARCH_RANK)
 
 
 class ConquestView(ttk.Frame):
@@ -23,15 +27,22 @@ class ConquestView(ttk.Frame):
         self.busy = False
         self.show_details = False
         self.selected = None
+        self.selected_army_id = None
+        self.purchase_cards = {}
         self.scale = 1
         self._campaign_id = None
         self._history_signature = None
+        self._history_nodes = {}
+        self._history_follow_pending = False
         self._fit_pending = False
         self._fit_after = None
         self._auto_fit = True
         self._army_images = {}
         self._animation = None
         self._animation_after = None
+        self._result_shown = set()
+        self._result_after = None
+        self._result_dialog = None
         self.columnconfigure(0, weight=1)
         self.rowconfigure(3, weight=1)
         self.heading = tk.StringVar(value='Conquest · Build an army. Claim a territory. Hold the front.')
@@ -69,6 +80,8 @@ class ConquestView(ttk.Frame):
                   wraplength=600).pack(side='left', fill='x', expand=True)
         ttk.Button(self.recovery, text='Retry loading campaign', command=app.reload_conquest).pack(side='right')
         self.bind('<Configure>', self._resize, add='+')
+        self.bind('<Map>', lambda event: self._schedule_result() if event.widget is self else None, add='+')
+        self.bind('<Destroy>', self._destroy_result, add='+')
         self.apply_theme()
         self.refresh(None)
 
@@ -86,11 +99,12 @@ class ConquestView(ttk.Frame):
         toolbar.grid(row=0, column=0, columnspan=2, sticky='ew', pady=(0, 6))
         self.buttons = {}
         self.battle_odds = tk.StringVar(value='Select an army, then a connected territory to move or attack.')
-        self.odds_label = ttk.Label(toolbar, textvariable=self.battle_odds, wraplength=760,
+        self.odds_label = ttk.Label(toolbar, textvariable=self.battle_odds, width=1, wraplength=760,
                                    font=('Segoe UI', 10, 'bold'))
         self.odds_label.grid(row=0, column=0, columnspan=4, sticky='ew', pady=(0, 4))
         actions = (
-            ('recruit', f'Recruit · {RECRUIT_COST}', lambda: self.app.conquest_action('recruit', node=self.selected)),
+            ('recruit', f'Recruit army · {RECRUIT_COST:,}', lambda: self.app.conquest_action('recruit', node=self.selected, new_army=True)),
+            ('reinforce', f'Reinforce · {RECRUIT_COST:,}', self._reinforce_selected),
             ('end', 'End turn', lambda: self.app.conquest_action('end')),
             ('battle', 'Start battle', self.app.launch_conquest),
             ('auto', 'Autobattle', lambda: self.app.conquest_action('auto')),
@@ -102,14 +116,33 @@ class ConquestView(ttk.Frame):
             ('gift', 'Give territory…', self._gift),
         )
         for i, (key, label, command) in enumerate(actions):
-            button = ttk.Button(toolbar, text=label, command=command)
+            button = (self._purchase_button(toolbar, text=label, command=command)
+                      if key in ('recruit', 'reinforce') else ttk.Button(toolbar, text=label, command=command))
+            button.configure(width=1)
             button.grid(row=1 + i // 4, column=i % 4, sticky='ew', padx=2, pady=2)
             toolbar.columnconfigure(i % 4, weight=1)
             self.buttons[key] = button
-        self.canvas_frame = ttk.Frame(page)
+        self.reinforce_tooltip = WidgetTooltip(self.buttons['reinforce'],
+            'Add troops to the selected army, up to 40 strength. Costs 1,000 credits and uses its action.')
+        self.army_controls = ttk.Frame(toolbar)
+        self.army_controls.grid(row=4, column=0, columnspan=4, sticky='w', pady=(4, 6))
+        ttk.Label(self.army_controls, text='Army:').pack(side='left', padx=(0, 6))
+        self.army_selector = ttk.Combobox(self.army_controls, state='disabled', width=46)
+        self.army_selector.pack(side='left')
+        self.army_selector.bind('<<ComboboxSelected>>', self._choose_army)
+        self.army_hint = ttk.Label(self.army_controls, text='Up to 4 allied armies per territory.', style='Muted.TLabel')
+        self.army_hint.pack(side='left', padx=10)
+        # Keep the body inside its allocated space, independent of the natural
+        # width of notebook tabs, text, and history entries.
+        self.map_body = ttk.Frame(page, width=1, height=1)
+        self.map_body.grid(row=1, column=0, columnspan=2, sticky='nsew')
+        self.map_body.grid_propagate(False)
+        self.map_body.columnconfigure(0, weight=1)
+        self.map_body.rowconfigure(0, weight=1)
+        self.canvas_frame = ttk.Frame(self.map_body)
         self.canvas_frame.columnconfigure(0, weight=1)
         self.canvas_frame.rowconfigure(0, weight=1)
-        self.canvas = tk.Canvas(self.canvas_frame, width=400, height=320, highlightthickness=0)
+        self.canvas = tk.Canvas(self.canvas_frame, width=1, height=1, highlightthickness=0)
         self.canvas.grid(row=0, column=0, sticky='nsew')
         vertical = ttk.Scrollbar(self.canvas_frame, command=self.canvas.yview)
         horizontal = ttk.Scrollbar(self.canvas_frame, orient='horizontal', command=self.canvas.xview)
@@ -126,12 +159,12 @@ class ConquestView(ttk.Frame):
             self.canvas.bind('<' + key + '>', lambda e, x=dx, y=dy: self._pan(x, y))
         self.canvas.bind('<Escape>', lambda _e: self.select(None))
         self.canvas.bind('<Configure>', self._canvas_resize)
-        self.side = ttk.Notebook(page)
+        self.side = ttk.Notebook(self.map_body)
         inspector = ttk.Frame(self.side, padding=8)
         inspector.columnconfigure(0, weight=1)
         inspector.rowconfigure(0, weight=1)
         self.side.add(inspector, text='Territory / battle')
-        self.inspector = tk.Text(inspector, width=30, height=12, wrap='word', relief='flat',
+        self.inspector = tk.Text(inspector, width=1, height=1, wrap='word', relief='flat',
                                  state='disabled', padx=8, pady=8, font=('Segoe UI', 10))
         self.inspector.grid(row=0, column=0, sticky='nsew')
         scrollbar = ttk.Scrollbar(inspector, command=self.inspector.yview)
@@ -141,26 +174,24 @@ class ConquestView(ttk.Frame):
         self.fortify_button.grid(row=1, column=0, columnspan=2, sticky='ew', pady=(8, 0))
         history = ttk.Frame(self.side, padding=6)
         history.columnconfigure(0, weight=1)
-        history.rowconfigure(1, weight=1)
+        history.rowconfigure(2, weight=1)
         self.side.add(history, text='History')
         self.history_filter = tk.StringVar(value='All actions')
         selector = ttk.Combobox(history, textvariable=self.history_filter,
                                values=('All actions', 'Your actions', 'Team actions', 'AI actions'), state='readonly', width=18)
         selector.grid(row=0, column=0, sticky='ew', pady=(0, 4))
         selector.bind('<<ComboboxSelected>>', lambda _: self._refresh_history())
-        self.history = ttk.Treeview(history, columns=('turn', 'action'), show='headings', height=10)
-        self.history.heading('turn', text='Round')
-        self.history.heading('action', text='Latest 500 actions · double-click to locate')
-        self.history.column('turn', width=48, stretch=False)
-        self.history.column('action', width=400, stretch=True)
-        self.history.grid(row=1, column=0, sticky='nsew')
+        self.history_heading = ttk.Label(history, width=1, wraplength=260,
+            text='Latest 500 actions · double-click to locate', style='Muted.TLabel')
+        self.history_heading.grid(row=1, column=0, sticky='ew', pady=(0, 6))
+        self.history = tk.Text(history, width=1, height=1, wrap='word', relief='flat',
+                               state='disabled', padx=8, pady=8, font=('Segoe UI', 10))
+        self.history.grid(row=2, column=0, sticky='nsew')
         scroll = ttk.Scrollbar(history, command=self.history.yview)
-        scroll.grid(row=1, column=1, sticky='ns')
+        scroll.grid(row=2, column=1, sticky='ns')
         self.history.configure(yscrollcommand=scroll.set)
-        hscroll = ttk.Scrollbar(history, orient='horizontal', command=self.history.xview)
-        hscroll.grid(row=2, column=0, sticky='ew')
-        self.history.configure(xscrollcommand=hscroll.set)
         self.history.bind('<Double-1>', self._history_select)
+        self.history.bind('<Map>', lambda _event: self.after_idle(self._follow_history), add='+')
         controls = ttk.Frame(self.side, padding=12)
         controls.columnconfigure(0, weight=1)
         self.side.add(controls, text='Turn controls')
@@ -168,12 +199,15 @@ class ConquestView(ttk.Frame):
         self.pace = tk.StringVar(value='Normal')
         ttk.Combobox(controls, textvariable=self.pace, values=('Normal', '2×', '4×', 'Instant'),
                      width=12, state='readonly').grid(row=1, column=0, sticky='ew', pady=8)
-        ttk.Label(controls, text='Enemy turns continue on every campaign tab. Normal, 2× and 4× show moving armies. Instant skips movement animation.',
-                  wraplength=270, justify='left').grid(row=2, column=0, sticky='ew')
+        self.pace_help = ttk.Label(controls, width=1,
+            text='Enemy turns continue on every campaign tab. Normal, 2× and 4× show moving armies. Instant skips movement animation.',
+            wraplength=270, justify='left')
+        self.pace_help.grid(row=2, column=0, sticky='ew')
+        self.side.bind('<Configure>', self._resize_sidebar, add='+')
         bottom = ttk.Frame(page)
         bottom.grid(row=3, column=0, columnspan=2, sticky='ew', pady=(6, 0))
         self.legend = tk.StringVar(value='Blue: you · Red: enemy · Gold: selected · /: action spent')
-        ttk.Label(bottom, textvariable=self.legend,
+        ttk.Label(bottom, textvariable=self.legend, width=1,
                   style='Muted.TLabel', wraplength=460).pack(side='left', fill='x', expand=True)
         page.bind('<Configure>', self._layout_map)
 
@@ -181,15 +215,23 @@ class ConquestView(ttk.Frame):
         width = event.width if event else self.map_page.winfo_width()
         wide = width >= 850
         columns = 4 if width >= 650 else 3
-        signature = wide, columns, self.show_details
+        sidebar_width = min(420, max(300, int(width * .36)))
+        signature = wide, columns, self.show_details, sidebar_width
         if signature == getattr(self, '_map_layout', None):
             return
         self._map_layout = signature
         self._wide = wide
         for column in range(4):
-            self.toolbar.columnconfigure(column, weight=1 if column < columns else 0)
+            self.toolbar.columnconfigure(column, weight=1 if column < columns else 0,
+                                         uniform='campaign-actions' if column < columns else '')
         for i, button in enumerate(self.buttons.values()):
             button.grid_configure(row=1 + i // columns, column=i % columns)
+        self.army_controls.grid_configure(row=1 + (len(self.buttons) + columns - 1) // columns, columnspan=columns)
+        self.army_selector.configure(width=max(22, min(46, (width - 80) // 8)))
+        if width < 700:
+            self.army_hint.pack_forget()
+        else:
+            self.army_hint.pack(side='left', padx=10)
         self.odds_label.grid_configure(columnspan=columns)
         self.odds_label.configure(wraplength=max(240, width - 24))
         if wide:
@@ -197,21 +239,56 @@ class ConquestView(ttk.Frame):
         self.canvas_frame.grid_forget()
         self.side.grid_forget()
         if wide:
-            self.map_page.columnconfigure(1, weight=0, minsize=320)
-            self.map_page.rowconfigure(2, weight=0)
-            self.canvas_frame.grid(row=1, column=0, sticky='nsew', padx=(0, 8))
-            self.side.grid(row=1, column=1, sticky='nsew')
+            self.side.configure(width=sidebar_width)
+            self.map_body.columnconfigure(1, weight=0, minsize=sidebar_width)
+            self.canvas_frame.grid(row=0, column=0, sticky='nsew', padx=(0, 8))
+            self.side.grid(row=0, column=1, sticky='nsew')
         else:
-            self.map_page.columnconfigure(1, weight=0, minsize=0)
-            self.map_page.rowconfigure(2, weight=0)
+            self.side.configure(width=1)
+            self.map_body.columnconfigure(1, weight=0, minsize=0)
             if self.show_details:
-                self.side.grid(row=1, column=0, columnspan=2, sticky='nsew')
+                self.side.grid(row=0, column=0, columnspan=2, sticky='nsew')
             else:
-                self.canvas_frame.grid(row=1, column=0, columnspan=2, sticky='nsew')
+                self.canvas_frame.grid(row=0, column=0, columnspan=2, sticky='nsew')
+
+    def _resize_sidebar(self, event):
+        width = max(80, event.width - 40)
+        self.history_heading.configure(wraplength=width)
+        self.pace_help.configure(wraplength=width)
 
     def _toggle_details(self):
         self.show_details = not self.show_details
         self._layout_map()
+
+    def _selected_army(self):
+        if not self.state or self.selected is None:
+            return None
+        chosen = campaign.army_at(self.state, self.selected, army_id=self.selected_army_id) if self.selected_army_id is not None else None
+        return chosen or campaign.army_at(self.state, self.selected, self.app.conquest_local_actor()) or campaign.army_at(self.state, self.selected)
+
+    def _sync_army_selector(self):
+        armies = campaign.armies_at(self.state, self.selected) if self.state and self.selected is not None else []
+        self._army_choices = [a['id'] for a in armies]
+        chosen = self._selected_army()
+        self.selected_army_id = chosen['id'] if chosen else None
+        self.army_selector.configure(values=tuple(
+            f'Army {a["id"]} · {actor_label(self.state, a["faction"])} · {a["strength"]} strength · {"Spent" if a["acted"] else "Ready"}'
+            for a in armies), state='readonly' if armies else 'disabled')
+        if chosen:
+            self.army_selector.current(self._army_choices.index(chosen['id']))
+        else:
+            self.army_selector.set('No army here')
+
+    def _choose_army(self, _event=None):
+        index = self.army_selector.current()
+        if 0 <= index < len(self._army_choices):
+            self.selected_army_id = self._army_choices[index]
+            self.refresh(self.state, busy=self.busy)
+
+    def _reinforce_selected(self):
+        army = self._selected_army()
+        if army and not self.buttons['reinforce'].instate(('disabled',)):
+            self.app.conquest_action('recruit', node=self.selected, army_id=army['id'])
 
     def _gift(self):
         if not self.state or not self.state.get('coop') or self.selected is None:
@@ -236,15 +313,18 @@ class ConquestView(ttk.Frame):
     def _build_research(self):
         parent = self.research_page.content
         ttk.Label(parent, text='Permanent research', font=('Segoe UI', 14, 'bold')).grid(row=0, column=0, sticky='w')
-        self._label(parent, 'Each rank adds 10%. Research survives territory losses. Research and territory bonuses cap at +100% per stat. Health and armor multiply effective durability for units and buildings.', 1)
+        self._label(parent, 'Each rank adds 10%, up to 50%. Prices rise after each upgrade.', 1)
         self.research_rows = {}
         for i, (key, name) in enumerate(STATS.items(), 2):
-            row = ttk.Frame(parent, padding=(0, 10))
-            row.grid(row=i, column=0, sticky='ew')
+            card = PurchaseCard(parent, padding=(12, 10))
+            card.grid(row=i, column=0, sticky='ew', pady=5)
+            row = card.body
             row.columnconfigure(0, weight=1)
             value = tk.StringVar()
-            ttk.Label(row, textvariable=value).grid(row=0, column=0, sticky='w')
-            button = ttk.Button(row, text=f'Buy · {RESEARCH_COST}',
+            label = ttk.Label(row, textvariable=value)
+            label.grid(row=0, column=0, sticky='w')
+            card.labels.append(label)
+            button = self._purchase_button(row, card=card, text=f'Buy · {RESEARCH_COST}',
                 command=lambda k=key: self.app.conquest_action('purchase', kind='research', key=k))
             button.grid(row=0, column=1, padx=(12, 0))
             self.research_rows[key] = value, button
@@ -252,17 +332,17 @@ class ConquestView(ttk.Frame):
         ttk.Label(parent, text='Battle supplies', font=('Segoe UI', 14, 'bold')).grid(row=9, column=0, sticky='w')
         self.supply_text = tk.StringVar()
         ttk.Label(parent, textvariable=self.supply_text, wraplength=650).grid(row=10, column=0, sticky='w', pady=8)
-        self.supply_button = ttk.Button(parent, text=f'Buy charge · {SUPPLY_COST}',
+        self.supply_button = self._purchase_button(parent, text=f'Buy charge · {SUPPLY_COST}',
             command=lambda: self.app.conquest_action('purchase', kind='supply'))
         self.supply_button.grid(row=11, column=0, sticky='w')
         ttk.Separator(parent).grid(row=12, column=0, sticky='ew', pady=14)
         ttk.Label(parent, text='Field Repairs · consumable item', font=('Segoe UI', 14, 'bold')).grid(row=13, column=0, sticky='w')
-        self._label(parent, 'Buy a kit, then arm it for your next battle. Combat units regenerate up to 50% health during that encounter; +10% autobattle power. One kit is consumed when the battle commits, including defensive and teammate encounters. Retries retain the effect. Disarm before combat to keep the kit. This item never grants permanent healing.', 14)
+        self._label(parent, 'Buy and arm a kit to heal damaged troops in your next battle.', 14)
         self.repairs_text = tk.StringVar()
         ttk.Label(parent, textvariable=self.repairs_text, wraplength=650).grid(row=15, column=0, sticky='ew', pady=8)
         actions = ttk.Frame(parent)
         actions.grid(row=16, column=0, sticky='ew')
-        self.repairs_buy = ttk.Button(actions, text=f'Buy repair kit · {REPAIR_KIT_COST}',
+        self.repairs_buy = self._purchase_button(actions, text=f'Buy repair kit · {REPAIR_KIT_COST}',
             command=lambda: self.app.conquest_action('purchase', kind='item', key='field_repairs'))
         self.repairs_buy.pack(side='left', padx=(0, 8))
         self.repairs_use = ttk.Button(actions, text='Arm for next battle',
@@ -276,40 +356,75 @@ class ConquestView(ttk.Frame):
         parent.bind('<Configure>', lambda e, w=label: w.configure(wraplength=max(220, e.width - 24)), add='+')
         return label
 
+    def _purchase_button(self, parent, *, card=None, **options):
+        button = ttk.Button(parent, style='Conquest.Purchase.TButton', **options)
+        self.purchase_cards[button] = card
+        return button
+
+    def _set_purchase_available(self, button, available, **options):
+        button.configure(state='normal' if available else 'disabled', **options)
+        card = self.purchase_cards.get(button)
+        if card is not None:
+            card.set_available(bool(available), self.app.ui_palette(), self.app.dark_mode_var.get())
+
+    def _refresh_escort_rosters(self):
+        actor = self.app.conquest_local_actor()
+        faction = country(self.state, actor) if self.state else 'GDI'
+        inventory = self.state[actor]['perks'] if self.state else {}
+        for key, roster in self.escort_rosters.items():
+            rank = perk_rank(inventory, key)
+            roster.show_roster(faction, rank, getattr(self.app, '_conquest_names', {}),
+                bool(self.state) and str(self.perk_rows[key][1]['state']) != 'disabled',
+                self.app.ui_palette(), self.app.dark_mode_var.get())
+
     def _build_perks(self):
         parent = self.perks_page.content
         ttk.Label(parent, text='Campaign perk shop', font=('Segoe UI', 14, 'bold')).grid(row=0, column=0, sticky='w')
-        self._label(parent, 'Faction perks persist for this campaign. Starting troops and buildings are placed in real battles and contribute to autobattle ratings. Buy local defenses and buildings in Node upgrades.', 1)
+        self._label(parent, 'Upgrade your armies here. Upgrade territories in Node upgrades. Prices rise after each purchase.', 1)
         self.perk_rows = {}
-        for i, (key, perk) in enumerate(((k, p) for k, p in PERKS.items() if not p['local']), 2):
-            card = ttk.Frame(parent, padding=12, relief='ridge', borderwidth=1)
-            card.grid(row=i, column=0, sticky='ew', pady=5)
+        self.perk_titles = {}
+        self.perk_descriptions = {}
+        self.escort_rosters = {}
+        for i, (key, perk) in enumerate(((k, p) for k, p in PERKS.items() if not p['local'] and not p.get('legacy')), 2):
+            border = PurchaseCard(parent)
+            border.grid(row=i, column=0, sticky='ew', pady=5)
+            card = border.body
             card.columnconfigure(0, weight=1)
-            ttk.Label(card, text=perk['name'], font=('Segoe UI', 11, 'bold')).grid(row=0, column=0, sticky='w')
-            self._label(card, perk['description'], 1)
+            title = self.perk_titles[key] = ttk.Label(card, text=perk['name'], font=('Segoe UI', 11, 'bold'))
+            title.grid(row=0, column=0, sticky='w')
+            self.perk_descriptions[key] = self._label(card, perk['description'], 1)
             value = tk.StringVar()
-            ttk.Label(card, textvariable=value).grid(row=2, column=0, sticky='w')
-            button = ttk.Button(card, text=f'Buy · {perk["cost"]}',
+            value_label = ttk.Label(card, textvariable=value)
+            value_label.grid(row=2, column=0, sticky='w')
+            border.labels.extend((title, self.perk_descriptions[key], value_label))
+            if key in ('infantry', 'vehicles'):
+                self.perk_descriptions[key].grid_remove()
+                value_label.grid_configure(row=1, pady=(6, 0))
+                roster = self.escort_rosters[key] = EscortRoster(card, key)
+                roster.grid(row=2, column=0, sticky='ew', pady=(8, 4))
+            button = self._purchase_button(card, card=border, text=f'Buy · {perk["cost"]}',
                 command=lambda k=key: self.app.conquest_action('purchase', kind='perk', key=k, node=self.selected))
             button.grid(row=3, column=0, sticky='w', pady=(8, 0))
             self.perk_rows[key] = value, button
         self.perks_page.bind_controls()
 
     def _open_node_upgrades(self):
-        if self.state:
+        if (self.state and self.selected is not None and not self.busy and
+            self.state['phase'] == self.app.conquest_local_actor() and not self.state['pending'] and
+            self.state['nodes'][self.selected]['owner'] == self.app.conquest_local_actor()):
             self.book.select(self.node_page)
 
     def _choose_upgrade_node(self, _event=None):
         index = self.node_selector.current()
-        if index >= 0:
+        if 0 <= index < len(self._upgrade_nodes):
             self.select(self._upgrade_nodes[index])
 
     def _build_node_upgrades(self):
         parent = self.node_page.content
         ttk.Label(parent, text='Node defenses & buildings', font=('Segoe UI', 14, 'bold')).grid(row=0, column=0, sticky='w')
         self._label(parent, 'Choose a territory below, or select it on the campaign map and click Fortify node. Improvements defend only their own node, remain after capture, and do not consume an army action. Buy during your turn, before a battle is committed.', 1)
-        self.node_selector = ttk.Combobox(parent, state='readonly', width=40)
-        self.node_selector.grid(row=2, column=0, sticky='ew', pady=(0, 10))
+        self.node_selector = ttk.Combobox(parent, state='readonly', width=54)
+        self.node_selector.grid(row=2, column=0, sticky='w', pady=(0, 10))
         self.node_selector.bind('<<ComboboxSelected>>', self._choose_upgrade_node)
         self.node_summary = tk.StringVar(value='Select a territory to see its stats and upgrades.')
         summary = ttk.Label(parent, textvariable=self.node_summary, justify='left', wraplength=650)
@@ -318,39 +433,48 @@ class ConquestView(ttk.Frame):
         self.node_rows = {}
         for i, key in enumerate(LOCAL_PERKS, 4):
             perk = PERKS[key]
-            card = ttk.Frame(parent, padding=12, relief='ridge', borderwidth=1)
-            card.grid(row=i, column=0, sticky='ew', pady=5)
+            border = PurchaseCard(parent)
+            border.grid(row=i, column=0, sticky='ew', pady=5)
+            card = border.body
             card.columnconfigure(0, weight=1)
-            ttk.Label(card, text=perk['name'], font=('Segoe UI', 11, 'bold')).grid(row=0, column=0, sticky='w')
-            self._label(card, perk['description'], 1)
+            title = ttk.Label(card, text=perk['name'], font=('Segoe UI', 11, 'bold'))
+            title.grid(row=0, column=0, sticky='w')
+            description = self._label(card, perk['description'], 1)
             value = tk.StringVar()
-            ttk.Label(card, textvariable=value, wraplength=600).grid(row=2, column=0, sticky='ew')
-            button = ttk.Button(card, text=f'Build · {perk["cost"]} credits',
-                command=lambda k=key: self.app.conquest_action('purchase', kind='perk', key=k, node=self.selected))
+            value_label = ttk.Label(card, textvariable=value, wraplength=600)
+            value_label.grid(row=2, column=0, sticky='ew')
+            border.labels.extend((title, description, value_label))
+            button = self._purchase_button(card, card=border, text=f'Build · {perk["cost"]} credits',
+                command=lambda k=key: self.app.conquest_action('purchase', kind='perk', key=k, node=self._upgrade_node_id))
             button.grid(row=3, column=0, sticky='w', pady=(8, 0))
             self.node_rows[key] = value, button
         self.node_page.bind_controls()
 
     def _refresh_node_upgrades(self, state, node, actor, active):
-        self._upgrade_nodes = [n['id'] for n in state['nodes']] if state else []
+        owned = [n for n in state['nodes'] if n['owner'] == actor] if state else []
+        self._upgrade_nodes = [n['id'] for n in owned]
         self.node_selector.configure(values=tuple(
-            f'{n["map"]["name"]} · {actor_label(state, n["owner"])} · Territory {n["id"] + 1}' for n in state['nodes']) if state else (),
-            state='readonly' if state else 'disabled')
+            f'{n["map"]["name"]} · Territory {n["id"] + 1}' for n in owned),
+            state='readonly' if owned else 'disabled')
+        if not node or node['id'] not in self._upgrade_nodes:
+            previous = getattr(self, '_upgrade_node_id', None)
+            node = next((n for n in owned if n['id'] == previous), owned[0] if owned else None)
+        self._upgrade_node_id = node['id'] if node else None
         if node:
             self.node_selector.current(self._upgrade_nodes.index(node['id']))
-            army = campaign.army_at(state, node['id'])
+            armies = campaign.armies_at(state, node['id'])
             upgrades = ', '.join(f'{PERKS[k]["name"]}: {node["perks"].get(k, 0)}/{PERKS[k]["maximum"]}' for k in LOCAL_PERKS)
             self.node_summary.set(f'{node["map"]["name"]} · {actor_label(state, node["owner"])}\n'
-                f'Income: {node["income"]} credits/turn · Army strength: {army["strength"] if army else 0}/{MAX_STRENGTH}\n'
+                f'Income: {node["income"]} credits/turn · Armies: {len(armies)}/4 · Total strength: {sum(a["strength"] for a in armies)}\n'
                 + 'Territory bonuses: ' + (', '.join(f'{STATS[k]} +{v}%' for k, v in node['buffs'].items()) or 'None')
                 + f'\nLocal upgrade ranks: {sum(node["perks"].values())}\n' + upgrades
                 + f'\nCivil Engineers: {state[actor]["perks"].get("civil_engineers", 0) * 10}% discount on your local purchases.')
         else:
             self.node_selector.set('')
-            self.node_summary.set('Select a territory to see its stats and upgrades.')
+            self.node_summary.set('You do not own any territories to upgrade.' if state else 'Create a campaign to upgrade your territories.')
         for key, (value, button) in self.node_rows.items():
             perk = PERKS[key]
-            cost = campaign.purchase_cost(state, actor, key) if state else perk['cost']
+            cost = campaign.purchase_cost(state, actor, key, node['id'] if node else None) if state else perk['cost']
             rank = node['perks'].get(key, 0) if node else 0
             if not node:
                 reason = 'Select a territory.'
@@ -363,25 +487,54 @@ class ConquestView(ttk.Frame):
             elif state[actor]['credits'] < cost:
                 reason = f'Need {cost - state[actor]["credits"]} more campaign credits.'
             else:
-                reason = f'Next rank adds +{perk["power"]} defense power.'
+                reason = 'Ready to build.'
             allowed = bool(active and node and node['owner'] == actor and rank < perk['maximum'] and
                            state[actor]['credits'] >= cost)
             value.set(f'Rank {rank}/{perk["maximum"]} · {reason}')
-            button.configure(state='normal' if allowed else 'disabled',
+            self._set_purchase_available(button, allowed,
                              text=('Fully upgraded' if rank >= perk['maximum'] else f'Build rank {rank + 1} · {cost} credits'))
 
     def _build_bonuses(self):
-        self.bonus_text = tk.StringVar()
-        ttk.Label(self.bonuses_page.content, text='Faction overview', font=('Segoe UI', 14, 'bold')).grid(row=0, column=0, sticky='w')
-        label = ttk.Label(self.bonuses_page.content, textvariable=self.bonus_text, justify='left', wraplength=650)
-        label.grid(row=1, column=0, sticky='ew', pady=12)
-        self.bonuses_page.content.bind('<Configure>', lambda e: label.configure(wraplength=max(220, e.width - 24)), add='+')
+        parent = self.bonuses_page.content
+        ttk.Label(parent, text='Faction overview', font=('Segoe UI', 14, 'bold')).grid(row=0, column=0, sticky='w')
+        self.bonus_intro = ttk.Label(parent, text='No campaign yet.', wraplength=650, width=1)
+        self.bonus_intro.grid(row=1, column=0, sticky='ew', pady=(8, 4))
+        self.bonus_cards_frame = ttk.Frame(parent)
+        self.bonus_cards_frame.grid(row=2, column=0, sticky='ew')
+        self.bonus_cards_frame.columnconfigure(0, weight=1)
+        self.bonus_cards = {}
+        self.bonus_footer = ttk.Label(parent, width=1, wraplength=650, style='Muted.TLabel',
+            text='Territory upgrades defend their own node. Stacked armies defend together.')
+        self.bonus_footer.grid(row=3, column=0, sticky='ew', pady=12)
+        parent.bind('<Configure>', self._resize_bonuses, add='+')
         self.bonuses_page.bind_controls()
+
+    def _resize_bonuses(self, event=None):
+        width = max(220, self.bonuses_page.canvas.winfo_width() - 58)
+        if width == getattr(self, '_bonus_wrap_width', None):
+            return
+        self._bonus_wrap_width = width
+        for label in (self.bonus_intro, self.bonus_footer):
+            label.configure(wraplength=width)
+        for card in self.bonus_cards.values():
+            for key in ('header', 'wallet', 'stats', 'effects'):
+                card[key].configure(wraplength=width)
+
+    def _theme_bonus_cards(self):
+        dark = self.app.dark_mode_var.get()
+        colors = (('#79c0ff', '#7ee787', '#d2a8ff', '#56d4dd', '#ff7b72') if dark else
+                  ('#0969da', '#1a7f37', '#8250df', '#0a6670', '#cf222e'))
+        for actor, card in self.bonus_cards.items():
+            color = colors[('player', 'player2', 'player3', 'player4', 'ai').index(actor)]
+            card['frame'].configure(background=color)
+            card['header'].configure(foreground=color)
+            card['wallet'].configure(foreground='#f2cc60' if dark else '#7d4e00')
+            card['stats'].configure(foreground='#7ee787' if dark else '#1a7f37')
 
     def _build_setup(self):
         parent = self.setup_page.content
         ttk.Label(parent, text='New Conquest campaign', font=('Segoe UI', 14, 'bold')).grid(row=0, column=0, sticky='w')
-        self._label(parent, 'Capture every enemy territory to win. Each army moves, merges, attacks, or recruits once per turn. Territories use installed 2–8-player skirmish maps. Every combatant starts with a base, 10,000 battle credits, and its committed troops/buildings.', 1)
+        self._label(parent, 'Capture every enemy territory. Each army acts once per turn. Up to four allied armies can share a territory and move out separately.', 1)
         self.settings = {}
         self.setup_controls = []
         fields = (
@@ -403,8 +556,8 @@ class ConquestView(ttk.Frame):
                 row, textvariable=value, values=options, state='readonly', width=28)
             widget.grid(row=0, column=1, sticky='ew')
             self.setup_controls.append((widget, options is not None))
-        self._label(parent, 'Recruitment adds 5 strength, up to 40 per army. Strength supplies a mix of rifle infantry and light vehicles. Escort perks add infantry or tanks; building perks include required power. Real-battle casualties use the same strategic formula as autobattle, not an exact count of surviving units.', 9)
-        self._label(parent, 'Coalition allies add AI teammates for either faction. Spare map starts are shared evenly; an odd spare slot is assigned by the saved battle seed. Undeployed allies stay in reserve and add no power. Deployed allies share faction upgrades and use the selected battle AI difficulty. Equal total team ratings mean 50/50. ZeroTier co-op supports 2–4 human players; every battle includes all teammates with their personal upgrades. Co-op campaigns use maps with enough starts for all humans plus an enemy. Assisting humans deploy a copy of their strongest army, without spending its campaign action. Existing campaigns retain their territory maps; start a new campaign for the expanded map pool.', 10)
+        self._label(parent, 'Recruit a new army for 1,000 credits, or reinforce a selected army for the same price. All armies stationed on a territory defend it together.', 9)
+        self._label(parent, 'Escort upgrades unlock stronger troops. Research reaches 50%. Upgrade prices rise for both you and the enemy.', 10)
         self.create_button = ttk.Button(parent, text='Start new campaign', style='Launch.TButton', command=self.app.new_conquest)
         self.create_button.grid(row=11, column=0, sticky='w', pady=12)
         self.map_count = tk.StringVar(value='Installed map catalogue loads when opening Conquest.')
@@ -420,11 +573,20 @@ class ConquestView(ttk.Frame):
 
     def apply_theme(self):
         palette = self.app.ui_palette()
+        dark = self.app.dark_mode_var.get()
+        configure_purchase_style(self.app.style, palette, dark)
+        for button, card in self.purchase_cards.items():
+            if card is not None:
+                card.set_available(str(button['state']) != 'disabled', palette, dark)
+        self._refresh_escort_rosters()
         self.background = palette['canvas']
         self.foreground = palette.get('foreground', '#dce8ee')
         self.canvas.configure(background=self.background)
         self.inspector.configure(background=palette['background'], foreground=self.foreground,
                                  insertbackground=self.foreground)
+        self.history.configure(background=palette['background'], foreground=self.foreground,
+                               insertbackground=self.foreground, selectbackground=palette['select'],
+                               selectforeground=palette['select_foreground'])
         for page in (self.node_page, self.research_page, self.perks_page, self.bonuses_page, self.setup_page):
             page.canvas.configure(background=palette['background'])
         self.history.tag_configure('player', foreground='#3596d0')
@@ -432,6 +594,7 @@ class ConquestView(ttk.Frame):
         self.history.tag_configure('player3', foreground='#bc88ed')
         self.history.tag_configure('player4', foreground='#65dad4')
         self.history.tag_configure('ai', foreground='#dd6659')
+        self._theme_bonus_cards()
         self.render_map()
 
     def refresh(self, state, *, busy=False, message=None):
@@ -470,18 +633,39 @@ class ConquestView(ttk.Frame):
                 self.selected = None
         active = bool(state and state['phase'] == actor and not busy)
         node = state['nodes'][self.selected] if state and self.selected is not None else None
-        army = campaign.army_at(state, self.selected) if node else None
+        self._sync_army_selector()
+        army = self._selected_army()
+        stationed = campaign.armies_at(state, self.selected) if node else []
         pending = state and state['pending']
         human_battle = bool(pending and (human(state, pending['attacker']) or human(state, pending['defense']['faction'])))
         can_battle = human_battle and not pending['attempt'] and not busy and decision_actor(state) == actor
-        statuses = dict(recruit=active and node and node['owner'] == actor and
-                        (not army or not army['acted'] and army['strength'] < MAX_STRENGTH) and state[actor]['credits'] >= RECRUIT_COST,
+        statuses = dict(recruit=active and node and node['owner'] == actor and len(stationed) < MAX_ARMIES_PER_NODE and state[actor]['credits'] >= RECRUIT_COST,
+                        reinforce=active and army and army['faction'] == actor and not army['acted'] and army['strength'] < MAX_STRENGTH and state[actor]['credits'] >= RECRUIT_COST,
                         end=active, battle=can_battle, auto=can_battle,
-                        overview=bool(state), fortify=bool(state), details=True, gift=bool(active and state.get('coop') and node and node['owner'] == actor and not army
+                        overview=bool(state), fortify=bool(active and node and node['owner'] == actor), details=True, gift=bool(active and state.get('coop') and node and node['owner'] == actor and not stationed
                         and state['coop']['gifts'][actor] != state['turn'] and node.get('gifted_round') != state['turn']
                         and sum(n['owner'] == actor for n in state['nodes']) > 1), **{'in': bool(state), 'out': bool(state)})
         for key, button in self.buttons.items():
-            button.configure(state='normal' if statuses[key] else 'disabled')
+            if button in self.purchase_cards:
+                self._set_purchase_available(button, statuses[key])
+            else:
+                button.configure(state='normal' if statuses[key] else 'disabled')
+        reinforce_amount = min(5 + state[actor]['perks'].get('recruitment', 0), MAX_STRENGTH - army['strength']) if state and army and army['faction'] == actor else 0
+        if not army or army['faction'] != actor:
+            reinforce_help = 'Select one of your armies to add troops to it.'
+        elif not active:
+            reinforce_help = 'Reinforce during your turn, before committing a battle.'
+        elif army['acted']:
+            reinforce_help = 'This army has used its action. Reinforce it next turn.'
+        elif not reinforce_amount:
+            reinforce_help = f'This army already has the maximum {MAX_STRENGTH} strength.'
+        elif state[actor]['credits'] < RECRUIT_COST:
+            reinforce_help = f'Reinforcing costs {RECRUIT_COST:,} campaign credits.'
+        else:
+            reinforce_help = (f'Add {reinforce_amount} strength to army #{army["id"]}: '
+                              f'{army["strength"]} to {army["strength"] + reinforce_amount}/{MAX_STRENGTH}. '
+                              f'Costs {RECRUIT_COST:,} credits and uses this army\'s action.')
+        self.reinforce_tooltip.text = reinforce_help
         if human_battle:
             chance = campaign.player_chance(pending)
             self.battle_odds.set(f'Autobattle odds: {chance:.1%} win · {1-chance:.1%} loss · '
@@ -491,81 +675,182 @@ class ConquestView(ttk.Frame):
             self.battle_odds.set('Enemy turn in progress…' if state and state['phase'] in ('ai', 'battle') else
                                 'Select an army, then a connected territory to move or attack.')
             self.buttons['auto'].configure(text='Autobattle')
-        self.fortify_button.configure(state='normal' if state else 'disabled')
+        self.fortify_button.configure(state='normal' if statuses['fortify'] else 'disabled')
         self._refresh_node_upgrades(state, node, actor, active)
         for key, (value, button) in self.research_rows.items():
             rank = state[actor]['research'][key] if state else 0
-            value.set(f'{STATS[key]} · rank {rank}/3 · permanent +{rank * 10}%')
-            button.configure(state='normal' if active and rank < 3 and state[actor]['credits'] >= RESEARCH_COST else 'disabled')
-        self.supply_text.set(f'Reserve: {state[actor]["supplies"] if state else 0}/3. One charge adds +20% damage to your next battle, including teammate encounters. Committed once when the attack begins; retries do not spend another charge.')
-        self.supply_button.configure(state='normal' if active and state[actor]['supplies'] < 3 and state[actor]['credits'] >= SUPPLY_COST else 'disabled')
+            cost = campaign.research_cost(state, actor, key) if state else RESEARCH_COST
+            value.set(f'{STATS[key]}: +{rank * 10}% · Rank {rank}/{MAX_RESEARCH_RANK}')
+            self._set_purchase_available(button, active and rank < MAX_RESEARCH_RANK and state[actor]['credits'] >= cost,
+                text='Fully upgraded' if rank >= MAX_RESEARCH_RANK else f'Upgrade · {cost:,} credits')
+        self.supply_text.set(f'Charges: {state[actor]["supplies"] if state else 0}/3. Each adds 20% damage to your next battle.')
+        self._set_purchase_available(self.supply_button, active and state[actor]['supplies'] < 3 and state[actor]['credits'] >= SUPPLY_COST)
         kits = state[actor].get('repair_kits', 0) if state else 0
         armed = bool(state and state[actor].get('repairs_armed'))
         self.repairs_text.set(f'Inventory: {kits}/{MAX_REPAIR_KITS} kits · ' +
                               ('Armed for your next encounter.' if armed else 'Not armed. Buy and arm a kit to enable healing.'))
         if pending and any(m['loadout']['faction'] == actor and m['loadout'].get('field_repairs') for m in participants(pending)):
             self.repairs_text.set(self.repairs_text.get() + '\nField Repairs active in the pending battle. Its kit is already consumed; retries keep the effect.')
-        self.repairs_buy.configure(state='normal' if active and kits < MAX_REPAIR_KITS and state[actor]['credits'] >= REPAIR_KIT_COST else 'disabled')
+        self._set_purchase_available(self.repairs_buy, active and kits < MAX_REPAIR_KITS and state[actor]['credits'] >= REPAIR_KIT_COST)
         self.repairs_use.configure(text='Disarm · keep kit' if armed else 'Arm for next battle',
                                    state='normal' if active and kits else 'disabled')
         for key, (value, button) in self.perk_rows.items():
             perk = PERKS[key]
             inventory = node['perks'] if perk['local'] and node else state[actor]['perks'] if state and not perk['local'] else {}
-            rank = inventory.get(key, 0)
+            rank = perk_rank(inventory, key)
+            cost = campaign.purchase_cost(state, actor, key) if state else perk['cost']
             location = f' · {node["map"]["name"]}' if perk['local'] and node else ' · Select an owned territory' if perk['local'] else ' · Personal armies'
             value.set(f'Rank {rank}/{perk["maximum"]}{location}')
-            allowed = active and rank < perk['maximum'] and state[actor]['credits'] >= perk['cost']
-            if key == 'veterans' and state and state[actor]['perks'].get('elite_deployment'):
-                value.set('Superseded by Elite Deployment · starting combat troops are Elite.')
-                allowed = False
+            allowed = active and rank < perk['maximum'] and state[actor]['credits'] >= cost
+            button_text = 'Fully upgraded' if rank >= perk['maximum'] else f'Buy rank {rank + 1} · {cost:,} credits'
+            if key == 'veterans':
+                level = ('Rookie', 'Veteran', 'Elite')[rank]
+                value.set(f'Rank {rank}/2 · Starting combat troops: {level}')
+                if rank < 2:
+                    next_level = ('Veteran', 'Elite')[rank]
+                    button_text = f'Buy rank {rank + 1} · {next_level} · {cost:,} credits'
+            elif key == 'recruitment':
+                value.set(f'Rank {rank}/3 · Recruiting adds {5 + rank} strength.')
+            elif key in ('infantry', 'vehicles'):
+                value.set(f'Owned rank: {rank}/6')
+            elif key == 'helipad':
+                building = AIRCRAFT_BUILDING_LABELS[country(state, actor)] if state else 'faction aircraft building'
+                self.perk_titles[key].configure(text=f'Forward {building}')
+                self.perk_descriptions[key].configure(text=f'Start with your {building}.')
             if perk['local']:
                 allowed = allowed and node and node['owner'] == actor
-            button.configure(state='normal' if allowed else 'disabled')
+            self._set_purchase_available(button, allowed, text=button_text)
+        self._refresh_escort_rosters()
         self.create_button.configure(state='disabled' if busy or not self.app.conquest_can_create() else 'normal')
         for widget, dropdown in self.setup_controls:
             widget.configure(state='disabled' if busy else 'readonly' if dropdown else 'normal')
         if state and state.get('coop'):
             self.legend.set(' · '.join(f'{color}: {p["name"]}' for color, p in zip(('Blue', 'Green', 'Purple', 'Cyan'), roster(state))) + ' · Red: enemy')
         else:
-            self.legend.set('Blue: you · Red: enemy · Gold: selected · /: action spent')
+            self.legend.set('Blue: you · Red: enemy · Gold: selected · Crossed out: action used')
         self._refresh_bonuses()
         self._refresh_inspector()
         self._refresh_history()
         self._detect_ai_movement(previous, state)
         self.render_map()
+        self._schedule_result()
+
+    def _schedule_result(self):
+        if (self.state and self.state['winner'] and not self.busy and self.winfo_ismapped() and
+            self.state['id'] not in self._result_shown and self._result_after is None and
+            self._result_dialog is None):
+            self._result_after = self.after_idle(self._show_result)
+
+    def _show_result(self):
+        self._result_after = None
+        state = self.state
+        if (not state or not state['winner'] or self.busy or not self.winfo_ismapped() or
+            state['id'] in self._result_shown or getattr(self.app, '_close_after_game', False)):
+            return
+        if self.tk.call('grab', 'current', self._w):
+            self._result_after = self.after(200, self._show_result)
+            return
+        self._result_shown.add(state['id'])
+        self._cancel_animation()
+        won = state['winner'] == 'player'
+        title = 'Campaign victory' if won else 'Campaign defeated'
+        dialog = self._result_dialog = tk.Toplevel(self)
+        dialog.title(title)
+        dialog.transient(self.app)
+        dialog.resizable(False, False)
+        body = ttk.Frame(dialog, padding=24)
+        body.pack(fill='both', expand=True)
+        color = ('#7ee787' if won else '#ff7b72') if self.app.dark_mode_var.get() else ('#1a7f37' if won else '#cf222e')
+        ttk.Label(body, text=title, foreground=color, font=('Segoe UI', 17, 'bold')).pack(anchor='w')
+        ttk.Label(body, text=('All enemy territories captured.' if won else 'All your territories have been lost.'),
+                  wraplength=340, justify='left').pack(anchor='w', pady=(12, 6))
+        ttk.Label(body, text=f'Campaign ended in round {state["turn"]}.',
+                  style='Muted.TLabel').pack(anchor='w', pady=(0, 18))
+
+        def finish(_event=None):
+            self._result_dialog = None
+            dialog.destroy()
+            if self.state and self.state['id'] == state['id'] and self.state['winner']:
+                self.book.select(self.setup_page)
+                self.create_button.focus_set()
+
+        button = ttk.Button(body, text='New campaign', command=finish)
+        button.pack(anchor='e')
+        dialog.protocol('WM_DELETE_WINDOW', finish)
+        dialog.bind('<Return>', finish)
+        dialog.bind('<Escape>', finish)
+        dialog.update_idletasks()
+        width, height = dialog.winfo_reqwidth(), dialog.winfo_reqheight()
+        x = self.app.winfo_rootx() + max(0, (self.app.winfo_width() - width) // 2)
+        y = self.app.winfo_rooty() + max(0, (self.app.winfo_height() - height) // 2)
+        dialog.geometry(f'+{x}+{y}')
+        dialog.grab_set()
+        button.focus_set()
+
+    def _destroy_result(self, event):
+        if event.widget is self and self._result_after is not None:
+            self.after_cancel(self._result_after)
+            self._result_after = None
 
     def show_recovery(self):
         self.recovery.grid(row=5, column=0, sticky='ew', pady=(6, 0))
 
     def _refresh_bonuses(self):
         if not self.state:
-            self.bonus_text.set('No campaign yet.')
+            self.bonus_intro.configure(text='No campaign yet.')
+            for card in self.bonus_cards.values():
+                card['frame'].grid_remove()
             return
-        lines = []
+        intro = 'Permanent campaign upgrades and the bonuses used in your battles.'
         if self.state.get('coop'):
-            lines.append('Territory stat bonuses: ' + ('shared by all commanders' if self.state['coop']['shared_nodes'] else 'personal'))
-            lines.append('Income, research, purchased perks and supplies stay personal.\n')
-        for faction in (*human_ids(self.state), 'ai'):
+            intro = ('Territory stat bonuses: ' + ('shared by all commanders' if self.state['coop']['shared_nodes'] else 'personal')
+                     + '. Income, research, purchased perks and supplies stay personal.')
+        self.bonus_intro.configure(text=intro)
+        factions = (*human_ids(self.state), 'ai')
+        for faction, card in self.bonus_cards.items():
+            if faction not in factions:
+                card['frame'].grid_remove()
+        for index, faction in enumerate(factions):
             state, wallet = self.state, self.state[faction]
-            lines.append(actor_label(state, faction) + f' · {wallet["credits"]} credits · +{campaign.income(state, faction)}/turn')
+            if faction not in self.bonus_cards:
+                self._bonus_wrap_width = None
+                frame = tk.Frame(self.bonus_cards_frame, padx=2, pady=2)
+                body = ttk.Frame(frame, padding=12)
+                body.pack(fill='both', expand=True)
+                body.columnconfigure(0, weight=1)
+                card = self.bonus_cards[faction] = {'frame': frame}
+                for row, key in enumerate(('header', 'wallet', 'stats', 'effects')):
+                    label = card[key] = ttk.Label(body, width=1, wraplength=650, justify='left',
+                        font=('Segoe UI', 13, 'bold') if key == 'header' else ('Segoe UI', 10))
+                    label.grid(row=row, column=0, sticky='ew', pady=(0, 8) if key != 'effects' else 0)
+            card = self.bonus_cards[faction]
+            card['frame'].grid(row=index, column=0, sticky='ew', pady=6)
+            role = 'Enemy' if faction == 'ai' else 'Player' if faction == 'player' else f'Player {faction[-1]}'
+            heading = ' · '.join(dict.fromkeys((role, actor_label(state, faction), country(state, faction))))
+            money = f'{wallet["credits"]:,} campaign credits · +{campaign.income(state, faction):,} per turn'
+            stats = []
             total = campaign.totals(state, faction)
             for key, label in STATS.items():
-                nodes = sum(n['buffs'].get(key, 0) for n in state['nodes'] if n['owner'] in bonus_owners(state, faction))
-                lines.append(f'{label}: {wallet["research"][key] * 10}% research + {nodes}% territories = +{total[key]}% (cap 100%)')
-            lines.append('Permanent perks: ' + (', '.join(f'{PERKS[k]["name"]} {v}' for k, v in wallet['perks'].items()) or 'None'))
+                stats.append(f'{label}: +{total[key]}%')
+            owned = [f'{PERKS[k]["name"]} {perk_rank(wallet["perks"], k)}/{PERKS[k]["maximum"]}'
+                     for k in PERKS if not PERKS[k].get('legacy') and perk_rank(wallet['perks'], k)]
+            lines = ['Permanent perks: ' + (', '.join(owned) or 'None')]
             lines.append(f'Supplies: {wallet["supplies"]}/3 · recruitment: +{5 + wallet["perks"].get("recruitment", 0)} strength')
             lines.append(f'AI allies available: {wallet["perks"].get("allies", 0)}/3 · deployment depends on spare map starts')
             lines.append(f'Battle credits per commander: {10000 + BATTLE_CREDITS_PER_RANK * wallet["perks"].get("battle_treasury", 0):,}')
             lines.append(f'Extended Arsenal: +{wallet["perks"].get("extended_arsenal", 0)} cells · Civil Engineers: {10 * wallet["perks"].get("civil_engineers", 0)}% off local upgrades')
-            lines.append(f'Rapid Rearm: {15 * wallet["perks"].get("rapid_rearm", 0)}% less docked-aircraft reload time')
-            lines.append(f'Hardened Infrastructure: +{15 * wallet["perks"].get("hardened_infrastructure", 0)}% production/economy building health')
+            lines.append(f'Rapid Rearm: {10 * wallet["perks"].get("rapid_rearm", 0)}% faster ammunition reload')
+            lines.append(f'Hardened Infrastructure: +{10 * wallet["perks"].get("hardened_infrastructure", 0)}% building health')
             lines.append('Infantry Tiberium protection: ' + ('enabled' if wallet['perks'].get('hazard_training') else 'not purchased'))
-            lines.append('Starting combat rank: ' + ('Elite' if wallet['perks'].get('elite_deployment') else
-                         'Veteran' if wallet['perks'].get('veterans') else 'Rookie'))
+            lines.append('Starting combat rank: ' + ('Rookie', 'Veteran', 'Elite')[deployment_rank(wallet['perks'])])
             lines.append(f'Field Repairs kits: {wallet.get("repair_kits", 0)}/{MAX_REPAIR_KITS} · ' + ('armed' if wallet.get('repairs_armed') else 'not armed'))
-            lines.append('')
-        lines.append('Supplies add their damage after the permanent cap. Territory garrisons apply only when defending their own node. Native AI difficulty affects real battles separately.')
-        self.bonus_text.set('\n'.join(lines))
+            signature = (heading, money, '\n'.join(stats), '\n'.join(lines))
+            if signature != card.get('signature'):
+                for key, text in zip(('header', 'wallet', 'stats', 'effects'), signature):
+                    card[key].configure(text=text)
+                card['signature'] = signature
+        self._theme_bonus_cards()
+        self._resize_bonuses()
 
     def _refresh_inspector(self):
         state, lines = self.state, []
@@ -577,7 +862,7 @@ class ConquestView(ttk.Frame):
                           'HQ guard: +8 rifle infantry and +2 powered faction defenses.' if node['owner'] == node['hq'] else
                           'HQ captured. Original defender bonus inactive.', '']
             lines += [f'Fortification: {node["perks"].get("garrison", 0)}/{PERKS["garrison"]["maximum"]}',
-                      'Each rank adds 1 powered faction defense (+4 defense power). Local defenses remain after capture.',
+                      'Each rank adds one defensive building here.',
                       f'Local upgrade ranks: {sum(node["perks"].values())}',
                       'Use Node upgrades to add defenses, power plants, barracks, refineries and vehicle factories.', '']
             lines += [f'{STATS[k]} +{v}%' for k, v in node['buffs'].items()]
@@ -586,11 +871,15 @@ class ConquestView(ttk.Frame):
                 lines.append(f'{claimed}: {PERKS[node["reward"]]["name"]}')
             for key, value in node['perks'].items():
                 lines.append(f'Local: {PERKS[key]["name"]} rank {value}')
-            army = campaign.army_at(state, node['id'])
+            armies = campaign.armies_at(state, node['id'])
+            army = self._selected_army()
+            if armies:
+                lines += ['', f'Armies here: {len(armies)}/4', f'All {len(armies)} defend together.']
+                lines += [f'#{a["id"]} · {actor_label(state, a["faction"])} · {a["strength"]} strength' for a in armies]
             if army:
                 from .catalogue import ROSTERS
                 unit = ROSTERS[country(state, army['faction'])][2]
-                lines += ['', f'Army marker: {getattr(self.app, "_conquest_names", {}).get(unit, unit)}',
+                lines += ['', f'Selected army #{army["id"]}', f'Army marker: {getattr(self.app, "_conquest_names", {}).get(unit, unit)}',
                           f'Army strength: {army["strength"]}/{MAX_STRENGTH}',
                           'Action spent' if army['acted'] else 'Ready to move, attack, or recruit']
             elif node['owner'] != self.app.conquest_local_actor():
@@ -604,7 +893,7 @@ class ConquestView(ttk.Frame):
                       'Your team attacks.' if human(state, battle['attacker']) else 'Your team defends.',
                       'Encounter decision: ' + actor_label(state, decision_actor(state)),
                       f'Autobattle: {chance:.1%} win / {1-chance:.1%} loss',
-                      f'Attack team {team_power(battle, "attack"):g} / Defense team {team_power(battle, "defense"):g}']
+                      f'Defending armies: {max(1, len(battle.get("defending_armies", ())))}']
             for key in ('attack', 'defense'):
                 deployed, requested = deployment(battle, key)
                 lines.append(f'{('Human team' if battle.get('human_team') == key else actor_label(state, battle[key]['faction']))} AI allies: {deployed}/{requested} deployed · {requested-deployed} in reserve')
@@ -612,10 +901,10 @@ class ConquestView(ttk.Frame):
                 loadout = member['loadout']
                 force = loadout['force']
                 names = getattr(self.app, '_conquest_names', {})
-                lines += ['', f'{actor_label(state, loadout['faction'])} {member["role"]} · start {member["waypoint"] + 1} · {loadout["power"]:g} power:',
+                lines += ['', f'{actor_label(state, loadout['faction'])} · {loadout["country"]} · {member["role"]}:',
                           f'Battle credits: {10000 + BATTLE_CREDITS_PER_RANK * loadout["perks"].get("battle_treasury", 0):,}',
                           f'Weapon range: +{loadout["perks"].get("extended_arsenal", 0)} cells · Field Repairs: ' + ('active for this battle' if loadout.get('field_repairs') else 'inactive'),
-                          f'Aircraft rearm time: −{15 * loadout["perks"].get("rapid_rearm", 0)}% · Infrastructure health: +{15 * loadout["perks"].get("hardened_infrastructure", 0)}%',
+                          f'Aircraft rearm time: −{(10 if battle.get("team_version", 1) >= 4 else 15) * loadout["perks"].get("rapid_rearm", 0)}% · Infrastructure health: +{(10 if battle.get("team_version", 1) >= 4 else 15) * loadout["perks"].get("hardened_infrastructure", 0)}%',
                           'Starting troop rank: ' + ('Elite' if force['veterancy'] == 2 else 'Veteran' if force['veterancy'] == 1 else 'Rookie'),
                           'Infantry Tiberium protection: ' + ('enabled' if loadout['perks'].get('hazard_training') else 'inactive'),
                           ', '.join(f'{count}× {names.get(kind, kind)}' for kind, count in force['units'].items()),
@@ -633,23 +922,35 @@ class ConquestView(ttk.Frame):
         if signature == self._history_signature:
             return
         self._history_signature = signature
-        follow = not self.history.get_children() or self.history.yview()[1] >= .98
-        self.history.delete(*self.history.get_children())
+        follow = self.history.index('end-1c') == '1.0' or self.history.yview()[1] >= .98
+        self.history.configure(state='normal')
+        self.history.delete('1.0', 'end')
+        if getattr(self, '_history_nodes', None):
+            self.history.tag_delete(*self._history_nodes)
         self._history_nodes = {}
         entries = self.state['history'] if self.state else []
         if choice != 'All actions':
             actors = human_ids(self.state) if self.state and choice == 'Team actions' else (self.app.conquest_local_actor() if choice == 'Your actions' else 'ai',)
             entries = [e for e in entries if e['faction'] in actors]
         for entry in entries[-500:]:
-            key = str(entry['id'])
-            self.history.insert('', 'end', iid=key, values=(entry['turn'], f'{actor_label(self.state, entry['faction'])}: {entry["text"]}'), tags=(entry['faction'],))
+            key = f'event:{entry["id"]}'
+            self.history.insert('end', f'Round {entry["turn"]} · {actor_label(self.state, entry["faction"])}: {entry["text"]}\n',
+                                (entry['faction'], key))
             self._history_nodes[key] = entry['node']
+        self.history.configure(state='disabled')
         if entries and follow:
-            self.history.see(str(entries[-1]['id']))
+            self._history_follow_pending = True
+            self.after_idle(self._follow_history)
 
-    def _history_select(self, _event=None):
-        selection = self.history.selection()
-        node = self._history_nodes.get(selection[0]) if selection else None
+    def _follow_history(self):
+        if self._history_follow_pending and self.history.winfo_ismapped():
+            self.history.see('end')
+            self._history_follow_pending = False
+
+    def _history_select(self, event):
+        tags = self.history.tag_names(f'@{event.x},{event.y}')
+        node = next((self._history_nodes[tag] for tag in tags
+                     if tag in self._history_nodes and self._history_nodes[tag] is not None), None)
         if node is not None:
             self.select(node)
             x, y = self._point(self.state['nodes'][node])
@@ -695,17 +996,6 @@ class ConquestView(ttk.Frame):
                     if not pending or pending['army'] != army['id'] or pending['target'] != army['node']:
                         movement = (old['node'], army['node'], old)
                     break
-            if movement is None and not battle:
-                remaining = {a['id'] for a in state['armies']}
-                for old in before.values():
-                    if old['id'] in remaining:
-                        continue
-                    merged = next((a for a in state['armies'] if a['id'] in before and
-                                   a['node'] in campaign.neighbors(state, old['node']) and
-                                   a['strength'] == before[a['id']]['strength'] + old['strength']), None)
-                    if merged:
-                        movement = (old['node'], merged['node'], old)
-                        break
         if movement and movement[2]:
             self._cancel_animation()
             source, target, army = movement
@@ -769,26 +1059,39 @@ class ConquestView(ttk.Frame):
         self.world_width = max(canvas.winfo_width(), (max(n['x'] for n in nodes) - self.min_x) * self.scale + 120)
         self.world_height = max(canvas.winfo_height(), (max(n['y'] for n in nodes) - self.min_y) * self.scale + 120)
         canvas.configure(scrollregion=(0, 0, self.world_width, self.world_height))
-        army = campaign.army_at(state, self.selected) if self.selected is not None else None
+        army = self._selected_army()
         ready = army and army['faction'] == self.app.conquest_local_actor() and not army['acted'] and state['phase'] == self.app.conquest_local_actor()
         destinations = set(campaign.neighbors(state, self.selected)) if ready else set()
         for a, b in state['edges']:
             highlighted = self.selected in (a, b) and (b if a == self.selected else a) in destinations
             canvas.create_line(*self._point(nodes[a]), *self._point(nodes[b]),
                                fill='#56b393' if highlighted else '#5b6c78', width=2 if highlighted else 1)
-        armies = {a['node']: a for a in state['armies']}
+        armies = {}
+        for stationed in state['armies']:
+            armies.setdefault(stationed['node'], []).append(stationed)
+        offsets = {1: ((0, 0),), 2: ((-16, 0), (16, 0)),
+                   3: ((-16, -12), (16, -12), (0, 16)),
+                   4: ((-16, -16), (16, -16), (-16, 16), (16, 16))}
+        colors = {'player': '#3eabe2', 'player2': '#58c987', 'player3': '#bc88ed', 'player4': '#65dad4', 'ai': '#e66d63'}
         for node in nodes:
             x, y = self._point(node)
             color = {'player': '#3eabe2', 'player2': '#58c987', 'player3': '#bc88ed', 'player4': '#65dad4', 'ai': '#e66d63', 'neutral': '#8b9da8'}[node['owner']]
             tag = 'node:' + str(node['id'])
             selected = node['id'] == self.selected
             radius = (23 if self.scale >= .55 else 15) if node['id'] in armies else max(3, min(8, round(10 * self.scale)))
+            stack = armies.get(node['id'], [])
+            if len(stack) > 1:
+                radius = 39 if self.scale >= .55 else 29
             canvas.create_oval(x-radius, y-radius, x+radius, y+radius, fill=self.background if node['id'] in armies else color,
                                outline='#e7c85a' if selected else color, width=4 if selected else 1, tags=(tag,))
-            if node['id'] in armies:
-                current = armies[node['id']]
-                if not self._animation or self._animation['army']['id'] != current['id']:
-                    self._draw_army(x, y, current, country(state, current['faction']), color, (tag,))
+            for current, (dx, dy) in zip(stack, offsets.get(len(stack), ())):
+                if self._animation and self._animation['army']['id'] == current['id']:
+                    continue
+                tags = tag, f'army:{current["id"]}'
+                if selected and current['id'] == self.selected_army_id:
+                    canvas.create_oval(x+dx-18, y+dy-18, x+dx+18, y+dy+18,
+                                       outline='#e7c85a', width=2, tags=tags)
+                self._draw_army(x+dx, y+dy, current, country(state, current['faction']), colors[current['faction']], tags)
             if node.get('hq'):
                 size = radius + 5
                 canvas.create_rectangle(x-size, y-size, x+size, y+size, outline='#e7c85a', width=2, tags=(tag,))
@@ -797,11 +1100,13 @@ class ConquestView(ttk.Frame):
                 canvas.create_oval(x-30, y-30, x+30, y+30, outline='#edb04e', width=2, dash=(3, 3), tags=(tag,))
             if self.scale >= .65 or selected:
                 name = node['map']['name']
-                canvas.create_text(x, y+36, text=name[:25] + ('…' if len(name) > 25 else ''),
+                canvas.create_text(x, y+radius+13, text=name[:25] + ('…' if len(name) > 25 else ''),
                                    fill=self.foreground, font=('Segoe UI', 8), tags=(tag,))
         self._draw_movement()
 
-    def select(self, node):
+    def select(self, node, army_id=None):
+        if node != self.selected or army_id is not None:
+            self.selected_army_id = army_id
         self.selected = node
         self.refresh(self.state, busy=getattr(self, 'busy', False))
 
@@ -811,17 +1116,22 @@ class ConquestView(ttk.Frame):
         found = self.canvas.find_overlapping(x-4, y-4, x+4, y+4)
         target = next((int(tag.split(':')[1]) for item in reversed(found)
                        for tag in self.canvas.gettags(item) if tag.startswith('node:')), None)
+        army_id = next((int(tag.split(':')[1]) for item in reversed(found)
+                        for tag in self.canvas.gettags(item) if tag.startswith('army:')), None)
+        if army_id is not None and self.state:
+            clicked = next((a for a in self.state['armies'] if a['id'] == army_id), None)
+            if clicked:
+                target = clicked['node']
         if target is not None and self.state and self.selected is not None and target != self.selected:
-            army = campaign.army_at(self.state, self.selected)
+            army = self._selected_army()
             if (not self.busy and self.state['phase'] == self.app.conquest_local_actor() and army and
                 army['faction'] == self.app.conquest_local_actor() and not army['acted'] and
-                target in campaign.neighbors(self.state, self.selected) and
-                (not human(self.state, self.state['nodes'][target]['owner']) or self.state['nodes'][target]['owner'] == self.app.conquest_local_actor())):
+                target in campaign.neighbors(self.state, self.selected)):
                 source = self.selected
                 self.selected = target
-                self.app.conquest_action('move', source=source, target=target)
+                self.app.conquest_action('move', source=source, target=target, army_id=army['id'])
                 return
-        self.select(target)
+        self.select(target, army_id)
 
     def fit_map(self):
         if not self.state:
