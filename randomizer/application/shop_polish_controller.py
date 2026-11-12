@@ -2035,7 +2035,7 @@ class ShopPolishController(ShopArchipelagoController):
             ),
         )
         if transition.unlocked_reward_id:
-            lines.append(f'Vibe-Unlocking: {transition.unlocked_reward_id} (free)')
+            lines += (f'Vibe-Unlocking: {transition.unlocked_reward_id} (free)',)
         dividend = transition.reward.gem_dividend_meta_coins
         completion_bonus = transition.reward.run_completion_meta_coins
         modifier_completion_gems = (
