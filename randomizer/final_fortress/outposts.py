@@ -358,8 +358,8 @@ def _prepare_deferred_outpost(writer, plan, camp, player_aliases, finished):
 def _reviewed_native_building_prefix(root, registration):
     """Use the native heap observed for the reviewed DTA runtime, not INI length.
 
-    DTA's initial Rules processing reports 501 building types for this exact
-    runtime/registration, although only 498 are explicitly listed. Unknown
+    DTA's initial Rules processing reports 501 building types for these exact
+    runtimes/registration, although only 498 are explicitly listed. Unknown
     combinations must be reviewed instead of silently granting foreign tech.
     """
     root = Path(root)
@@ -369,10 +369,21 @@ def _reviewed_native_building_prefix(root, registration):
         ('554dedfdae3948e50e61b0058689b8a265ae40908cb55fae31e6f05e0e549a23',
          '0a12176636e4f6aab7bf05651bbad64bf95cf4c76a5759fecfa115bfead5d051',
          '12025e116c95679841670789c0684584da5f914c8f96dfba19100ab7e1e900f9'): 501,
+        # DTA 16.2.3 / Vinifera f5ae74ae: installed runtime logs confirm
+        # the same 501-type native prefix and unchanged registration signature.
+        ('554dedfdae3948e50e61b0058689b8a265ae40908cb55fae31e6f05e0e549a23',
+         'c059becd565f14fbfc1be7ae74ef8e8ffbd8329bb48e18d835c57de73d47d435',
+         '12025e116c95679841670789c0684584da5f914c8f96dfba19100ab7e1e900f9'): 501,
     }
     key = (*binary, registration)
     if key not in reviewed:
-        raise ValueError('Forward Outposts requires a reviewed native building registry for this DTA/Vinifera installation.')
+        raise ValueError(
+            'Forward Outposts requires a reviewed native building registry for this DTA/Vinifera installation. '
+            'Update the Randomizer to a build supporting your installed DTA version.\n\n'
+            f'game.exe SHA-256: {binary[0]}\n'
+            f'Vinifera.dll SHA-256: {binary[1]}\n'
+            f'Building registration SHA-256: {registration}'
+        )
     return reviewed[key]
 
 

@@ -214,6 +214,14 @@ than the catalogue's 498 entries, then the actual emitted map type order. Runtim
 binary and registration fingerprints guard that reviewed mapping so unsupported
 installations cannot silently deliver foreign buildings.
 
+The reviewed runtimes include DTA 16.2.3 / Vinifera `f5ae74ae` (DLL SHA-256
+`c059becd565f14fbfc1be7ae74ef8e8ffbd8329bb48e18d835c57de73d47d435`).
+Installed runtime logs `DEBUG_13-11-2026_00-49-17.LOG` and
+`DEBUG_13-11-2026_01-08-05.LOG` both report 501 building types before map-local
+registration. The game executable and registration signature match the earlier
+reviewed runtime. Unknown combinations remain blocked and report all three
+fingerprints for diagnosis.
+
 Production occupies the inner core, with defenses around it. Foundations use
 connected ground at one elevation, avoiding isolated cliff ledges. Buildings have
 clearance from other structures, scenery, existing units, arrival lanes and camp
