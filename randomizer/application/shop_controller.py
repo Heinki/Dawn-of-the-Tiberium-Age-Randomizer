@@ -2427,26 +2427,28 @@ class ShopController(ShopPolishController):
             self.workspace_tabs.select(self.shop_tab)
         self.refresh_shop_mode()
 
-    def buy_selected_shop_reward(self, _event=None):
+    def buy_selected_shop_reward(self, _event=None, *, buy_max=False):
         selected = self.shop_catalogue_tree.selection()
         if not selected:
             return
         reward_id = self._shop_catalogue_rows.get(selected[0])
         if not reward_id:
             return
-        self._buy_shop_reward(reward_id)
+        self._buy_shop_reward(reward_id, buy_max=buy_max)
 
     def buy_random_shop_training(self):
         self._buy_shop_reward(None)
 
-    def _buy_shop_reward(self, reward_id, *, loadout=False):
+    def _buy_shop_reward(self, reward_id, *, loadout=False, buy_max=False):
         if self.shop_launch_active():
             self._set_shop_message('Wait for current mission process to close.')
             return
         try:
             validation = (
                 self.shop_service.purchase_random_training() if reward_id is None
-                else self.shop_service.purchase_run_reward(reward_id)
+                else self.shop_service.purchase_run_reward(
+                    reward_id, buy_max=buy_max
+                )
             )
             reward_id = validation.reward_id
         except ShopTransitionError as exc:
@@ -2459,6 +2461,9 @@ class ShopController(ShopPolishController):
                 )
                 self.__dict__[focus_attribute] = reward_id
                 self._set_shop_message(
+                    f'Purchased {validation.quantity} stacks of '
+                    f'{reward_id} for {validation.cost} Ore.'
+                    if buy_max else
                     f'Purchased {reward_id} with a Free Buff Token.'
                     if validation.cost == 0 else
                     f'Purchased {reward_id} for {validation.cost} Ore.'
@@ -3517,6 +3522,9 @@ class ShopController(ShopPolishController):
         self.shop_permanent_buff_button.configure(
             state='normal' if allowed else 'disabled'
         )
+        self.shop_permanent_buff_max_button.configure(
+            state='normal' if allowed else 'disabled'
+        )
         if not selected:
             self.shop_permanent_buff_info_var.set(
                 'Select a permanently unlocked unit, then choose a buff.'
@@ -3582,6 +3590,9 @@ class ShopController(ShopPolishController):
         self.shop_permanent_power_buff_button.configure(
             state='normal' if allowed else 'disabled'
         )
+        self.shop_permanent_power_buff_max_button.configure(
+            state='normal' if allowed else 'disabled'
+        )
         if not selected:
             self.shop_permanent_power_buff_info_var.set(
                 self._shop_power_unavailable_reason(None)
@@ -3595,14 +3606,14 @@ class ShopController(ShopPolishController):
             selected[0], 'values'
         )
         self.shop_permanent_power_buff_info_var.set(
-            f'{values[0]} • {values[1]} • {values[2]} • Next: {values[3]}.'
+            f'{values[0]} • {values[2]} • {values[4]} • Next: {values[5]}.'
             + (' ' + self._shop_power_unavailable_reason(None)
                if self._shop_power_unavailable_reason(None) else '')
         )
         self.shop_permanent_power_buff_button.configure(
             text=(
-                f'Buy Permanent Stack — {values[3]}'
-                if allowed else values[2]
+                f'Buy Permanent Stack — {values[5]}'
+                if allowed else values[4]
             )
         )
 
@@ -3773,15 +3784,18 @@ class ShopController(ShopPolishController):
                 )
         self.refresh_shop_mode()
 
-    def buy_selected_permanent_buff(self, _event=None):
+    def buy_selected_permanent_buff(self, _event=None, *, buy_max=False):
         selected = self.shop_permanent_buff_tree.selection()
         if not selected:
             return
         reward_id = self._shop_permanent_buff_rows.get(selected[0])
         if not reward_id:
             return
+        self._shop_permanent_buff_focus_reward_id = reward_id
         try:
-            outcome = self.shop_service.purchase_permanent_buff(reward_id)
+            outcome = self.shop_service.purchase_permanent_buff(
+                reward_id, buy_max=buy_max
+            )
         except ShopTransitionError as exc:
             self._set_shop_message(exc, error=True)
         else:
@@ -3843,7 +3857,7 @@ class ShopController(ShopPolishController):
                 )
         self.refresh_shop_mode()
 
-    def buy_selected_permanent_power_buff(self, _event=None):
+    def buy_selected_permanent_power_buff(self, _event=None, *, buy_max=False):
         if self._shop_power_unavailable_reason(None):
             self._set_shop_message(self._shop_power_unavailable_reason(None), error=True)
             return
@@ -3855,7 +3869,9 @@ class ShopController(ShopPolishController):
             return
         self._shop_permanent_power_buff_focus_reward_id = reward_id
         try:
-            outcome = self.shop_service.purchase_permanent_buff(reward_id)
+            outcome = self.shop_service.purchase_permanent_buff(
+                reward_id, buy_max=buy_max
+            )
         except ShopTransitionError as exc:
             self._set_shop_message(exc, error=True)
         else:
@@ -3864,7 +3880,12 @@ class ShopController(ShopPolishController):
 
     def _report_profile_purchase(self, outcome, item_id):
         validation = outcome.validation
-        if validation.allowed:
+        if validation.allowed and outcome.quantity > 1:
+            self._set_shop_message(
+                f'Purchased {outcome.quantity} stacks of {item_id} '
+                f'for {gem_text(validation.cost)}.'
+            )
+        elif validation.allowed:
             self._set_shop_message(
                 f'Purchased {item_id} for {gem_text(validation.cost)}.'
             )

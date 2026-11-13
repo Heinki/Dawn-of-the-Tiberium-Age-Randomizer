@@ -147,6 +147,17 @@ still obey engine limits and integer rounding. Mission Starting Credits
 remains a separate permanent upgrade. Mission boons can stack with these
 lasting upgrades for their selected mission.
 
+For run buffs, **Buy Max** sits beside **Purchase Selected** in both the
+Current Run Shop and Current Loadout upgrade view. It buys the selected
+buff until the next stack is unaffordable or the stack limit is reached.
+Each stack uses the normal Ore price, discounts, coupons, and available
+Free Buff Tokens; the complete purchase is saved once.
+
+In Shop Mode, select a permanent unit or power buff and click **Buy Max**
+to buy all affordable stacks in one purchase. Purchases stop at the buff
+stack limit and leave any unspent Gems. Permanent buff purchases are
+available only between runs; the arrows still buy or refund one stack.
+
 Permanent Gems and permanent unlocks live in `shop_profile.json`; Run Ore,
 purchases, mission choices, commitments, and victory receipts live in
 `shop_run.json`. Two-file transitions use `shop_transaction.json` for crash
