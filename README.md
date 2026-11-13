@@ -19,11 +19,11 @@ This project is the randomizer launcher for DTA 16.0.2 and Vinifera. It reuses t
 For APWorld installation, room generation, connection, and troubleshooting,
 see the [Archipelago player guide](Archipelago/README.md).
 
-Conquest is disabled in this release. Its build-time switch is
+Conquest is enabled in this release as a standalone game mode, including its
+campaign map, armies, research, perks, native skirmish battles and autobattles.
+It is not an Archipelago progression mode. Its build-time switch is
 `CONQUEST_FEATURE_ENABLED` in [randomizer/conquest/feature.py](randomizer/conquest/feature.py).
-Set it to `True` before launching from source or rebuilding to enable the mode.
-When disabled, its menu, campaign loading, AI timer, and co-op entry points are
-inactive. Existing Conquest saves are preserved; regular unit buffs remain available.
+Existing Conquest campaigns use their own saves.
 
 Experimental native co-op Grid/Shop supports 2–4 humans when its source-only
 feature flag is enabled. The host controls mission selection and team progress.
