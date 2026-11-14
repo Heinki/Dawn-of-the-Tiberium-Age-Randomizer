@@ -7,6 +7,7 @@ from tkinter import ttk
 
 from randomizer.ui.viewport import ScrollableViewport
 from randomizer.ui.tooltips import WidgetTooltip
+from randomizer.ui.config import GAME_SPEEDS
 from randomizer.ui.conquest_widgets import PurchaseCard, EscortRoster, configure_purchase_style
 from . import campaign
 from .teams import participants, team_power, deployment
@@ -564,12 +565,21 @@ class ConquestView(ttk.Frame):
                 row, textvariable=value, values=options, state='readonly', width=28)
             widget.grid(row=0, column=1, sticky='ew')
             self.setup_controls.append((widget, options is not None))
-        self._label(parent, 'Recruit a new army for 1,000 credits, or reinforce a selected army for the same price. All armies stationed on a territory defend it together.', 9)
-        self._label(parent, 'Escort upgrades unlock stronger troops. Research reaches 50%. Upgrade prices rise for both you and the enemy.', 10)
+        speed_row = ttk.Frame(parent, padding=(0, 7))
+        speed_row.grid(row=9, column=0, sticky='ew')
+        speed_row.columnconfigure(1, weight=1)
+        ttk.Label(speed_row, text='Game speed', width=23).grid(row=0, column=0, sticky='w')
+        self.game_speed_combo = ttk.Combobox(speed_row, textvariable=self.app.game_speed_var,
+            values=tuple(label for label, _ in GAME_SPEEDS), state='readonly', width=28)
+        self.game_speed_combo.grid(row=0, column=1, sticky='ew')
+        self.setup_controls.append((self.game_speed_combo, True))
+        self._label(parent, 'Game speed applies to the next battle, including existing campaigns. Co-op uses the host\'s selected speed.', 10)
+        self._label(parent, 'Recruit a new army for 1,000 credits, or reinforce a selected army for the same price. All armies stationed on a territory defend it together.', 11)
+        self._label(parent, 'Escort upgrades unlock stronger troops. Research reaches 50%. Upgrade prices rise for both you and the enemy.', 12)
         self.create_button = ttk.Button(parent, text='Start new campaign', style='Launch.TButton', command=self.app.new_conquest)
-        self.create_button.grid(row=11, column=0, sticky='w', pady=12)
+        self.create_button.grid(row=13, column=0, sticky='w', pady=12)
         self.map_count = tk.StringVar(value='Installed map catalogue loads when opening Conquest.')
-        ttk.Label(parent, textvariable=self.map_count, style='Muted.TLabel').grid(row=12, column=0, sticky='w')
+        ttk.Label(parent, textvariable=self.map_count, style='Muted.TLabel').grid(row=14, column=0, sticky='w')
         self.setup_page.bind_controls()
 
     def setup_values(self):

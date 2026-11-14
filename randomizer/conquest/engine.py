@@ -213,7 +213,7 @@ def _placements(writer, source, sides, *, private_types=None):
     def cells(kind, x, y):
         return {(x + dx, y + dy) for dx, dy in foundation({'Image': kind, **rules[kind]}, art)}
 
-    def building_site(kind, candidates, connected):
+    def building_sites(kind, candidates, connected):
         # Prefer clearance on every side. Tight authored bases may put a
         # building against rear scenery; both front exit edges stay open.
         for offsets in ((-1, 0, 1), (0, 1)):
@@ -223,8 +223,49 @@ def _placements(writer, source, sides, *, private_types=None):
                          for dx in offsets for dy in offsets}
                 # Resources may border foundations, but never occupy them.
                 if apron <= connected and not apron.intersection(occupied) and terrain.clear(footprint):
-                    return x, y, apron
-        return None
+                    yield x, y, apron
+
+    def building_plan(buildings, candidates, connected):
+        initial = set(occupied)
+        layout = []
+        for kind in buildings:
+            site = next(building_sites(kind, candidates, connected), None)
+            if site is None:
+                failed_kind = kind
+                break
+            occupied.update(site[2])
+            layout.append((kind, site))
+        else:
+            return layout, None
+
+        # A nearest-first refinery can consume the only factory site on an
+        # island. Retry the whole base before declaring that it cannot fit.
+        occupied.clear()
+        occupied.update(initial)
+        choices = {kind: list(building_sites(kind, candidates, connected)) for kind in dict.fromkeys(buildings)}
+        layout = []
+        remaining = 20000
+
+        def search(index):
+            nonlocal remaining
+            if index == len(buildings):
+                return True
+            kind = buildings[index]
+            for site in choices[kind]:
+                if remaining <= 0:
+                    return False
+                if site[2].intersection(occupied):
+                    continue
+                remaining -= 1
+                occupied.update(site[2])
+                layout.append((kind, site))
+                if search(index + 1):
+                    return True
+                layout.pop()
+                occupied.difference_update(site[2])
+            return False
+
+        return (layout, None) if search(0) else (None, failed_kind)
 
     for value in source.get('Structures', {}).values():
         row = value.split(',')
@@ -282,12 +323,11 @@ def _placements(writer, source, sides, *, private_types=None):
         # Large foundations first; every building retains an access apron.
         buildings = [k for k, count in structures.items() for _ in range(count)]
         buildings.sort(key=lambda k: -len(cells(k, 0, 0)))
-        for kind in buildings:
-            site = building_site(kind, candidates, connected)
-            if site is None:
-                raise ValueError(f'{kind} cannot fit safely near start {waypoint + 1}. Battle remains pending; autobattle is available.')
+        layout, failed_kind = building_plan(buildings, candidates, connected)
+        if layout is None:
+            raise ValueError(f'{failed_kind} cannot fit safely near start {waypoint + 1}. Battle remains pending; autobattle is available.')
+        for kind, site in layout:
             x, y, apron = site
-            occupied.update(apron)
             output = (_starting_structure_type(writer, kind, refinery_cache, template=private.get(kind))
                       if kind in ('TDPROC', 'RAPROC') else private.get(kind, kind))
             if kind in {*AIRCRAFT_BUILDINGS.values(), 'SHPAD'}:

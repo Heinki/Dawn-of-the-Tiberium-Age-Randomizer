@@ -10,11 +10,12 @@ class Terrain(FortressTerrain):
         self.ground = native_ground(self.theater)
 
     def flat(self, cell):
-        tile, sub, _ = self.cells.get(cell, (-1, 0, 0))
+        # Native maps may omit default clear ground from IsoMapPack5.
+        tile, sub, _ = self.cells.get(cell, (0, 0, 0))
         return self.ground.flat(tile, sub)
 
     def clear(self, cells, *, occupied=()):
         cells = set(cells)
         if not cells or not all(self.flat(cell) for cell in cells):
             return False
-        return super().clear(cells, flat_tiles={self.cells[cell][0] for cell in cells}, occupied=occupied)
+        return super().clear(cells, flat_tiles={self.cells.get(cell, (0, 0, 0))[0] for cell in cells}, occupied=occupied)

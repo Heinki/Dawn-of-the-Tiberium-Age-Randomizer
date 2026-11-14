@@ -24,6 +24,10 @@ campaign map, armies, research, perks, native skirmish battles and autobattles.
 It is not an Archipelago progression mode. Its build-time switch is
 `CONQUEST_FEATURE_ENABLED` in [randomizer/conquest/feature.py](randomizer/conquest/feature.py).
 Existing Conquest campaigns use their own saves.
+The Conquest **New campaign** tab includes **Game speed**, which also applies to
+the next battle in an existing campaign. Cooperative battles use the host's speed.
+Starting bases support maps with omitted default clear terrain and retry building
+layouts when a nearby refinery would otherwise block the only safe factory site.
 
 Experimental native co-op Grid/Shop supports 2–4 humans when its source-only
 feature flag is enabled. The host controls mission selection and team progress.
