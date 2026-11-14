@@ -26,6 +26,10 @@ It is not an Archipelago progression mode. Its build-time switch is
 Existing Conquest campaigns use their own saves.
 The Conquest **New campaign** tab includes **Game speed**, which also applies to
 the next battle in an existing campaign. Cooperative battles use the host's speed.
+Infantry and armored escorts accompany each stationed defending army. Empty
+territories retain their basic garrison, HQ guards and starting buildings, but
+receive no escort troops or escort contribution to autobattle power. Battles
+already committed before this change retain their frozen forces.
 Starting bases support maps with omitted default clear terrain and retry building
 layouts when a nearby refinery would otherwise block the only safe factory site.
 

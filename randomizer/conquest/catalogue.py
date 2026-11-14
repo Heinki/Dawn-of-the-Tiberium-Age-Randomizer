@@ -43,8 +43,8 @@ def _perk(name, cost, maximum, power, description, *, local=False):
 
 PERKS = {
     'allies': _perk('Coalition allies', 2500, 3, 0, 'Add one AI ally per rank when the map has room.'),
-    'infantry': _perk('Infantry escort', 1000, 6, 3, 'Bring more and stronger infantry as you upgrade.'),
-    'vehicles': _perk('Armored escort', 1500, 6, 5, 'Bring more and stronger vehicles as you upgrade.'),
+    'infantry': _perk('Infantry escort', 1000, 6, 3, 'Each army brings more and stronger infantry as you upgrade. Empty territories receive no infantry escort.'),
+    'vehicles': _perk('Armored escort', 1500, 6, 5, 'Each army brings more and stronger vehicles as you upgrade. Empty territories receive no armored escort.'),
     'veterans': _perk('Starting army training', 700, 2, 0, 'Rank 1: troops start Veteran. Rank 2: troops start Elite.'),
     'power': _perk('Field power plant', 800, 1, 1, 'Start with a power plant.'),
     'barracks': _perk('Forward Barracks', 1000, 1, 2, 'Start with a barracks. With Node barracks, you get two when defending.'),

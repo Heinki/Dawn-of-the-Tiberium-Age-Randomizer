@@ -9,7 +9,7 @@ from copy import deepcopy
 
 from .catalogue import LOCAL_PERKS, combat_power, starting_force
 
-TEAM_VERSION = 4
+TEAM_VERSION = 5
 ALLY_STRENGTH = 8
 HOUSE_ALIASES = ('GDI1', 'Nod1', 'GDI2', 'Nod2', 'Allies1', 'Allies2', 'Soviet1', 'Soviet2')
 COLOR_SCHEMES = (3, 21, 47, 73, 27, 55, 39, 33)
@@ -90,8 +90,8 @@ def validate_teams(battle):
         if 'team_version' in battle or any(battle[t]['perks'].get('allies') for t in ('attack', 'defense')):
             raise ValueError('Missing committed Conquest participants.')
         return
-    if (battle.get('team_version') not in (1, 2, 3, TEAM_VERSION) or
-        'human_loadouts' in battle and battle['team_version'] not in (2, 3, TEAM_VERSION) or
+    if (battle.get('team_version') not in (1, 2, 3, 4, TEAM_VERSION) or
+        'human_loadouts' in battle and battle['team_version'] not in (2, 3, 4, TEAM_VERSION) or
         battle['participants'] != plan_participants(battle)):
         raise ValueError('Invalid committed Conquest teams or starting positions.')
 

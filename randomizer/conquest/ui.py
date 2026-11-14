@@ -900,8 +900,9 @@ class ConquestView(ttk.Frame):
                 lines += ['', f'Selected army #{army["id"]}', f'Army marker: {getattr(self.app, "_conquest_names", {}).get(unit, unit)}',
                           f'Army strength: {army["strength"]}/{MAX_STRENGTH}',
                           'Action spent' if army['acted'] else 'Ready to move, attack, or recruit']
-            elif node['owner'] != self.app.conquest_local_actor():
-                lines += ['', 'Unoccupied defense strength: 2']
+            elif not armies:
+                lines += ['', 'Unoccupied defense strength: 2',
+                          'Escort perks require a stationed army. HQ guards and starting buildings still defend.']
         else:
             lines += ['Select a territory to inspect it.', 'Select your ready army, then a connected node to move or attack.']
         if state and state['pending']:
@@ -911,7 +912,7 @@ class ConquestView(ttk.Frame):
                       'Your team attacks.' if human(state, battle['attacker']) else 'Your team defends.',
                       'Encounter decision: ' + actor_label(state, decision_actor(state)),
                       f'Autobattle: {chance:.1%} win / {1-chance:.1%} loss',
-                      f'Defending armies: {max(1, len(battle.get("defending_armies", ())))}']
+                      f'Defending armies: {len(campaign.armies_at(state, battle["target"]))}']
             for key in ('attack', 'defense'):
                 deployed, requested = deployment(battle, key)
                 lines.append(f'{('Human team' if battle.get('human_team') == key else actor_label(state, battle[key]['faction']))} AI allies: {deployed}/{requested} deployed · {requested-deployed} in reserve')

@@ -53,11 +53,12 @@ def _validate_loadout(state, loadout, actor):
     version = state['pending'].get('team_version', 1)
     count = loadout.get('army_count', 1) if version >= 4 else 1
     multiplier = loadout.get('defense_multiplier', 1) if version >= 4 else 1
-    if not _integer(count, 1, MAX_ARMIES_PER_NODE) or not _integer(multiplier, 1, MAX_ARMIES_PER_NODE):
+    minimum = 0 if version >= 5 else 1
+    if not _integer(count, minimum, MAX_ARMIES_PER_NODE) or not _integer(multiplier, 1, MAX_ARMIES_PER_NODE):
         raise ValueError('Invalid defending army stack.')
     sizing = dict(balance_version=version, army_count=count, defense_multiplier=multiplier)
     if (loadout['faction'] != actor or loadout['country'] != country(state, actor) or
-        not _integer(loadout['strength'], 1, MAX_STRENGTH * count) or
+        not _integer(loadout['strength'], 1, MAX_STRENGTH * max(1, count)) or
         set(loadout['stats']) != set(STATS) or
         any(not _integer(v, 0, 120 if k == 'damage' else 100) for k, v in loadout['stats'].items()) or
         any(k not in PERKS or not _integer(v, 1, PERKS[k]['maximum']) for k, v in loadout['perks'].items()) or
@@ -188,7 +189,7 @@ def validate(state):
                 own = [a for a in defenders if a['faction'] == nodes[battle['target']]['owner']]
                 defense, attack = battle['defense'], battle['attack']
                 if (battle.get('defending_armies') != [a['id'] for a in defenders] or
-                    defense.get('army_count') != max(1, len(own)) or
+                    defense.get('army_count') != (len(own) if battle['team_version'] >= 5 else max(1, len(own))) or
                     defense.get('defense_multiplier') != max(1, len(defenders)) or
                     defense['strength'] != (sum(a['strength'] for a in own) or 2) or
                     attack.get('army_count') != 1 or attack.get('defense_multiplier') != 1 or
@@ -217,7 +218,9 @@ def validate(state):
                         stationed = [a for a in armies_at(state, battle['target']) if a['faction'] == actor] if team == 'defense' else []
                         strength = sum(a['strength'] for a in stationed) if stationed else max(
                             (a['strength'] for a in armies if a['faction'] == actor), default=2)
-                        if (entry['loadout'].get('army_count') != max(1, len(stationed)) or
+                        army_count = (len(stationed) if battle['team_version'] >= 5 and team == 'defense'
+                                      else max(1, len(stationed)))
+                        if (entry['loadout'].get('army_count') != army_count or
                             entry['loadout'].get('defense_multiplier') != 1 or entry['loadout']['strength'] != strength):
                             raise ValueError('Teammate loadout differs from its stationed armies.')
             elif 'human_loadouts' in battle or 'human_team' in battle:

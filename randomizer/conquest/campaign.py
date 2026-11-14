@@ -313,7 +313,7 @@ def node_structures(state, node, power=None):
     own_armies = [army for army in defenders if army['faction'] == faction]
     force = starting_force(country(state, faction), sum(army['strength'] for army in own_armies) or 2,
                            perks, headquarters=node.get('hq') == faction,
-                           army_count=max(1, len(own_armies)), defense_multiplier=max(1, len(defenders)))
+                           army_count=len(own_armies), defense_multiplier=max(1, len(defenders)))
     return starting_structures(force, perks, power)
 
 
@@ -365,7 +365,7 @@ def move(state, source, target, faction='player', *, army_id=None):
     attack = _loadout(state, faction, army['strength'], destination, False)
     defending_owner = [a for a in defenders if a['faction'] == destination['owner']]
     defense = _loadout(state, destination['owner'], sum(a['strength'] for a in defending_owner) or 2,
-                      destination, True, army_count=max(1, len(defending_owner)),
+                      destination, True, army_count=len(defending_owner),
                       defense_multiplier=max(1, len(defenders)))
     map_info = deepcopy(destination['map'])
     starts = map_info['starts']
@@ -393,13 +393,16 @@ def move(state, source, target, faction='player', *, army_id=None):
             stationed = [a for a in defenders if a['faction'] == actor] if battle['human_team'] == 'defense' else []
             strength = sum(a['strength'] for a in stationed) if stationed else max(
                 (a['strength'] for a in state['armies'] if a['faction'] == actor), default=2)
+            # Escort perks accompany stationed armies on defense. Cooperative
+            # attack support still deploys one army for each human commander.
+            army_count = len(stationed) if battle['human_team'] == 'defense' else 1
             loadout = main if actor == main['faction'] else _loadout(
-                state, actor, strength, destination, False, army_count=max(1, len(stationed)))
+                state, actor, strength, destination, False, army_count=army_count)
             battle['human_loadouts'].append(dict(player=deepcopy(player), loadout=deepcopy(loadout)))
     battle['team_version'] = TEAM_VERSION
     battle['participants'] = plan_participants(battle)
     state['phase'] = 'battle'
-    record(state, f'Attack committed. {max(1, len(defenders))} defending armies.', faction, target)
+    record(state, f'Attack committed. {len(defenders)} defending armies.', faction, target)
 
 
 def player_chance(battle):
