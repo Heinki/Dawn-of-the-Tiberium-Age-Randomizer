@@ -204,6 +204,14 @@ needed, and existing global indexes must not be reordered.
 
 ## Unit safety rule
 
+Generated maps validate placed infantry, vehicles, aircraft, and structures
+against the installed and map-local type registries before launch. Black Forest
+still places the unregistered `MTNK2` type; the launcher restores that identity
+as a non-buildable, map-local copy of the current `MTNK` medium tank. Its owner,
+position, health, and other placement fields remain unchanged. Installed maps
+are never edited. Other unknown placement types stop launch with the affected
+section, entry, and type instead of reaching an engine loading error.
+
 Direct mobile-unit placements owned by the exact player house use a non-buildable player clone when that unit has an active buff. Enemy placements, structures, TaskForce entries, trigger references, script references, and reinforcements retain their original type.
 
 Additional houses with `PlayerControl=yes` are not treated as the exact player.

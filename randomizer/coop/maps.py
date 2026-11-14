@@ -3,7 +3,7 @@
 import hashlib
 
 from randomizer.dta.clones import unit_specific_buff_rules
-from randomizer.dta.maps import preserve_collateral_damage_coefficients
+from randomizer.dta.maps import prepare_placed_object_types, preserve_collateral_damage_coefficients
 from randomizer.dta.rules import PLAYABLE_FACTIONS, ini_sections
 from randomizer.maps.ini import IniLines, append_section_entry, section_value_map
 from randomizer.maps.hooks import unique_section_key
@@ -70,6 +70,9 @@ def prepare_map(root, mission, rewards, difficulty, *, settings=None, credit_bon
         # them from [Houses]. The engine indexes HouseTypes[-1] in that case.
         append_section_entry(lines, 'Triggers', trigger, 'Neutral,<none>,Co-op Starting Credits,0,1,1,1,0')
         append_section_entry(lines, 'Tags', tag, f'0,Co-op Starting Credits,{trigger}')
+    installed = ini_sections(root / 'INI' / 'Rules.ini')
+    merge(installed, ini_sections(root / 'INI' / 'Enhance.ini'))
+    report['placed_type_repairs'] = sorted(prepare_placed_object_types(lines, installed))
     preserve_collateral_damage_coefficients(lines)
     validate_scripting(root, lines)
     data = ('\r\n'.join(lines) + '\r\n').encode('cp1252')

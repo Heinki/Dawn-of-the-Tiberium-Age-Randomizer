@@ -13,6 +13,7 @@ from randomizer.maps.ini import (
     IniLines,
     action_group_tokens,
     append_section_entry,
+    append_section_list_entry,
     merge_ini_section_values,
     next_numeric_section_index,
     read_text,
@@ -24,6 +25,64 @@ DIFFICULTY_FILE_BY_VALUE = {
     1: 'Difficulty Medium.ini',
     2: 'Difficulty Hard.ini',
 }
+
+
+def prepare_placed_object_types(lines, installed):
+    """Restore reviewed legacy props and reject unknown placed object types.
+
+    Black Forest still places MTNK2, which current DTA no longer registers.
+    Keep that authored identity using the current medium tank as a fallback;
+    never rewrite the placement or make this compatibility type buildable.
+    """
+    authored = _ini_sections('\n'.join(lines))
+    combined = {name: dict(values) for name, values in installed.items()}
+    for name, values in authored.items():
+        combined.setdefault(name, {}).update(values)
+    base = {name.casefold(): values for name, values in installed.items()}
+    local = {name.casefold(): values for name, values in authored.items()}
+    repairs, missing = {}, []
+    for placement, registry in (
+        ('Units', 'VehicleTypes'), ('Infantry', 'InfantryTypes'),
+        ('Aircraft', 'AircraftTypes'), ('Structures', 'BuildingTypes'),
+    ):
+        registered = {
+            value.split(';', 1)[0].strip().casefold()
+            for source in (base, local)
+            for value in source.get(registry.casefold(), {}).values()
+        }
+        for key, record in local.get(placement.casefold(), {}).items():
+            fields = record.split(',')
+            if len(fields) < 2:
+                missing.append(f'[{placement}] {key}: malformed placement')
+                continue
+            unit = fields[1].strip()
+            if unit.casefold() in registered:
+                continue
+            if (
+                placement == 'Units' and unit.casefold() == 'mtnk2'
+                and 'mtnk' in registered
+                and effective_section(combined, 'MTNK')
+            ):
+                values = effective_section(combined, 'MTNK')
+                values.update(effective_section(combined, unit))
+                values.pop('$Inherits', None)
+                values.pop('BaseSection', None)
+                values.update(TechLevel='-1', CrateGoodie='no',
+                              AllowedToStartInMultiplayer='no')
+                repairs[unit] = values
+                registered.add(unit.casefold())
+            else:
+                missing.append(f'[{placement}] {key}: {unit} is absent from [{registry}]')
+    if missing:
+        raise ValueError(
+            'DTA map contains unregistered or invalid placed objects: '
+            + '; '.join(missing)
+            + '. Update or repair the installed game/map, then retry.'
+        )
+    for unit, values in repairs.items():
+        append_section_list_entry(lines, 'VehicleTypes', unit)
+        merge_ini_section_values(lines, {unit: values})
+    return repairs
 
 
 def _ini_sections(text):
@@ -310,6 +369,7 @@ def prepare_spawn_map(
     installed_runtime = installed_effective_sections(
         enhanced=bool(mission.get('required_addon'))
     )
+    placed_type_repairs = prepare_placed_object_types(lines, installed_runtime)
     collateral_safeguards = preserve_collateral_damage_coefficients(
         lines, installed_runtime
     )
@@ -373,6 +433,7 @@ def prepare_spawn_map(
         ),
         'power_grant_triggers': power_grant_triggers,
         'collateral_damage_safeguards': collateral_safeguards,
+        'placed_type_repairs': sorted(placed_type_repairs),
     }
 
 

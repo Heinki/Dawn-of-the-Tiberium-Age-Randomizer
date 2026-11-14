@@ -272,6 +272,9 @@ class MapWriter:
         for section in ('OverlayPack', 'OverlayDataPack'):
             if len(unpack(section_value_map(self.lines, section))) != 512 * 512:
                 raise ValueError('Invalid generated DTA packed overlay: ' + section)
+        from randomizer.dta.maps import prepare_placed_object_types
+
+        prepare_placed_object_types(self.lines, self.rules)
         validate_scripting(self.root, self.lines)
         return ('\r\n'.join(self.lines) + '\r\n').encode('cp1252')
 

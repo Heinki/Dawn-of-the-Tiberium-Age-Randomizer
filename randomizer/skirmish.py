@@ -238,9 +238,10 @@ def _dta_rewards(root, rows, rewards, settings, country, randomized, scenario):
     bonus = starting_credit_bonus(rewards) + int(settings.get('shop_mission_starting_credits_flat', 0))
     if bonus:
         _startup_trigger(rows, 'Neutral', [['106', '0', '50', str(max(-10000, bonus)), '0', '0', '0', 'A']], 'RZCREDITS')
-    from randomizer.dta.maps import preserve_collateral_damage_coefficients
+    from randomizer.dta.maps import prepare_placed_object_types, preserve_collateral_damage_coefficients
     from randomizer.coop.maps import validate_scripting
     lines = IniLines(_serialize(rows).splitlines())
+    prepare_placed_object_types(lines, installed)
     preserve_collateral_damage_coefficients(lines)
     validate_scripting(root, lines)
     return all_section_value_maps_preserve(lines), sides[0]
