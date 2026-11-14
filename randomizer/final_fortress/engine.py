@@ -1042,6 +1042,8 @@ def build_map(game_root, run, rules=None, *, power_runtime=None):
     validate_layout(root, plan['map'], rules)
     lines = source_lines(root, plan['map'])
     writer = MapWriter(lines, rules, root)
+    from randomizer.dta.advanced_ai import advanced_ai_sections, apply_advanced_ai, route_advanced_ai_tactics
+    rules = apply_advanced_ai(writer, advanced_ai_sections(root))
     finished = writer.flag('Run finished')
     for i in range(8):
         writer.put('Houses', 50 + i, f'Spawn{i+1}')
@@ -1430,6 +1432,13 @@ def build_map(game_root, run, rules=None, *, power_runtime=None):
                 writer.put(
                     kind, 'Prerequisite', ','.join(group if v == yard else v for v in prereq)
                 )
+    advanced_houses = {NATIVE_INDICES[index]: country
+                       for index, country in enumerate([faction, *plan['enemy_countries']])}
+    advanced_houses.update({FRIENDLY_INDICES[seat]: faction for seat in range(len(friends))})
+    advanced_computers = {*NATIVE_INDICES[1:],
+                          *(FRIENDLY_INDICES[seat] for seat in range(
+                              len(plan.get('coop_players', [])) or 1, len(friends)))}
+    route_advanced_ai_tactics(writer, advanced_houses, advanced_computers)
     for enemy, country in enumerate(plan['enemy_countries']):
         _route_native_ai(
             writer, country, ALIASES[enemy + 1], NATIVE_INDICES[enemy + 1],

@@ -27,7 +27,8 @@ MAX_WIRE = 16 * 1024 * 1024
 MAX_DATA = 32 * 1024 * 1024
 INSTALLATION_FILES = ('version', 'game.exe', 'Vinifera.dll', 'LaunchVinifera.dat',
                       'INI/Rules.ini', 'INI/Enhance.ini', 'INI/Art.ini', 'INI/AI.ini', 'INI/Vinifera.ini',
-                      'Resources/GameOptions.ini', 'Resources/SkirmishLobby.ini', 'INI/MPMaps.ini')
+                      'Resources/GameOptions.ini', 'Resources/SkirmishLobby.ini', 'INI/MPMaps.ini',
+                      'INI/Game Options/Advanced AI.ini')
 
 
 def pack(data):

@@ -8,7 +8,7 @@ import subprocess
 from pathlib import Path
 from randomizer.coop.victory import ScoreLog, debug_logs
 from .engine import marker
-from .teams import participants
+from .teams import participants, human_coalition
 
 
 def native_game_running(root):
@@ -44,9 +44,9 @@ class ResultReader:
         self.closed = False
         # Old two-house attempts retain their original receipt format. New
         # battles identify AI teammates by their unique native color scheme;
-        # all of them have the same native display name, "Computer".
+        # their native display names can be localized.
         self.members = participants(battle) if battle and 'participants' in battle else None
-        self.player_team = next((m['team'] for m in self.members or [] if m['controller'] == 'human'), None)
+        self.player_team = human_coalition(battle) if self.members is not None else None
 
     def _score(self, record):
         if self.members is None:
@@ -55,12 +55,14 @@ class ResultReader:
                 return
         else:
             member = next((m for m in self.members if m['scheme'] == record.get('Scheme') and
-                record['name'] == (m.get('name', 'Commander') if m['controller'] == 'human' else 'Computer')), None)
+                (m['controller'] == 'ai' or record['name'] == m.get('name', 'Commander'))), None)
             if member is None:
                 return
             key = member['slot']
         if key in self.scores:
-            self.error = 'Duplicate native Conquest score record.'
+            if self.scores[key] == record['outcome']:
+                return  # Native score collection can print the same receipt twice.
+            self.error = 'Conflicting native Conquest score records.'
             self.closed = True
             return
         self.scores[key] = record['outcome']

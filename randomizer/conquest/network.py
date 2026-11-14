@@ -7,7 +7,7 @@ from . import campaign
 
 
 class ConquestLobby(Lobby):
-    mode = 'conquest-3'
+    mode = 'conquest-4'
 
 
 def validate_endpoints(state, endpoints):

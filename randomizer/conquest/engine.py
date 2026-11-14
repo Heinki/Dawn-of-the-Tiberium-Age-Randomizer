@@ -28,7 +28,8 @@ CONQUEST_GROUND = BUILDABLE_TILES
 def installation_fingerprint(root):
     digest = hashlib.sha256()
     for relative in ('INI/Rules.ini', 'INI/Enhance.ini', 'INI/Art.ini', 'INI/AI.ini',
-                     'INI/MPMaps.ini', 'Resources/SkirmishLobby.ini', 'Vinifera.dll', 'game.exe'):
+                     'INI/MPMaps.ini', 'Resources/SkirmishLobby.ini',
+                     'INI/Game Options/Advanced AI.ini', 'Vinifera.dll', 'game.exe'):
         path = Path(root) / relative
         digest.update(relative.encode())
         digest.update(path.read_bytes() if path.is_file() else b'<absent>')
@@ -435,6 +436,8 @@ def render(root, state, attempt_id, *, game_speed=2, coop_slot=0, endpoints=None
     rows['Basic'].pop('Player', None)
     lines = IniLines(_serialize(rows).splitlines())
     writer = ConquestWriter(lines, rules, root)
+    from randomizer.dta.advanced_ai import advanced_ai_sections, apply_advanced_ai, route_advanced_ai_tactics
+    rules = apply_advanced_ai(writer, advanced_ai_sections(root))
     for i in range(8):
         writer.put('Houses', 50 + i, f'Spawn{i+1}')
     members = participants(battle)
@@ -464,6 +467,9 @@ def render(root, state, attempt_id, *, game_speed=2, coop_slot=0, endpoints=None
     grants = _placements(writer, rows, [(m['loadout'], m['waypoint']) for m in members],
                          private_types={m['waypoint']: private[m['slot']] for m in members},
                          ai_waypoints={m['waypoint'] for m in members if m['controller'] == 'ai'})
+    route_advanced_ai_tactics(
+        writer, {6 + member['slot']: member['loadout']['country'] for member in members},
+        {6 + member['slot'] for member in members if member['controller'] == 'ai'})
     from .helper_ai import start_computers
     start_computers(writer, members, private)
     team, force, script = writer.key(), writer.key(), writer.key()

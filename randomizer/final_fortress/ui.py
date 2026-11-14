@@ -255,6 +255,10 @@ def build_final_fortress_tab(app, notebook):
         if handler is not None:
             combo.bind('<<ComboboxSelected>>', handler)
 
+    advanced_ai_note = ttk.Label(setup, text='Advanced AI enabled for enemy and allied AI.',
+                                 style='Muted.TLabel', wraplength=500)
+    advanced_ai_note.grid(row=5, column=0, columnspan=2, sticky='w', pady=(5, 0))
+
     launch = ttk.Frame(content)
     launch.grid(row=2, column=0, sticky='ew', pady=(8, 0))
     launch.columnconfigure(0, weight=1)
@@ -283,6 +287,9 @@ def build_final_fortress_tab(app, notebook):
             label_widget.grid_configure(row=row, column=column,
                                         padx=(16 if column else 0, 8), pady=3)
             combo.grid_configure(row=row, column=column + 1, pady=3)
+        advanced_ai_note.grid_configure(row=(len(setup_labels) + 1) // 2 if two_columns else len(setup_labels),
+                                        column=0, columnspan=4 if two_columns else 2)
+        advanced_ai_note.configure(wraplength=max(1, width - 56))
         orient = 'vertical' if compact else 'horizontal'
         for pane in (panes, challenge_panes):
             if str(pane.cget('orient')) != orient:
