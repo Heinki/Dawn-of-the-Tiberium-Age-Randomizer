@@ -180,6 +180,12 @@ python3 Archipelago/build_apworld.py
 
 Changes affecting mission parsing, map generation, difficulty, access, clones, buffs, launch, or completion require focused generated-map checks and relevant live DTA mission checks. Changes affecting the catalogue or APWorld require matching launcher and APWorld builds.
 
+The APWorld also vendors shared generation dependencies, including
+`randomizer/dta/maps.py`. Rebuild and commit `Archipelago/dta.apworld` whenever
+bundled source changes, even if the catalogue is unchanged. Run
+`pwsh -NoProfile -File ./check_release_files.ps1` before pushing to use the same
+archive-content validation as CI; it does not require an installed DTA copy.
+
 Regenerate the checked-in APWorld catalogue and generation snapshots from an
 installed DTA copy before building whenever reward, mission, or unit catalogue
 data changes:
