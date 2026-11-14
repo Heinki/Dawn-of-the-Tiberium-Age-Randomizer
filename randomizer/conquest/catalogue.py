@@ -1,6 +1,7 @@
 """Versioned Conquest economy and faction-native battle grants."""
 
 from collections import Counter
+from math import ceil
 from randomizer.dta.aircraft import AIRCRAFT_BUILDINGS, AIRCRAFT_BUILDING_LABELS
 
 FACTIONS = ('GDI', 'Nod', 'Allies', 'Soviet')
@@ -134,6 +135,21 @@ def starting_force(country, strength, perks, *, headquarters=False, legacy_aircr
         units[collector] += refineries
     return {'units': dict(+units), 'structures': dict(+structures),
             'veterancy': deployment_rank(perks), 'collector': collector, 'power_type': power}
+
+
+def starting_structures(force, perks, power=None):
+    """Count granted buildings plus the native generators needed to power them."""
+    structures = Counter(force['structures'])
+    if power is not None:
+        balance = sum(float(power.get(kind, 0)) * count for kind, count in structures.items())
+        # Purchased generators are extra capacity, beyond the base's needs.
+        output = float(power.get(force['power_type'], 0))
+        balance -= output * perks.get('node_power', 0)
+        if balance < 0:
+            if output <= 0:
+                raise ValueError('The selected faction has no valid starting generator.')
+            structures[force['power_type']] += ceil(-balance / output)
+    return dict(+structures)
 
 
 def deployment_rank(perks):
