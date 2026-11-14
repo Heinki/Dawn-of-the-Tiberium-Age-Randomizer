@@ -240,46 +240,62 @@ def _placements(writer, source, sides, *, private_types=None, ai_waypoints=()):
                     yield x, y, apron
 
     def building_plan(buildings, candidates, connected):
-        initial = set(occupied)
+        # An access lane can serve two buildings. Reserve foundations against
+        # other buildings' clearance, but allow empty aprons to overlap.
+        # Do not consume global space until the entire base fits.
         layout = []
+        foundations, clearance = set(), set()
+
+        def fits(kind, site, foundations, clearance):
+            return (not site[2].intersection(foundations)
+                    and not cells(kind, site[0], site[1]).intersection(clearance))
+
         for kind in buildings:
-            site = next(building_sites(kind, candidates, connected), None)
+            site = next((site for site in building_sites(kind, candidates, connected)
+                         if fits(kind, site, foundations, clearance)), None)
             if site is None:
                 failed_kind = kind
                 break
-            occupied.update(site[2])
+            foundations.update(cells(kind, site[0], site[1]))
+            clearance.update(site[2])
             layout.append((kind, site))
         else:
+            occupied.update(clearance)
             return layout, None
 
         # A nearest-first refinery can consume the only factory site on an
-        # island. Retry the whole base before declaring that it cannot fit.
-        occupied.clear()
-        occupied.update(initial)
+        # island. Place the most constrained types first when retrying. Equal
+        # buildings use increasing site indices, avoiding equivalent orders.
         choices = {kind: list(building_sites(kind, candidates, connected)) for kind in dict.fromkeys(buildings)}
+        order = sorted(buildings, key=lambda kind: (len(choices[kind]), -len(cells(kind, 0, 0)), kind))
         layout = []
         remaining = 20000
 
-        def search(index):
+        def search(index, foundations, clearance, first=0):
             nonlocal remaining
-            if index == len(buildings):
+            if index == len(order):
                 return True
-            kind = buildings[index]
-            for site in choices[kind]:
+            kind = order[index]
+            for choice in range(first, len(choices[kind])):
                 if remaining <= 0:
                     return False
-                if site[2].intersection(occupied):
+                site = choices[kind][choice]
+                if not fits(kind, site, foundations, clearance):
                     continue
                 remaining -= 1
-                occupied.update(site[2])
                 layout.append((kind, site))
-                if search(index + 1):
+                next_first = choice + 1 if index + 1 < len(order) and order[index + 1] == kind else 0
+                if search(index + 1, foundations | cells(kind, site[0], site[1]),
+                          clearance | site[2], next_first):
                     return True
                 layout.pop()
-                occupied.difference_update(site[2])
             return False
 
-        return (layout, None) if search(0) else (None, failed_kind)
+        if search(0, set(), set()):
+            for _, site in layout:
+                occupied.update(site[2])
+            return layout, None
+        return None, failed_kind
 
     for value in source.get('Structures', {}).values():
         row = value.split(',')
@@ -303,7 +319,7 @@ def _placements(writer, source, sides, *, private_types=None, ai_waypoints=()):
         # Keep two escape lanes open through any starting production compound.
         occupied.update((x + step, y + width) for step in range(5, 13) for width in (-1, 0, 1))
         occupied.update((x + width, y + step) for step in range(5, 13) for width in (-1, 0, 1))
-    refinery_cache, reports = {}, []
+    refinery_cache, reports, armies = {}, [], []
     for loadout, waypoint in sides:
         private = (private_types or {}).get(waypoint, {})
         force = loadout['force']
@@ -356,6 +372,13 @@ def _placements(writer, source, sides, *, private_types=None, ai_waypoints=()):
             writer.place('Structures', output, {'x': x, 'y': y}, tag=tag, owner=owner,
                          ai_sellable=not computer, ai_repairable=computer)
             placed.append(dict(type=kind, output_type=output, x=x, y=y))
+        armies.append((loadout, waypoint, private, computer, owner, tag, candidates, structures, placed))
+
+    # Every seat's buildings and exit aprons must be reserved before any
+    # opening army is placed. Nearby starts share ground on maps such as
+    # Aurora Clash; earlier troops must not occupy a later ally's refinery.
+    for loadout, waypoint, private, computer, owner, tag, candidates, structures, placed in armies:
+        force = loadout['force']
         for kind, count in force['units'].items():
             if kind not in rules:
                 raise ValueError('Missing DTA starting unit: ' + kind)
