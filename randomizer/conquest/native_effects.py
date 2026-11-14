@@ -4,7 +4,7 @@ from copy import deepcopy
 
 from randomizer.dta.rules import comma_items
 from randomizer.dta.aircraft import docked_reload_time as _reload_time
-from randomizer.final_fortress.engine import _private_type, _route_native_ai
+from randomizer.final_fortress.engine import _private_type
 from randomizer.final_fortress.utilities import infrastructure_building, unit_updates
 from .teams import HOUSE_ALIASES
 
@@ -139,9 +139,4 @@ def apply_effects(writer, members, *, balance_version=4):
             if kind in comma_items(value):
                 current = comma_items(writer.sections.get('PrerequisiteGroups', {}).get(key, value))
                 writer.put('PrerequisiteGroups', key, ','.join(dict.fromkeys([*current, *copies])))
-    for member in members:
-        if member['controller'] == 'ai':
-            _route_native_ai(writer, member['loadout']['country'], HOUSE_ALIASES[member['slot']],
-                             6 + member['slot'], aliases[member['slot']],
-                             opponent_aliases=[aliases[m['slot']] for m in members if m['team'] != member['team']])
     return aliases

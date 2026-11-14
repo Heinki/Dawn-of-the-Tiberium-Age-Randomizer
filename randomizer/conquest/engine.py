@@ -180,7 +180,9 @@ def _starting_structure_type(writer, kind, cache, *, template=None, refinery=Tru
     group = ('DCQREF_' if refinery else 'DCQGRANT_') + kind
     members = comma_items(writer.sections.get('PrerequisiteGroups', {}).get(group, kind))
     writer.put('PrerequisiteGroups', group, ','.join(dict.fromkeys([*members, alias])))
-    for key, values in list(writer.sections.get('PrerequisiteGroups', {}).items()):
+    groups = {**writer.rules.get('PrerequisiteGroups', {}),
+              **writer.sections.get('PrerequisiteGroups', {})}
+    for key, values in groups.items():
         members = comma_items(values)
         if kind in members or source in members:
             writer.put('PrerequisiteGroups', key, ','.join(dict.fromkeys([*members, alias])))
@@ -189,9 +191,21 @@ def _starting_structure_type(writer, kind, cache, *, template=None, refinery=Tru
         prerequisites = comma_items(values.get('Prerequisite'))
         if kind in prerequisites:
             writer.put(target, 'Prerequisite', ','.join(group if v == kind else v for v in prerequisites))
-        docks = list(comma_items(values.get('Dock')))
-        if kind in docks:
-            writer.put(target, 'Dock', ','.join([*docks, alias]))
+        for field in ('Dock', 'BuiltAt'):
+            factories = comma_items(values.get(field))
+            if kind in factories or source in factories:
+                writer.put(target, field, ','.join(dict.fromkeys([*factories, alias])))
+    # Placement-only refineries and aircraft factories must count toward all
+    # native AI construction ratios and generic prerequisite checks. Keep
+    # buildable types first so first-ownable lookups never choose a grant.
+    for section in ('AI', 'General'):
+        fields = {**writer.rules.get(section, {}), **writer.sections.get(section, {})}
+        for field, value in fields.items():
+            if not field.startswith('Build' if section == 'AI' else 'Prerequisite'):
+                continue
+            members = comma_items(value)
+            if kind in members or source in members:
+                writer.put(section, field, ','.join(dict.fromkeys([*members, alias])))
     fields = (('AI', 'BuildRefinery'), ('PrerequisiteGroups', 'REFINERY')) if refinery else ()
     for section, field in fields:
         values = writer.sections.get(section, {}).get(field, writer.rules.get(section, {}).get(field, ''))
@@ -199,7 +213,7 @@ def _starting_structure_type(writer, kind, cache, *, template=None, refinery=Tru
     return alias
 
 
-def _placements(writer, source, sides, *, private_types=None):
+def _placements(writer, source, sides, *, private_types=None, ai_waypoints=()):
     terrain = Terrain(source)
     raw_art = ini_sections(writer.root / 'INI/Art.ini')
     art = {key.casefold(): effective_section(raw_art, key) for key in raw_art}
@@ -318,7 +332,12 @@ def _placements(writer, source, sides, *, private_types=None):
         if not candidates:
             raise ValueError(f'No connected clear ground near start {waypoint + 1}. Battle remains pending; autobattle is available.')
         structures = starting_structures(force, loadout['perks'], power)
-        tag = writer.transfer_tag(waypoint, 'Conquest starting forces')
+        computer = waypoint in ai_waypoints
+        # Capturing Neutral factories after scenario initialization bypasses
+        # the new owner's factory registration in Vinifera. Spawn ownership
+        # registers AI production and economy before its first planning pass.
+        owner = f'Spawn{waypoint + 1}' if computer else 'Neutral'
+        tag = 'None' if computer else writer.transfer_tag(waypoint, 'Conquest starting forces')
         placed = []
         # Large foundations first; every building retains an access apron.
         buildings = [k for k, count in structures.items() for _ in range(count)]
@@ -334,7 +353,8 @@ def _placements(writer, source, sides, *, private_types=None):
                 pad = {**rules[kind], **writer.sections.get(output, {})}
                 if pad.get('FreeUnit', 'none').casefold() not in ('none', '<none>', ''):
                     output = _starting_structure_type(writer, kind, refinery_cache, template=private.get(kind), refinery=False)
-            writer.place('Structures', output, {'x': x, 'y': y}, tag=tag)
+            writer.place('Structures', output, {'x': x, 'y': y}, tag=tag, owner=owner,
+                         ai_sellable=not computer, ai_repairable=computer)
             placed.append(dict(type=kind, output_type=output, x=x, y=y))
         for kind, count in force['units'].items():
             if kind not in rules:
@@ -346,6 +366,9 @@ def _placements(writer, source, sides, *, private_types=None):
                     raise ValueError('Starting army cannot fit safely. Battle remains pending; autobattle is available.')
                 occupied.add(position)
                 writer.place(category, private.get(kind, kind), dict(zip(('x', 'y'), position)), tag=tag,
+                             owner=owner,
+                             recruitable=(kind != force['collector']) if computer else None,
+                             mission='Harvest' if kind == force['collector'] else 'Hunt' if computer else 'Guard',
                              veterancy=0 if kind == force['collector'] else force['veterancy'])
                 placed.append(dict(type=kind, output_type=private.get(kind, kind), x=position[0], y=position[1]))
         reports.append(dict(country=loadout['country'], waypoint=waypoint,
@@ -416,7 +439,10 @@ def render(root, state, attempt_id, *, game_speed=2, coop_slot=0, endpoints=None
     from .native_effects import apply_effects
     private = apply_effects(writer, members, balance_version=battle.get('team_version', 1))
     grants = _placements(writer, rows, [(m['loadout'], m['waypoint']) for m in members],
-                         private_types={m['waypoint']: private[m['slot']] for m in members})
+                         private_types={m['waypoint']: private[m['slot']] for m in members},
+                         ai_waypoints={m['waypoint'] for m in members if m['controller'] == 'ai'})
+    from .helper_ai import start_computers
+    start_computers(writer, members, private)
     team, force, script = writer.key(), writer.key(), writer.key()
     append_hook_team(lines, team, force, script, marker(attempt_id), 'Neutral')
     writer.trigger('Conquest battle identity', [(13, 0, 0)], [_action(4, team=team)])

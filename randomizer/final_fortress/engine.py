@@ -221,19 +221,23 @@ class MapWriter:
         return action
 
     def place(
-        self, section, kind, position, *, tag='None', veterancy=0, mission='Guard', owner='Neutral'
+        self, section, kind, position, *, tag='None', veterancy=0, mission='Guard', owner='Neutral',
+        ai_sellable=True, ai_repairable=False, recruitable=None,
     ):
         p = position
         index = len(self.sections.get(section, {})) + 10000
         if section == 'Structures':
-            value = f'{owner},{kind},256,{p["x"]},{p["y"]},0,{tag},1,0,1,0,0,None,None,None,0,0'
+            value = (f'{owner},{kind},256,{p["x"]},{p["y"]},0,{tag},'
+                     f'{int(ai_sellable)},0,1,0,0,None,None,None,{int(ai_repairable)},0')
         elif section == 'Infantry':
+            recruitment = '-1' if recruitable is None else f'{int(recruitable)},{int(recruitable)}'
             value = (
-                f'{owner},{kind},256,{p["x"]},{p["y"]},0,{mission},0,{tag},{veterancy*100},-1,0,-1'
+                f'{owner},{kind},256,{p["x"]},{p["y"]},0,{mission},0,{tag},{veterancy*100},-1,0,{recruitment}'
             )
         else:
+            recruitment = '' if recruitable is None else f',{int(recruitable)},{int(recruitable)}'
             value = (
-                f'{owner},{kind},256,{p["x"]},{p["y"]},0,{mission},{tag},{veterancy*100},-1,0,-1'
+                f'{owner},{kind},256,{p["x"]},{p["y"]},0,{mission},{tag},{veterancy*100},-1,0,-1{recruitment}'
             )
         self.put(section, index, value)
 
