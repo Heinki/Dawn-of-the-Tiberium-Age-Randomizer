@@ -23,7 +23,6 @@ from ._dependencies import (
     log_event,
     logging,
     normalize_faction,
-    mission_matches_campaign,
     reward_display_name,
     tk,
     tech_ids_for_rewards,
@@ -35,7 +34,7 @@ from ._dependencies import (
 
 from tkinter import ttk
 
-from randomizer.ui.showcase import draw_showcase_card, scale_showcase_photo
+from randomizer.ui.showcase import draw_showcase_card, matches_search, scale_showcase_photo
 
 
 class AdvancedSettingsController:
@@ -117,13 +116,42 @@ class AdvancedSettingsController:
 
     def advanced_search_matches(self, pool_key, *values):
         variable = getattr(self, 'advanced_pool_search_vars', {}).get(pool_key)
-        query = variable.get().strip().casefold() if variable is not None else ''
-        if not query:
-            return True
-        haystack = ' '.join(
-            str(value) for value in values if value is not None
-        ).casefold()
-        return all(term in haystack for term in query.split())
+        return matches_search(variable.get() if variable is not None else '', *values)
+
+    def advanced_pool_view_matches(self, pool_key, entry):
+        groups = self.advanced_pool_group_vars[pool_key]
+        if pool_key == 'missions':
+            campaign = groups['campaign'].get()
+            return self.advanced_mission_matches_campaign(entry, campaign)
+        faction, category = groups['faction'].get(), groups['category'].get()
+        factions = entry.get('factions') or (entry.get('faction'),)
+        return ((faction in ('all', '') or faction in factions)
+                and (category in ('all', '') or category == entry.get('category')))
+
+    def advanced_mission_matches_campaign(self, entry, campaign):
+        return campaign == CAMPAIGN_FILTERS[0] or campaign == entry.get('campaign')
+
+    def advanced_mission_entry(self, mission):
+        return {
+            'id': mission['code'].upper(),
+            'label': mission.get('title') or mission['code'],
+            'campaign': mission.get('campaign') or normalize_faction(mission.get('side', '')),
+            'faction': normalize_faction(mission.get('side', '')),
+            'mission_category': mission.get('mission_category'),
+            'mission': mission,
+            'special': bool(mission.get('operation')),
+            'skirmish': bool(mission.get('skirmish')),
+            'shop_mission': self.shop_mode_selected(),
+        }
+
+    def advanced_pool_search_entry(self, pool_key, entry):
+        mission = entry.get('mission', {})
+        return self.advanced_search_matches(
+            pool_key, entry['id'], entry.get('label'), entry.get('faction'),
+            entry.get('factions'), entry.get('category'), entry.get('campaign'),
+            mission.get('side'), mission.get('scenario'), mission.get('operation'),
+            entry.get('reward', {}).get('description'),
+        )
 
     def schedule_advanced_pool_search_refresh(self, pool_key):
         refresh_ids = self.__dict__.setdefault(
@@ -147,6 +175,9 @@ class AdvancedSettingsController:
             self.refresh_advanced_power_buff_view()
         else:
             self.refresh_advanced_pool_views(pool_key)
+        canvas = self.advanced_pool_canvases.get(pool_key)
+        if canvas is not None:
+            canvas.yview_moveto(0)
 
     def on_advanced_tab_configure(self, event):
         wraplength = max(340, int(event.width or 0) - 32)
@@ -730,10 +761,7 @@ class AdvancedSettingsController:
                 or entry.get('faction') in selected_factions
             )
 
-        campaign_missions = [
-            mission for mission in self.missions
-            if self.shop_mode_selected() or mission_matches_campaign(mission, selected_campaign)
-        ]
+        campaign_missions = self.missions
         campaign_missions = self.advanced_skirmish_missions(campaign_missions)
         visible_missions = filter_missions_by_build_settings(
             campaign_missions,
@@ -743,17 +771,11 @@ class AdvancedSettingsController:
             ),
             include_operation_missions=self.include_operation_missions_var.get(),
         )
+        mission_entries = [self.advanced_mission_entry(mission) for mission in visible_missions]
         displayed_missions = [
-            mission for mission in visible_missions
-            if self.advanced_search_matches(
-                'missions',
-                mission.get('code'),
-                mission.get('title'),
-                mission.get('campaign'),
-                mission.get('side'),
-                mission.get('operation'),
-                mission.get('scenario'),
-            )
+            entry['mission'] for entry in mission_entries
+            if self.advanced_pool_view_matches('missions', entry)
+            and self.advanced_pool_search_entry('missions', entry)
         ]
         if 'missions' in requested:
             mission_frame = self.advanced_pool_frames['missions']
@@ -844,16 +866,11 @@ class AdvancedSettingsController:
         ]
         displayed_unit_entries = [
             entry for entry in unit_entries
-            if self.advanced_search_matches(
-                'units',
-                entry.get('id'),
-                entry.get('label'),
-                entry.get('faction'),
-                entry.get('category'),
-            )
+            if self.advanced_pool_view_matches('units', entry)
+            and self.advanced_pool_search_entry('units', entry)
         ]
         if 'units' in requested:
-            unit_ids = [entry['id'] for entry in all_unit_entries]
+            unit_ids = [entry['id'] for entry in displayed_unit_entries]
             cameo_paths = dict(
                 getattr(self, 'advanced_unit_cameo_paths', {}) or {}
             )
@@ -896,16 +913,8 @@ class AdvancedSettingsController:
         ]
         displayed_power_entries = [
             entry for entry in power_entries
-            if self.advanced_search_matches(
-                'powers',
-                entry.get('id'),
-                entry.get('label'),
-                entry.get('faction'),
-                entry.get('category'),
-                entry.get('reward', {}).get('name'),
-                entry.get('reward', {}).get('description'),
-                entry.get('reward', {}).get('power_category'),
-            )
+            if self.advanced_pool_view_matches('powers', entry)
+            and self.advanced_pool_search_entry('powers', entry)
         ]
         if 'powers' in requested:
             normal_power_ids = [
@@ -1020,6 +1029,8 @@ class AdvancedSettingsController:
             entry['id']
             for entry in entries
             if self.advanced_pool_entry_is_visible(entry, pool_key)
+            and self.advanced_pool_search_entry(pool_key, entry)
+            and self.advanced_pool_view_matches(pool_key, entry)
         }
         if include:
             target.difference_update(all_ids)
@@ -1035,12 +1046,7 @@ class AdvancedSettingsController:
         """Return eligible entries and their existing exclusion set."""
         if pool_key == 'missions':
             entries = [
-                {
-                    'id': mission['code'].upper(),
-                    'faction': normalize_faction(mission.get('side', '')),
-                    'campaign': mission.get('campaign', ''),
-                    'special': bool(mission.get('operation')),
-                }
+                self.advanced_mission_entry(mission)
                 for mission in filter_missions_by_build_settings(
                     self.missions,
                     include_true_no_build=self.include_no_build_missions_var.get(),
@@ -1115,11 +1121,7 @@ class AdvancedSettingsController:
         """Match campaign and Arsenal scope used by Advanced cards."""
         selected_campaign = self.campaign_var.get()
         if pool_key == 'missions':
-            return (
-                self.shop_mode_selected()
-                or selected_campaign == CAMPAIGN_FILTERS[0]
-                or entry.get('campaign') == selected_campaign
-            )
+            return True
         if self.reward_mode_var.get() == ARSENAL_MODE:
             arsenal_factions = {
                 faction
@@ -1145,23 +1147,15 @@ class AdvancedSettingsController:
         scope = [
             entry for entry in entries
             if self.advanced_pool_entry_is_visible(entry, pool_key)
+            and self.advanced_pool_search_entry(pool_key, entry)
         ]
         if selector == 'special':
-            included_ids = {
-                entry['id'] for entry in scope if entry.get('special')
-            }
+            included_ids = {entry['id'] for entry in scope if entry.get('special')}
         elif pool_key == 'missions':
-            included_ids = {
-                entry['id']
-                for entry in scope
-                if selector == CAMPAIGN_FILTERS[0]
-                or entry.get('campaign') == selector
-            }
+            included_ids = {entry['id'] for entry in scope
+                            if self.advanced_mission_matches_campaign(entry, selector)}
         else:
-            included_ids = {
-                entry['id'] for entry in scope
-                if entry.get('faction') == selector
-            }
+            included_ids = {entry['id'] for entry in scope if entry.get('faction') == selector}
         if not included_ids:
             return
         target.update(entry['id'] for entry in scope)
@@ -1180,13 +1174,15 @@ class AdvancedSettingsController:
         scope = [
             entry for entry in entries
             if self.advanced_pool_entry_is_visible(entry, pool_key)
+            and self.advanced_pool_search_entry(pool_key, entry)
         ]
         if group_type == 'special':
             matching_ids = {
                 entry['id'] for entry in scope if entry.get('special')
             }
-        elif group_type == 'campaign' and value == CAMPAIGN_FILTERS[0]:
-            matching_ids = {entry['id'] for entry in scope}
+        elif group_type == 'campaign':
+            matching_ids = {entry['id'] for entry in scope
+                            if self.advanced_mission_matches_campaign(entry, value)}
         else:
             matching_ids = {
                 entry['id'] for entry in scope
@@ -1215,7 +1211,8 @@ class AdvancedSettingsController:
             entry['id']
             for entry in entries
             if self.advanced_pool_entry_is_visible(entry, pool_key)
-            and entry.get('faction') == faction
+            and self.advanced_pool_search_entry(pool_key, entry)
+            and (faction == 'all' or faction in (entry.get('factions') or (entry.get('faction'),)))
             and (
                 category == 'all'
                 or entry.get('category') == category
@@ -1517,6 +1514,10 @@ class AdvancedSettingsController:
             return
         filtered_count = len(self.filtered_missions_for_seed())
         self.campaign_label.configure(text=f'Campaign ({filtered_count})')
-        self.mission_goal_spinbox.configure(to=max(1, filtered_count))
-        if self.mission_goal_var.get() > filtered_count:
-            self.mission_goal_var.set(max(1, filtered_count))
+        maximum = max(1, filtered_count)
+        previous = getattr(self, '_mission_pool_limit', None)
+        self._mission_pool_limit = maximum
+        self.mission_goal_spinbox.configure(to=maximum)
+        goal = self.mission_goal_var.get()
+        if goal == previous or goal > maximum:
+            self.mission_goal_var.set(maximum)

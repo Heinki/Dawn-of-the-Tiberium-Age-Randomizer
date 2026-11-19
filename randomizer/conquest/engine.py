@@ -19,7 +19,6 @@ from .terrain import Terrain, BUILDABLE_TILES
 from randomizer.final_fortress.placement import foundation
 from .catalogue import FACTIONS, DIFFICULTIES, RULES_VERSION, BATTLE_CREDITS_PER_RANK, AIRCRAFT_BUILDINGS, starting_structures
 from .teams import HOUSE_ALIASES, participants
-from .players import human
 
 
 CONQUEST_GROUND = BUILDABLE_TILES
@@ -407,8 +406,8 @@ def render(root, state, attempt_id, *, game_speed=2, coop_slot=0, endpoints=None
     battle = state['pending']
     if not battle or battle['rules_version'] != RULES_VERSION:
         raise ValueError('No supported Conquest battle is pending.')
-    if battle['attacker'] == 'ai' and not human(state, battle['defense']['faction']):
-        raise ValueError('AI battles against neutral territories use autobattle.')
+    if not any(member['controller'] == 'human' for member in participants(battle)):
+        raise ValueError('Battles between AI commanders use autobattle.')
     root = Path(root).resolve()
     source = (root / battle['map']['path']).resolve()
     if not source.is_relative_to(root) or not source.is_file():

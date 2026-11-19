@@ -3,6 +3,7 @@
 from ._dependencies import (
     CAMPAIGN_FILTERS,
     filter_missions_by_build_settings,
+    mission_matches_campaign,
     normalize_faction,
 )
 
@@ -51,7 +52,9 @@ class ShopArchipelagoController:
             return list(self.missions)
         return [
             mission for mission in self.missions
-            if normalize_faction(mission.get('side', '')) == campaign
+            if mission_matches_campaign(mission, campaign)
+            or (campaign in {'GDI', 'Nod', 'Allies', 'Soviet'}
+                and normalize_faction(mission.get('side', '')) == campaign)
         ]
 
     def filtered_missions_for_seed(self):
@@ -193,6 +196,7 @@ class ShopArchipelagoController:
             include_no_build_production=(
                 self.include_no_build_production_missions_var.get()
             ),
+            include_operation_missions=self.include_operation_missions_var.get(),
         )
         if fresh and self.archipelago_shop_slot_settings() is None:
             excluded = self.excluded_mission_codes

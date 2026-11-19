@@ -231,6 +231,21 @@ def _dta_rewards(root, rows, rewards, settings, country, randomized, scenario):
         synthetic.setdefault('Basic', {})['Player'] = country
         starter_access.update(_starter_rules(IniLines(_serialize(synthetic).splitlines()), settings))
     rewards = list(rewards) + [{'unit': unit, 'dta_production_access': True} for unit in sorted(starter_access)]
+    # The GDI and Soviet Mammoths share a sidebar label. Keep the local
+    # variant when both are available and apply both variants' earned buffs.
+    mammoths = {'HTNK', '4TNK'}
+    mammoth_access = {reward.get('unit') for reward in rewards
+                      if reward.get('dta_production_access')} & mammoths
+    native_mammoth = {'GDI': 'HTNK', 'Soviet': '4TNK'}.get(country)
+    if native_mammoth and not randomized:
+        mammoth_access.add(native_mammoth)
+    mammoth_routes = {}
+    if mammoth_access == mammoths:
+        preferred = native_mammoth or next(reward['unit'] for reward in rewards
+                                           if reward.get('dta_production_access') and reward.get('unit') in mammoths)
+        mammoth_routes = {unit: preferred for unit in mammoths - {preferred}}
+        rewards = [dict(reward, unit=mammoth_routes[reward['unit']])
+                   if reward.get('unit') in mammoth_routes else reward for reward in rewards]
     # Existing adapter allocates an unused, engine-registered HouseType mask.
     sides, report = player_production_rules(root, mission, rows, [{
         'rewards': rewards, 'settings': settings, 'randomize_access': randomized, 'credit_bonus': 0}])
@@ -239,6 +254,7 @@ def _dta_rewards(root, rows, rewards, settings, country, randomized, scenario):
     context = {'player_house': 'Spawn1', 'production_house': house, 'acts_like': sides[0],
                'original_production_house': country, 'shared_hostile_houses': []}
     routes = {entry['unit']: entry['output_type'] for entry in report['applied']}
+    routes.update({unit: routes.get(target, target) for unit, target in mammoth_routes.items()})
     rules, actions, power_report = player_power_rules(
         mission, rewards, reserved_rules=rows, production_context=context,
         scenario_sections=rows, installed_sections=installed, player_house_heap_id=0,

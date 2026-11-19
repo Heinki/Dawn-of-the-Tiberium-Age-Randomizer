@@ -61,7 +61,8 @@ def start_computers(writer, members, private_types):
         # Create Team recruits existing owned units. Reinforce would duplicate
         # the committed army. Harvesters remain outside combat teams.
         for number, batch in enumerate(batches(units, 15)):
-            team = writer.team('Conquest starting army', batch, waypoint, waypoint)
+            team = writer.team('Conquest starting army', batch, slot, waypoint,
+                               veterancy=force['veterancy'])
             writer.put(team, 'AreTeamMembersRecruitable', 'yes')
             # Separate triggers also keep the largest committed armies below
             # the native 512-byte Actions record limit.
