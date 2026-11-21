@@ -1,5 +1,7 @@
 """Mission file preparation, game process control, and log watching."""
 
+from time import monotonic
+
 from ._dependencies import (
     ARSENAL_MODE,
     BUFF_TARGETS,
@@ -854,7 +856,8 @@ throw "Map $name was not found in expandmo*.mix"
                     # needs to stop at the score screen. Unlocking is idempotent,
                     # but game cleanup must run for both new and prior victories.
                     unlocked = self.unlock_mission_check(
-                        code, 'victory', 'DTA score screen'
+                        code, 'victory', 'DTA score screen',
+                        started_at=(self.active_mission_attempt or {}).get('started_at'),
                     )
                     if unlocked or self.is_mission_complete(code):
                         self.active_hook.setdefault('seen', set()).add(
@@ -925,6 +928,7 @@ throw "Map $name was not found in expandmo*.mix"
                     code,
                     check_id,
                     'In-game hook',
+                    started_at=(self.active_mission_attempt or {}).get('started_at'),
                 )
                 if check_id == 'victory' and unlocked:
                     self.schedule_game_close_after_victory()
@@ -1792,6 +1796,7 @@ throw "Map $name was not found in expandmo*.mix"
                     env=environment,
                     start_new_session=True,
                 )
+            started_at = monotonic()
             process = subprocess.Popen(
                 launch_target,
                 cwd=GAME_ROOT,
@@ -1840,6 +1845,7 @@ throw "Map $name was not found in expandmo*.mix"
             self.active_mission_attempt = {
                 'mission_code': mission.get('code'),
                 'scenario': scenario,
+                'started_at': started_at,
             }
             self.after(HOOK_POLL_MS, self.poll_hook_log)
         except Exception:

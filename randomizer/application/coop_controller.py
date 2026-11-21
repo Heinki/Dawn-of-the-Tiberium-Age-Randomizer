@@ -41,6 +41,7 @@ from randomizer.shop.persistence import COOP_SHOP_PATHS, ShopPersistenceError, S
 from randomizer.shop.service import ShopProgressionService
 from randomizer.shop.state import normalize_shop_run
 from randomizer.shop.transitions import ShopTransitionError
+from randomizer.ui.grid_victory import show_synced_grid_victory
 
 
 
@@ -851,12 +852,12 @@ class CoopController:
             return
         return super().on_launch_selected()
 
-    def unlock_mission_check(self, code, check_id, source):
+    def unlock_mission_check(self, code, check_id, source, *, started_at=None):
         if self.coop_guest_connected() or getattr(self, '_coop_pending_launch', None):
             return False
         self._coop_recording_result = True
         try:
-            result = super().unlock_mission_check(code, check_id, source)
+            result = super().unlock_mission_check(code, check_id, source, started_at=started_at)
         finally:
             self._coop_recording_result = False
         if self.coop_enabled():
@@ -1548,7 +1549,8 @@ class CoopController:
             raise ValueError('Host must send a shared Archipelago projection without private session state.')
         run = normalize_shop_run(snapshot['shop_run']) if snapshot['shop_run'] else None
         first_snapshot = self._coop_received_revision < 0
-        state_changed = state != self.state
+        previous_state = self.state
+        state_changed = state != previous_state
         mode_changed = snapshot['mode'] != self.progression_mode_var.get()
         settings_changed = snapshot['difficulty'] != self.difficulty_var.get()
         shop_changed = run != getattr(self, '_coop_host_shop_run', None)
@@ -1628,6 +1630,8 @@ class CoopController:
                 self.workspace_tabs.select(self.shop_tab)
             if state_changed or mode_changed or first_snapshot or shop_changed:
                 self._record_coop_log(f'Co-op host state synced: {snapshot["mode"]}, seed {self.seed_var.get()}.')
+            if state_changed and not first_snapshot and snapshot['mode'] == 'Grid Mode':
+                show_synced_grid_victory(self, previous_state)
         finally:
             self._coop_applying_state = False
         self.coop_publish_state()
@@ -1934,7 +1938,10 @@ class CoopController:
         if any(re.fullmatch('(?:' + names + r'): Winner\s*', line.strip()) for line in parts):
             self._coop_team_result['won'] = True
             if not self.coop_guest_connected() and not result.get('shop'):
-                self.unlock_mission_check(hook['mission_code'], 'victory', 'DTA co-op team victory')
+                self.unlock_mission_check(
+                    hook['mission_code'], 'victory', 'DTA co-op team victory',
+                    started_at=(self.active_mission_attempt or {}).get('started_at'),
+                )
             hook['seen'].add('co-op victory')
 
     def on_mission_select(self, event):
