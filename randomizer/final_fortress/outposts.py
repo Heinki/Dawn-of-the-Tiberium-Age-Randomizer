@@ -374,6 +374,11 @@ def _reviewed_native_building_prefix(root, registration):
         ('554dedfdae3948e50e61b0058689b8a265ae40908cb55fae31e6f05e0e549a23',
          'c059becd565f14fbfc1be7ae74ef8e8ffbd8329bb48e18d835c57de73d47d435',
          '12025e116c95679841670789c0684584da5f914c8f96dfba19100ab7e1e900f9'): 501,
+        # The map-local Advanced AI option changes the fingerprint without
+        # adding native building types. DTA still loads map buildings at 501.
+        ('554dedfdae3948e50e61b0058689b8a265ae40908cb55fae31e6f05e0e549a23',
+         'c059becd565f14fbfc1be7ae74ef8e8ffbd8329bb48e18d835c57de73d47d435',
+         '623e8fd738c7f5c0e37d588cdf60b028f4959898f5d519da68dff7fc20032688'): 501,
     }
     key = (*binary, registration)
     if key not in reviewed:

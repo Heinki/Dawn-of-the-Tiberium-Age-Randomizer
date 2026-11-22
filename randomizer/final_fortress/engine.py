@@ -23,6 +23,7 @@ ALIASES = ('GDI1', 'Nod1', 'GDI2', 'Nod2')
 NATIVE_INDICES = (6, 7, 8, 9)
 FRIENDLY_ALIASES = ('GDI1', 'Allies1', 'Allies2')
 FRIENDLY_INDICES = (6, 10, 11)
+MCV_TYPES = {'GDI': 'GMCV', 'Nod': 'NMCV', 'Allies': 'AMCV', 'Soviet': 'SMCV'}
 
 
 def coalition(plan):
@@ -1044,6 +1045,13 @@ def build_map(game_root, run, rules=None, *, power_runtime=None):
     writer = MapWriter(lines, rules, root)
     from randomizer.dta.advanced_ai import advanced_ai_sections, apply_advanced_ai, route_advanced_ai_tactics
     rules = apply_advanced_ai(writer, advanced_ai_sections(root))
+    # Enhanced rules reparent this AI variant to SHILKA and lose its inherited
+    # Image. A private turreted copy without a shape crashes Vinifera's renderer.
+    # Set the art before cloning so native AI teams and all copies can draw it.
+    if 'AISHILKA2' in rules['VehicleTypes'].values() and not rules['AISHILKA2'].get('Image'):
+        image = rules['SHILKA'].get('Image', 'SHILKA')
+        rules['AISHILKA2']['Image'] = image
+        writer.put('AISHILKA2', 'Image', image)
     finished = writer.flag('Run finished')
     for i in range(8):
         writer.put('Houses', 50 + i, f'Spawn{i+1}')
@@ -1162,19 +1170,19 @@ def build_map(game_root, run, rules=None, *, power_runtime=None):
             [_action(4, team=markers['milestone:' + milestone['id']])],
         )
     generators = {'GDI': 'NUK2', 'Nod': 'NUK2', 'Allies': 'RAAPWR', 'Soviet': 'RAAPWR'}
-    mcv = {'GDI': 'GMCV', 'Nod': 'NMCV', 'Allies': 'AMCV', 'Soviet': 'SMCV'}
     enemy_defenses = {
         'GDI': ['TWR', 'TWR', 'ATWR', 'ATWR'],
         'Nod': ['GUN', 'GUN', 'SAM', 'OBLI'],
         'Allies': ['RAPBOX', 'RAHBOX', 'RAAGUN', 'RAGUN'],
         'Soviet': ['RAFTUR', 'RAFTUR', 'RASAM', 'RATSLA'],
     }
+    unranked_starting_types = {'TDHARV', 'RAHARV', *MCV_TYPES.values()}
     for seat, (_, _, wp) in enumerate(friends):
         layout = plan['map']['perk_layouts'][str(wp)]
         helper = seat >= (len(plan.get('coop_players', [])) or 1)
         tag = writer.transfer_tag(wp, 'Friendly grants ' + str(seat))
         writer.place(
-            'Units', player_aliases.get(mcv[faction], mcv[faction]), start(wp),
+            'Units', player_aliases.get(MCV_TYPES[faction], MCV_TYPES[faction]), start(wp),
             tag='None' if helper else tag,
             mission='Unload' if helper else 'Guard',
             owner=f'Spawn{wp+1}' if helper else 'Neutral',
@@ -1279,7 +1287,7 @@ def build_map(game_root, run, rules=None, *, power_runtime=None):
                     helper_types.get(kind, player_aliases.get(kind, kind)),
                     position,
                     tag=tag,
-                    veterancy=0 if kind in ('TDHARV', 'RAHARV') else effects['veterancy'],
+                    veterancy=0 if kind in unranked_starting_types else effects['veterancy'],
                     mission='Harvest' if kind in ('TDHARV', 'RAHARV') else 'Guard',
                 )
         if helper and effects['starting_units']:
@@ -1317,7 +1325,7 @@ def build_map(game_root, run, rules=None, *, power_runtime=None):
     ):
         layout = plan['map']['perk_layouts'][str(wp)]
         tag = writer.transfer_tag(wp, 'Enemy fortress ' + str(enemy))
-        yard = rules[mcv[country]]['DeploysInto']
+        yard = rules[MCV_TYPES[country]]['DeploysInto']
         private = _private_type(
             writer,
             yard,
@@ -1340,7 +1348,7 @@ def build_map(game_root, run, rules=None, *, power_runtime=None):
         # transferring a preplaced yard does neither. Only this initial MCV
         # deploys into the protected type. Future ordinary MCVs stay vulnerable.
         starting_mcv = writer.key()
-        source_mcv = enemy_aliases[enemy][mcv[country]]
+        source_mcv = enemy_aliases[enemy][MCV_TYPES[country]]
         writer.sections[starting_mcv] = {
             **writer.sections[source_mcv],
             'DeploysInto': private,
