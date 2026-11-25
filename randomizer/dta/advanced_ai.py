@@ -31,6 +31,15 @@ def apply_advanced_ai(writer, sections):
         rules.setdefault(section, {}).update(values)
         for key, value in values.items():
             writer.put(section, key, value)
+    # Enhance.ini reparents these AI variants, dropping the Image inherited
+    # from their Classic AI parents. Their own IDs have no sprite files.
+    # Write the art for native AI teams and for any private copies built later.
+    vehicles = rules.get('VehicleTypes', {}).values()
+    for variant, source in (('AIBIKE2', 'BIKE'), ('AISHILKA2', 'SHILKA')):
+        if variant in vehicles and not rules[variant].get('Image'):
+            image = rules[source].get('Image') or source
+            rules[variant]['Image'] = image
+            writer.put(variant, 'Image', image)
     writer.rules = rules
     return rules
 

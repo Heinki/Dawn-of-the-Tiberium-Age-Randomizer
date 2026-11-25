@@ -1045,13 +1045,6 @@ def build_map(game_root, run, rules=None, *, power_runtime=None):
     writer = MapWriter(lines, rules, root)
     from randomizer.dta.advanced_ai import advanced_ai_sections, apply_advanced_ai, route_advanced_ai_tactics
     rules = apply_advanced_ai(writer, advanced_ai_sections(root))
-    # Enhanced rules reparent this AI variant to SHILKA and lose its inherited
-    # Image. A private turreted copy without a shape crashes Vinifera's renderer.
-    # Set the art before cloning so native AI teams and all copies can draw it.
-    if 'AISHILKA2' in rules['VehicleTypes'].values() and not rules['AISHILKA2'].get('Image'):
-        image = rules['SHILKA'].get('Image', 'SHILKA')
-        rules['AISHILKA2']['Image'] = image
-        writer.put('AISHILKA2', 'Image', image)
     finished = writer.flag('Run finished')
     for i in range(8):
         writer.put('Houses', 50 + i, f'Spawn{i+1}')
